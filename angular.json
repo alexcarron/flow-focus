@@ -30,7 +30,7 @@
               "src/styles.css"
             ],
             "scripts": [],
-						"baseHref": "/flow-focus/"
+						"baseHref": "alexcarron.github.io/flow-focus/"
           },
           "configurations": {
             "production": {
@@ -90,6 +90,9 @@
             ],
             "scripts": []
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy"
         }
       }
     }

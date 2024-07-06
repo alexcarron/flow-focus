@@ -7,8 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "predeploy": "ng build",
-    "deploy": "gh-pages -d docs"
+    "predeploy": "ng build --configuration production",
+    "deploy": "gh-pages -d docs/browser"
   },
   "private": true,
   "dependencies": {
@@ -29,6 +29,7 @@
     "@angular/cli": "^18.0.7",
     "@angular/compiler-cli": "^18.0.0",
     "@types/jasmine": "~5.1.0",
+    "angular-cli-ghpages": "^2.0.1",
     "gh-pages": "^6.1.1",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
