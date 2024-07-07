@@ -1,0 +1,16 @@
+
+<h1
+	contenteditable
+	[textContent]="getDescription()"
+	(input)="onDescriptionChange($event)"
+> </h1>
+<p
+	*ngIf="hasSteps()"
+	contenteditable
+	[textContent]="getNextStep()"
+	(input)="onNextStepChange($event)"
+>
+</p>
+<p *ngIf="hasUpcomingDeadline()">{{ getTimeLeft() }}</p>
+<button *ngIf="isOptional()" (click)="skip()">Skip</button>
+<button (click)="complete()">Complete</button>
