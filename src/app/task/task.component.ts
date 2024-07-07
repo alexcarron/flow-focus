@@ -27,7 +27,13 @@ export class TaskComponent {
 	}
 
 	hasUpcomingDeadline(): boolean {
-		return this.task.getDeadline() != null;
+		const millisecondsLeft = this.task.getMillisecondsLeft();
+
+		if (millisecondsLeft == null) {
+			return false;
+		}
+
+		return millisecondsLeft <= 1000 * 60 * 5;
 	}
 
 	/**
@@ -47,7 +53,7 @@ export class TaskComponent {
 		];
 
 		timeUnits.sort((a, b) => b.millisecondsLong - a.millisecondsLong);
-		
+
 		for (const timeUnit of timeUnits) {
 			if (millisecondsLeft >= timeUnit.millisecondsLong) {
 				const unitsLeft = Math.floor(millisecondsLeft / timeUnit.millisecondsLong);
@@ -64,14 +70,10 @@ export class TaskComponent {
 	 * @return {string} A string representing the time left in appropriate units.
 	 */
 	getTimeLeft(): string {
-		const deadline = this.task.getDeadline();
-
-		if (deadline == null) {
+		const millisecondsLeft = this.task.getMillisecondsLeft();
+		if (millisecondsLeft === null) {
 			return "";
 		}
-
-		const now = new Date();
-		const millisecondsLeft = deadline.getTime() - now.getTime();
 		return this.getTimeLeftString(millisecondsLeft);
 	}
 

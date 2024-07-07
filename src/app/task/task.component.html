@@ -14,7 +14,3 @@
 <p *ngIf="hasUpcomingDeadline()">{{ getTimeLeft() }}</p>
 <button *ngIf="isSkippable()" (click)="skip()">Skip</button>
 <button (click)="complete()">Complete</button>
-
-<p>
-	{{task.getDescription()}}: {{task.getNextStep()}} - {{task.getDeadline()}} - {{task.isMandatory()}}
-</p>
