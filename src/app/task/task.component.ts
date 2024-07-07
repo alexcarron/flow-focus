@@ -10,6 +10,8 @@ import { CommonModule } from '@angular/common';
   styleUrl: './task.component.css'
 })
 export class TaskComponent {
+	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 5;
+
 	@Input() task!: Task;
 	@Output() taskSkipped: EventEmitter<void> = new EventEmitter<void>();
 
@@ -33,7 +35,7 @@ export class TaskComponent {
 			return false;
 		}
 
-		return millisecondsLeft <= 1000 * 60 * 5;
+		return millisecondsLeft <= TaskComponent.URGENT_MILLISECONDS_LEFT;
 	}
 
 	/**
@@ -44,7 +46,6 @@ export class TaskComponent {
 	 */
 	private getTimeLeftString(millisecondsLeft: number): string {
 		const timeUnits = [
-			{ millisecondsLong: 1000, name: 'seconds' },
 			{ millisecondsLong: 60 * 1000, name: 'minutes' },
 			{ millisecondsLong: 60 * 60 * 1000, name: 'hours' },
 			{ millisecondsLong: 24 * 60 * 60 * 1000, name: 'days' },
