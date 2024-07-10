@@ -8,9 +8,11 @@ export default class PersistentTasksManager extends TasksManager {
 	public constructor(persistenceManager: PersistenceManager<TasksManager>) {
 		super();
 		this.persistenceManager = persistenceManager;
+	}
 
+	public async load() {
 		try {
-			this.persistenceManager.loadObject(this);
+			await this.persistenceManager.loadObject(this);
 		}
 		catch (error) {
 			console.error("Error loading tasks manager: ", error);

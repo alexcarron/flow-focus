@@ -17,6 +17,7 @@ export class TaskComponent {
 
 
 	getDescription(): string {
+		console.log(this.task);
 		return this.task.getDescription();
 	}
 

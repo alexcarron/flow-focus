@@ -1,2 +1,6 @@
 <button class="fade-in-on-hover">Leave</button>
-<task [task]="this.tasksManager.getNextTask()"></task>
+<task [task]="getNextTask()"></task>
+
+<button (click)="addRandomTask()">ADD RANDOM</button>
+
+<button (click)="displayLocalStorage()">localStoage</button>

@@ -1,30 +1,31 @@
 /**
  * Interface for a class that handles persistence of objects.
  * @interface
- * @template PerisitentObject - The type of object to be saved and loaded.
+ * @template PersistentObject - The type of object to be saved and loaded.
  */
-export default abstract class PersistenceManager<PerisitentObject extends object> {
+export default abstract class PersistenceManager<PersistentObject extends object> {
 	/**
 	 * Saves the object to a persistence medium.
-	 * @param {PerisitentObject} objectSaving - The object to save.
+	 * @param {PersistentObject} objectSaving - The object to save.
 	 * @return {void}
 	 */
-	public abstract saveObject(objectSaving: PerisitentObject): void;
+	public abstract saveObject(objectSaving: PersistentObject): void;
 
 	/**
 	 * Gets the object loaded from a persistence medium.
 	 *
-	 * @return {PerisitentObject} The loaded object.
+	 * @return {PersistentObject} The loaded object.
 	 */
-	protected abstract getLoadedObject(): PerisitentObject;
+	protected abstract getLoadedObject(): Promise<PersistentObject>;
 
 	/**
 	 * Loads the object from a persistence medium.
 	 * @param objectToLoad - The object to load.
 	 * @return The loaded object.
 	 */
-	public loadObject(objectToLoad: PerisitentObject) {
-		Object.assign(objectToLoad, this.getLoadedObject());
+	public async loadObject(objectToLoad: PersistentObject) {
+    const loadedObject = await this.getLoadedObject();
+    Object.assign(objectToLoad, loadedObject);
 	};
 
 
