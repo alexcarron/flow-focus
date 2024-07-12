@@ -10,10 +10,19 @@ import { CommonModule } from '@angular/common';
   styleUrl: './task.component.css'
 })
 export class TaskComponent {
-	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 5;
+	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
 
 	@Input() task!: Task;
 	@Output() taskSkipped: EventEmitter<void> = new EventEmitter<void>();
+	timeLeft: string | null = null;
+
+	ngOnInit() {
+		this.timeLeft = this.getTimeLeft();
+
+		setInterval(() => {
+			this.timeLeft = this.getTimeLeft();
+		}, 1000);
+	}
 
 
 	getDescription(): string {
@@ -46,11 +55,11 @@ export class TaskComponent {
 	 */
 	private getTimeLeftString(millisecondsLeft: number): string {
 		const timeUnits = [
-			{ millisecondsLong: 60 * 1000, name: 'minutes' },
-			{ millisecondsLong: 60 * 60 * 1000, name: 'hours' },
-			{ millisecondsLong: 24 * 60 * 60 * 1000, name: 'days' },
-			{ millisecondsLong: 7 * 24 * 60 * 60 * 1000, name: 'weeks' },
-			{ millisecondsLong: 52.1775 * 7 * 24 * 60 * 60 * 1000, name: 'years' }
+			{ millisecondsLong: 60 * 1000, name: 'minute' },
+			{ millisecondsLong: 60 * 60 * 1000, name: 'hour' },
+			{ millisecondsLong: 24 * 60 * 60 * 1000, name: 'day' },
+			{ millisecondsLong: 7 * 24 * 60 * 60 * 1000, name: 'week' },
+			{ millisecondsLong: 52.1775 * 7 * 24 * 60 * 60 * 1000, name: 'year' }
 		];
 
 		timeUnits.sort((a, b) => b.millisecondsLong - a.millisecondsLong);
@@ -58,7 +67,13 @@ export class TaskComponent {
 		for (const timeUnit of timeUnits) {
 			if (millisecondsLeft >= timeUnit.millisecondsLong) {
 				const unitsLeft = Math.floor(millisecondsLeft / timeUnit.millisecondsLong);
-				return `${unitsLeft} ${timeUnit.name}`;
+				let unitName = timeUnit.name;
+
+				if (unitsLeft > 1) {
+					unitName += 's';
+				}
+
+				return `${unitsLeft} ${unitName}`;
 			}
 		}
 
@@ -70,11 +85,16 @@ export class TaskComponent {
 	 *
 	 * @return {string} A string representing the time left in appropriate units.
 	 */
-	getTimeLeft(): string {
+	getTimeLeft(): string | null {
 		const millisecondsLeft = this.task.getMillisecondsLeft();
 		if (millisecondsLeft === null) {
-			return "";
+			return null;
 		}
+
+		if (!this.hasUpcomingDeadline()) {
+			return null
+		}
+
 		return this.getTimeLeftString(millisecondsLeft);
 	}
 

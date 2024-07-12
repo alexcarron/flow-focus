@@ -42,7 +42,10 @@ export default class Task {
 			return null;
 		}
 
-		return this.getDeadline()!.getTime() - Date.now();
+		const deadlineTime = this.getDeadline()!.getTime();
+		const currentTime = Date.now();
+
+		return deadlineTime - currentTime;
 	}
 	public setDeadline(deadline: Date): void {
 		this.deadline = deadline;

@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { FocusPageComponent } from './focus-page/focus-page.component';
-import { tasksManagerResolver } from '../services/TasksManagerResolver';
+import { tasksManagerResolver } from '../resolvers/TasksManagerResolver';
 
 export const routes: Routes = [
 	{

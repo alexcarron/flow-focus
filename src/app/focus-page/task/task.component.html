@@ -11,6 +11,7 @@
 	(input)="onNextStepChange($event)"
 >
 </p>
-<p *ngIf="hasUpcomingDeadline()">{{ getTimeLeft() }}</p>
+
+<p *ngIf="this.timeLeft">{{ this.timeLeft }}</p>
 <button *ngIf="isSkippable()" (click)="skip()">Skip</button>
 <button (click)="complete()">Complete</button>
