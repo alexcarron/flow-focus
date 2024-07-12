@@ -7,6 +7,45 @@ import JsonObservableConverter from "./JsonToObservableConverter";
 export default class JsonToTasksManager implements JsonObservableConverter<TasksManager> {
 	private static readonly stateObserverPropertyName = 'stateObserver';
 
+	private isIsoDateString(value: any): boolean {
+		if (typeof value !== 'string') {
+			return false;
+		}
+
+		const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+		if (!dateRegex.test(value)) {
+			return false;
+		}
+
+		try {
+			const date = new Date(value);
+
+			if (isNaN(date.getTime())) {
+				return false;
+			}
+
+			return true;
+		}
+		catch (error) {
+			return false;
+		}
+	}
+
+	private assignWithDateConversion(target: any, ...sources: any[]): any {
+		sources.forEach(source => {
+			Object.keys(source).forEach(key => {
+				const value = source[key];
+				if (this.isIsoDateString(value)) {
+					target[key] = new Date(value);
+				} else {
+					target[key] = value;
+				}
+			});
+		});
+		return target;
+	}
+
 	/**
 	 * Converts a JSON object into a TasksManager instance.
 	 *
@@ -73,6 +112,8 @@ export default class JsonToTasksManager implements JsonObservableConverter<Tasks
 					}
 				});
 			}
+
+			this.assignWithDateConversion(task, jsonTaskObject);
 
 			return task;
 		});

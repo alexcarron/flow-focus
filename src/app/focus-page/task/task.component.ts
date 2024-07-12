@@ -15,12 +15,14 @@ export class TaskComponent {
 	@Input() task!: Task;
 	@Output() taskSkipped: EventEmitter<void> = new EventEmitter<void>();
 	timeLeft: string | null = null;
+	currentTime: Date = new Date();
 
 	ngOnInit() {
 		this.timeLeft = this.getTimeLeft();
 
 		setInterval(() => {
 			this.timeLeft = this.getTimeLeft();
+			this.currentTime = new Date();
 		}, 1000);
 	}
 
@@ -30,11 +32,11 @@ export class TaskComponent {
 	}
 
 	hasSteps(): boolean {
-		return this.task.getNextStep() != null;
+		return this.task.getNextUncompletedStep() != null;
 	}
 
 	getNextStep(): string {
-		return this.task.getNextStep() ?? "";
+		return this.task.getNextUncompletedStep() ?? "";
 	}
 
 	hasUpcomingDeadline(): boolean {
@@ -99,7 +101,7 @@ export class TaskComponent {
 	}
 
 	isSkippable(): boolean {
-		return !this.task.isMandatory();
+		return !this.task.getIsMandatory();
 	}
 
 	skip() {
@@ -116,6 +118,7 @@ export class TaskComponent {
 	 * @param {Event} event - The event object containing information about the input element.
 	 */
 	onDescriptionChange(event: Event) {
+		console.log(event);
 		const newDescription = (event.target as HTMLHeadingElement).textContent ?? "";
 		this.task.setDescription(newDescription);
 	}
@@ -128,6 +131,6 @@ export class TaskComponent {
 	 */
 	onNextStepChange(event: Event) {
 		const newNextStep = (event.target as HTMLHeadingElement).textContent ?? "";
-		this.task.replaceNextStep(newNextStep);
+		this.task.replaceNextUncompletedStep(newNextStep);
 	}
 }

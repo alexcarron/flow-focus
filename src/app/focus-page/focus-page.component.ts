@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import TasksManager from '../../model/TasksManager';
 import { ActivatedRoute } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'focus-page',
   standalone: true,
-  imports: [TaskComponent],
+  imports: [TaskComponent, CommonModule],
   templateUrl: './focus-page.component.html',
   styleUrl: './focus-page.component.css'
 })
@@ -20,6 +21,7 @@ export class FocusPageComponent {
 	}
 
 	getNextTask() {
-		return this.tasksManager.getNextTask();
+		const currentTime = new Date();
+		return this.tasksManager.getPriorityTask(currentTime);
 	}
 }

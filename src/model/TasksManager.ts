@@ -1,4 +1,5 @@
 import Task from "./Task";
+import TaskPrioritizer from "./TaskPrioritizer";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
@@ -14,7 +15,8 @@ export default class TasksManager {
 		return task;
 	}
 
-	public getNextTask(): Task {
-		return this.tasks[this.tasks.length - 1];
+	public getPriorityTask(currentTime: Date): Task | null {
+		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this.tasks);
+		return taskPrioritizer.getMostImportantTask(currentTime);
 	}
 }
