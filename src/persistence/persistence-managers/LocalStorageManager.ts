@@ -1,4 +1,4 @@
-import JsonToObjectConverter from "../json-converters/JsonToObjectConverter";
+import JsonObservableConverter from "../json-converters/JsonToObservableConverter";
 import PersistenceManager from "./PersistenceManager";
 
 /**
@@ -20,19 +20,19 @@ export default class LocalStorageManager<PersistentObject extends object> extend
 	/**
 	 * The converter used to convert the object to and from JSON.
 	 */
-	private jsonToObjectConverter: JsonToObjectConverter<PersistentObject>;
+	private jsonToObjectConverter: JsonObservableConverter<PersistentObject>;
 
 	/**
 	 * Creates a new LocalStorage object.
 	 *
 	 * @param {string} localStorage - The browser local storage object.
 	 * @param {string} localStorageKey - The name of the key used to store the object in local storage.
-	 * @param {JsonToObjectConverter<PersistentObject>} jsonToObjectConverter - The converter used to convert the object to and from JSON.
+	 * @param {JsonObservableConverter<PersistentObject>} jsonToObjectConverter - The converter used to convert the object to and from JSON.
 	 */
 	constructor(
 		localStorage: Storage,
 		localStorageKey: string,
-		jsonToObjectConverter: JsonToObjectConverter<PersistentObject>
+		jsonToObjectConverter: JsonObservableConverter<PersistentObject>
 	) {
 		super();
 		this.localStorage = localStorage;
@@ -42,11 +42,14 @@ export default class LocalStorageManager<PersistentObject extends object> extend
 
 	/**
 	 * Saves the object to local storage.
-	 *
-	 * @param {PersistentObject} obj - The object to save.
 	 */
-	saveObject(obj: PersistentObject): void {
-		this.localStorage.setItem(this.localStorageKey, JSON.stringify(obj));
+	saveNonNullObject(): Promise<void> {
+		return Promise.resolve(
+			this.localStorage.setItem(
+				this.localStorageKey,
+				JSON.stringify(this.persistentObject)
+			)
+		);
 	}
 
 	/**

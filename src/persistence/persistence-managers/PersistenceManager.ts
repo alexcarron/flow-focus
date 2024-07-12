@@ -1,15 +1,43 @@
+import StateObserver from "../peristent-objects/StateObserver";
+
 /**
  * Interface for a class that handles persistence of objects.
  * @interface
  * @template PersistentObject - The type of object to be saved and loaded.
  */
-export default abstract class PersistenceManager<PersistentObject extends object> {
+export default abstract class PersistenceManager<PersistentObject extends object> implements StateObserver {
+	protected persistentObject: PersistentObject | null = null;
+
+	public getPersistentObject() {return this.persistentObject}
+	public setPersistentObject(persistentObject: PersistentObject) {
+		this.persistentObject = persistentObject;
+	}
+
+
 	/**
-	 * Saves the object to a persistence medium.
-	 * @param {PersistentObject} objectSaving - The object to save.
-	 * @return {void}
+	 * Called when the state of the persistent object changes.
 	 */
-	public abstract saveObject(objectSaving: PersistentObject): void;
+	public onStateChange() {
+		this.saveObject();
+	}
+
+	private isLoaded(): boolean {
+		return this.persistentObject !== null;
+	}
+
+	/**
+	 * Saves the persistent object to a persistence medium.
+	 */
+	protected abstract saveNonNullObject(): Promise<void>;
+
+	/**
+	 * Saves the persistent object to a persistence medium if it is not null.
+	 */
+	public async saveObject(): Promise<void> {
+		if (this.isLoaded()) {
+			return await this.saveNonNullObject();
+		}
+	}
 
 	/**
 	 * Gets the object loaded from a persistence medium.
@@ -23,9 +51,14 @@ export default abstract class PersistenceManager<PersistentObject extends object
 	 * @param objectToLoad - The object to load.
 	 * @return The loaded object.
 	 */
-	public async loadObject(objectToLoad: PersistentObject) {
-    const loadedObject = await this.getLoadedObject();
-    Object.assign(objectToLoad, loadedObject);
+	public async loadObject(): Promise<void> {
+		const loadedObject = await this.getLoadedObject();
+		if (this.isLoaded()) {
+			Object.assign(this.persistentObject!, loadedObject);
+		}
+		else {
+			this.persistentObject = loadedObject;
+		}
 	};
 
 
