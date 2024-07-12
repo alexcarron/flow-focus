@@ -4,16 +4,11 @@ import TasksManager from '../model/TasksManager';
 import JsonToTasksManager from '../persistence/json-converters/JsonToTasksManager';
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import PersistentTasksManager from '../persistence/peristent-objects/PersistentTasksManager';
 
 export const tasksManagerResolver: ResolveFn<any> = async (route, state) => {
-	console.log("RESOLVER TIME");
 	const API_URL = "http://localhost:3000/tasksMangager";
 	const httpClient = inject(HttpClient);
 	const jsonToTasksManagerConverter = new JsonToTasksManager();
-
-
-	console.log({API_URL, httpClient, jsonToTasksManagerConverter});
 
 	const tasksManagerJsonServer = new JsonServer<TasksManager>(
 		API_URL,
@@ -21,11 +16,11 @@ export const tasksManagerResolver: ResolveFn<any> = async (route, state) => {
 		jsonToTasksManagerConverter
 	);
 
-	console.log({tasksManagerJsonServer});
+	console.log("Persistent Json Server Object Created in Resolver",{tasksManagerJsonServer});
 
-	const tasksManager = new PersistentTasksManager(tasksManagerJsonServer);
-	console.log({tasksManager});
-	await tasksManager.load();
-	console.log("loaded", tasksManager);
+	console.log("Uninitialized tasks manager created in Resolver", {tasksManager: tasksManagerJsonServer.getPersistentObject()});
+	await tasksManagerJsonServer.loadObject();
+	const tasksManager = tasksManagerJsonServer.getPersistentObject();
+	console.log("Tasks manager loaded in Resolver", tasksManager);
 	return tasksManager;
 };

@@ -23,18 +23,18 @@ export default class Task {
 
 		return this.steps[0];
 	};
-	public replaceNextStep(nextStep: string): void {
+	public replaceNextStep(newNextStep: string): void {
 		if (this.steps.length === 0) {
 			return;
 		}
 
-		this.steps[0] = nextStep;
+		this.steps[0] = newNextStep;
 	};
 	public addStep(step: string): void {
 		this.steps.push(step);
 	};
 
-	protected getDeadline(): Date | null {
+	public getDeadline(): Date | null {
 		return this.deadline;
 	};
 	public getMillisecondsLeft(): number | null {

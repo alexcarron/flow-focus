@@ -1,10 +1,17 @@
 import Task from "./Task";
 
 export default class TasksManager {
-	private tasks: Task[] = [];
+	protected tasks: Task[] = [];
 
-	public addTask(task: Task) {
+	protected createNewTask(taskDescription: string): Task {
+		const task = new Task(taskDescription);
+		return task;
+	}
+
+	public addTask(taskDescription: string): Task {
+		const task = this.createNewTask(taskDescription);
 		this.tasks.push(task);
+		return task;
 	}
 
 	public getNextTask(): Task {
