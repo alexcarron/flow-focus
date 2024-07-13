@@ -63,6 +63,7 @@ export default class Task {
 			return;
 		}
 
+		// Reset task's progress
 		this.completedSteps = 0;
 		this.isComplete = false;
 
@@ -81,8 +82,6 @@ export default class Task {
 		}
 
 	};
-
-	public isRoutine(): boolean {return false};
 
 	public getNextUncompletedStep(): string | null {
 		if (this.steps.length === 0) {

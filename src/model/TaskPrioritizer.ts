@@ -1,7 +1,6 @@
 import Task from './Task'; // Assume this is your task model
 
 export default class TaskPrioritizer {
-	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
 	private tasks: Task[] = [];
 
 	constructor(tasks: Task[]) {
@@ -26,32 +25,15 @@ export default class TaskPrioritizer {
 		priorityTasks = this.filterOutCompletedTasks(priorityTasks);
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
-			// Prioritize routine task unless task has a minimum buffer time less than 5 hours
-			if (
-				task1.isRoutine() &&
-				!(task2.isRoutine()) &&
-				task2.getMinSlackTime(currentTime) > TaskPrioritizer.URGENT_MILLISECONDS_LEFT
-			) {
-				return -1;
-			}
-
-			if (
-				task2.isRoutine() &&
-				!(task1.isRoutine()) &&
-				task1.getMinSlackTime(currentTime) > TaskPrioritizer.URGENT_MILLISECONDS_LEFT
-			) {
-				return 1;
-			}
-
 			/**
 			 * A function to prioritize between a mandatory and an optional task based on their slack times and required times. If the first task is the optional task, you should reverse the return value.
 			 *
-			 * @param {Task} manadtoryTask - The mandatory task to be prioritized.
-			 * @param {Task} optionalTask - The optional task to be prioritized against the mandatory task.
-			 * @return {number} 1 if the mandatory task has more slack time than the optional task, -1 otherwise.
+			 * @param mandatoryTask - The mandatory task to be prioritized.
+			 * @param optionalTask - The optional task to be prioritized against the mandatory task.
+			 * @return 1 if the mandatory task has more slack time than the optional task, -1 otherwise.
 			 */
-			function priortizeRequiredOrOptionalTask(manadtoryTask: Task, optionalTask: Task) {
-				const mandatoryTaskSlackTime = manadtoryTask.getMinSlackTime(currentTime);
+			function priortizeRequiredOrOptionalTask(mandatoryTask: Task, optionalTask: Task) {
+				const mandatoryTaskSlackTime = mandatoryTask.getMinSlackTime(currentTime);
 				const optionalTaskRequiredTime = optionalTask.getMaxRequiredTime();
 
 				if (
