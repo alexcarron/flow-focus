@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import Task from '../../../model/Task';
 import { CommonModule } from '@angular/common';
+import EditTaskDescriptionCommand from '../../../model/command/EditTaskDescriptionCommand';
+import { CommandHistoryService } from '../../../services/CommandHistory.service';
+import EditTaskStepsCommand from '../../../model/command/EditTaskStepsCommand';
 
 @Component({
   selector: 'task',
@@ -13,9 +16,14 @@ export class TaskComponent {
 	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
 
 	@Input() task!: Task;
-	@Output() taskSkipped: EventEmitter<void> = new EventEmitter<void>();
+	@Output() taskSkipped = new EventEmitter<Task>();
+	@Output() taskCompleted = new EventEmitter<Task>();
 	timeLeft: string | null = null;
 	currentTime: Date = new Date();
+
+	constructor(
+		private commandHistory: CommandHistoryService
+	) {}
 
 	ngOnInit() {
 		this.timeLeft = this.getTimeLeft();
@@ -105,11 +113,11 @@ export class TaskComponent {
 	}
 
 	skip() {
-		this.taskSkipped.emit();
+		this.taskSkipped.emit(this.task);
 	}
 
 	complete() {
-		this.task.complete();
+		this.taskCompleted.emit(this.task);
 	}
 
 	/**
@@ -118,9 +126,11 @@ export class TaskComponent {
 	 * @param {Event} event - The event object containing information about the input element.
 	 */
 	onDescriptionChange(event: Event) {
-		console.log(event);
 		const newDescription = (event.target as HTMLHeadingElement).textContent ?? "";
-		this.task.setDescription(newDescription);
+
+		this.commandHistory.execute(
+			new EditTaskDescriptionCommand(this.task, newDescription)
+		);
 	}
 
 
@@ -131,6 +141,9 @@ export class TaskComponent {
 	 */
 	onNextStepChange(event: Event) {
 		const newNextStep = (event.target as HTMLHeadingElement).textContent ?? "";
-		this.task.replaceNextUncompletedStep(newNextStep);
+
+		this.commandHistory.execute(
+			new EditTaskStepsCommand(this.task, newNextStep)
+		)
 	}
 }

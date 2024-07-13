@@ -83,6 +83,7 @@ export default class Task {
 
 	};
 
+	public getSteps(): string[] {return this.steps};
 	public getNextUncompletedStep(): string | null {
 		if (this.steps.length === 0) {
 			return null;
@@ -110,6 +111,9 @@ export default class Task {
 		}
 
 		this.completedSteps += 1;
+	}
+	public editSteps(newSteps: string[]): void {
+		this.steps = newSteps;
 	}
 
 	public getEarliestStartTime(): Date | null {return this.earliestStartTime};
@@ -182,7 +186,8 @@ export default class Task {
 	public setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	public getIsComplete(): boolean {return this.isComplete}
-	public complete(): void {this.isComplete = true;}
+	public complete(): void {this.isComplete = true}
+	public undoComplete(): void {this.isComplete = false}
 
 	public getProgress(): number {
 		if (this.getIsComplete()) {

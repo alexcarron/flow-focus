@@ -34,6 +34,16 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override completeStep(): void {
+		super.completeStep();
+		this.stateObserver.onStateChange();
+	}
+
+	override editSteps(newSteps: string[]): void {
+		super.editSteps(newSteps);
+		this.stateObserver.onStateChange();
+	}
+
 	override setEarliestStartTime(earliestStartTime: Date): void {
 		super.setEarliestStartTime(earliestStartTime);
 		this.stateObserver.onStateChange();
@@ -61,6 +71,11 @@ export default class ObservedTask extends Task {
 
 	override complete(): void {
 		super.complete();
+		this.stateObserver.onStateChange();
+	}
+
+	override undoComplete(): void {
+		super.undoComplete();
 		this.stateObserver.onStateChange();
 	}
 }

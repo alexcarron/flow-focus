@@ -4,6 +4,8 @@ import TasksManager from '../../model/TasksManager';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import Task from '../../model/Task';
+import { CommandHistoryService } from '../../services/CommandHistory.service';
+import CompleteTaskCommand from '../../model/command/CompleteTaskCommand';
 
 @Component({
   selector: 'focus-page',
@@ -15,7 +17,10 @@ import Task from '../../model/Task';
 export class FocusPageComponent {
 	tasksManager!: TasksManager;
 
-	constructor(private activatedRoute: ActivatedRoute) {}
+	constructor(
+		private activatedRoute: ActivatedRoute,
+		private commandHistory: CommandHistoryService,
+	) {}
 
 	ngOnInit() {
 		this.tasksManager = this.activatedRoute.snapshot.data['tasksManager'];
@@ -40,8 +45,29 @@ export class FocusPageComponent {
     return selection.toString().trim().length > 0;
   }
 
-	private complete() {
-		this.getNextTask()?.complete();
+	onTaskSkipped(task: Task) {
+		console.log("Skipped");
+	}
+
+	onTaskCompleted(task: Task) {
+		this.complete(task);
+	}
+
+	private complete(task?: Task) {
+		let taskToComplete: Task | null = null;
+
+		if (task) {
+			taskToComplete = task;
+		}
+		else {
+			taskToComplete = this.getNextTask();
+		}
+
+
+		if (taskToComplete !== null) {
+			const command = new CompleteTaskCommand(taskToComplete);
+			this.commandHistory.execute(command);
+		}
 	}
 
 	private lastPointerDownTime = 0;
@@ -50,7 +76,10 @@ export class FocusPageComponent {
 
   @HostListener('pointerdown', ['$event'])
   onTouchStart(event: PointerEvent): void {
-		console.log("Click")
+		if (this.isTextSelected()) {
+			return;
+		}
+
 		this.clickCount++;
 
 		const currentTime = new Date().getTime();
@@ -73,15 +102,12 @@ export class FocusPageComponent {
   onDoubleClick(event: PointerEvent | MouseEvent | TouchEvent): void {
     const targetElement = event.target as HTMLElement;
 
-		setTimeout(() => {
-			if (
-				!targetElement.hasAttribute('contenteditable') &&
-				!targetElement.matches('button, input, select, textarea') &&
-				!this.isTextSelected()
-			) {
-				this.complete();
-			}
-		}, FocusPageComponent.TEXT_SELECTION_DELAY);
+		if (
+			!targetElement.hasAttribute('contenteditable') &&
+			!targetElement.matches('button, input, select, textarea')
+		) {
+			this.complete();
+		}
   }
 
   @HostListener('window:keydown', ['$event'])
