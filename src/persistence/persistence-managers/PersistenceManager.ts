@@ -59,6 +59,8 @@ export default abstract class PersistenceManager<PersistentObject extends object
 		else {
 			this.persistentObject = loadedObject;
 		}
+
+		await this.saveObject();
 	};
 
 

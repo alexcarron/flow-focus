@@ -69,13 +69,8 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
-	override complete(): void {
-		super.complete();
-		this.stateObserver.onStateChange();
-	}
-
-	override undoComplete(): void {
-		super.undoComplete();
+	override undoCompleteStep(): void {
+		super.undoCompleteStep();
 		this.stateObserver.onStateChange();
 	}
 }

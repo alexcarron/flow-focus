@@ -106,12 +106,27 @@ export default class Task {
 		this.steps.push(step);
 	};
 	public completeStep(): void {
-		if (this.getNextUncompletedStep() === null) {
+		if (this.steps.length === 0) {
+			this.complete();
 			return;
 		}
 
 		this.completedSteps += 1;
+
+		if (this.completedSteps >= this.steps.length) {
+			this.complete();
+		}
 	}
+	public undoCompleteStep(): void {
+		if (this.isComplete) {
+			this.isComplete = false;
+		}
+
+		if (this.completedSteps > 0) {
+			this.completedSteps -= 1;
+		}
+	}
+
 	public editSteps(newSteps: string[]): void {
 		this.steps = newSteps;
 	}
@@ -186,8 +201,7 @@ export default class Task {
 	public setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	public getIsComplete(): boolean {return this.isComplete}
-	public complete(): void {this.isComplete = true}
-	public undoComplete(): void {this.isComplete = false}
+	private complete(): void {this.isComplete = true}
 
 	public getProgress(): number {
 		if (this.getIsComplete()) {

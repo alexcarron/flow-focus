@@ -119,6 +119,7 @@ export default class JsonToTasksManager implements JsonObservableConverter<Tasks
 			if (task.isRecurring()) {
 				if (task.isPastIntervalEndTime()) {
 					task.onPastIntervalEndTime();
+					console.log(task)
 				}
 			}
 

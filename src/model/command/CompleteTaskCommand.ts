@@ -9,14 +9,14 @@ export default class CompleteTaskCommand implements UndoableCommand {
 	}
 
 	public undo(): void {
-		this.task.undoComplete();
+		this.task.undoCompleteStep();
 	}
 
 	public redo(): void {
-		this.task.complete();
+		this.task.completeStep();
 	}
 
 	public toString(): string {
-		return `Completing "${this.task.getDescription()}"`
+		return `Completing Next Step of "${this.task.getDescription()}"`
 	}
 }

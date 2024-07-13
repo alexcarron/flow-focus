@@ -27,7 +27,9 @@ export default class JsonServer<PersistentObject extends object> extends Persist
 	 */
 	protected async getLoadedObject(): Promise<PersistentObject> {
 		const loadedJsonObject = await lastValueFrom(this.httpClient.get<object>(this.apiURL));
+
 		const loadedObject = this.jsonToObjectConverter.convertJsonToObject(loadedJsonObject, this);
+
 		return loadedObject;
 	}
 
