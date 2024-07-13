@@ -19,14 +19,14 @@
 <p>
 	{{ task.getProgress() * 100 | number : '1.0-0' }}%<br>
 	{{ task.getIsMandatory() ? "MANDATORY" : "" }}<br>
-	Earliest start time: {{ task.getEarliestStartTime() | date }}<br>
-	Deadline: {{ task.getDeadline() | date }}<br>
-	Min duration: {{ task.getMinDuration() }}<br>
-	Max duration: {{ task.getMaxDuration() }}<br>
+	Earliest start time: {{ task.getEarliestStartTime() | date: 'medium' }}<br>
+	Deadline: {{ task.getDeadline() | date: 'medium' }}<br>
+	Min duration: {{ task.getMinRequiredTime() }}<br>
+	Max duration: {{ task.getMaxRequiredTime() }}<br>
 	<br>
 	Is complete: {{ task.getIsComplete() }}<br>
-	Min buffer time: {{ task.getMinBufferTime(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
-	Max buffer time: {{ task.getMaxBufferTime(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
+	Min buffer time: {{ task.getMinSlackTime(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
+	Max buffer time: {{ task.getMaxSlackTime(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
 	Total time left: {{ task.getTimeToComplete(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
 
 </p>

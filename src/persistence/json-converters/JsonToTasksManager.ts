@@ -115,6 +115,13 @@ export default class JsonToTasksManager implements JsonObservableConverter<Tasks
 
 			this.assignWithDateConversion(task, jsonTaskObject);
 
+			// Check if task is recurring and if so, check if we passed it's interval end time
+			if (task.isRecurring()) {
+				if (task.isPastIntervalEndTime()) {
+					task.onPastIntervalEndTime();
+				}
+			}
+
 			return task;
 		});
 

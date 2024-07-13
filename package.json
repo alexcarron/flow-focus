@@ -3,12 +3,13 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --open",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "predeploy": "ng build --configuration production",
-    "deploy": "gh-pages -d docs/browser"
+    "deploy": "gh-pages -d docs/browser",
+		"server": "json-server --watch json-server/tasksDatabase.json"
   },
   "private": true,
   "dependencies": {

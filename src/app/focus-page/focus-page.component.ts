@@ -18,6 +18,10 @@ export class FocusPageComponent {
 
 	ngOnInit() {
 		this.tasksManager = this.activatedRoute.snapshot.data['tasksManager'];
+
+		setInterval(() => {
+			this.tasksManager.update(new Date());
+		}, 1000);
 	}
 
 	getNextTask() {

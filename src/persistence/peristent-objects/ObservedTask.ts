@@ -3,14 +3,24 @@ import StateObserver from "./StateObserver";
 
 export default class ObservedTask extends Task {
 	public constructor(
+		private stateObserver: StateObserver,
 		description: string,
-		private stateObserver: StateObserver
 	) {
 		super(description);
 	}
 
 	override setDescription(description: string): void {
 		super.setDescription(description);
+		this.stateObserver.onStateChange();
+	}
+
+	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
+		super.makeRecurring(repeatInterval, repeatStartTime);
+		this.stateObserver.onStateChange();
+	}
+
+	override onPastIntervalEndTime(): void {
+		super.onPastIntervalEndTime();
 		this.stateObserver.onStateChange();
 	}
 
@@ -34,13 +44,13 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
-	override setMinDuration(minDuration: number): void {
-		super.setMinDuration(minDuration);
+	override setMinRequiredTime(minDuration: number): void {
+		super.setMinRequiredTime(minDuration);
 		this.stateObserver.onStateChange();
 	}
 
-	override setMaxDuration(maxDuration: number): void {
-		super.setMaxDuration(maxDuration);
+	override setMaxRequiredTime(maxDuration: number): void {
+		super.setMaxRequiredTime(maxDuration);
 		this.stateObserver.onStateChange();
 	}
 

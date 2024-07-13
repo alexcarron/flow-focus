@@ -1,4 +1,3 @@
-import RoutineTask from './RoutineTask';
 import Task from './Task'; // Assume this is your task model
 
 export default class TaskPrioritizer {
@@ -29,27 +28,47 @@ export default class TaskPrioritizer {
 		priorityTasks = priorityTasks.sort((task1, task2) => {
 			// Prioritize routine task unless task has a minimum buffer time less than 5 hours
 			if (
-				task1 instanceof RoutineTask &&
-				!(task2 instanceof RoutineTask) &&
-				task2.getMinBufferTime(currentTime) > TaskPrioritizer.URGENT_MILLISECONDS_LEFT
+				task1.isRoutine() &&
+				!(task2.isRoutine()) &&
+				task2.getMinSlackTime(currentTime) > TaskPrioritizer.URGENT_MILLISECONDS_LEFT
 			) {
 				return -1;
 			}
 
 			if (
-				task2 instanceof RoutineTask &&
-				!(task1 instanceof RoutineTask) &&
-				task1.getMinBufferTime(currentTime) > TaskPrioritizer.URGENT_MILLISECONDS_LEFT
+				task2.isRoutine() &&
+				!(task1.isRoutine()) &&
+				task1.getMinSlackTime(currentTime) > TaskPrioritizer.URGENT_MILLISECONDS_LEFT
 			) {
 				return 1;
 			}
 
-			// Prioritize mandatory tasks
-			if (task1.getIsMandatory() && !task2.getIsMandatory()) {
+			/**
+			 * A function to prioritize between a mandatory and an optional task based on their slack times and required times. If the first task is the optional task, you should reverse the return value.
+			 *
+			 * @param {Task} manadtoryTask - The mandatory task to be prioritized.
+			 * @param {Task} optionalTask - The optional task to be prioritized against the mandatory task.
+			 * @return {number} 1 if the mandatory task has more slack time than the optional task, -1 otherwise.
+			 */
+			function priortizeRequiredOrOptionalTask(manadtoryTask: Task, optionalTask: Task) {
+				const mandatoryTaskSlackTime = manadtoryTask.getMinSlackTime(currentTime);
+				const optionalTaskRequiredTime = optionalTask.getMaxRequiredTime();
+
+				if (
+					mandatoryTaskSlackTime > optionalTaskRequiredTime
+				) {
+					return 1;
+				}
+
 				return -1;
 			}
+
+			// Prioritize mandatory tasks
+			if (task1.getIsMandatory() && !task2.getIsMandatory()) {
+				return priortizeRequiredOrOptionalTask(task1, task2);
+			}
 			else if (!task1.getIsMandatory() && task2.getIsMandatory()) {
-				return 1;
+				return -1 * priortizeRequiredOrOptionalTask(task2, task1);
 			}
 
 			// Tasks with closer deadlines should be prioritized first so we can get them done quicker
@@ -63,8 +82,8 @@ export default class TaskPrioritizer {
 
 			// Tasks with less minimum buffer time should be prioritized first since we have less time to procrastinate them
 			const minBufferTimeDifference =
-				task1.getMinBufferTime(currentTime) -
-				task2.getMinBufferTime(currentTime);
+				task1.getMinSlackTime(currentTime) -
+				task2.getMinSlackTime(currentTime);
 
 
 			if (minBufferTimeDifference !== 0) {
@@ -74,8 +93,8 @@ export default class TaskPrioritizer {
 
 			// Tasks with less maximum buffer time should be prioritized first  since we have less time to procrastinate them
 			const maxBufferTimeDifference =
-				task1.getMaxBufferTime(currentTime) -
-				task2.getMaxBufferTime(currentTime);
+				task1.getMaxSlackTime(currentTime) -
+				task2.getMaxSlackTime(currentTime);
 
 			if (maxBufferTimeDifference !== 0) {
 				return maxBufferTimeDifference;

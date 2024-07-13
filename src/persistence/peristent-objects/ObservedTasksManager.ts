@@ -11,8 +11,8 @@ export default class ObservedTasksManager extends TasksManager {
 
 	override createNewTask(taskDescription: string): ObservedTask {
 		const task = new ObservedTask(
+			this.stateObserver,
 			taskDescription,
-			this.stateObserver
 		);
 		return task;
 	}
