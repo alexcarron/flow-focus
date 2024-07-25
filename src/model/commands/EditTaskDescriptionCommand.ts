@@ -1,4 +1,4 @@
-import Task from "../Task";
+import Task from "../task/Task";
 import UndoableCommand from "./UndoableCommand";
 
 export default class EditTaskDescriptionCommand implements UndoableCommand {
@@ -13,11 +13,11 @@ export default class EditTaskDescriptionCommand implements UndoableCommand {
 	}
 
 	public undo(): void {
-		this.task.setDescription(this.oldDescription);
+		this.task.changeDescription(this.oldDescription);
 	}
 
 	public redo(): void {
-		this.task.setDescription(this.newDescription);
+		this.task.changeDescription(this.newDescription);
 	}
 
 	public toString(): string {

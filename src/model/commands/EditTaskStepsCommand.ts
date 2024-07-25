@@ -1,4 +1,4 @@
-import Task from "../Task";
+import Task from "../task/Task";
 import UndoableCommand from "./UndoableCommand";
 
 export default class EditTaskStepsCommand implements UndoableCommand {
