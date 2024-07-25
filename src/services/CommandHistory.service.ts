@@ -5,8 +5,8 @@ import UndoableCommand from '../model/command/UndoableCommand';
   providedIn: 'root'
 })
 export class CommandHistoryService {
-	private doneCommands: UndoableCommand[] = [];
-	private undoneCommands: UndoableCommand[] = [];
+	private commandsToUndo: UndoableCommand[] = [];
+	private commandsToRedo: UndoableCommand[] = [];
 
   constructor() {}
 
@@ -14,31 +14,32 @@ export class CommandHistoryService {
 		let stringToDisplay = "\n\n";
 
 		stringToDisplay += "Done Commands: \n";
-		this.doneCommands.forEach((command) => {
+		this.commandsToUndo.forEach((command) => {
 			stringToDisplay += command.toString() + "\n";
 		})
 
 		stringToDisplay += "\nUndone Commands: \n";
-		this.undoneCommands.forEach((command) => {
+		this.commandsToRedo.forEach((command) => {
 			stringToDisplay += command.toString() + "\n";
-		})
+		});
 
 		console.log(stringToDisplay);
 	}
 
 	public execute(command: UndoableCommand): void {
-		this.doneCommands.push(command);
+		this.commandsToUndo.push(command);
 		command.redo();
 
 		this.displayCommands();
+		this.commandsToRedo = [];
 	}
 
 	public undo(): void {
-		if (this.doneCommands.length > 0) {
-			const undoneCommand = this.doneCommands.pop();
+		if (this.commandsToUndo.length > 0) {
+			const undoneCommand = this.commandsToUndo.pop();
 
 			if (undoneCommand !== undefined) {
-				this.undoneCommands.push(undoneCommand);
+				this.commandsToRedo.push(undoneCommand);
 				undoneCommand.undo();
 			}
 		}
@@ -47,11 +48,11 @@ export class CommandHistoryService {
 	}
 
 	public redo(): void {
-		if (this.undoneCommands.length > 0) {
-			const undoneCommand = this.undoneCommands.pop();
+		if (this.commandsToRedo.length > 0) {
+			const undoneCommand = this.commandsToRedo.pop();
 
 			if (undoneCommand !== undefined) {
-				this.doneCommands.push(undoneCommand);
+				this.commandsToUndo.push(undoneCommand);
 				undoneCommand.redo();
 			}
 		}
