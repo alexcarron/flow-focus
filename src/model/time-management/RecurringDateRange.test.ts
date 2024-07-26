@@ -1,5 +1,5 @@
 import DateRange from "./DateRange";
-import RecurringDateRange from "./RecurringTime";
+import RecurringDateRange from "./RecurringDateRange";
 
 describe('RecurringTime', () => {
 	const currentTime = new Date();
