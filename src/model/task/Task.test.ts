@@ -12,7 +12,7 @@ describe('Task', () => {
 	});
 
 	it('changeDescription should change description', () => {
-			task.changeDescription('New Description');
+			task.setDescription('New Description');
 			expect(task.getDescription()).toEqual('New Description');
 	});
 
@@ -450,6 +450,24 @@ describe('Task', () => {
 		expect(task.getTimeToComplete(currentTime)).toBe(1000);
 	});
 
+	it('getTimeToComplete should return the number of milliseconds between the deadline and earliest start time minus the the number of milliseconds that you can\'t spend completing tasks ', () => {
+		const currentTime = new Date();
+		const tenDays = 1000 * 60 * 60 * 24 * 10; // 10 days
+		const eightHours = 1000 * 60 * 60 * 8; // 80 hours
+
+		const earliestStartTime = new Date(currentTime.getTime() + 1000);
+		const deadline = new Date(currentTime.getTime() + 1000 + tenDays);
+		const nonTaskableTimePerDay = eightHours; // 8 hours
+
+		task.setEarliestStartTime(earliestStartTime);
+		task.setDeadline(deadline);
+
+		const expectedTimeToComplete = tenDays - eightHours*10; // 10 days - 80 hours
+
+		expect(task.getTimeToComplete(currentTime, nonTaskableTimePerDay))
+		.toBe(expectedTimeToComplete);
+	});
+
 	it('getMaxRequiredTime should return infinity if there is no maxRequiredTime or deadline', () => {
 		expect(task.getMaxRequiredTime(new Date())).toEqual(Infinity);
 	});
@@ -534,7 +552,7 @@ describe('Task', () => {
 		const state = task.getCurrentState();
 
 		task.editSteps(['Step 4', 'Step 5', 'Step 6']);
-		task.changeDescription('New Description');
+		task.setDescription('New Description');
 		task.completeNextStep();
 		task.setMaxRequiredTime(3000);
 		task.setMinRequiredTime(2000);
