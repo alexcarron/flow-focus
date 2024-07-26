@@ -10,7 +10,8 @@ export default class WeeklyDateRange extends RecurringDateRange {
 		endWeekday: Weekday,
 		endTime: Time
 	) {
-		const week = 1000 * 60 * 60 * 24 * 7;
+		const day = 1000 * 60 * 60 * 24;
+		const week = day * 7;
 
 		const startDate = new Date();
 		// Set start date at weekday
@@ -19,16 +20,17 @@ export default class WeeklyDateRange extends RecurringDateRange {
 		);
 		startDate.setHours(startTime.getHour(), startTime.getMinute(), 0, 0);
 
-		let daysAfter = endWeekday - startWeekday;
+		let daysAfter = (endWeekday - startWeekday + 7)%7;
 
-		if (endWeekday < startWeekday) {
-			daysAfter = 6 - startWeekday + endWeekday;
-		}
-
-		const endDate = new Date(startDate.getTime() + daysAfter * week);
+		const endDate = new Date(startDate.getTime() + daysAfter * day);
 		endDate.setHours(endTime.getHour(), endTime.getMinute(), 0, 0);
 
 		const dateRange = new DateRange(startDate, endDate);
+
+
+		console.log({
+			startWeekday, startTime, endWeekday, endTime, startDate: startDate.toString(), endDate: endDate.toString(),
+		});
 
 		super(dateRange, week);
 	}

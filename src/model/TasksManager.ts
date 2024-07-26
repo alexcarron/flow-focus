@@ -4,7 +4,7 @@ import RecurringDateRange from "./time-management/RecurringDateRange";
 import Time from "./time-management/Time";
 import TimeWindow from "./time-management/TimeWindow";
 import Weekday from "./time-management/Weekday";
-import WeeklyDateRange from "./time-management/WeeklyTime";
+import WeeklyDateRange from "./time-management/WeeklyDateRange";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
