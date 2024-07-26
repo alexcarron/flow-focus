@@ -5,7 +5,8 @@ import StateObserver from '../peristent-objects/StateObserver';
 import JsonSerializer from "./JsonToObservableConverter";
 
 export default class JsonToTasksManager implements JsonSerializer<TasksManager> {
-	private static readonly stateObserverPropertyName = 'stateObserver';
+	private static readonly STATE_OBSERVER_PROPERTY_NAME = 'stateObserver';
+	private static readonly TASKS_MANAGER_PROPERTY_NAME = 'tasksManager';
 
 	private isIsoDateString(value: any): boolean {
 		if (typeof value !== 'string') {
@@ -121,9 +122,9 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 		return tasksManager;
 	}
 
-	private static createReplacer(excludeKey: string) {
+	private static createReplacer(excludedProperties: string[]) {
 		return function (key: string, value: any): any {
-			if (key === excludeKey) {
+			if (excludedProperties.includes(key)) {
 				return undefined; // Exclude this property
 			}
 
@@ -143,7 +144,11 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 	 * @return {object} The JSON object created from the TasksManager instance.
 	 */
 	convertObjectToJson(tasksManager: TasksManager): object {
-		const replacer = JsonToTasksManager.createReplacer(JsonToTasksManager.stateObserverPropertyName);
+		const excludedProperties = [
+			JsonToTasksManager.STATE_OBSERVER_PROPERTY_NAME,
+			JsonToTasksManager.TASKS_MANAGER_PROPERTY_NAME,
+		]
+		const replacer = JsonToTasksManager.createReplacer(excludedProperties);
 		const object = JSON.parse(JSON.stringify(tasksManager, replacer));
 
 		const tasks: {[key: string]: any}[] = [];
@@ -152,7 +157,7 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 			const resultTask: {[key: string]: any} = {};
 
 			Object.keys(task).forEach(key => {
-				if (key !== JsonToTasksManager.stateObserverPropertyName) {
+				if (!excludedProperties.includes(key)) {
 					resultTask[key] = task[key];
 				}
 			});

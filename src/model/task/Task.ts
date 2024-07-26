@@ -1,9 +1,8 @@
+import TasksManager from "../TasksManager";
 import StepStatus from "./StepStatus";
 import TaskState from "./TaskState";
 
 export default class Task {
-	protected description: string;
-
 	/**
 	 * A map of steps to their status in order of completion. All steps are set to 'Uncomplete' by default.
 	 */
@@ -22,9 +21,10 @@ export default class Task {
 
 	protected lastAction: StepStatus | null = null;
 
-	constructor(description: string) {
-		this.description = description;
-	};
+	constructor(
+		protected tasksManager: TasksManager,
+		protected description: string,
+	) {};
 
 	getDescription(): string {return this.description};
 	setDescription(description: string): void {this.description = description};
@@ -319,7 +319,7 @@ export default class Task {
 	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks.
 	 * @returns
 	 */
-	getTimeToComplete(currentTime: Date, nonTaskableTimePerDay: number = 0): number {
+	getTimeToComplete(currentTime: Date): number {
 		if (this.getDeadline() === null) {
 			return Number.POSITIVE_INFINITY;
 		}
@@ -335,18 +335,7 @@ export default class Task {
 			totalTime = deadlineTime - earliestStartTime;
 		}
 
-		const day = 1000 * 60 * 60 * 24;
-		const daysInTotalTime = Math.floor(totalTime / day);
-		const remainderTime = totalTime % day;
-
-		let remainderNonTaskableTime = remainderTime + nonTaskableTimePerDay - day
-
-		if (remainderNonTaskableTime < 0) {
-			remainderNonTaskableTime = 0;
-		}
-
-		const totalNonTaskableTime = daysInTotalTime * nonTaskableTimePerDay + remainderNonTaskableTime;
-		return totalTime - totalNonTaskableTime;
+		return totalTime;
 	}
 
 	getMinRequiredTime(): number {
@@ -364,13 +353,13 @@ export default class Task {
 	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks
 	 * @returns The maximum amount of milliseconds it will take to complete this task
 	 */
-	getMaxRequiredTime(currentTime: Date, nonTaskableTimePerDay: number = 0): number {
+	getMaxRequiredTime(currentTime: Date): number {
 		if (this.maxRequiredTime === null) {
 			if (this.deadline === null) {
 				return Number.POSITIVE_INFINITY;
 			}
 			else {
-				return this.getTimeToComplete(currentTime, nonTaskableTimePerDay);
+				return this.getTimeToComplete(currentTime);
 			}
 		}
 		return this.maxRequiredTime
@@ -383,8 +372,8 @@ export default class Task {
 	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks
 	 * @returns The minimum amount of milliseconds you can spend not completing the task
 	 */
-	getMinSlackTime(currentTime: Date, nonTaskableTimePerDay: number = 0): number {
-		return this.getTimeToComplete(currentTime, nonTaskableTimePerDay) - this.getMaxRequiredTime(currentTime, nonTaskableTimePerDay);
+	getMinSlackTime(currentTime: Date): number {
+		return this.getTimeToComplete(currentTime) - this.getMaxRequiredTime(currentTime);
 	}
 
 	/**
@@ -393,8 +382,8 @@ export default class Task {
 	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks
 	 * @returns The maximum amount of milliseconds you can spend not completing the task
 	 */
-	getMaxSlackTime(currentTime: Date, nonTaskableTimePerDay: number = 0): number {
-		return this.getTimeToComplete(currentTime, nonTaskableTimePerDay) - this.getMinRequiredTime();
+	getMaxSlackTime(currentTime: Date): number {
+		return this.getTimeToComplete(currentTime) - this.getMinRequiredTime();
 	}
 
 	getIsMandatory(): boolean {return this.isMandatory}

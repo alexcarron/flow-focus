@@ -2,7 +2,6 @@
 <task
 	*ngIf="getNextTask()"
 	[task]="getNextTask()!"
-	[nonTaskableTimePerDay]="tasksManager.getNonTaskableTimePerDay()"
 	(taskSkipped)="onTaskSkipped($event)"
 	(taskCompleted)="onTaskCompleted($event)"
 ></task>

@@ -17,7 +17,6 @@ export class TaskComponent {
 	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
 
 	@Input() task!: Task;
-	@Input() nonTaskableTimePerDay: number = 0;
 	@Output() taskSkipped = new EventEmitter<Task>();
 	@Output() taskCompleted = new EventEmitter<Task>();
 	timeLeft: string | null = null;

@@ -1,16 +1,17 @@
 import Task from './task/Task'; // Assume this is your task model
+import TasksManager from './TasksManager';
 
 export default class TaskPrioritizer {
-	private tasks: Task[] = [];
-	private nonTaskableTimePerDay: number = 0;
+	constructor(
+		private tasksManager: TasksManager
+	) {}
 
-	constructor(tasks: Task[], nonTaskableTimePerDay: number = 0) {
-		this.tasks = tasks;
-		this.nonTaskableTimePerDay = nonTaskableTimePerDay;
+	private getTasks(): Task[] {
+		return this.tasksManager.getTasks();
 	}
 
 	public getMostImportantTask(currentTime: Date): Task | null {
-		const prioritizedTasks = this.prioritizeTasks(this.tasks, currentTime);
+		const prioritizedTasks = this.prioritizeTasks(this.getTasks(), currentTime);
 
 		if (prioritizedTasks.length === 0) {
 				return null;
@@ -65,8 +66,8 @@ export default class TaskPrioritizer {
 
 			// Prioritize task with less time to complete
 			const timeToCompleteDifference =
-				task1.getTimeToComplete(currentTime, this.nonTaskableTimePerDay) -
-				task2.getTimeToComplete(currentTime, this.nonTaskableTimePerDay);
+				task1.getTimeToComplete(currentTime) -
+				task2.getTimeToComplete(currentTime);
 
 			if (timeToCompleteDifference !== 0 && !isNaN(timeToCompleteDifference)) {
 				this.logPriotizedTask(task1, task2, timeToCompleteDifference, "Had less time to complete");
@@ -75,8 +76,8 @@ export default class TaskPrioritizer {
 
 			// Priotize task with less minimum slack time
 			const minSlackTimeDifference =
-				task1.getMinSlackTime(currentTime, this.nonTaskableTimePerDay) -
-				task2.getMinSlackTime(currentTime, this.nonTaskableTimePerDay);
+				task1.getMinSlackTime(currentTime) -
+				task2.getMinSlackTime(currentTime);
 
 
 			if (minSlackTimeDifference !== 0 && !isNaN(timeToCompleteDifference)) {
@@ -87,8 +88,8 @@ export default class TaskPrioritizer {
 
 			// Priotize task with less maximum slack time
 			const maxBufferTimeDifference =
-				task1.getMaxSlackTime(currentTime, this.nonTaskableTimePerDay) -
-				task2.getMaxSlackTime(currentTime, this.nonTaskableTimePerDay);
+				task1.getMaxSlackTime(currentTime) -
+				task2.getMaxSlackTime(currentTime);
 
 			if (maxBufferTimeDifference !== 0 && !isNaN(timeToCompleteDifference)) {
 				this.logPriotizedTask(task1, task2, maxBufferTimeDifference, "Had less maximum slack time");
@@ -119,8 +120,8 @@ export default class TaskPrioritizer {
 	 */
 	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, optionalTask: Task, currentTime: Date): boolean {
 		return (
-			mandatoryTask.getMinSlackTime(currentTime, this.nonTaskableTimePerDay) <
-			optionalTask.getMaxRequiredTime(currentTime, this.nonTaskableTimePerDay)
+			mandatoryTask.getMinSlackTime(currentTime) <
+			optionalTask.getMaxRequiredTime(currentTime)
 		);
 	}
 

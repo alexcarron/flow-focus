@@ -1,14 +1,16 @@
 import StepStatus from "../../model/task/StepStatus";
 import Task from "../../model/task/Task";
 import TaskState from "../../model/task/TaskState";
+import TasksManager from "../../model/TasksManager";
 import StateObserver from "./StateObserver";
 
 export default class ObservedTask extends Task {
 	public constructor(
-		private stateObserver: StateObserver,
+		tasksManager: TasksManager,
 		description: string,
+		private stateObserver: StateObserver,
 	) {
-		super(description);
+		super(tasksManager, description);
 	}
 
 	override setDescription(description: string): void {

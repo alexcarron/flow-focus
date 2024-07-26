@@ -22,12 +22,11 @@
 	Earliest start time: {{ task.getEarliestStartTime() | date: 'medium' }}<br>
 	Deadline: {{ task.getDeadline() | date: 'medium' }}<br>
 	Min duration: {{ task.getMinRequiredTime() | timeFormatter }}<br>
-	Max duration: {{ task.getMaxRequiredTime(this.currentTime, nonTaskableTimePerDay) | timeFormatter }}<br>
+	Max duration: {{ task.getMaxRequiredTime(this.currentTime) | timeFormatter }}<br>
 	<br>
 	Is complete: {{ task.getIsComplete() }}<br>
-	Min Slack Time: {{ task.getMinSlackTime(this.currentTime, nonTaskableTimePerDay) | timeFormatter}}<br>
-	Max Slack Time: {{ task.getMaxSlackTime(this.currentTime, nonTaskableTimePerDay) | timeFormatter}}<br>
+	Min Slack Time: {{ task.getMinSlackTime(this.currentTime) | timeFormatter}}<br>
+	Max Slack Time: {{ task.getMaxSlackTime(this.currentTime) | timeFormatter}}<br>
 	Total time left: {{ task.getTimeToComplete(this.currentTime) | timeFormatter }}<br>
-	{{nonTaskableTimePerDay}}
 
 </p>

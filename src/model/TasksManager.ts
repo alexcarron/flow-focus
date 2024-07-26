@@ -7,20 +7,12 @@ export default class TasksManager {
 	private static readonly NIGHT_TIME_WINDOW: TimeWindow = new TimeWindow("00:00", "8:00");
 
 	/**
-	 * Gets the number of milliseconds per day that you can't spend completing tasks.
-	 * @returns The number of milliseconds per day that you can't spend completing tasks.
-	 */
-	public getNonTaskableTimePerDay(): number {
-		return TasksManager.NIGHT_TIME_WINDOW.getMinutesLong() * 60 * 1000;
-	}
-
-	/**
 	 * Dynamically creates a new task
 	 * @param taskDescription - The description of the task
 	 * @returns The new task
 	 */
 	protected createNewTask(taskDescription: string): Task {
-		return new Task(taskDescription);
+		return new Task(this, taskDescription);
 	}
 
 	/**
@@ -40,10 +32,7 @@ export default class TasksManager {
 	 * @returns The task with the highest priority
 	 */
 	public getPriorityTask(currentTime: Date): Task | null {
-		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(
-			this.tasks,
-			this.getNonTaskableTimePerDay()
-		);
+		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
 		return taskPrioritizer.getMostImportantTask(currentTime);
 	}
 
@@ -53,6 +42,10 @@ export default class TasksManager {
 	 */
 	private getRecurringTasks(): Task[] {
 		return this.tasks.filter(task => task.isRecurring());
+	}
+
+	getTasks(): Task[] {
+		return this.tasks;
 	}
 
 	/**
