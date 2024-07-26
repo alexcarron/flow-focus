@@ -1,3 +1,5 @@
+import DateRange from "./DateRange";
+
 class Time {
 	private hour: number;
 	private minute: number;
@@ -115,8 +117,44 @@ export default class TimeWindow {
 		const startTimeTotalMinutes = this.startTime.getTotalMinutes();
 		const endTimeTotalMinutes = this.endTime.getTotalMinutes();
 
-		return (
-			(currentTotalMinutes >= startTimeTotalMinutes) && (currentTotalMinutes <= endTimeTotalMinutes)
-		);
+		if (startTimeTotalMinutes > endTimeTotalMinutes) {
+			return (
+				(currentTotalMinutes >= startTimeTotalMinutes) ||
+				(currentTotalMinutes <= endTimeTotalMinutes)
+			);
+		}
+		else {
+			return (
+				(currentTotalMinutes >= startTimeTotalMinutes) && (currentTotalMinutes <= endTimeTotalMinutes)
+			);
+		}
+	}
+
+	/**
+	 * Converts a time window to a date range.
+	 * @param startDate - The start date
+	 * @returns The date range
+	 */
+	toDateRange(startDate: Date): DateRange {
+		const startDateHour = startDate.getHours();
+		const startDateMinute = startDate.getMinutes();
+		const startDateTotalMinutes = startDateHour * 60 + startDateMinute;
+
+		if (
+			(this.isInWindow(startDate) &&
+			startDateTotalMinutes < this.startTime.getTotalMinutes()) ||
+			(!this.isInWindow(startDate) &&
+			startDateTotalMinutes > this.startTime.getTotalMinutes())
+		) {
+			startDate.setDate(startDate.getDate() + 1);
+		}
+
+		startDate.setHours(this.startTime.getHour());
+		startDate.setMinutes(this.startTime.getMinute());
+		startDate.setSeconds(0);
+
+		const endDate = new Date(startDate.getTime() + this.getDuration());
+
+		return new DateRange(startDate, endDate);
 	}
 }

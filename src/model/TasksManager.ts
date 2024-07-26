@@ -4,7 +4,12 @@ import TimeWindow from "./time-management/TimeWindow";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
-	private asleepTimeWindow: TimeWindow = new TimeWindow("00:00", "8:00");
+	private asleepTimeWindow: TimeWindow = new TimeWindow("0:00", "8:00");
+	private sleepTask: Task;
+
+	constructor() {
+		this.sleepTask = this.createSleepTask(new Date());
+	}
 
 	/**
 	 * Dynamically creates a new task
@@ -30,12 +35,27 @@ export default class TasksManager {
 		return this.asleepTimeWindow;
 	}
 
+	private createSleepTask(currentTime: Date): Task {
+		const sleepDateRange = this.asleepTimeWindow.toDateRange(currentTime);
+
+		const task = new Task(this, "Go To Sleep");
+		const day = 1000 * 60 * 60 * 24;
+		task.makeRecurring(day, sleepDateRange.getStartDate());
+		task.setEarliestStartTime(sleepDateRange.getStartDate());
+		task.setDeadline(sleepDateRange.getEndDate());
+
+		return task;
+	}
+
 	/**
 	 * Returns the task with the highest priority
 	 * @param currentTime - The current time
 	 * @returns The task with the highest priority
 	 */
 	public getPriorityTask(currentTime: Date): Task | null {
+		if (this.asleepTimeWindow.isInWindow(currentTime)) {
+			return this.sleepTask;
+		}
 		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
 		return taskPrioritizer.getMostImportantTask(currentTime);
 	}

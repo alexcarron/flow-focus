@@ -60,8 +60,11 @@ export default class DateRange {
 			nonCrossoverEndDate = new Date(this.endDate.getTime() - crossoverTimeWindow.getDuration());
 		}
 
-		const nonCrossoverDays = new DateRange(nonCrossoverStartDate, nonCrossoverEndDate).getDaysLong();
-		excludedTime += nonCrossoverDays * timeWindow.getDuration();
+		try {
+			const nonCrossoverDays = new DateRange(nonCrossoverStartDate, nonCrossoverEndDate).getDaysLong();
+			excludedTime += nonCrossoverDays * timeWindow.getDuration();
+		}
+		catch {}
 
 		return this.getDuration() - excludedTime;
 	}

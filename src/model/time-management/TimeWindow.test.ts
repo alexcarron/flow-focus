@@ -125,38 +125,50 @@ describe('TimeWindow', () => {
 
 			expect(timeWindow.isInWindow(currentTime)).toEqual(true);
 		});
-	});
 
-	it('should return true if at start of time window', () => {
-		const timeWindow = new TimeWindow(
-			'5:00 AM', '5:30 AM'
-		);
+		it('should return true if at start of time window', () => {
+			const timeWindow = new TimeWindow(
+				'5:00 AM', '5:30 AM'
+			);
 
-		const currentTime = new Date();
-		currentTime.setHours(5, 0, 0, 0);
+			const currentTime = new Date();
+			currentTime.setHours(5, 0, 0, 0);
 
-		expect(timeWindow.isInWindow(currentTime)).toEqual(true);
-	});
+			expect(timeWindow.isInWindow(currentTime)).toEqual(true);
+		});
 
-	it('should return true if at end of time window', () => {
-		const timeWindow = new TimeWindow(
-			'5:00 AM', '5:30 AM'
-		);
+		it('should return true if at end of time window', () => {
+			const timeWindow = new TimeWindow(
+				'5:00 AM', '5:30 AM'
+			);
 
-		const currentTime = new Date();
-		currentTime.setHours(5, 30, 0, 0);
+			const currentTime = new Date();
+			currentTime.setHours(5, 30, 0, 0);
 
-		expect(timeWindow.isInWindow(currentTime)).toEqual(true);
-	});
+			expect(timeWindow.isInWindow(currentTime)).toEqual(true);
+		});
 
-	it('should return false if not in time window', () => {
-		const timeWindow = new TimeWindow(
-			'5:00 AM', '5:30 AM'
-		);
+		it('should return false if not in time window', () => {
+			const timeWindow = new TimeWindow(
+				'5:00 AM', '5:30 AM'
+			);
 
-		const currentTime = new Date();
-		currentTime.setHours(4, 59, 0, 0);
+			const currentTime = new Date();
+			currentTime.setHours(4, 59, 0, 0);
 
-		expect(timeWindow.isInWindow(currentTime)).toEqual(false);
+			expect(timeWindow.isInWindow(currentTime)).toEqual(false);
+		});
+
+		it('should return true if in wrapped time window', () => {
+			const timeWindow = new TimeWindow(
+				'8:00 PM', '8:00 AM'
+			);
+
+			const currentTime = new Date();
+			currentTime.setHours(22, 59, 0, 0);
+
+			expect(timeWindow.isInWindow(currentTime)).toEqual(true);
+		});
+
 	});
 })
