@@ -1,10 +1,10 @@
-import Task from '../../model/Task';
+import Task from '../../model/task/Task';
 import TasksManager from '../../model/TasksManager';
 import ObservedTasksManager from '../peristent-objects/ObservedTasksManager';
 import StateObserver from '../peristent-objects/StateObserver';
-import JsonObservableConverter from "./JsonToObservableConverter";
+import JsonSerializer from "./JsonToObservableConverter";
 
-export default class JsonToTasksManager implements JsonObservableConverter<TasksManager> {
+export default class JsonToTasksManager implements JsonSerializer<TasksManager> {
 	private static readonly stateObserverPropertyName = 'stateObserver';
 
 	private isIsoDateString(value: any): boolean {
@@ -67,6 +67,7 @@ export default class JsonToTasksManager implements JsonObservableConverter<Tasks
 		}
 
 		jsonObject.tasks.forEach((jsonTaskObject: object) => {
+
 			if (
 				!('description' in jsonTaskObject) ||
 				typeof jsonTaskObject.description !== 'string'
@@ -75,51 +76,42 @@ export default class JsonToTasksManager implements JsonObservableConverter<Tasks
 			}
 
 			const task = tasksManager.addTask(jsonTaskObject.description);
+			this.assignWithDateConversion(task, jsonTaskObject);
 
+			// Check if jsonTaskObject has object stepsToStatusMap property
 			if (
-				('deadline' in jsonTaskObject) &&
-				typeof jsonTaskObject.deadline === 'string'
+				!('steps' in jsonTaskObject) &&
+				'stepsToStatusMap' in jsonTaskObject &&
+				Array.isArray(jsonTaskObject.stepsToStatusMap)
 			) {
-				const deadline = new Date(jsonTaskObject.deadline);
-
-				// Check if deadline is a valid date and reasonable time
-				if (
-					!isNaN(deadline.getTime()) &&
-					deadline instanceof Date &&
-					deadline.getTime() > Date.now() - 1000 * 60 * 60 * 24 * 365 * 5
-				) {
-					task.setDeadline(deadline);
-				}
+				task.setStepsToStatusMap(jsonTaskObject.stepsToStatusMap);
 			}
 
-			// Check if jsonTaskObject has boolean isMandatory property
-			if (
-				('isMandatory' in jsonTaskObject) &&
-				typeof jsonTaskObject.isMandatory === 'boolean'
-			) {
-				task.setMandatory(jsonTaskObject.isMandatory);
-			}
-
-			// Check if jsonTaskObject has string array steps property
 			if (
 				'steps' in jsonTaskObject &&
 				Array.isArray(jsonTaskObject.steps)
 			) {
-				// Check if jsonTaskObject.steps array contains only strings
-				jsonTaskObject.steps.forEach((step: any) => {
-					if (typeof step === 'string') {
-						task.addStep(step);
+				const stepsToStatusObject: Array<[string, string]> = [];
+				jsonTaskObject.steps.forEach((step: string) => {
+					if (
+						'isComplete' in jsonTaskObject &&
+						typeof jsonTaskObject.isComplete === 'boolean' &&
+						jsonTaskObject.isComplete
+					) {
+						stepsToStatusObject.push([step, 'Completed']);
 					}
-				});
-			}
+					else {
+						stepsToStatusObject.push([step, 'Uncomplete']);
+					}
+				})
 
-			this.assignWithDateConversion(task, jsonTaskObject);
+				task.setStepsToStatusMap(stepsToStatusObject);
+			}
 
 			// Check if task is recurring and if so, check if we passed it's interval end time
 			if (task.isRecurring()) {
-				if (task.isPastIntervalEndTime()) {
-					task.onPastIntervalEndTime();
-					console.log(task)
+				if (task.isPastIntervalEndTime(new Date())) {
+					task.onPastIntervalEndTime(new Date());
 				}
 			}
 
@@ -134,8 +126,14 @@ export default class JsonToTasksManager implements JsonObservableConverter<Tasks
 			if (key === excludeKey) {
 				return undefined; // Exclude this property
 			}
+
+			if (value instanceof Map) {
+        // Convert Map to an array of key-value pairs
+        return Array.from(value.entries())
+			}
+
 			return value;
-		};
+		}
 	}
 
 	/**

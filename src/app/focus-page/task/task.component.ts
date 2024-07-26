@@ -1,14 +1,15 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import Task from '../../../model/Task';
+import Task from '../../../model/task/Task';
 import { CommonModule } from '@angular/common';
-import EditTaskDescriptionCommand from '../../../model/command/EditTaskDescriptionCommand';
+import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescriptionCommand';
 import { CommandHistoryService } from '../../../services/CommandHistory.service';
-import EditTaskStepsCommand from '../../../model/command/EditTaskStepsCommand';
+import EditTaskStepsCommand from '../../../model/commands/EditTaskStepsCommand';
+import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
 
 @Component({
   selector: 'task',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TimeFormatterPipe],
   templateUrl: './task.component.html',
   styleUrl: './task.component.css'
 })
@@ -16,6 +17,7 @@ export class TaskComponent {
 	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
 
 	@Input() task!: Task;
+	@Input() nonTaskableTimePerDay: number = 0;
 	@Output() taskSkipped = new EventEmitter<Task>();
 	@Output() taskCompleted = new EventEmitter<Task>();
 	timeLeft: string | null = null;
@@ -39,16 +41,17 @@ export class TaskComponent {
 		return this.task.getDescription();
 	}
 
+
 	hasSteps(): boolean {
-		return this.task.getNextUncompletedStep() != null;
+		return this.task.hasNextStep();
 	}
 
 	getNextStep(): string {
-		return this.task.getNextUncompletedStep() ?? "";
+		return this.task.getNextStep() ?? "";
 	}
 
 	hasUpcomingDeadline(): boolean {
-		const millisecondsLeft = this.task.getMillisecondsLeft();
+		const millisecondsLeft = this.task.getTimeToComplete(new Date());
 
 		if (millisecondsLeft == null) {
 			return false;
@@ -96,7 +99,7 @@ export class TaskComponent {
 	 * @return {string} A string representing the time left in appropriate units.
 	 */
 	getTimeLeft(): string | null {
-		const millisecondsLeft = this.task.getMillisecondsLeft();
+		const millisecondsLeft = this.task.getTimeToComplete(new Date());
 		if (millisecondsLeft === null) {
 			return null;
 		}

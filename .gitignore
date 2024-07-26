@@ -43,3 +43,6 @@ Thumbs.db
 
 # Json Server
 json-server
+
+# Local Executables
+*.sh

@@ -21,12 +21,13 @@
 	{{ task.getIsMandatory() ? "MANDATORY" : "" }}<br>
 	Earliest start time: {{ task.getEarliestStartTime() | date: 'medium' }}<br>
 	Deadline: {{ task.getDeadline() | date: 'medium' }}<br>
-	Min duration: {{ task.getMinRequiredTime() }}<br>
-	Max duration: {{ task.getMaxRequiredTime() }}<br>
+	Min duration: {{ task.getMinRequiredTime() | timeFormatter }}<br>
+	Max duration: {{ task.getMaxRequiredTime(this.currentTime, nonTaskableTimePerDay) | timeFormatter }}<br>
 	<br>
 	Is complete: {{ task.getIsComplete() }}<br>
-	Min buffer time: {{ task.getMinSlackTime(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
-	Max buffer time: {{ task.getMaxSlackTime(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
-	Total time left: {{ task.getTimeToComplete(this.currentTime) / 1000 | number : '1.0-0' }}s<br>
+	Min Slack Time: {{ task.getMinSlackTime(this.currentTime, nonTaskableTimePerDay) | timeFormatter}}<br>
+	Max Slack Time: {{ task.getMaxSlackTime(this.currentTime, nonTaskableTimePerDay) | timeFormatter}}<br>
+	Total time left: {{ task.getTimeToComplete(this.currentTime) | timeFormatter }}<br>
+	{{nonTaskableTimePerDay}}
 
 </p>

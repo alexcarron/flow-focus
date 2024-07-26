@@ -6,7 +6,7 @@ import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 export const tasksManagerResolver: ResolveFn<any> = async (route, state) => {
-	const API_URL = "http://localhost:3000/tasksMangager";
+	const API_URL = "http://localhost:3004/tasksMangager";
 	const httpClient = inject(HttpClient);
 	const jsonToTasksManagerConverter = new JsonToTasksManager();
 

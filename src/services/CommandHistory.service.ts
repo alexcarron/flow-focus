@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import UndoableCommand from '../model/command/UndoableCommand';
+import UndoableCommand from '../model/commands/UndoableCommand';
 
 @Injectable({
   providedIn: 'root'

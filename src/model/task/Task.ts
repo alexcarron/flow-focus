@@ -2,25 +2,25 @@ import StepStatus from "./StepStatus";
 import TaskState from "./TaskState";
 
 export default class Task {
-	private description: string;
+	protected description: string;
 
 	/**
 	 * A map of steps to their status in order of completion. All steps are set to 'Uncomplete' by default.
 	 */
-	private stepsToStatusMap: Map<string, StepStatus> = new Map();
+	protected stepsToStatusMap: Map<string, StepStatus> = new Map();
 
-	private earliestStartTime: Date | null = null;
-	private deadline: Date | null = null;
-	private minRequiredTime: number | null = null;
-	private maxRequiredTime: number | null = null;
+	protected earliestStartTime: Date | null = null;
+	protected deadline: Date | null = null;
+	protected minRequiredTime: number | null = null;
+	protected maxRequiredTime: number | null = null;
 
-	private repeatInterval: number | null = null;
+	protected repeatInterval: number | null = null;
 
-	private isMandatory: boolean = false;
-	private isComplete: boolean = false;
-	private isSkipped: boolean = false;
+	protected isMandatory: boolean = false;
+	protected isComplete: boolean = false;
+	protected isSkipped: boolean = false;
 
-	private lastAction: StepStatus | null = null;
+	protected lastAction: StepStatus | null = null;
 
 	constructor(description: string) {
 		this.description = description;
@@ -103,7 +103,7 @@ export default class Task {
 	/**
 	 * Resets the progress and completion status of the task.
 	 */
-	private resetProgress() {
+	protected resetProgress() {
 		this.getSteps().forEach((step) => {
 			this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 		});
@@ -127,7 +127,7 @@ export default class Task {
 	 * Checks if the task has steps.
 	 * @returns Whether the task has steps.
 	 */
-	private hasSteps(): boolean {
+	protected hasSteps(): boolean {
 		return this.stepsToStatusMap.size > 0;
 	};
 
@@ -135,7 +135,7 @@ export default class Task {
 		return this.getNextStep() !== null;
 	};
 
-	private getNumSteps(): number {
+	protected getNumSteps(): number {
 		return this.stepsToStatusMap.size;
 	}
 
@@ -211,7 +211,7 @@ export default class Task {
 	/**
 	 * Determines if the last action taken was a skip.
 	 */
-	private wasLastActionASkip(): boolean {
+	protected wasLastActionASkip(): boolean {
 		return this.lastAction === StepStatus.SKIPPED;
 	}
 
@@ -219,7 +219,7 @@ export default class Task {
 	 * Determines if all steps are completed.
 	 * @returns Whether all steps are completed.
 	 */
-	private areAllStepsCompleted(): boolean {
+	protected areAllStepsCompleted(): boolean {
 		return Array.from(this.stepsToStatusMap.values())
 			.every((status) => status === StepStatus.COMPLETED);
 	}
@@ -257,7 +257,7 @@ export default class Task {
 	 * Determines if all steps are completed or skipped.
 	 * @returns Whether all steps are completed or skipped.
 	 */
-	private areAllStepsActioned(): boolean {
+	protected areAllStepsActioned(): boolean {
 		return Array.from(this.stepsToStatusMap.values())
 			.every((status) => status !== StepStatus.UNCOMPLETE);
 	}
@@ -335,8 +335,17 @@ export default class Task {
 			totalTime = deadlineTime - earliestStartTime;
 		}
 
-		const daysInTotalTime = Math.floor(totalTime / 86400000);
-		const totalNonTaskableTime = daysInTotalTime * nonTaskableTimePerDay;
+		const day = 1000 * 60 * 60 * 24;
+		const daysInTotalTime = Math.floor(totalTime / day);
+		const remainderTime = totalTime % day;
+
+		let remainderNonTaskableTime = remainderTime + nonTaskableTimePerDay - day
+
+		if (remainderNonTaskableTime < 0) {
+			remainderNonTaskableTime = 0;
+		}
+
+		const totalNonTaskableTime = daysInTotalTime * nonTaskableTimePerDay + remainderNonTaskableTime;
 		return totalTime - totalNonTaskableTime;
 	}
 
@@ -392,12 +401,12 @@ export default class Task {
 	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	getIsComplete(): boolean {return this.isComplete}
-	private complete(): void {
+	protected complete(): void {
 		this.isComplete = true;
 	}
 
 	getIsSkipped(): boolean {return this.isSkipped}
-	private skip(): void {
+	protected skip(): void {
 		this.isSkipped = true;
 	}
 

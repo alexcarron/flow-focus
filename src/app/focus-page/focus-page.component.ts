@@ -3,9 +3,10 @@ import { TaskComponent } from './task/task.component';
 import TasksManager from '../../model/TasksManager';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import Task from '../../model/Task';
+import Task from '../../model/task/Task';
 import { CommandHistoryService } from '../../services/CommandHistory.service';
-import CompleteTaskCommand from '../../model/command/CompleteTaskCommand';
+import CompleteTaskCommand from '../../model/commands/CompleteTaskCommand';
+import SkipTaskCommand from '../../model/commands/SkipTaskCommand';
 
 @Component({
   selector: 'focus-page',
@@ -46,7 +47,20 @@ export class FocusPageComponent {
   }
 
 	onTaskSkipped(task: Task) {
-		console.log("Skipped");
+		this.skip(task);
+	}
+
+	private skip(task?: Task) {
+		let taskToSkip = task;
+
+		if (!taskToSkip) {
+			taskToSkip = this.getNextTask() ?? undefined;
+		}
+
+		if (taskToSkip !== undefined) {
+			const command = new SkipTaskCommand(taskToSkip);
+			this.commandHistory.execute(command);
+		}
 	}
 
 	onTaskCompleted(task: Task) {
@@ -112,6 +126,15 @@ export class FocusPageComponent {
 
   @HostListener('window:keydown', ['$event'])
   onKeyPress(event: KeyboardEvent): void {
+    const currentFocusedElement = document.activeElement as HTMLElement;
+
+		if (
+			currentFocusedElement.matches('button, input, select')
+			|| currentFocusedElement.hasAttribute('contenteditable')
+		) {
+			return;
+		}
+
     if (
 			event.key === 'Enter' &&
 			!event.ctrlKey &&

@@ -1,2 +1,8 @@
 <button class="fade-in-on-hover">Leave</button>
-<task *ngIf="getNextTask()" [task]="getNextTask()!" (taskSkipped)="onTaskSkipped($event)" (taskCompleted)="onTaskCompleted($event)"></task>
+<task
+	*ngIf="getNextTask()"
+	[task]="getNextTask()!"
+	[nonTaskableTimePerDay]="tasksManager.getNonTaskableTimePerDay()"
+	(taskSkipped)="onTaskSkipped($event)"
+	(taskCompleted)="onTaskCompleted($event)"
+></task>

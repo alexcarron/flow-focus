@@ -1,13 +1,13 @@
 import { HttpClient } from "@angular/common/http";
 import PersistenceManager from "./PersistenceManager";
 import { lastValueFrom } from "rxjs";
-import JsonObservableConverter from "../json-converters/JsonToObservableConverter";
+import JsonSerializer from "../json-converters/JsonToObservableConverter";
 
 export default class JsonServer<PersistentObject extends object> extends PersistenceManager<PersistentObject> {
 	constructor(
 		private apiURL: string,
 		private httpClient: HttpClient,
-		private jsonToObjectConverter: JsonObservableConverter<PersistentObject>
+		private jsonToObjectConverter: JsonSerializer<PersistentObject>
 	) {
 		super();
 	}

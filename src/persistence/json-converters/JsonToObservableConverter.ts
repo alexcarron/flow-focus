@@ -5,7 +5,7 @@ import StateObserver from "../peristent-objects/StateObserver";
  *
  * @template ObjectCreating - The type of object created from the JSON object.
  */
-export default interface JsonObservableConverter<ObjectCreating> {
+export default interface JsonSerializer<ObjectCreating> {
   /**
    * Converts a JSON object into an instance of the class.
    *

@@ -1,10 +1,12 @@
-import Task from './Task'; // Assume this is your task model
+import Task from './task/Task'; // Assume this is your task model
 
 export default class TaskPrioritizer {
 	private tasks: Task[] = [];
+	private nonTaskableTimePerDay: number = 0;
 
-	constructor(tasks: Task[]) {
+	constructor(tasks: Task[], nonTaskableTimePerDay: number = 0) {
 		this.tasks = tasks;
+		this.nonTaskableTimePerDay = nonTaskableTimePerDay;
 	}
 
 	public getMostImportantTask(currentTime: Date): Task | null {
@@ -18,67 +20,78 @@ export default class TaskPrioritizer {
 		return prioritizedTasks[0];
 	}
 
-	private prioritizeTasks(tasksToPrioritize: Task[], currentTime: Date): Task[] {
-		let priorityTasks = tasksToPrioritize;
+	private logPriotizedTask(task1: Task, task2: Task, priorityNumber: number, reason: string) {
+		let prioritizedTask, unprioritizedTask;
 
-		priorityTasks = this.filterOnlyStartableTasks(priorityTasks, currentTime);
+		if (priorityNumber > 0) {
+			prioritizedTask = task2;
+			unprioritizedTask = task1;
+		}
+		else {
+			prioritizedTask = task1;
+			unprioritizedTask = task2;
+		}
+
+		console.table({
+			"Prioritized Task": prioritizedTask.getDescription(),
+			"Unprioritized Task": unprioritizedTask.getDescription(),
+			"Reason": reason
+		});
+	}
+
+	private prioritizeTasks(tasksToPrioritize: Task[], currentTime: Date): Task[] {
+		let priorityTasks: Task[] = tasksToPrioritize;
+
+		priorityTasks = this.filterOutUnstartableTasks(priorityTasks, currentTime);
 		priorityTasks = this.filterOutCompletedTasks(priorityTasks);
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
-			/**
-			 * A function to prioritize between a mandatory and an optional task based on their slack times and required times. If the first task is the optional task, you should reverse the return value.
-			 *
-			 * @param mandatoryTask - The mandatory task to be prioritized.
-			 * @param optionalTask - The optional task to be prioritized against the mandatory task.
-			 * @return 1 if the mandatory task has more slack time than the optional task, -1 otherwise.
-			 */
-			function priortizeRequiredOrOptionalTask(mandatoryTask: Task, optionalTask: Task) {
-				const mandatoryTaskSlackTime = mandatoryTask.getMinSlackTime(currentTime);
-				const optionalTaskRequiredTime = optionalTask.getMaxRequiredTime();
-
-				if (
-					mandatoryTaskSlackTime > optionalTaskRequiredTime
-				) {
-					return 1;
-				}
-
-				return -1;
-			}
 
 			// Prioritize mandatory tasks
-			if (task1.getIsMandatory() && !task2.getIsMandatory()) {
-				return priortizeRequiredOrOptionalTask(task1, task2);
+			if (
+				task1.getIsMandatory() && !task2.getIsMandatory() &&
+				this.shouldPrioritizeMandatoryTask(task1, task2, currentTime)
+			) {
+				this.logPriotizedTask(task1, task2, -1, "Had less slack time than optional task's required time");
+				return -1
 			}
-			else if (!task1.getIsMandatory() && task2.getIsMandatory()) {
-				return -1 * priortizeRequiredOrOptionalTask(task2, task1);
+			else if (
+				!task1.getIsMandatory() && task2.getIsMandatory() &&
+				this.shouldPrioritizeMandatoryTask(task2, task1, currentTime)
+			) {
+				this.logPriotizedTask(task1, task2, 1, "Had less slack time than optional task's required time");
+				return 1
 			}
 
-			// Tasks with closer deadlines should be prioritized first so we can get them done quicker
+			// Prioritize task with less time to complete
 			const timeToCompleteDifference =
-				task1.getTimeToComplete(currentTime) -
-				task2.getTimeToComplete(currentTime);
+				task1.getTimeToComplete(currentTime, this.nonTaskableTimePerDay) -
+				task2.getTimeToComplete(currentTime, this.nonTaskableTimePerDay);
 
-			if (timeToCompleteDifference !== 0) {
+			if (timeToCompleteDifference !== 0 && !isNaN(timeToCompleteDifference)) {
+				this.logPriotizedTask(task1, task2, timeToCompleteDifference, "Had less time to complete");
 				return timeToCompleteDifference;
 			}
 
-			// Tasks with less minimum buffer time should be prioritized first since we have less time to procrastinate them
-			const minBufferTimeDifference =
-				task1.getMinSlackTime(currentTime) -
-				task2.getMinSlackTime(currentTime);
+			// Priotize task with less minimum slack time
+			const minSlackTimeDifference =
+				task1.getMinSlackTime(currentTime, this.nonTaskableTimePerDay) -
+				task2.getMinSlackTime(currentTime, this.nonTaskableTimePerDay);
 
 
-			if (minBufferTimeDifference !== 0) {
-				return minBufferTimeDifference;
+			if (minSlackTimeDifference !== 0 && !isNaN(timeToCompleteDifference)) {
+				this.logPriotizedTask(task1, task2, minSlackTimeDifference, "Had less minimum slack time");
+				return minSlackTimeDifference;
 			}
 
 
-			// Tasks with less maximum buffer time should be prioritized first  since we have less time to procrastinate them
+			// Priotize task with less maximum slack time
 			const maxBufferTimeDifference =
-				task1.getMaxSlackTime(currentTime) -
-				task2.getMaxSlackTime(currentTime);
+				task1.getMaxSlackTime(currentTime, this.nonTaskableTimePerDay) -
+				task2.getMaxSlackTime(currentTime, this.nonTaskableTimePerDay);
 
-			if (maxBufferTimeDifference !== 0) {
+			if (maxBufferTimeDifference !== 0 && !isNaN(timeToCompleteDifference)) {
+				this.logPriotizedTask(task1, task2, maxBufferTimeDifference, "Had less maximum slack time");
 				return maxBufferTimeDifference;
 			}
 
@@ -86,7 +99,8 @@ export default class TaskPrioritizer {
 			const progressDifference =
 				task1.getProgress() - task2.getProgress();
 
-			if (progressDifference !== 0) {
+			if (progressDifference !== 0 && !isNaN(timeToCompleteDifference)) {
+				this.logPriotizedTask(task1, task2, progressDifference, "Had more progress");
 				return -progressDifference; // Higher progress should be prioritized first
 			}
 
@@ -96,7 +110,21 @@ export default class TaskPrioritizer {
 		return priorityTasks;
 	}
 
-	private filterOnlyStartableTasks(tasks: Task[], currentTime: Date): Task[] {
+	/**
+	 * Decides whether a mandatory task should be priortized over an optional one or if we should continue. If the first task is the optional task, you should reverse the return value.
+	 *
+	 * @param mandatoryTask - The mandatory task.
+	 * @param optionalTask - The optional task.
+	 * @return - Whether the mandatory task should be priortized over the optional task.
+	 */
+	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, optionalTask: Task, currentTime: Date): boolean {
+		return (
+			mandatoryTask.getMinSlackTime(currentTime, this.nonTaskableTimePerDay) <
+			optionalTask.getMaxRequiredTime(currentTime, this.nonTaskableTimePerDay)
+		);
+	}
+
+	private filterOutUnstartableTasks(tasks: Task[], currentTime: Date): Task[] {
 		return tasks.filter(task => {
 			if (task.getEarliestStartTime() === null) {
 				return true;
