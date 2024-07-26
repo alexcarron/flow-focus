@@ -5,9 +5,6 @@ export default class DateRange {
 		private startDate: Date,
 		private endDate: Date
 	) {
-		if (this.startDate > this.endDate) {
-			throw new Error('Cannot construct DateRange with start date after end date');
-		}
 	}
 
 	getStartDate(): Date {return this.startDate}
@@ -25,11 +22,21 @@ export default class DateRange {
 		return Math.floor(this.getDuration() / (1000 * 60 * 60 * 24));
 	}
 
+	private areDatesReversed(): boolean {
+		return this.startDate.getTime() > this.endDate.getTime();
+	}
+
 	/**
 	 * Calculates the total duration between two dates, excluding any time that falls within a specified daily time window
 	 * @param timeWindow - The daily time window to exclude
 	 */
 	getDurationWithoutTimeWindow(timeWindow: TimeWindow): number {
+		if (this.areDatesReversed()) {
+			const reverseDateRange = new DateRange(this.endDate, this.startDate);
+			const durationWithoutTimeWindow = reverseDateRange.getDurationWithoutTimeWindow(timeWindow);
+			return -durationWithoutTimeWindow;
+		}
+
 		let excludedTime = 0;
 		let nonCrossoverStartDate = this.startDate;
 		let nonCrossoverEndDate = this.endDate;

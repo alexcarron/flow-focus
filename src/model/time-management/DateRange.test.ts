@@ -12,12 +12,6 @@ describe('DateRange', () => {
 			expect(dateRange.getStartDate()).toEqual(start);
 			expect(dateRange.getEndDate()).toEqual(end);
 		});
-
-		it('should throw an error if start date is after end date', () => {
-			const start = new Date(currentTime.getTime() + 1000);
-			const end = currentTime
-			expect(() => new DateRange(start, end)).toThrow();
-		})
 	})
 
 	describe('getDuration', () => {
@@ -26,6 +20,13 @@ describe('DateRange', () => {
 			const end = new Date(currentTime.getTime() + 1000);
 			const dateRange = new DateRange(start, end);
 			expect(dateRange.getDuration()).toEqual(1000);
+		});
+
+		it('should get negative time between dates in milliseconds if reversed date range', () => {
+			const start = currentTime
+			const end = new Date(currentTime.getTime() + 1000);
+			const dateRange = new DateRange(end, start);
+			expect(dateRange.getDuration()).toEqual(-1000);
 		});
 	});
 
@@ -121,6 +122,26 @@ describe('DateRange', () => {
 			expect(dateRange.getDuration()).toEqual(rangeDuration);
 			expect(dateRange.getDurationWithoutTimeWindow(timeWindow))
 			.toEqual(rangeDuration - (11*4*hour - hour));
+		});
+
+		it('should get negative time between dates excluding the daily time window in milliseconds with a reverse dynamic multi-day range at end points', () => {
+			const tenDays = 10 * 24 * 60 * 60 * 1000;
+			const hour = 60 * 60 * 1000;
+			const rangeDuration = tenDays + 3*hour;
+
+
+			const start = currentTime
+			const end = new Date(start.getTime() + tenDays);
+			start.setHours(0, 30, 0, 0);
+			end.setHours(3, 30, 0, 0);
+
+			const dateRange = new DateRange(end, start);
+
+			const timeWindow = new TimeWindow('0:00', '4:00');
+
+			expect(dateRange.getDuration()).toEqual(-rangeDuration);
+			expect(dateRange.getDurationWithoutTimeWindow(timeWindow))
+			.toEqual(-(rangeDuration - (11*4*hour - hour)));
 		});
 	});
 });
