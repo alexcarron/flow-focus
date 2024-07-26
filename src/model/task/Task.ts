@@ -1,4 +1,5 @@
 import TasksManager from "../TasksManager";
+import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
 import TaskState from "./TaskState";
 
@@ -324,18 +325,21 @@ export default class Task {
 			return Number.POSITIVE_INFINITY;
 		}
 
-		const earliestStartTime = this.getEarliestStartTime()?.getTime();
-		const deadlineTime = this.getDeadline()!.getTime();
-		let totalTime = deadlineTime - currentTime.getTime();
+		const earliestStartDate = this.getEarliestStartTime()
+		const deadlineDate = this.getDeadline()!;
+
+		let taskDateRange = new DateRange(currentTime, deadlineDate);
 
 		if (
-			earliestStartTime !== undefined &&
-			currentTime.getTime() < earliestStartTime
+			earliestStartDate !== null &&
+			currentTime.getTime() < earliestStartDate.getTime()
 		) {
-			totalTime = deadlineTime - earliestStartTime;
+			taskDateRange = new DateRange(earliestStartDate, deadlineDate);
 		}
 
-		return totalTime;
+		return taskDateRange.getDurationWithoutTimeWindow(
+			this.tasksManager.getAsleepTimeWindow()
+		);
 	}
 
 	getMinRequiredTime(): number {

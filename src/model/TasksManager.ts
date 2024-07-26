@@ -1,10 +1,10 @@
 import Task from "./task/Task";
 import TaskPrioritizer from './TaskPrioritizer';
-import TimeWindow from "./TimeWindow";
+import TimeWindow from "./time-management/TimeWindow";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
-	private static readonly NIGHT_TIME_WINDOW: TimeWindow = new TimeWindow("00:00", "8:00");
+	private asleepTimeWindow: TimeWindow = new TimeWindow("00:00", "8:00");
 
 	/**
 	 * Dynamically creates a new task
@@ -24,6 +24,10 @@ export default class TasksManager {
 		const task = this.createNewTask(taskDescription);
 		this.tasks.push(task);
 		return task;
+	}
+
+	public getAsleepTimeWindow(): TimeWindow {
+		return this.asleepTimeWindow;
 	}
 
 	/**
