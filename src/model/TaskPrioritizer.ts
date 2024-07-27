@@ -47,6 +47,20 @@ export default class TaskPrioritizer {
 		priorityTasks = this.filterOutCompletedTasks(priorityTasks);
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
+			if (this.tasksManager.getDowntime().isInRange(currentTime)) {
+				if (
+					task1.getIsMandatory() && !task2.getIsMandatory() &&
+					task1.getTimeToComplete(currentTime) > task1.getMaxRequiredTime(currentTime)
+				) {
+					return 1
+				}
+				else if (
+					!task1.getIsMandatory() && task2.getIsMandatory() &&
+					task2.getTimeToComplete(currentTime) > task2.getMaxRequiredTime(currentTime)
+				) {
+					return -1
+				}
+			}
 
 			// Prioritize mandatory tasks
 			if (
@@ -137,5 +151,9 @@ export default class TaskPrioritizer {
 
 	private filterOutCompletedTasks(tasks: Task[]): Task[] {
 		return tasks.filter(task => !task.getIsComplete());
+	}
+
+	private filterOutMandatoryTasks(tasks: Task[]): Task[] {
+		return tasks.filter(task => !task.getIsMandatory());
 	}
 }

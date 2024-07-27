@@ -396,6 +396,7 @@ export default class Task {
 	getIsComplete(): boolean {return this.isComplete}
 	protected complete(): void {
 		this.isComplete = true;
+		this.tasksManager.deleteCompletedTasks();
 	}
 
 	getIsSkipped(): boolean {return this.isSkipped}
