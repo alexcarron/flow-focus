@@ -1,4 +1,5 @@
 import TasksManager from "../TasksManager";
+import StepStatus from "./StepStatus";
 import Task from "./Task";
 
 describe('Task', () => {
@@ -262,6 +263,35 @@ describe('Task', () => {
 		expect(task.getNextStep()).toEqual('Step 4');
 	});
 
+	it('getNextStep should return nothing if they just skipped a task but there are no uncomplete tasks', () => {
+		task.addStep('Step 1');
+		task.addStep('Step 2');
+		task.addStep('Step 3');
+		task.addStep('Step 4');
+		task.skipNextStep();
+		task.completeNextStep();
+		task.skipNextStep();
+		task.completeNextStep();
+		task.skipNextStep();
+		task.completeNextStep();
+		task.skipNextStep();
+
+		expect(task.getNextStep()).toBeNull();
+	});
+
+	it('getNextStep should return the next skipped step after the last if they just skipped a task that was skipped before', () => {
+		task.addStep('Step 1');
+		task.addStep('Step 2');
+		task.addStep('Step 3');
+		task.addStep('Step 4');
+		task.skipNextStep();
+		task.skipNextStep();
+		task.completeNextStep();
+		task.skipNextStep();
+
+		expect(task.getNextStep()).toEqual('Step 2');
+	});
+
 	it('getNextStep should return the first skipped step if they didn\'t skip the last step', () => {
 		task.addStep('Step 1');
 		task.addStep('Step 2');
@@ -518,7 +548,10 @@ describe('Task', () => {
 				]
 			)
 		);
-		expect(state.lastAction?.toString()).toEqual('Skipped');
+		expect(state.lastAction).toEqual({
+			step: 'Step 2',
+			status: 'Skipped' as StepStatus,
+		});
 	});
 
 	it('restoreState should restore internal state of the task', () => {

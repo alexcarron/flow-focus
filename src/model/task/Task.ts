@@ -20,7 +20,7 @@ export default class Task {
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
 
-	protected lastAction: StepStatus | null = null;
+	protected lastActionedStep: {step: string, status: StepStatus} | null = null;
 
 	constructor(
 		protected tasksManager: TasksManager,
@@ -146,6 +146,28 @@ export default class Task {
 	 */
 	getNextStep(): string | null {
 		if (this.wasLastActionASkip()) {
+			const lastStepSkipped = this.lastActionedStep!.step;
+
+			let foundLastStepSkipped = false;
+
+			// Get next step skipped after last step skipped if any
+			const nextStepSkipped = Array.from(this.stepsToStatusMap.entries())
+				.find(([step, status]) => {
+					if (foundLastStepSkipped) {
+						return status === StepStatus.SKIPPED && step !== lastStepSkipped
+					}
+
+					if (lastStepSkipped === step) {
+						foundLastStepSkipped = true;
+					}
+
+					return false;
+				});
+
+			if (nextStepSkipped !== undefined) {
+				return nextStepSkipped[0];
+			}
+
 			const firstUncompletedStepEntry =
 				Array.from(this.stepsToStatusMap.entries())
 					.find(([step, status]) => status === StepStatus.UNCOMPLETE);
@@ -213,7 +235,7 @@ export default class Task {
 	 * Determines if the last action taken was a skip.
 	 */
 	protected wasLastActionASkip(): boolean {
-		return this.lastAction === StepStatus.SKIPPED;
+		return this.lastActionedStep?.status === StepStatus.SKIPPED;
 	}
 
 	/**
@@ -236,7 +258,10 @@ export default class Task {
 			this.complete();
 		}
 
-		this.lastAction = StepStatus.COMPLETED;
+		this.lastActionedStep = {
+			step: step,
+			status: StepStatus.COMPLETED
+		}
 	}
 
 	/**
@@ -275,7 +300,11 @@ export default class Task {
 			this.skip();
 		}
 
-		this.lastAction = StepStatus.SKIPPED;
+
+		this.lastActionedStep = {
+			step: step,
+			status: StepStatus.SKIPPED
+		}
 	}
 
 	/**
@@ -435,7 +464,7 @@ export default class Task {
 			maxRequiredTime: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
 			stepsToStatusMap: new Map(this.stepsToStatusMap),
-			lastAction: this.lastAction
+			lastAction: this.lastActionedStep
 		};
 	}
 
@@ -454,6 +483,6 @@ export default class Task {
 		this.maxRequiredTime = taskState.maxRequiredTime;
 		this.repeatInterval = taskState.repeatInterval;
 		this.stepsToStatusMap = new Map(taskState.stepsToStatusMap);
-		this.lastAction = taskState.lastAction;
+		this.lastActionedStep = taskState.lastAction;
 	}
 }
