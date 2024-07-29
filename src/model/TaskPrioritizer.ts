@@ -45,7 +45,7 @@ export default class TaskPrioritizer {
 
 		priorityTasks = this.filterOutUnstartableTasks(priorityTasks, currentTime);
 		priorityTasks = this.filterOutCompletedTasks(priorityTasks);
-		priorityTasks = this.filterOutSkippedTasks(priorityTasks);
+		priorityTasks = this.filterOutNonUrgentSkippedTasks(priorityTasks, currentTime);
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
 			let downtimeTaskCompareValue = this.compareTasksDuringDowntime(task1, task2, currentTime);
@@ -120,13 +120,13 @@ export default class TaskPrioritizer {
 		if (this.tasksManager.getDowntime().isInRange(currentTime)) {
 			if (
 				task1.getIsMandatory() && !task2.getIsMandatory() &&
-				task1.getTimeToComplete(currentTime) > task1.getMaxRequiredTime(currentTime)
+				!task1.isUrgent(currentTime)
 			) {
 				return 1
 			}
 			else if (
 				!task1.getIsMandatory() && task2.getIsMandatory() &&
-				task2.getTimeToComplete(currentTime) > task2.getMaxRequiredTime(currentTime)
+				!task2.isUrgent(currentTime)
 			) {
 				return -1
 			}
@@ -163,7 +163,12 @@ export default class TaskPrioritizer {
 		return tasks.filter(task => !task.getIsComplete());
 	}
 
-	private filterOutSkippedTasks(tasks: Task[]): Task[] {
-		return tasks.filter(task => !task.getIsSkipped());
+	private filterOutNonUrgentSkippedTasks(tasks: Task[], currentTime: Date): Task[] {
+		return tasks.filter(task => {
+			return (
+				!task.getIsSkipped() ||
+				task.isUrgent(currentTime)
+			)
+		});
 	}
 }

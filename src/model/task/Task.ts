@@ -476,6 +476,15 @@ export default class Task {
 		return this.getTimeToComplete(currentTime) - this.getMinRequiredTime();
 	}
 
+	/**
+	 * Determines if the task is urgent
+	 * @param currentTime - The current time
+	 * @returns Whether the task is urgent
+	 */
+	isUrgent(currentTime: Date): boolean {
+		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
+	}
+
 	getIsMandatory(): boolean {return this.isMandatory}
 	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
