@@ -122,6 +122,10 @@ export class TaskComponent {
 		this.taskCompleted.emit(this.task);
 	}
 
+	getProgressPercentage(): string {
+		return this.task.getProgress() * 100 + '%';
+	}
+
 	/**
 	 * Updates the task's description based on the value of the input element.
 	 *

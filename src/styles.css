@@ -1,4 +1,96 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Zain:wght@200;300;400;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Zain:wght@200;300;400;700;800;900&display=swap');
+
+
+:root {
+	/* Margin */
+	--margin-small: 0.5rem;
+	--margin-medium: 1rem;
+	--margin-large: 1.25rem;
+	--margin-xlarge: 1.5rem;
+
+  /* Colors */
+  --primary-color: #3498db;
+  --accent-color: #2ecc71;
+  --background-color: #ecf0f1;
+  --text-color: #2c3e50;
+
+  /* Font sizes */
+  --font-size-small: 0.875rem;
+  --font-size-medium: 1rem;
+  --font-size-large: 1.5rem;
+  --font-size-xlarge: 3.5rem;
+
+	/* Line height */
+	--line-height-small: 1.25rem;
+	--line-height-medium: 1.5rem;
+	--line-height-large: 1.7rem;
+	--line-height-xlarge: 2.85rem;
+}
+
+* {
+	font-family: 'Poppins', sans-serif;
+	text-align: center;
+	transition: 0.1s ease-out;
+}
+
+h1 {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 800;
+	font-size: var(--font-size-xlarge);
+	line-height: var(--line-height-xlarge);
+	margin: var(--margin-xlarge)
+}
+
+h2 {
+	font-weight: normal;
+	font-size: var(--font-size-large);
+	line-height: var(--line-height-large);
+	margin: var(--margin-large)
+}
+
+h3 {
+	font-weight: normal;
+	font-size: var(--font-size-medium);
+	line-height: var(--line-height-medium);
+	margin: var(--margin-medium)
+}
+
+p {
+	font-weight: normal;
+	font-size: var(--font-size-small);
+	line-height: var(--line-height-small);
+	margin: var(--margin-small)
+}
+
+.icon-button {
+	cursor: pointer;
+
+	background: none;
+	border: none;
+	padding: 0;
+	margin: var(--margin-small);
+	height: 0;
+
+	opacity: 1;
+}
+
+/* Animate the icon button on hover */
+.icon-button:hover {
+	opacity: 0.5;
+	transform: scale(1.1);
+}
+
+/* Animate the icon button on click */
+.icon-button:active {
+	opacity: 0.3;
+	transform: scale(0.9);
+}
+
+.icon-button img {
+	width: var(--font-size-large);
+}
 
 /* Fade In Animation */
 @keyframes fade-in {

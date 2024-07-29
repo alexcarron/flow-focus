@@ -1,20 +1,27 @@
 
 <h1
+	id="taskDescription"
 	contenteditable
 	[textContent]="getDescription()"
 	(input)="onDescriptionChange($event)"
+	[style.--progress]="getProgressPercentage()"
 > </h1>
-<p
+<h2
 	*ngIf="hasSteps()"
 	contenteditable
 	[textContent]="getNextStep()"
 	(input)="onNextStepChange($event)"
 >
-</p>
+</h2>
 
 <p *ngIf="this.timeLeft">{{ this.timeLeft }}</p>
-<button *ngIf="isSkippable()" (click)="skip()">Skip</button>
-<button (click)="complete()">Complete</button>
+<button *ngIf="isSkippable()" class="icon-button" (click)="skip()">
+	<img src="assets/skip-icon.svg" alt="Skip">
+</button>
+<button id="completeButton" class="icon-button" (click)="complete()">
+	<img id="unfilledCompleteIcon" src="assets/complete-unfilled-icon.svg" alt="Complete">
+	<img id="filledCompleteIcon" src="assets/complete-filled-icon.svg" alt="Complete">
+</button>
 
 <p>
 	{{ task.getProgress() * 100 | number : '1.0-0' }}%<br>

@@ -1,0 +1,27 @@
+
+/* Hides the unfilled complete icon and shows the filled complete icon on hover */
+#completeButton img#unfilledCompleteIcon {
+	display: inline;
+}
+#completeButton:hover img#unfilledCompleteIcon {
+	display: none;
+}
+
+#completeButton img#filledCompleteIcon {
+	display: none;
+}
+#completeButton:hover img#filledCompleteIcon {
+	display: inline;
+}
+
+/* Displays progress of task through linear gradient */
+#taskDescription {
+  background: linear-gradient(
+		to right,
+		var(--accent-color) var(--progress),
+		var(--text-color) calc(var(--progress))
+	);
+	background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
