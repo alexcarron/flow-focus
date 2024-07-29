@@ -252,7 +252,9 @@ export default class Task {
 				const entriesAfterNextUncompletedStep = Array.from(this.stepsToStatusMap.entries()).slice(nextUncompletedStepIndex + 1);
 
 				// Remove entries after the next uncompleted step
-				entriesAfterNextUncompletedStep.forEach(([step, status]) => this.stepsToStatusMap.delete(step));
+				entriesAfterNextUncompletedStep.forEach(
+					([step, status]) => this.stepsToStatusMap.delete(step)
+				);
 
 				// Remove the next uncompleted step
 				this.stepsToStatusMap.delete(nextStep);

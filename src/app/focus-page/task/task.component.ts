@@ -50,7 +50,7 @@ export class TaskComponent {
 	}
 
 	hasUpcomingDeadline(): boolean {
-		const millisecondsLeft = this.task.getTimeToComplete(new Date());
+		const millisecondsLeft = this.task.getTimeToComplete(this.currentTime);
 
 		if (millisecondsLeft == null) {
 			return false;
@@ -98,7 +98,7 @@ export class TaskComponent {
 	 * @return {string} A string representing the time left in appropriate units.
 	 */
 	getTimeLeft(): string | null {
-		const millisecondsLeft = this.task.getTimeToComplete(new Date());
+		const millisecondsLeft = this.task.getTimeToComplete(this.currentTime);
 		if (millisecondsLeft === null) {
 			return null;
 		}
@@ -111,7 +111,7 @@ export class TaskComponent {
 	}
 
 	isSkippable(): boolean {
-		return !this.task.getIsMandatory();
+		return !this.task.isUrgent(this.currentTime);
 	}
 
 	skip() {
