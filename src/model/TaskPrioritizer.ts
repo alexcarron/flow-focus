@@ -45,6 +45,7 @@ export default class TaskPrioritizer {
 
 		priorityTasks = this.filterOutUnstartableTasks(priorityTasks, currentTime);
 		priorityTasks = this.filterOutCompletedTasks(priorityTasks);
+		priorityTasks = this.filterOutSkippedTasks(priorityTasks);
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
 			if (this.tasksManager.getDowntime().isInRange(currentTime)) {
@@ -153,7 +154,7 @@ export default class TaskPrioritizer {
 		return tasks.filter(task => !task.getIsComplete());
 	}
 
-	private filterOutMandatoryTasks(tasks: Task[]): Task[] {
-		return tasks.filter(task => !task.getIsMandatory());
+	private filterOutSkippedTasks(tasks: Task[]): Task[] {
+		return tasks.filter(task => !task.getIsSkipped());
 	}
 }

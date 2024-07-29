@@ -195,7 +195,7 @@ describe('Task', () => {
 		expect(task.hasNextStep()).toBe(false);
 	});
 
-	it('hasNextStep should return false if all steps are skipped', () => {
+	it('hasNextStep should return true if all steps are skipped', () => {
 		task.addStep('Step 1');
 		task.addStep('Step 2');
 		task.addStep('Step 3');
@@ -203,7 +203,7 @@ describe('Task', () => {
 		task.skipNextStep();
 		task.skipNextStep();
 
-		expect(task.hasNextStep()).toBe(false);
+		expect(task.hasNextStep()).toBe(true);
 	});
 
 	it('getNextStep should return null if there are no steps', () => {
@@ -219,13 +219,13 @@ describe('Task', () => {
 		expect(task.getNextStep()).toEqual('Step 1');
 	});
 
-	it('getNextStep should return null if there are no uncompleted steps', () => {
+	it('getNextStep should return null if there are no non-completed steps', () => {
 		task.addStep('Step 1');
 		task.addStep('Step 2');
 		task.addStep('Step 3');
 		task.completeNextStep();
 		task.completeNextStep();
-		task.skipNextStep();
+		task.completeNextStep();
 
 		expect(task.getNextStep()).toBeNull();
 	});
@@ -263,7 +263,7 @@ describe('Task', () => {
 		expect(task.getNextStep()).toEqual('Step 4');
 	});
 
-	it('getNextStep should return nothing if they just skipped a task but there are no uncomplete tasks', () => {
+	it('getNextStep should return first skipped step if they just skipped a task but there are no uncomplete tasks', () => {
 		task.addStep('Step 1');
 		task.addStep('Step 2');
 		task.addStep('Step 3');
@@ -276,7 +276,7 @@ describe('Task', () => {
 		task.completeNextStep();
 		task.skipNextStep();
 
-		expect(task.getNextStep()).toBeNull();
+		expect(task.getNextStep()).toEqual('Step 1');
 	});
 
 	it('getNextStep should return the next skipped step after the last if they just skipped a task that was skipped before', () => {
@@ -422,9 +422,23 @@ describe('Task', () => {
 		task.completeNextStep();
 		task.skipNextStep();
 
-		expect(task.getNextStep()).toBeNull();
 		expect(task.getIsComplete()).toBe(false);
 		expect(task.getIsSkipped()).toBe(true);
+	});
+
+	it('skipNextStep should not skip the task if they are not skipping the last skipped step', () => {
+		task.addStep('Step 1');
+		task.addStep('Step 2');
+		task.addStep('Step 3');
+		task.addStep('Step 4');
+		task.completeNextStep();
+		task.skipNextStep();
+		task.skipNextStep();
+		task.completeNextStep();
+		task.skipNextStep();
+
+		expect(task.getIsComplete()).toBe(false);
+		expect(task.getIsSkipped()).toBe(false);
 	});
 
 	it('editSteps should edit the steps with the given steps', () => {
@@ -548,7 +562,7 @@ describe('Task', () => {
 				]
 			)
 		);
-		expect(state.lastAction).toEqual({
+		expect(state.lastActionedStep).toEqual({
 			step: 'Step 2',
 			status: 'Skipped' as StepStatus,
 		});

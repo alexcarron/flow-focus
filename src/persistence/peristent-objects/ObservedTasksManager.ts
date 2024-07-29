@@ -26,8 +26,8 @@ export default class ObservedTasksManager extends TasksManager {
 	}
 
 
-	override deleteCompletedTasks() {
-		super.deleteCompletedTasks();
+	override deleteCompletedOneTimeTasks() {
+		super.deleteCompletedOneTimeTasks();
 		this.stateObserver.onStateChange();
 	}
 }

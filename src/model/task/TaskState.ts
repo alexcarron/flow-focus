@@ -11,7 +11,7 @@ type TaskState = {
 	isMandatory: boolean,
 	isComplete: boolean,
 	isSkipped: boolean,
-	lastAction: {step: string, status: StepStatus} | null,
+	lastActionedStep: {step: string, status: StepStatus} | null,
 }
 
 export default TaskState;

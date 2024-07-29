@@ -8,7 +8,7 @@ import WeeklyDateRange from "./time-management/WeeklyDateRange";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
-	private asleepTimeWindow: TimeWindow = new TimeWindow("7:00", "8:00");
+	private asleepTimeWindow: TimeWindow = new TimeWindow("0:00", "8:00");
 	private downtimeTime: RecurringDateRange = new WeeklyDateRange(
 		Weekday.SATURDAY, new Time(0),
 		Weekday.SUNDAY, new Time(23, 59)
@@ -39,8 +39,13 @@ export default class TasksManager {
 		return task;
 	}
 
-	deleteCompletedTasks() {
-		this.tasks = this.tasks.filter(task => !task.getIsComplete());
+	public unSkipSkippedTasks() {
+		const skippedTasks = this.tasks.filter(task => task.getIsSkipped());
+		skippedTasks.forEach(task => task.unSkip());
+	}
+
+	deleteCompletedOneTimeTasks() {
+		this.tasks = this.tasks.filter(task => !task.getIsComplete() || task.isRecurring());
 	}
 
 	public getAsleepTimeWindow(): TimeWindow {

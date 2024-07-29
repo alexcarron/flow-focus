@@ -110,6 +110,7 @@ export default class Task {
 		});
 		this.isComplete = false;
 		this.isSkipped = false;
+		this.lastActionedStep = null;
 	}
 
 	setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]>) {
@@ -141,56 +142,97 @@ export default class Task {
 	}
 
 	/**
-	 * Gets the first uncompleted or skipped step unless they just skipped it
-	 * @returns {string | null} - The first uncompleted step or null if there are no steps or all steps are completed.
+	 * Gets the first step that hasn't been completed
+	 * @returns The first step that hasn't been completed or null if there are no steps or all steps are completed.
+	 */
+	getFirstNotCompletedStep(): string | null {
+		const firstNonCompletedStepEntry =
+			Array.from(this.stepsToStatusMap.entries())
+				.find(([step, status]) => status !== StepStatus.COMPLETED);
+
+		if (firstNonCompletedStepEntry === undefined) {
+			return null;
+		}
+		else {
+			return firstNonCompletedStepEntry ? firstNonCompletedStepEntry[0] : null;
+		}
+	}
+
+	/**
+	 * Gets the first step that is not complete or skipped
+	 * @returns The first step that is not complete or skipped or null if there are no uncomplete step
+	 */
+	getFirstUncompleteStep(): string | null {
+		const firstUncompletedStepEntry =
+		Array.from(this.stepsToStatusMap.entries())
+			.find(([step, status]) => status === StepStatus.UNCOMPLETE);
+
+		if (firstUncompletedStepEntry === undefined) {
+			return null;
+		}
+		else {
+			return firstUncompletedStepEntry ? firstUncompletedStepEntry[0] : null;
+		}
+	}
+
+	/**
+	 * Gets the next skipped step after the last step that was completed or skipped
+	 * @returns The next skipped step after the last step that was completed or skipped or null if there has been no action or skipped steps
+	 */
+	getNextSkippedStep(): string | null {
+		if (this.lastActionedStep === null) {
+			return null;
+		}
+
+		const lastStepActioned = this.lastActionedStep.step;
+
+		let foundLastStepActioned = false;
+
+		// Get next step skipped after last step skipped if any
+		const nextSkippedStep = Array.from(this.stepsToStatusMap.entries())
+			.find(([step, status]) => {
+				if (foundLastStepActioned) {
+					return status === StepStatus.SKIPPED && step !== lastStepActioned
+				}
+
+				if (lastStepActioned === step) {
+					foundLastStepActioned = true;
+				}
+
+				return false;
+			});
+
+		if (nextSkippedStep !== undefined) {
+			return nextSkippedStep[0];
+		}
+		else {
+			return null;
+		}
+	}
+
+
+
+	/**
+	 * Gets the next step that the user should focus on
+	 * @returns The next step the uesr should focus on or null if there are no steps or all are completed.
 	 */
 	getNextStep(): string | null {
 		if (this.wasLastActionASkip()) {
-			const lastStepSkipped = this.lastActionedStep!.step;
+			const nextSkippedStep = this.getNextSkippedStep();
+			const firstUncompletedStep = this.getFirstUncompleteStep();
 
-			let foundLastStepSkipped = false;
-
-			// Get next step skipped after last step skipped if any
-			const nextStepSkipped = Array.from(this.stepsToStatusMap.entries())
-				.find(([step, status]) => {
-					if (foundLastStepSkipped) {
-						return status === StepStatus.SKIPPED && step !== lastStepSkipped
-					}
-
-					if (lastStepSkipped === step) {
-						foundLastStepSkipped = true;
-					}
-
-					return false;
-				});
-
-			if (nextStepSkipped !== undefined) {
-				return nextStepSkipped[0];
+			if (nextSkippedStep) {
+				return nextSkippedStep;
 			}
-
-			const firstUncompletedStepEntry =
-				Array.from(this.stepsToStatusMap.entries())
-					.find(([step, status]) => status === StepStatus.UNCOMPLETE);
-
-			if (firstUncompletedStepEntry === undefined) {
-				return null;
+			else if (firstUncompletedStep) {
+				return firstUncompletedStep;
 			}
 			else {
-				return firstUncompletedStepEntry ? firstUncompletedStepEntry[0] : null;
+				return  this.getFirstNotCompletedStep();
 			}
 		}
 		else {
-			const firstNonCompletedStepEntry =
-				Array.from(this.stepsToStatusMap.entries())
-					.find(([step, status]) => status !== StepStatus.COMPLETED);
-
-			if (firstNonCompletedStepEntry === undefined) {
-				return null;
-			}
-			else {
-				return firstNonCompletedStepEntry ? firstNonCompletedStepEntry[0] : null;
-			}
-
+			return this.getFirstNotCompletedStep();
 		}
 	};
 
@@ -288,6 +330,18 @@ export default class Task {
 			.every((status) => status !== StepStatus.UNCOMPLETE);
 	}
 
+	/**
+	 * Gets the last skipped step.
+	 * @returns The last skipped step or null if there are no skipped steps
+	 */
+	getLastSkippedStep(): string | null {
+		const lastSkippedStep = Array.from(this.stepsToStatusMap.entries())
+			.reverse()
+			.find(([step, status]) => status === StepStatus.SKIPPED);
+
+		return lastSkippedStep?.[0] || null;
+	}
+
 
 	/**
 	 * Skips a specified step.
@@ -296,10 +350,12 @@ export default class Task {
 	skipStep(step: string) {
 		this.stepsToStatusMap.set(step, StepStatus.SKIPPED);
 
-		if (this.areAllStepsActioned()) {
+		if (
+			this.areAllStepsActioned() &&
+			this.getLastSkippedStep() === step
+		) {
 			this.skip();
 		}
-
 
 		this.lastActionedStep = {
 			step: step,
@@ -425,12 +481,17 @@ export default class Task {
 	getIsComplete(): boolean {return this.isComplete}
 	protected complete(): void {
 		this.isComplete = true;
-		this.tasksManager.deleteCompletedTasks();
+		this.tasksManager.deleteCompletedOneTimeTasks();
+		this.tasksManager.unSkipSkippedTasks();
 	}
 
 	getIsSkipped(): boolean {return this.isSkipped}
 	protected skip(): void {
 		this.isSkipped = true;
+	}
+
+	unSkip(): void {
+		this.isSkipped = false;
 	}
 
 	getProgress(): number {
@@ -464,7 +525,7 @@ export default class Task {
 			maxRequiredTime: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
 			stepsToStatusMap: new Map(this.stepsToStatusMap),
-			lastAction: this.lastActionedStep
+			lastActionedStep: this.lastActionedStep
 		};
 	}
 
@@ -483,6 +544,6 @@ export default class Task {
 		this.maxRequiredTime = taskState.maxRequiredTime;
 		this.repeatInterval = taskState.repeatInterval;
 		this.stepsToStatusMap = new Map(taskState.stepsToStatusMap);
-		this.lastActionedStep = taskState.lastAction;
+		this.lastActionedStep = taskState.lastActionedStep;
 	}
 }

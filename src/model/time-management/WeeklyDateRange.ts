@@ -27,11 +27,6 @@ export default class WeeklyDateRange extends RecurringDateRange {
 
 		const dateRange = new DateRange(startDate, endDate);
 
-
-		console.log({
-			startWeekday, startTime, endWeekday, endTime, startDate: startDate.toString(), endDate: endDate.toString(),
-		});
-
 		super(dateRange, week);
 	}
 }
