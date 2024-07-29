@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Output } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import TasksManager from '../../model/TasksManager';
 import { ActivatedRoute } from '@angular/router';

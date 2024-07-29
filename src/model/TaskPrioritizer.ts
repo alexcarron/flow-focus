@@ -2,6 +2,7 @@ import Task from './task/Task'; // Assume this is your task model
 import TasksManager from './TasksManager';
 
 export default class TaskPrioritizer {
+	private static readonly LOG_PRIORITIES = false;
 	constructor(
 		private tasksManager: TasksManager
 	) {}
@@ -22,22 +23,24 @@ export default class TaskPrioritizer {
 	}
 
 	private logPriotizedTask(task1: Task, task2: Task, priorityNumber: number, reason: string) {
-		// let prioritizedTask, unprioritizedTask;
+		if (TaskPrioritizer.LOG_PRIORITIES) {
+			let prioritizedTask, unprioritizedTask;
 
-		// if (priorityNumber > 0) {
-		// 	prioritizedTask = task2;
-		// 	unprioritizedTask = task1;
-		// }
-		// else {
-		// 	prioritizedTask = task1;
-		// 	unprioritizedTask = task2;
-		// }
+			if (priorityNumber > 0) {
+				prioritizedTask = task2;
+				unprioritizedTask = task1;
+			}
+			else {
+				prioritizedTask = task1;
+				unprioritizedTask = task2;
+			}
 
-		// console.table({
-		// 	"Prioritized Task": prioritizedTask.getDescription(),
-		// 	"Unprioritized Task": unprioritizedTask.getDescription(),
-		// 	"Reason": reason
-		// });
+			console.table({
+				"Prioritized Task": prioritizedTask.getDescription(),
+				"Unprioritized Task": unprioritizedTask.getDescription(),
+				"Reason": reason
+			});
+		}
 	}
 
 	private prioritizeTasks(tasksToPrioritize: Task[], currentTime: Date): Task[] {

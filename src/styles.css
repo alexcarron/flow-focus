@@ -39,7 +39,7 @@
 * {
 	font-family: 'Poppins', sans-serif;
 	text-align: center;
-	/* transition: 0.1s ease-out; */
+	transition: 0.1s ease-out;
 }
 
 h1 {
