@@ -1,4 +1,5 @@
 import TasksManager from "../TasksManager";
+import TasksManagerState from "../TasksManagerState";
 import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
 import TaskState from "./TaskState";
@@ -513,7 +514,7 @@ export default class Task {
 	/**
 	 * Gets a deep copy of the current state of the task.
 	 */
-	getCurrentState(): TaskState {
+	getState(): TaskState {
 		return {
 			description: this.description,
 			isComplete: this.isComplete,
@@ -527,6 +528,14 @@ export default class Task {
 			stepsToStatusMap: new Map(this.stepsToStatusMap),
 			lastActionedStep: this.lastActionedStep
 		};
+	}
+
+	/**
+	 * Gets a deep copy of the current state of the task's tasks manager
+	 * @returns The state of the tasks manager
+	 */
+	getTasksManagerState(): TasksManagerState {
+		return this.tasksManager.getState();
 	}
 
 	/**
@@ -545,5 +554,13 @@ export default class Task {
 		this.repeatInterval = taskState.repeatInterval;
 		this.stepsToStatusMap = new Map(taskState.stepsToStatusMap);
 		this.lastActionedStep = taskState.lastActionedStep;
+	}
+
+	/**
+	 * Restores the state of the task from the given state.
+	 * @param taskState - The state to restore.
+	 */
+	restoreTasksManagerState(taskManagerState: TasksManagerState) {
+		this.tasksManager.restoreState(taskManagerState);
 	}
 }

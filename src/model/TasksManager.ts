@@ -1,5 +1,7 @@
+import { retry } from "rxjs";
 import Task from "./task/Task";
 import TaskPrioritizer from './TaskPrioritizer';
+import TasksManagerState from "./TasksManagerState";
 import RecurringDateRange from "./time-management/RecurringDateRange";
 import Time from "./time-management/Time";
 import TimeWindow from "./time-management/TimeWindow";
@@ -113,6 +115,27 @@ export default class TasksManager {
 	 */
 	public update(currentTime: Date): void {
 		this.checkRecurringTasks(currentTime);
+	}
+
+	getState(): TasksManagerState {
+		return {
+			tasks: this.tasks.map(task => task.getState()),
+			asleepTimeWindow: this.asleepTimeWindow,
+			downtimeTime: this.downtimeTime
+		}
+	}
+
+	restoreState(tasksManagerState: TasksManagerState) {
+		this.tasks = [];
+		
+		tasksManagerState.tasks.forEach(state => {
+			const task = this.createNewTask(state.description);
+			task.restoreState(state);
+			this.tasks.push(task);
+		})
+
+		this.asleepTimeWindow = tasksManagerState.asleepTimeWindow;
+		this.downtimeTime = tasksManagerState.downtimeTime;
 	}
 }
 

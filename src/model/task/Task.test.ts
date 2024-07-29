@@ -541,7 +541,7 @@ describe('Task', () => {
 		task.setMaxRequiredTime(2000);
 		task.makeRecurring(1000, currentTime);
 
-		const state = task.getCurrentState();
+		const state = task.getState();
 
 		expect(state.description).toEqual(task.getDescription());
 		expect(state.isComplete).toEqual(task.getIsComplete());
@@ -580,7 +580,7 @@ describe('Task', () => {
 		task.setMaxRequiredTime(2000);
 		task.makeRecurring(1000, currentTime);
 
-		const state = task.getCurrentState();
+		const state = task.getState();
 
 		task.editSteps(['Step 4', 'Step 5', 'Step 6']);
 		task.setDescription('New Description');

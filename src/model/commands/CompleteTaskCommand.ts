@@ -1,18 +1,18 @@
 import Task from "../task/Task";
-import TaskState from "../task/TaskState";
+import TasksManagerState from "../TasksManagerState";
 import UndoableCommand from "./UndoableCommand";
 
 export default class CompleteTaskCommand implements UndoableCommand {
 	private task: Task;
-	private taskStateBefore: TaskState;
+	private tasksStateBefore: TasksManagerState;
 
 	constructor(task: Task) {
 		this.task = task;
-		this.taskStateBefore = task.getCurrentState();
+		this.tasksStateBefore = task.getTasksManagerState();
 	}
 
 	public undo(): void {
-		this.task.restoreState(this.taskStateBefore);
+		this.task.restoreTasksManagerState(this.tasksStateBefore);
 	}
 
 	public redo(): void {
