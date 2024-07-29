@@ -1,4 +1,3 @@
-import { retry } from "rxjs";
 import Task from "./task/Task";
 import TaskPrioritizer from './TaskPrioritizer';
 import TasksManagerState from "./TasksManagerState";

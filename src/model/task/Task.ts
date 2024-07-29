@@ -340,7 +340,7 @@ export default class Task {
 			.reverse()
 			.find(([step, status]) => status === StepStatus.SKIPPED);
 
-		return lastSkippedStep?.[0] || null;
+		return lastSkippedStep?.[0] ?? null;
 	}
 
 
