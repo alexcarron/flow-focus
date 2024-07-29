@@ -16,12 +16,24 @@
 </h2>
 
 <div id="taskControls">
-	<button *ngIf="isSkippable()" class="icon-button" (click)="skip()">
+	<button
+		id="skipButton"
+		*ngIf="isSkippable()"
+		class="icon-button"
+		(click)="skip()"
+	>
 		<img src="assets/skip-icon.svg" alt="Skip">
+		<span class="tooltip">Skip</span>
 	</button>
-	<button id="completeButton" class="icon-button" (click)="complete()">
+
+	<button
+		id="completeButton"
+		class="icon-button"
+		(click)="complete()"
+	>
 		<img id="unfilledCompleteIcon" src="assets/complete-unfilled-icon.svg" alt="Complete">
 		<img id="filledCompleteIcon" src="assets/complete-filled-icon.svg" alt="Complete">
+		<span class="tooltip">Complete</span>
 	</button>
 </div>
 

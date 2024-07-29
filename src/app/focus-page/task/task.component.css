@@ -47,3 +47,11 @@
 
 	margin-bottom: var(--margin-medium);
 }
+
+#skipButton .tooltip {
+	top: var(--margin-large);
+}
+#completeButton .tooltip {
+	margin-left: -1.4rem;
+	top: var(--margin-large);
+}

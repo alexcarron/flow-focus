@@ -12,12 +12,16 @@ export default class EditTaskDescriptionCommand implements UndoableCommand {
 		this.newDescription = newDescription;
 	}
 
+	public execute(): void {
+		this.task.setDescription(this.newDescription);
+	}
+
 	public undo(): void {
 		this.task.setDescription(this.oldDescription);
 	}
 
 	public redo(): void {
-		this.task.setDescription(this.newDescription);
+		this.execute();
 	}
 
 	public toString(): string {

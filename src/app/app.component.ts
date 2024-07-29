@@ -16,6 +16,14 @@ export class AppComponent {
 		private commandHistory: CommandHistoryService
 	) {}
 
+	onUndo() {
+		this.commandHistory.undo();
+	}
+
+	onRedo() {
+		this.commandHistory.redo();
+	}
+
 	// Listen for Ctrl+Z for undoing commands
 	@HostListener('window:keydown', ['$event'])
 	onKeydown(event: KeyboardEvent) {
@@ -32,8 +40,7 @@ export class AppComponent {
 			!event.shiftKey &&
 			!event.metaKey
 		) {
-			this.commandHistory.undo();
-			console.log("Undo")
+			this.onUndo();
 		}
 
 		// Listen for Ctrl+Y or Ctrl+Shift+Z or Ctrl+Alt+Z or Ctrl+Meta+Z for redoing commands
@@ -48,8 +55,7 @@ export class AppComponent {
 				(event.altKey || event.shiftKey || event.metaKey)
 			)
 		) {
-			this.commandHistory.redo();
-			console.log("Redo")
+			this.onRedo();
 		}
 	}
 }

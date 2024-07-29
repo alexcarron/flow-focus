@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, EventEmitter, HostListener, Output } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import TasksManager from '../../model/TasksManager';
 import { ActivatedRoute } from '@angular/router';
@@ -29,6 +29,14 @@ export class FocusPageComponent {
 		setInterval(() => {
 			this.tasksManager.update(new Date());
 		}, 1000);
+	}
+
+	undo() {
+		this.commandHistory.undo();
+	}
+
+	redo() {
+		this.commandHistory.redo();
 	}
 
 	getNextTask(): Task| null {
@@ -88,7 +96,7 @@ export class FocusPageComponent {
 	private clickCount = 0;
 	private static readonly DOUBLE_TAP_THRESHOLD = 400;
 
-  @HostListener('pointerdown', ['$event'])
+  @HostListener('touchstart ', ['$event'])
   onTouchStart(event: PointerEvent): void {
 		if (this.isTextSelected()) {
 			return;

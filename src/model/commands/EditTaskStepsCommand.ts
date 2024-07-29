@@ -23,12 +23,16 @@ export default class EditTaskStepsCommand implements UndoableCommand {
 		}
 	}
 
+	public execute(): void {
+		this.task.editSteps(this.newSteps);
+	}
+
 	public undo(): void {
 		this.task.editSteps(this.oldSteps);
 	}
 
 	public redo(): void {
-		this.task.editSteps(this.newSteps);
+		this.execute();
 	}
 
 	public toString(): string {

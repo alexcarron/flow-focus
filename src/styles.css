@@ -13,6 +13,7 @@
   /* Colors */
   --primary-color: #3498db;
   --accent-color: #2ecc71;
+  --light-background-color: #ffffff;
   --background-color: #ecf0f1;
   --text-color: #2c3e50;
 
@@ -27,6 +28,12 @@
 	--line-height-medium: 1.5rem;
 	--line-height-large: 1.7rem;
 	--line-height-xlarge: 2.85rem;
+
+	/* Border Radius */
+	--border-radius-small: 0.25rem;
+	--border-radius-medium: 0.5rem;
+	--border-radius-large: 0.75rem;
+	--border-radius-xlarge: 1rem;
 }
 
 * {
@@ -95,32 +102,33 @@ p {
 	width: var(--font-size-large);
 }
 
-/* Fade In Animation */
-@keyframes fade-in {
-	100% {
-		opacity: 1;
-	}
-}
-
-/* Fade Out Animation */
-@keyframes fade-out {
-	100% {
-		opacity: 0;
-	}
-}
-
-/* Elements that fade in on hover and fade out when no longer hovered */
-.fade-in-on-hover {
-	opacity: 0; /* Start hidden */
-	transition: opacity 0.25s ease-out; /* Smooth transition for opacity */
-}
-.fade-in-on-hover:hover {
-	opacity: 1; /* Make visible when hovered */
-}
-
 html, body, app-root, main {
 	display: block;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+}
+
+
+/* Tooltip text */
+*>.tooltip {
+	visibility: hidden;
+	opacity: 0;
+  color: var(--text-color);
+  text-align: center;
+
+	/* Position the tooltip around parent */
+	position: absolute;
+  z-index: 1;
+
+	transition: opacity 0.3s ease-in-out;
+
+	font-weight: normal;
+	font-size: var(--font-size-small);
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+*:hover>.tooltip {
+	opacity: 1;
+  visibility: visible;
 }

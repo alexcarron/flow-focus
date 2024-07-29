@@ -28,7 +28,7 @@ export class CommandHistoryService {
 
 	public execute(command: UndoableCommand): void {
 		this.commandsToUndo.push(command);
-		command.redo();
+		command.execute();
 
 		this.displayCommands();
 		this.commandsToRedo = [];

@@ -1,4 +1,26 @@
-<button class="fade-in-on-hover">Leave</button>
+<button id="leaveFocusButton" class="fade-in-on-hover icon-button">
+	<img src="assets/arrow-left-icon.svg" alt="Leave">
+	<span class="tooltip">Leave</span>
+</button>
+
+<button
+	id="undoButton"
+	class="fade-in-on-hover icon-button"
+	(click)="undo()"
+>
+	<img src="assets/undo-icon.svg" alt="Leave">
+	<span class="tooltip">Undo</span>
+</button>
+
+<button
+	id="redoButton"
+	class="fade-in-on-hover icon-button"
+	(click)="redo()"
+>
+	<img src="assets/redo-icon.svg" alt="Leave">
+	<span class="tooltip">Redo</span>
+</button>
+
 <task
 	*ngIf="getNextTask()"
 	[task]="getNextTask()!"

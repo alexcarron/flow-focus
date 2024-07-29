@@ -5,10 +5,16 @@ import UndoableCommand from "./UndoableCommand";
 export default class CompleteTaskCommand implements UndoableCommand {
 	private task: Task;
 	private tasksStateBefore: TasksManagerState;
+	private tasksStateAfter: TasksManagerState | null = null;
 
 	constructor(task: Task) {
 		this.task = task;
 		this.tasksStateBefore = task.getTasksManagerState();
+	}
+
+	public execute(): void {
+		this.task.completeNextStep();
+		this.tasksStateAfter = this.task.getTasksManagerState();
 	}
 
 	public undo(): void {
@@ -16,7 +22,9 @@ export default class CompleteTaskCommand implements UndoableCommand {
 	}
 
 	public redo(): void {
-		this.task.completeNextStep();
+		if (this.tasksStateAfter !== null) {
+			this.task.restoreTasksManagerState(this.tasksStateAfter);
+		}
 	}
 
 	public toString(): string {
