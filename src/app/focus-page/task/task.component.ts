@@ -49,23 +49,13 @@ export class TaskComponent {
 		return this.task.getNextStep() ?? "";
 	}
 
-	hasUpcomingDeadline(): boolean {
-		const millisecondsLeft = this.task.getTimeToComplete(this.currentTime);
-
-		if (millisecondsLeft == null) {
-			return false;
-		}
-
-		return millisecondsLeft <= TaskComponent.URGENT_MILLISECONDS_LEFT;
-	}
-
 	/**
 	 * Returns a minimal string representation of the time left from the given delta time.
 	 *
 	 * @param {number} millisecondsLeft - The time difference in milliseconds.
 	 * @return {string} A string representing the time left in the format '<units left> <unit of time>'.
 	 */
-	private getTimeLeftString(millisecondsLeft: number): string {
+	private getTimeString(millisecondsLeft: number): string {
 		const timeUnits = [
 			{ millisecondsLong: 60 * 1000, name: 'minute' },
 			{ millisecondsLong: 60 * 60 * 1000, name: 'hour' },
@@ -103,11 +93,8 @@ export class TaskComponent {
 			return null;
 		}
 
-		if (!this.hasUpcomingDeadline()) {
-			return null
-		}
-
-		return this.getTimeLeftString(millisecondsLeft);
+		const timeLeftString = this.getTimeString(millisecondsLeft);
+		return timeLeftString + " left";
 	}
 
 	isSkippable(): boolean {

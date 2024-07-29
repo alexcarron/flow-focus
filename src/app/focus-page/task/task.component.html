@@ -7,6 +7,7 @@
 	[style.--progress]="getProgressPercentage()"
 > </h1>
 <h2
+	id="taskNextStep"
 	*ngIf="hasSteps()"
 	contenteditable
 	[textContent]="getNextStep()"
@@ -14,26 +15,28 @@
 >
 </h2>
 
-<p *ngIf="this.timeLeft">{{ this.timeLeft }}</p>
-<button *ngIf="isSkippable()" class="icon-button" (click)="skip()">
-	<img src="assets/skip-icon.svg" alt="Skip">
-</button>
-<button id="completeButton" class="icon-button" (click)="complete()">
-	<img id="unfilledCompleteIcon" src="assets/complete-unfilled-icon.svg" alt="Complete">
-	<img id="filledCompleteIcon" src="assets/complete-filled-icon.svg" alt="Complete">
-</button>
+<div id="taskControls">
+	<button *ngIf="isSkippable()" class="icon-button" (click)="skip()">
+		<img src="assets/skip-icon.svg" alt="Skip">
+	</button>
+	<button id="completeButton" class="icon-button" (click)="complete()">
+		<img id="unfilledCompleteIcon" src="assets/complete-unfilled-icon.svg" alt="Complete">
+		<img id="filledCompleteIcon" src="assets/complete-filled-icon.svg" alt="Complete">
+	</button>
+</div>
 
-<p>
-	{{ task.getProgress() * 100 | number : '1.0-0' }}%<br>
-	{{ task.getIsMandatory() ? "MANDATORY" : "" }}<br>
-	Earliest start time: {{ task.getEarliestStartTime() | date: 'medium' }}<br>
-	Deadline: {{ task.getDeadline() | date: 'medium' }}<br>
-	Min duration: {{ task.getMinRequiredTime() | timeFormatter }}<br>
+<p *ngIf="this.timeLeft">{{ this.timeLeft }}</p>
+
+<!-- <p> -->
+	<!-- {{ task.getIsMandatory() ? "MANDATORY" : "" }}<br> -->
+	<!-- Earliest start time: {{ task.getEarliestStartTime() | date: 'medium' }}<br> -->
+	<!-- Deadline: {{ task.getDeadline() | date: 'medium' }}<br> -->
+	<!-- Min duration: {{ task.getMinRequiredTime() | timeFormatter }}<br>
 	Max duration: {{ task.getMaxRequiredTime(this.currentTime) | timeFormatter }}<br>
 	<br>
 	Is complete: {{ task.getIsComplete() }}<br>
 	Min Slack Time: {{ task.getMinSlackTime(this.currentTime) | timeFormatter}}<br>
 	Max Slack Time: {{ task.getMaxSlackTime(this.currentTime) | timeFormatter}}<br>
-	Total time left: {{ task.getTimeToComplete(this.currentTime) | timeFormatter }}<br>
+	Total time left: {{ task.getTimeToComplete(this.currentTime) | timeFormatter }}<br> -->
 
-</p>
+<!-- </p> -->
