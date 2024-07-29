@@ -19,6 +19,11 @@ export class AppComponent {
 	// Listen for Ctrl+Z for undoing commands
 	@HostListener('window:keydown', ['$event'])
 	onKeydown(event: KeyboardEvent) {
+		// Cooldown
+		if (event.repeat) {
+			return;
+		}
+
 		// Listen for Ctrl+Z for undoing commands
 		if (
 			event.ctrlKey &&

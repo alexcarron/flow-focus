@@ -127,7 +127,7 @@ export default class TasksManager {
 
 	restoreState(tasksManagerState: TasksManagerState) {
 		this.tasks = [];
-		
+
 		tasksManagerState.tasks.forEach(state => {
 			const task = this.createNewTask(state.description);
 			task.restoreState(state);
