@@ -2,7 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Zain:wght@200;300;400;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Zain:wght@200;300;400;700;800;900&display=swap');
 
-
 :root {
 	/* Margin */
 	--margin-small: 0.5rem;
@@ -16,6 +15,7 @@
   --light-background-color: #ffffff;
   --background-color: #ecf0f1;
   --text-color: #2c3e50;
+	--icon-color: #000000;
 
   /* Font sizes */
   --font-size-small: 0.875rem;
@@ -87,6 +87,20 @@ p {
 	transform: scale(0.9);
 }
 
+/* Fade In Animation */
+@keyframes fade-in {
+	100% {
+		opacity: 1;
+	}
+}
+
+/* Fade Out Animation */
+@keyframes fade-out {
+	100% {
+		opacity: 0.2;
+	}
+}
+
 .icon-button {
 	cursor: pointer;
 
@@ -112,6 +126,15 @@ p {
 .icon-button:active {
 	opacity: 0.3;
 	transform: scale(0.9);
+}
+
+/* Elements that fade in on hover and fade out when no longer hovered */
+.fade-in-on-hover {
+	opacity: 0.2; /* Start hidden */
+	transition: opacity 0.25s ease-out; /* Smooth transition for opacity */
+}
+.fade-in-on-hover:hover {
+	opacity: 1; /* Make visible when hovered */
 }
 
 .icon-button img {
@@ -141,6 +164,7 @@ html, body, app-root, main {
 
 	font-weight: normal;
 	font-size: var(--font-size-small);
+	width: max-content;
 
 	background-color: #ffffff99;
 	border-radius: var(--border-radius-small);
@@ -151,4 +175,25 @@ html, body, app-root, main {
 *:hover>.tooltip {
 	opacity: 1;
   visibility: visible;
+}
+
+.corner-button {
+	display: block;
+	position: fixed;
+	text-align: left;
+	top: 0;
+	left: 0;
+	margin: var(--margin-small);
+	font-size: var(--font-size-medium);
+	font-weight: bold;
+	color: var(--text-color);
+	background-color: var(--background-color);
+	border: 0;
+	border-radius: var(--border-radius-medium);
+}
+
+.corner-button .tooltip {
+	margin-top: 0.1rem;
+	margin-left: 0.2rem;
+	color: var(--icon-color)
 }

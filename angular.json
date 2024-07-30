@@ -28,7 +28,7 @@
               "src/styles.css"
             ],
             "scripts": [],
-						"baseHref": ""
+						"baseHref": "localhost:4200/"
           },
           "configurations": {
             "production": {

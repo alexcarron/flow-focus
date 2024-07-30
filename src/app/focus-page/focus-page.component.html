@@ -1,11 +1,16 @@
-<button id="leaveFocusButton" class="fade-in-on-hover icon-button">
+<!-- Routes to tasks manager page -->
+<button
+	id="leaveFocusButton"
+	class="fade-in-on-hover icon-button corner-button"
+	[routerLink]="['/tasks']"
+>
 	<img src="assets/arrow-left-icon.svg" alt="Leave">
 	<span class="tooltip">Leave</span>
 </button>
 
 <button
 	id="undoButton"
-	class="fade-in-on-hover icon-button"
+	class="fade-in-on-hover icon-button corner-button"
 	(click)="undo()"
 >
 	<img src="assets/undo-icon.svg" alt="Leave">
@@ -14,7 +19,7 @@
 
 <button
 	id="redoButton"
-	class="fade-in-on-hover icon-button"
+	class="fade-in-on-hover icon-button corner-button"
 	(click)="redo()"
 >
 	<img src="assets/redo-icon.svg" alt="Leave">

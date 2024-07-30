@@ -1,7 +1,7 @@
 import { Component, HostListener } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import TasksManager from '../../model/TasksManager';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import Task from '../../model/task/Task';
 import { CommandHistoryService } from '../../services/CommandHistory.service';
@@ -11,7 +11,7 @@ import SkipTaskCommand from '../../model/commands/SkipTaskCommand';
 @Component({
   selector: 'focus-page',
   standalone: true,
-  imports: [TaskComponent, CommonModule],
+  imports: [TaskComponent, CommonModule, RouterModule],
   templateUrl: './focus-page.component.html',
   styleUrl: './focus-page.component.css'
 })
