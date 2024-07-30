@@ -237,6 +237,14 @@ export default class Task {
 		}
 	};
 
+	removeDeadline(): void {
+		this.deadline = null;
+	}
+
+	removeEarliestStartTime(): void {
+		this.earliestStartTime = null;
+	}
+
 	/**
 	 * Replaces the next step with a different step.
 	 * @param newNextStep - The step to replace the first uncompleted step.
@@ -493,7 +501,6 @@ export default class Task {
 	getIsComplete(): boolean {return this.isComplete}
 	protected complete(): void {
 		this.isComplete = true;
-		this.tasksManager.deleteCompletedOneTimeTasks();
 		this.tasksManager.unSkipSkippedTasks();
 	}
 

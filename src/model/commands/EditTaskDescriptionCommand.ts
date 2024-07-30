@@ -1,30 +1,18 @@
 import Task from "../task/Task";
-import UndoableCommand from "./UndoableCommand";
+import EditTaskCommand from "./EditTaskCommand";
 
-export default class EditTaskDescriptionCommand implements UndoableCommand {
-	private task: Task;
-	private oldDescription: string;
-	private newDescription: string;
-
-	constructor(task: Task, newDescription: string) {
-		this.task = task;
-		this.oldDescription = task.getDescription();
-		this.newDescription = newDescription;
+export default class EditTaskDescriptionCommand extends EditTaskCommand {
+	constructor(task: Task,
+		private newDescription: string
+	) {
+		super(task);
 	}
 
-	public execute(): void {
+	public doAction(): void {
 		this.task.setDescription(this.newDescription);
 	}
 
-	public undo(): void {
-		this.task.setDescription(this.oldDescription);
-	}
-
-	public redo(): void {
-		this.execute();
-	}
-
 	public toString(): string {
-		return `Editing "${this.task.getDescription()}"'s description from "${this.oldDescription}" to "${this.newDescription}"`
+		return `Editing "${this.task.getDescription()}"'s description from "${this.getTaskStateBefore()?.description}" to "${this.getTaskStateAfter()?.description}"`
 	}
 }

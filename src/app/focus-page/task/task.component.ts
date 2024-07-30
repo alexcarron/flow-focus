@@ -1,15 +1,18 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import Task from '../../../model/task/Task';
 import { CommonModule } from '@angular/common';
 import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescriptionCommand';
 import { CommandHistoryService } from '../../../services/CommandHistory.service';
-import EditTaskStepsCommand from '../../../model/commands/EditTaskStepsCommand';
+import EditTaskStepCommand from '../../../model/commands/EditTaskStepsCommand';
 import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
+import { DatetimePopupComponent } from './datetime-popup/datetime-popup.component';
+import EditTaskDeadlineCommand from '../../../model/commands/EditTaskDeadlineCommand';
+import EditTaskStartTimeCommand from '../../../model/commands/EditTaskStartTimeCommand';
 
 @Component({
   selector: 'task',
   standalone: true,
-  imports: [CommonModule, TimeFormatterPipe],
+  imports: [CommonModule, TimeFormatterPipe, DatetimePopupComponent],
   templateUrl: './task.component.html',
   styleUrl: './task.component.css'
 })
@@ -21,6 +24,7 @@ export class TaskComponent {
 	@Output() taskCompleted = new EventEmitter<Task>();
 	timeLeft: string | null = null;
 	currentTime: Date = new Date();
+	isPopupOpen = false;
 
 	constructor(
 		private commandHistory: CommandHistoryService
@@ -94,7 +98,7 @@ export class TaskComponent {
 		}
 
 		const timeLeftString = this.getTimeString(millisecondsLeft);
-		return timeLeftString + " left";
+		return timeLeftString ? timeLeftString + " left" : "";
 	}
 
 	isSkippable(): boolean {
@@ -110,7 +114,7 @@ export class TaskComponent {
 	}
 
 	getProgressPercentage(): string {
-		return this.task.getProgress() * 100 + '%';
+		return this.task.getProgress() * 94 + 3 + '%';
 	}
 
 	/**
@@ -136,7 +140,54 @@ export class TaskComponent {
 		const newNextStep = (event.target as HTMLHeadingElement).textContent ?? "";
 
 		this.commandHistory.execute(
-			new EditTaskStepsCommand(this.task, newNextStep)
+			new EditTaskStepCommand(this.task, newNextStep)
 		)
 	}
+
+	getDeadline(): Date | null {
+		return this.task.getDeadline();
+	}
+
+	getStartTime(): Date | null {
+		return this.task.getEarliestStartTime();
+	}
+
+  openPopup(): void {
+		console.log('Opening popup...');
+    this.isPopupOpen = true;
+  }
+
+  closePopup(): void {
+		console.log('Closing popup...');
+    this.isPopupOpen = false;
+  }
+
+  changeStartTime(dateTime: string): void {
+		const newStartTime = new Date(dateTime);
+		const editStartTimeCommand = new EditTaskStartTimeCommand(
+			this.task, newStartTime
+		);
+		this.commandHistory.execute(editStartTimeCommand);
+		this.closePopup();
+  }
+
+  changeDeadline(dateTime: string): void {
+		const newDeadline = new Date(dateTime);
+		const editDeadlineCommand = new EditTaskDeadlineCommand(
+			this.task, newDeadline
+		);
+		this.commandHistory.execute(editDeadlineCommand);
+		this.closePopup();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+		if (this.isPopupOpen) {
+			const target = event.target as HTMLElement;
+			// if clicked on element with overlay class
+			if (target?.classList.contains('overlay')) {
+				this.closePopup();
+			}
+		}
+  }
 }

@@ -45,10 +45,6 @@ export default class TasksManager {
 		skippedTasks.forEach(task => task.unSkip());
 	}
 
-	deleteCompletedOneTimeTasks() {
-		this.tasks = this.tasks.filter(task => !task.getIsComplete() || task.isRecurring());
-	}
-
 	public getAsleepTimeWindow(): TimeWindow {
 		return this.asleepTimeWindow;
 	}

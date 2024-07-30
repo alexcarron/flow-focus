@@ -20,10 +20,12 @@
   /* Font sizes */
   --font-size-small: 0.875rem;
   --font-size-medium: 1rem;
+  --font-size-xmedium: 1.2rem;
   --font-size-large: 1.5rem;
   --font-size-xlarge: 3.5rem;
 
 	/* Line height */
+	--line-height-xsmall: 1rem;
 	--line-height-small: 1.25rem;
 	--line-height-medium: 1.5rem;
 	--line-height-large: 1.7rem;
@@ -47,7 +49,7 @@ h1 {
 	font-weight: 800;
 	font-size: var(--font-size-xlarge);
 	line-height: var(--line-height-xlarge);
-	margin: var(--margin-xlarge)
+	padding: var(--margin-xlarge)
 }
 
 h2 {
@@ -69,6 +71,20 @@ p {
 	font-size: var(--font-size-small);
 	line-height: var(--line-height-small);
 	margin: var(--margin-small)
+}
+
+.popup-opener {
+	cursor: pointer;
+}
+
+.popup-opener:hover {
+	opacity: 0.5;
+	transform: scale(1.1);
+}
+
+.popup-opener:active {
+	opacity: 0.3;
+	transform: scale(0.9);
 }
 
 .icon-button {
@@ -119,12 +135,16 @@ html, body, app-root, main {
 
 	/* Position the tooltip around parent */
 	position: absolute;
-  z-index: 1;
+  z-index: -1;
 
 	transition: opacity 0.3s ease-in-out;
 
 	font-weight: normal;
 	font-size: var(--font-size-small);
+
+	background-color: #ffffff99;
+	border-radius: var(--border-radius-small);
+	padding-right: 0.2rem;
 }
 
 /* Show the tooltip text when you mouse over the tooltip container */

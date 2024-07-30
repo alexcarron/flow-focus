@@ -144,7 +144,10 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 	 * @return {object} The JSON object created from the TasksManager instance.
 	 */
 	convertObjectToJson(tasksManager: TasksManager): object {
-		console.log('convertObjectToJson', tasksManager)
+		if (tasksManager.getTasks().length === 0) {
+			return {};
+		}
+		
 		const excludedProperties = [
 			JsonToTasksManager.STATE_OBSERVER_PROPERTY_NAME,
 			JsonToTasksManager.TASKS_MANAGER_PROPERTY_NAME,

@@ -16,6 +16,13 @@
 </h2>
 
 <div id="taskControls">
+	<p
+		*ngIf="this.timeLeft"
+		class="popup-opener"
+		(click)="openPopup()"
+		(keyDown)="openPopup()"
+	>{{ this.timeLeft }}</p>
+
 	<button
 		id="skipButton"
 		*ngIf="isSkippable()"
@@ -37,4 +44,13 @@
 	</button>
 </div>
 
-<p *ngIf="this.timeLeft">{{ this.timeLeft }}</p>
+
+<datetime-popup
+	*ngIf="isPopupOpen"
+	(closePopup)="closePopup()"
+	(startTimeSelected)="changeStartTime($event)"
+	(deadlineSelected)="changeDeadline($event)"
+	[oldStartTime]="getStartTime()"
+	[oldDeadline]="getDeadline()"
+>
+</datetime-popup>
