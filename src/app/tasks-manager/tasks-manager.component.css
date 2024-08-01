@@ -1,15 +1,14 @@
-.corner-button:nth-child(2) {
-	top: calc(var(--font-size-medium) + 2*var(--margin-small));
+#taskHeader,
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #00000020;
+	padding: 0 calc(2 * var(--margin-large));
 }
 
-.corner-button:nth-child(3) {
-	top: calc(2 * (var(--font-size-medium) + 2*var(--margin-small)));
-}
-
-.corner-button:nth-child(4) {
-	top: calc(3 * (var(--font-size-medium) + 2*var(--margin-small)));
-}
-
-.corner-button:nth-child(5) {
-	top: calc(4 * (var(--font-size-medium) + 2*var(--margin-small)));
+.task-header-item {
+	font-size: var(--font-size-medium);
+	line-height: var(--line-height-medium);
+	margin: var(--margin-small);
+	font-weight: 600;
 }

@@ -1,0 +1,86 @@
+<button
+	id="goToFocusButton"
+	class="fade-in-on-hover icon-button corner-button"
+	[routerLink]="['/']"
+>
+	<img src="assets/assistant.svg" alt="To Task Focus">
+	<span class="tooltip">To Task Focus</span>
+</button>
+
+<div class="input-row">
+	<h1
+		id="taskDescription"
+		type="text"
+		contenteditable
+		placeholder="Enter the task name"
+		(input)="onNameChange($event)"
+	></h1>
+	<button
+		id="confirmButton"
+		*ngIf="name !== null"
+		class="icon-button"
+		(click)="confirmName()"
+	>
+		<img src="assets/check-icon.svg" alt="Confirm">
+		<span class="tooltip">Confirm</span>
+	</button>
+</div>
+<div class="input-row">
+	<h2
+		id="taskNextStep"
+		type="text"
+		contenteditable
+		placeholder="Enter a step to complete the task"
+		(input)="onStepChange($event)"
+	></h2>
+
+	<button
+		id="confirmButton"
+		*ngIf="step !== null"
+		class="icon-button"
+		(click)="confirmStep()"
+	>
+		<img src="assets/check-icon.svg" alt="Confirm">
+		<span class="tooltip">Confirm</span>
+	</button>
+</div>
+<div class="input-row">
+	<h3 class="input-label">Start Time</h3>
+	<!-- <input
+		id="startTimeInput"
+		type="datetime-local"
+		(change)="onStartTimeChange($event)"
+	> -->
+</div>
+<div class="input-row">
+	<h3 class="input-label">Deadline</h3>
+	<!-- <input
+		id="deadlineInput"
+		type="datetime-local"
+		(change)="onDeadlineChange($event)"
+	> -->
+</div>
+<div class="input-row">
+	<h3 class="input-label">Duration</h3>
+	<!-- <input
+		id="durationInput"
+		type="time"
+		(change)="onDurationChange($event)"
+	> -->
+</div>
+<div class="input-row">
+	<h3 class="input-label">Repeat Interval</h3>
+	<!-- <input
+		id="repeatInput"
+		type="time"
+		(change)="onRepeatChange($event)"
+	> -->
+</div>
+<div class="input-row">
+	<h3 class="input-label">Mandatory?</h3>
+	<!-- <input
+		id="mandatoryInput"
+		type="checkbox"
+		(change)="onMandatoryChange($event)"
+	> -->
+</div>

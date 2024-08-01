@@ -1,0 +1,42 @@
+/* Displays progress of task through linear gradient */
+/* #taskDescription {
+	width: clamp(var(--font-size-large), min-content, var(--font-size-xlarge));
+	color: var(--text-color);
+	margin-bottom: var(--margin-medium);
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 800;
+	font-size: var(--font-size-xlarge);
+	line-height: var(--line-height-xlarge);
+	padding: var(--margin-xlarge);
+	border: 0;
+}
+
+#taskNextStep {
+	width: min-content;
+	margin-top: var(--margin-medium);
+	margin-bottom: var(--margin-small);
+	font-weight: normal;
+	font-size: var(--font-size-large);
+	line-height: var(--line-height-large);
+	border: 0;
+} */
+
+.input-row {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.input-wrap {
+  position: relative;
+}
+.input-wrap .input {
+  position: absolute;
+  width: 100%;
+  left: 0;
+}
+.width-machine {
+  /*   Sort of a magic number to add extra space for number spinner */
+  padding: 0 1rem;
+	visibility: false;
+}

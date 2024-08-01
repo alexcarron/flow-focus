@@ -5,12 +5,3 @@
   box-sizing: border-box;
 	background-color: white; /* Example background color */
 }
-
-/* Button on top left of screen */
-#undoButton {
-	top: calc(var(--font-size-medium) + 2*var(--margin-small));
-}
-
-#redoButton {
-	top: calc(2*(var(--font-size-medium) + 2*var(--margin-small)));
-}

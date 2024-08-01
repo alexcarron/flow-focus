@@ -14,27 +14,15 @@
 	display: inline;
 }
 
-/* Displays progress of task through linear gradient */
-#taskDescription {
-  background: linear-gradient(
-		to right,
-		var(--accent-color) 50%,
-		var(--text-color) 50%
-	);
-	background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-
-	background-size: 200%;
-	background-position: calc(100% - var(--progress, 0%));
-	transition: background-position 0.2s ease-in-out;
-
-	margin-bottom: var(--margin-medium);
+:host {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
-#taskNextStep {
-	margin-top: var(--margin-medium);
-	margin-bottom: var(--margin-small);
+#taskDescription, #taskNextStep {
+	border: 0;
 }
 
 #taskControls {
@@ -44,8 +32,6 @@
 	justify-content: center;
 
 	margin: 0;
-
-	margin-bottom: var(--margin-medium);
 }
 
 #skipButton .tooltip {

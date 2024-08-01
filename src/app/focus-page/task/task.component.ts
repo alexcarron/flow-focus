@@ -60,6 +60,12 @@ export class TaskComponent {
 	 * @return {string} A string representing the time left in the format '<units left> <unit of time>'.
 	 */
 	private getTimeString(millisecondsLeft: number): string {
+		// Handle negative time
+		const isNegative = millisecondsLeft < 0;
+		if (isNegative) {
+			millisecondsLeft = -millisecondsLeft;
+		}
+
 		const timeUnits = [
 			{ millisecondsLong: 60 * 1000, name: 'minute' },
 			{ millisecondsLong: 60 * 60 * 1000, name: 'hour' },
@@ -79,7 +85,7 @@ export class TaskComponent {
 					unitName += 's';
 				}
 
-				return `${unitsLeft} ${unitName}`;
+				return `${unitsLeft} ${unitName} ${isNegative ? 'ago' : 'left'}`;
 			}
 		}
 
@@ -98,7 +104,7 @@ export class TaskComponent {
 		}
 
 		const timeLeftString = this.getTimeString(millisecondsLeft);
-		return timeLeftString ? timeLeftString + " left" : "";
+		return timeLeftString;
 	}
 
 	isSkippable(): boolean {

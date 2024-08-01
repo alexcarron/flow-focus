@@ -44,19 +44,28 @@
 	transition: 0.1s ease-out;
 }
 
+html, body, app-root, main {
+	display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+	margin: 0;
+}
+
 h1 {
 	font-family: 'Montserrat', sans-serif;
 	font-weight: 800;
 	font-size: var(--font-size-xlarge);
 	line-height: var(--line-height-xlarge);
-	padding: var(--margin-xlarge)
+	border-radius: var(--border-radius-xlarge);
 }
 
 h2 {
 	font-weight: normal;
 	font-size: var(--font-size-large);
 	line-height: var(--line-height-large);
-	margin: var(--margin-large)
+	margin: var(--margin-large);
+	border-radius: var(--border-radius-large);
 }
 
 h3 {
@@ -141,14 +150,6 @@ p {
 	width: var(--font-size-large);
 }
 
-html, body, app-root, main {
-	display: block;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-
 /* Tooltip text */
 *>.tooltip {
 	visibility: hidden;
@@ -166,7 +167,7 @@ html, body, app-root, main {
 	font-size: var(--font-size-small);
 	width: max-content;
 
-	background-color: #ffffff99;
+	background-color: #ffffffb0;
 	border-radius: var(--border-radius-small);
 	padding-right: 0.2rem;
 }
@@ -196,4 +197,64 @@ html, body, app-root, main {
 	margin-top: 0.1rem;
 	margin-left: 0.2rem;
 	color: var(--icon-color)
+}
+
+.corner-button:nth-child(2) {
+	top: calc(var(--font-size-medium) + 2*var(--margin-small));
+}
+
+.corner-button:nth-child(3) {
+	top: calc(2 * (var(--font-size-medium) + 2*var(--margin-small)));
+}
+
+.corner-button:nth-child(4) {
+	top: calc(3 * (var(--font-size-medium) + 2*var(--margin-small)));
+}
+
+.corner-button:nth-child(5) {
+	top: calc(4 * (var(--font-size-medium) + 2*var(--margin-small)));
+}
+
+/* Displays progress of task through linear gradient */
+#taskDescription {
+	width: clamp(var(--font-size-large), min-content, var(--font-size-xlarge));
+
+  background: linear-gradient(
+		to right,
+		var(--accent-color) 50%,
+		var(--text-color) 50%
+	);
+	background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+	background-size: 200%;
+	background-position: calc(100% - var(--progress, 0%));
+	transition: background-position 0.2s ease-in-out;
+
+	margin: var(--margin-medium);
+	margin-bottom: var(--margin-small);
+	padding: var(--margin-xlarge);
+}
+
+#taskNextStep {
+	margin-top: var(--margin-small);
+	margin-bottom: var(--margin-small);
+	padding: var(--margin-medium);
+}
+
+[contenteditable]:empty:not(:focus):before{
+	cursor: text;
+  content: attr(placeholder);
+  color: grey;
+  font-style: italic;
+}
+
+[contenteditable]:focus {
+	cursor: text;
+	border: 1px solid var(--text-color);
+}
+
+[contenteditable] {
+	border: 1px solid #00000020;
 }

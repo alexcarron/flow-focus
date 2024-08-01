@@ -9,6 +9,15 @@
 </button>
 
 <button
+	id="createTaskButton"
+	class="fade-in-on-hover icon-button corner-button"
+	[routerLink]="['/create-task']"
+>
+	<img src="assets/plus-icon.svg" alt="Create Task">
+	<span class="tooltip">Create Task</span>
+</button>
+
+<button
 	id="undoButton"
 	class="fade-in-on-hover icon-button corner-button"
 	(click)="undo()"
