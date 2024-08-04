@@ -1,4 +1,5 @@
 import TasksManager from "../../model/TasksManager";
+import TasksManagerState from "../../model/TasksManagerState";
 import ObservedTask from "./ObservedTask";
 import StateObserver from './StateObserver';
 
@@ -23,5 +24,11 @@ export default class ObservedTasksManager extends TasksManager {
 		this.tasks.push(task);
 		this.stateObserver.onStateChange();
 		return task;
+	}
+
+	override async restoreState(tasksManagerState: TasksManagerState): Promise<void> {
+		return super.restoreState(tasksManagerState).then(() => {
+			this.stateObserver.onStateChange();
+		});
 	}
 }

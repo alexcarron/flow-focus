@@ -72,14 +72,16 @@ h3 {
 	font-weight: normal;
 	font-size: var(--font-size-medium);
 	line-height: var(--line-height-medium);
-	margin: var(--margin-medium)
+	margin: var(--margin-medium);
+	border-radius: var(--border-radius-medium);
 }
 
 p {
 	font-weight: normal;
 	font-size: var(--font-size-small);
 	line-height: var(--line-height-small);
-	margin: var(--margin-small)
+	margin: var(--margin-small);
+	border-radius: var(--border-radius-small);
 }
 
 .popup-opener {
@@ -243,18 +245,22 @@ p {
 	padding: var(--margin-medium);
 }
 
-[contenteditable]:empty:not(:focus):before{
+.text-input, [contenteditable] {
+	margin: 0;
+	padding: 0 var(--margin-small);
+	width: fit-content;
+	border: 1px solid #00000020;
+}
+
+.text-input:empty:not(:focus):before,
+[contenteditable]:empty:not(:focus):before {
 	cursor: text;
   content: attr(placeholder);
   color: grey;
   font-style: italic;
 }
 
-[contenteditable]:focus {
+.text-input:focus, [contenteditable]:focus {
 	cursor: text;
 	border: 1px solid var(--text-color);
-}
-
-[contenteditable] {
-	border: 1px solid #00000020;
 }

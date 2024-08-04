@@ -10,7 +10,6 @@
 <div class="input-row">
 	<h1
 		id="taskDescription"
-		type="text"
 		contenteditable
 		placeholder="Enter the task name"
 		(input)="onNameChange($event)"
@@ -67,6 +66,7 @@
 		type="time"
 		(change)="onDurationChange($event)"
 	> -->
+	<duration-input></duration-input>
 </div>
 <div class="input-row">
 	<h3 class="input-label">Repeat Interval</h3>

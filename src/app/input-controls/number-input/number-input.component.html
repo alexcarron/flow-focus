@@ -1,0 +1,11 @@
+<!-- Listen for up/down for incrementing/decrementing -->
+<p
+	class="number-input"
+	contenteditable
+	(input)="onInput()"
+	(click)="setCaretPosition()"
+	(focus)="setCaretPosition()"
+	(keydown)="onKeyDown($event)"
+></p>
+
+

@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CommandHistoryService } from '../../services/CommandHistory.service';
 import { RouterModule } from '@angular/router';
+import { DurationInputComponent } from '../input-controls/duration-input/duration-input.component';
 
 @Component({
   selector: 'task-creator',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, DurationInputComponent],
   templateUrl: './task-creator.component.html',
   styleUrl: './task-creator.component.css'
 })

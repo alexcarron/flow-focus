@@ -120,14 +120,24 @@ export default class TasksManager {
 		}
 	}
 
-	restoreState(tasksManagerState: TasksManagerState) {
-		this.tasks = [];
+	async restoreState(tasksManagerState: TasksManagerState) {
+		const unFoundTasks = tasksManagerState.tasks.filter(state => {
+			const task = this.tasks.find(task => task.getDescription() === state.description);
 
-		tasksManagerState.tasks.forEach(state => {
+			if (task !== undefined) {
+				task.restoreState(state);
+				return false;
+			}
+			else {
+				return true;
+			}
+		});
+
+		unFoundTasks.forEach(state => {
 			const task = this.createNewTask(state.description);
 			task.restoreState(state);
 			this.tasks.push(task);
-		})
+		});
 
 		this.asleepTimeWindow = tasksManagerState.asleepTimeWindow;
 		this.downtimeTime = tasksManagerState.downtimeTime;
