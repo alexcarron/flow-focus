@@ -1,0 +1,14 @@
+<select (input)="onSelectChange($event)" class="select-input">
+	<option
+		class="placeholder-option"
+		*ngIf="placeholder"
+		[value]="placeholder"
+		disabled selected
+	>{{placeholder}}</option>
+
+	<option
+		class="select-option"
+		*ngFor="let option of options.keys()"
+		[value]="option"
+	>{{option}}</option>
+</select>

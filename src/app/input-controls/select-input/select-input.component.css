@@ -1,0 +1,19 @@
+:host {
+	display: flex;
+}
+
+select:hover {
+	background-color: var(--faint-background-color);
+	cursor: pointer;
+}
+
+.select-input .select-option {
+	cursor: pointer;
+	color: var(--text-color);
+	font-style: normal;
+}
+
+.placeholder-select, .placeholder-option {
+  color: var(--faint-text-color);
+	font-style: italic;
+}

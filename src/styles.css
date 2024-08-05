@@ -12,9 +12,17 @@
   /* Colors */
   --primary-color: #3498db;
   --accent-color: #2ecc71;
-  --light-background-color: #ffffff;
-  --background-color: #ecf0f1;
+  --light-background-color: #f9fbfb;
+
+  --background-color: #f3f7f8;
+  --faint-background-color: #ebf1f2;
+  --inactive-background-color: #e3e6e6;
+
   --text-color: #2c3e50;
+	--inactive-text-color: #2c3e5080;
+	--faint-text-color: #2c3e5040;
+	--slight-text-color: #2c3e5020;
+
 	--icon-color: #000000;
 
   /* Font sizes */
@@ -36,12 +44,19 @@
 	--border-radius-medium: 0.5rem;
 	--border-radius-large: 0.75rem;
 	--border-radius-xlarge: 1rem;
+
+	/* Shadow Radius */
+	--shadow-radius-small: 0.15rem;
+	--shadow-radius-medium: 0.25rem;
+	--shadow-radius-large: 0.3rem;
+	--shadow-radius-xlarge: 0.33rem;
 }
 
 * {
 	font-family: 'Poppins', sans-serif;
 	text-align: center;
 	transition: 0.1s ease-out;
+	background-color: var(--background-color);
 }
 
 html, body, app-root, main {
@@ -57,7 +72,8 @@ h1 {
 	font-weight: 800;
 	font-size: var(--font-size-xlarge);
 	line-height: var(--line-height-xlarge);
-	border-radius: var(--border-radius-xlarge);
+	border-radius: var(--border-radius-xlarge) !important;
+	border-width: 4px !important;
 }
 
 h2 {
@@ -65,7 +81,8 @@ h2 {
 	font-size: var(--font-size-large);
 	line-height: var(--line-height-large);
 	margin: var(--margin-large);
-	border-radius: var(--border-radius-large);
+	border-radius: var(--border-radius-large) !important;
+	border-width: 3px !important;
 }
 
 h3 {
@@ -73,7 +90,8 @@ h3 {
 	font-size: var(--font-size-medium);
 	line-height: var(--line-height-medium);
 	margin: var(--margin-medium);
-	border-radius: var(--border-radius-medium);
+	border-radius: var(--border-radius-medium) !important;
+	border-width: 2px !important;
 }
 
 p {
@@ -81,7 +99,8 @@ p {
 	font-size: var(--font-size-small);
 	line-height: var(--line-height-small);
 	margin: var(--margin-small);
-	border-radius: var(--border-radius-small);
+	border-radius: var(--border-radius-small) !important;
+	border-width: 1px !important;
 }
 
 .popup-opener {
@@ -193,6 +212,8 @@ p {
 	background-color: var(--background-color);
 	border: 0;
 	border-radius: var(--border-radius-medium);
+
+	z-index: 10;
 }
 
 .corner-button .tooltip {
@@ -219,8 +240,19 @@ p {
 
 /* Displays progress of task through linear gradient */
 #taskDescription {
-	width: clamp(var(--font-size-large), min-content, var(--font-size-xlarge));
+	box-sizing: border-box;
+	width: min(
+		calc(100vw - 5*var(--margin-large))
+	);
 
+	overflow-wrap: break-word;
+
+	margin: var(--margin-medium);
+	margin-bottom: var(--margin-small);
+	padding: var(--margin-xlarge);
+}
+
+.progress-bar {
   background: linear-gradient(
 		to right,
 		var(--accent-color) 50%,
@@ -233,34 +265,47 @@ p {
 	background-size: 200%;
 	background-position: calc(100% - var(--progress, 0%));
 	transition: background-position 0.2s ease-in-out;
-
-	margin: var(--margin-medium);
-	margin-bottom: var(--margin-small);
-	padding: var(--margin-xlarge);
 }
 
 #taskNextStep {
+	box-sizing: border-box;
+	width: calc(
+		100vw
+			- 5*var(--margin-large)
+	);
+
 	margin-top: var(--margin-small);
 	margin-bottom: var(--margin-small);
 	padding: var(--margin-medium);
 }
 
-.text-input, [contenteditable] {
+.text-input, [contenteditable], select {
+	width: fit-content;
+
 	margin: 0;
 	padding: 0 var(--margin-small);
-	width: fit-content;
-	border: 1px solid #00000020;
+
+	border: 1px solid var(--faint-text-color);
+	border-radius: var(--border-radius-small);
+
+	background-color: var(--light-background-color);
+
+	filter: drop-shadow(0 0 var(--shadow-radius-small) var(--slight-text-color));
 }
 
 .text-input:empty:not(:focus):before,
 [contenteditable]:empty:not(:focus):before {
 	cursor: text;
   content: attr(placeholder);
-  color: grey;
+  color: var(--faint-text-color);
   font-style: italic;
 }
 
 .text-input:focus, [contenteditable]:focus {
 	cursor: text;
+}
+
+.text-input:focus, [contenteditable]:focus, select:focus {
 	border: 1px solid var(--text-color);
+	background-color: var(--inactive-background-color);
 }

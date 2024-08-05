@@ -1,10 +1,11 @@
-<number-input id="durationValue" name="durationValue" placeholder="Enter number"></number-input>
-<select id="durationUnit" name="durationUnit">
-	<option value="seconds">Seconds</option>
-	<option value="minutes">Minutes</option>
-	<option value="hours">Hours</option>
-	<option value="days">Days</option>
-	<option value="weeks">Weeks</option>
-	<option value="months">Months</option>
-	<option value="years">Years</option>
-</select>
+<number-input
+	id="durationValue"
+	placeholder="Enter number"
+	(onInputChange)="onNumberChange($event)"
+></number-input>
+<select-input
+	id="durationUnit"
+	placeholder="Select Unit"
+	[options]="unitOptions"
+	(onInputChange)="onUnitChange($event)"
+></select-input>

@@ -21,6 +21,14 @@
 	border: 0;
 } */
 
+#taskDescription {
+	filter: drop-shadow(0 0 var(--shadow-radius-xlarge) var(--slight-text-color));
+}
+
+#taskNextStep {
+	filter: drop-shadow(0 0 var(--shadow-radius-large) var(--slight-text-color));
+}
+
 .input-row {
 	display: flex;
 	justify-content: center;
