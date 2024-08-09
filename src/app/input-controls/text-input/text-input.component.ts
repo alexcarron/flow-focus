@@ -1,27 +1,38 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'text-input',
   standalone: true,
   imports: [],
   templateUrl: './text-input.component.html',
-  styleUrl: './text-input.component.css'
+  styleUrl: './text-input.component.css',
+	host: {
+		'contenteditable': '',
+		'(input)': 'onInput()',
+		'(click)': 'setCaretPosition()',
+		'(focus)': 'setCaretPosition()',
+		'(keypress)': 'setCaretPosition()'
+	}
 })
 export class TextInputComponent {
 	@Input() placeholder: string | null = null;
 	@Output() onInputChange = new EventEmitter<string | null>();
-	textInputElement!: HTMLParagraphElement;
+	private hostElement: HTMLElement;
 
-	ngOnInit() {
-		this.textInputElement = document.querySelector('.text-input') as HTMLParagraphElement;
-
-		// Set placeholder attribute
-		if (this.placeholder)
-			this.textInputElement.setAttribute('placeholder', this.placeholder);
+	constructor (
+		hostElementReference: ElementRef<HTMLElement>,
+	) {
+		this.hostElement = hostElementReference.nativeElement;
 	}
 
-	onInput(event: Event) {
-		let inputText: string | null = this.textInputElement.textContent ?? '';
+	@HostBinding('attr.placeholder') get placeholderValue() {
+		return this.placeholder;
+	}
+
+	onInput() {
+		let inputText: string | null = this.hostElement.textContent ?? '';
+
+		console.log(inputText);
 
 		if (inputText.trim() === "") {
 			inputText = null;
@@ -30,10 +41,10 @@ export class TextInputComponent {
 		this.onInputChange.emit(inputText);
 	}
 
-	setCaretPosition(event: Event) {
+	setCaretPosition() {
 		if (
-			this.textInputElement.textContent !== null &&
-			this.textInputElement.textContent !== ""
+			this.hostElement.textContent !== null &&
+			this.hostElement.textContent !== ""
 		) {
 			return;
 		}
@@ -41,7 +52,7 @@ export class TextInputComponent {
 		const range = document.createRange();
 		const selection = window.getSelection();
 
-		range.setStart(this.textInputElement, 0)
+		range.setStart(this.hostElement, 0)
 		range.collapse(true)
 
 		if (selection) {

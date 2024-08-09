@@ -3,16 +3,18 @@ import { CommonModule } from '@angular/common';
 import { CommandHistoryService } from '../../services/CommandHistory.service';
 import { RouterModule } from '@angular/router';
 import { DurationInputComponent } from '../input-controls/duration-input/duration-input.component';
+import { DatetimePopupComponent } from '../focus-page/task/datetime-popup/datetime-popup.component';
+import { DatetimeInputComponent } from '../input-controls/timedate-input/datetime-input.component';
+import { TextInputComponent } from '../input-controls/text-input/text-input.component';
 
 @Component({
   selector: 'task-creator',
   standalone: true,
-  imports: [CommonModule, RouterModule, DurationInputComponent],
+  imports: [CommonModule, RouterModule, DurationInputComponent, DatetimeInputComponent, TextInputComponent],
   templateUrl: './task-creator.component.html',
   styleUrl: './task-creator.component.css'
 })
 export class TaskCreatorComponent {
-	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
 	name: string | null = null;
 	step: string | null = null;
 
@@ -22,24 +24,24 @@ export class TaskCreatorComponent {
 
 	ngOnInit() {}
 
-	onNameChange(event: Event) {
-		const element = event.target as HTMLHeadingElement;
-		this.name = element.textContent ?? null;
-
-		// Check if string is empty
-		if (this.name?.trim() === "") {
-			this.name = null;
-		}
+	onNameChange(description: string | null) {
+		console.log({description});
 	}
 
-	onStepChange(event: Event) {
-		const element = event.target as HTMLHeadingElement;
-		this.step = element.textContent ?? null;
+	onStepChange(nextStep: string | null) {
+		console.log({nextStep});
+	}
 
-		// Check if string is empty
-		if (this.step?.trim() === "") {
-			this.step = null;
-		}
+	onDurationChange(durationInMilliseconds: number | null) {
+		console.log({durationInMilliseconds});
+	}
+
+	onDeadlineChange(deadline: Date | null) {
+		console.log({deadline});
+	}
+
+	onStartTimeChange(startTime: Date | null) {
+		console.log(startTime);
 	}
 
 	confirmName() {}

@@ -25,19 +25,42 @@
 	border: 0;
 }
 
+#taskNextStep {
+	background: none;
+}
+
+.progress-bar {
+  background: linear-gradient(
+		to right,
+		var(--accent-color) 50%,
+		var(--text-color) 50%
+	);
+	background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+	background-size: 200%;
+	background-position: calc(100% - var(--progress, 0%));
+	transition: background-position 0.2s ease-in-out;
+}
+
 #taskControls {
 	height:initial;
 
 	display: flex;
 	justify-content: center;
 
+	margin: var(--margin-small);
+	gap: var(--margin-medium);
+}
+
+#taskControls * {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	margin: 0;
 }
 
-#skipButton .tooltip {
-	top: var(--margin-large);
-}
-#completeButton .tooltip {
-	margin-left: -1.4rem;
+.tooltip {
 	top: var(--margin-large);
 }

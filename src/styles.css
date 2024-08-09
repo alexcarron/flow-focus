@@ -6,8 +6,8 @@
 	/* Margin */
 	--margin-small: 0.5rem;
 	--margin-medium: 1rem;
-	--margin-large: 1.25rem;
-	--margin-xlarge: 1.5rem;
+	--margin-large: 1.3rem;
+	--margin-xlarge: 1.6rem;
 
   /* Colors */
   --primary-color: #3498db;
@@ -19,8 +19,8 @@
   --inactive-background-color: #e3e6e6;
 
   --text-color: #2c3e50;
-	--inactive-text-color: #2c3e5080;
-	--faint-text-color: #2c3e5040;
+	--inactive-text-color: #2c3e50a0;
+	--faint-text-color: #2c3e5060;
 	--slight-text-color: #2c3e5020;
 
 	--icon-color: #000000;
@@ -29,27 +29,27 @@
   --font-size-small: 0.875rem;
   --font-size-medium: 1rem;
   --font-size-xmedium: 1.2rem;
-  --font-size-large: 1.5rem;
-  --font-size-xlarge: 3.5rem;
+  --font-size-large: 1.7rem;
+  --font-size-xlarge: 4.2rem;
 
 	/* Line height */
 	--line-height-xsmall: 1rem;
 	--line-height-small: 1.25rem;
 	--line-height-medium: 1.5rem;
-	--line-height-large: 1.7rem;
-	--line-height-xlarge: 2.85rem;
+	--line-height-large: 1.9rem;
+	--line-height-xlarge: 3.5rem;
 
 	/* Border Radius */
 	--border-radius-small: 0.25rem;
 	--border-radius-medium: 0.5rem;
-	--border-radius-large: 0.75rem;
-	--border-radius-xlarge: 1rem;
+	--border-radius-large: 0.8rem;
+	--border-radius-xlarge: 1.1rem;
 
 	/* Shadow Radius */
 	--shadow-radius-small: 0.15rem;
 	--shadow-radius-medium: 0.25rem;
-	--shadow-radius-large: 0.3rem;
-	--shadow-radius-xlarge: 0.33rem;
+	--shadow-radius-large: 0.32rem;
+	--shadow-radius-xlarge: 0.36rem;
 }
 
 * {
@@ -61,13 +61,14 @@
 
 html, body, app-root, main {
 	display: block;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   box-sizing: border-box;
 	margin: 0;
+	font-size: var(--font-size-small);
 }
 
-h1 {
+h1, .xlarge-text {
 	font-family: 'Montserrat', sans-serif;
 	font-weight: 800;
 	font-size: var(--font-size-xlarge);
@@ -76,7 +77,7 @@ h1 {
 	border-width: 4px !important;
 }
 
-h2 {
+h2, .large-text {
 	font-weight: normal;
 	font-size: var(--font-size-large);
 	line-height: var(--line-height-large);
@@ -85,7 +86,7 @@ h2 {
 	border-width: 3px !important;
 }
 
-h3 {
+h3, .medium-text {
 	font-weight: normal;
 	font-size: var(--font-size-medium);
 	line-height: var(--line-height-medium);
@@ -94,7 +95,7 @@ h3 {
 	border-width: 2px !important;
 }
 
-p {
+p, .small-text {
 	font-weight: normal;
 	font-size: var(--font-size-small);
 	line-height: var(--line-height-small);
@@ -252,21 +253,6 @@ p {
 	padding: var(--margin-xlarge);
 }
 
-.progress-bar {
-  background: linear-gradient(
-		to right,
-		var(--accent-color) 50%,
-		var(--text-color) 50%
-	);
-	background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-
-	background-size: 200%;
-	background-position: calc(100% - var(--progress, 0%));
-	transition: background-position 0.2s ease-in-out;
-}
-
 #taskNextStep {
 	box-sizing: border-box;
 	width: calc(
@@ -279,7 +265,7 @@ p {
 	padding: var(--margin-medium);
 }
 
-.text-input, [contenteditable], select {
+[contenteditable], select, input {
 	width: fit-content;
 
 	margin: 0;
@@ -293,19 +279,22 @@ p {
 	filter: drop-shadow(0 0 var(--shadow-radius-small) var(--slight-text-color));
 }
 
-.text-input:empty:not(:focus):before,
+.placeholder-text,
 [contenteditable]:empty:not(:focus):before {
-	cursor: text;
-  content: attr(placeholder);
   color: var(--faint-text-color);
   font-style: italic;
 }
 
-.text-input:focus, [contenteditable]:focus {
+[contenteditable]:empty:not(:focus):before {
+	cursor: text;
+  content: attr(placeholder);
+}
+
+[contenteditable]:focus {
 	cursor: text;
 }
 
-.text-input:focus, [contenteditable]:focus, select:focus {
+[contenteditable]:focus, select:focus, input:focus {
 	border: 1px solid var(--text-color);
 	background-color: var(--inactive-background-color);
 }

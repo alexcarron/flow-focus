@@ -1,16 +1,22 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'number-input',
   standalone: true,
   imports: [],
   templateUrl: './number-input.component.html',
-  styleUrl: './number-input.component.css'
+  styleUrl: './number-input.component.css',
+	host: {
+		'contenteditable': '',
+		'(input)': 'onInput($event)',
+		'(click)': 'setCaretPosition()',
+		'(focus)': 'setCaretPosition()',
+		'(keypress)': 'onKeyDown($event)'
+	}
 })
 export class NumberInputComponent {
 	@Input() placeholder: string | null = null;
 	@Output() onInputChange = new EventEmitter<number | null>();
-	numberInputElement!: HTMLParagraphElement;
 	inputNumber: number | null = null;
 	savedRange: {
 		anchorNode: Node,
@@ -18,26 +24,29 @@ export class NumberInputComponent {
 		focusNode: Node,
 		focusOffset: number
 	} | null = null;
+	private hostElement: HTMLElement;
 
-	ngOnInit() {
-		this.numberInputElement = document.querySelector('.number-input') as HTMLParagraphElement;
+	constructor (
+		hostElementReference: ElementRef<HTMLElement>,
+	) {
+		this.hostElement = hostElementReference.nativeElement;
+	}
 
-		// Set placeholder attribute
-		if (this.placeholder)
-			this.numberInputElement.setAttribute('placeholder', this.placeholder);
+	@HostBinding('attr.placeholder') get placeholderValue() {
+		return this.placeholder;
 	}
 
 	onInput() {
-		let inputText: string | null = this.numberInputElement.textContent ?? '';
+		let inputText: string | null = this.hostElement.textContent ?? '';
 
 		if (inputText.trim() === "") {
 			this.inputNumber = null;
-			this.numberInputElement.textContent = '';
+			this.hostElement.textContent = '';
 			return
 		}
 
 		if (isNaN(Number(inputText))) {
-			this.numberInputElement.textContent = `${this.inputNumber ?? ''}`;
+			this.hostElement.textContent = `${this.inputNumber ?? ''}`;
 			return;
 		}
 
@@ -47,8 +56,8 @@ export class NumberInputComponent {
 
 	setCaretPosition() {
 		if (
-			this.numberInputElement.textContent !== null &&
-			this.numberInputElement.textContent !== ""
+			this.hostElement.textContent !== null &&
+			this.hostElement.textContent !== ""
 		) {
 			return;
 		}
@@ -56,7 +65,7 @@ export class NumberInputComponent {
 		const range = document.createRange();
 		const selection = window.getSelection();
 
-		range.setStart(this.numberInputElement, 0)
+		range.setStart(this.hostElement, 0)
 		range.collapse(true)
 
 		if (selection) {
@@ -71,7 +80,7 @@ export class NumberInputComponent {
 		}
 		else {return;}
 
-		let inputText: string | null = this.numberInputElement.textContent ?? null;
+		let inputText: string | null = this.hostElement.textContent ?? null;
 		let inputNumber: number | null = null;
 
 		if (!isNaN(Number(inputText))) {
@@ -88,7 +97,7 @@ export class NumberInputComponent {
 			inputNumber -= 1;
 		}
 
-		this.numberInputElement.textContent = inputNumber.toString();
+		this.hostElement.textContent = inputNumber.toString();
 		this.onInput();
 	}
 }

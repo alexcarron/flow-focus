@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'select-input',
@@ -12,19 +12,26 @@ export class SelectInputComponent<ValueType> {
 	@Input() placeholder: string | null = null;
 	@Input() options!: Map<string, ValueType>;
 	@Output() onInputChange = new EventEmitter<ValueType | null>();
+	private hostElement: HTMLElement;
 	selectInputElement!: HTMLSelectElement;
 
+	constructor (
+		hostElementReference: ElementRef<HTMLElement>,
+	) {
+		this.hostElement = hostElementReference.nativeElement;
+	}
+
 	ngOnInit() {
-		this.selectInputElement = document.querySelector('.select-input') as HTMLSelectElement;
+		this.selectInputElement = this.hostElement.childNodes[0] as HTMLSelectElement;
 		this.addPlaceholderClass();
 	}
 
 	addPlaceholderClass() {
-		this.selectInputElement.classList.add('placeholder-select');
+		this.selectInputElement.classList.add('placeholder-text');
 	}
 
 	removePlaceholderClass() {
-		this.selectInputElement.classList.remove('placeholder-select');
+		this.selectInputElement.classList.remove('placeholder-text');
 	}
 
 	onSelectChange(event: Event) {
