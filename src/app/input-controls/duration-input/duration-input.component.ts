@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { NumberInputComponent } from '../number-input/number-input.component';
 import { SelectInputComponent } from '../select-input/select-input.component';
+import InputControlComponent from '../InputControlComponent';
 
 @Component({
   selector: 'duration-input',
@@ -9,8 +10,11 @@ import { SelectInputComponent } from '../select-input/select-input.component';
   templateUrl: './duration-input.component.html',
   styleUrl: './duration-input.component.css'
 })
-export class DurationInputComponent {
-	@Input() initialTimeValue: number | null = null;
+export class DurationInputComponent implements InputControlComponent<number | null> {
+	@ViewChild('durationValueInput') durationValueInput!: NumberInputComponent;
+	@ViewChild('durationUnitInput') durationUnitInput!: SelectInputComponent<string>;
+
+	@Input() initialValue: number | null = null;
 	@Input() initialUnit: string | null = null;
 	@Output() onInputChange = new EventEmitter<number | null>();
 	timeValue: number | null = null;
@@ -27,24 +31,24 @@ export class DurationInputComponent {
 	}));
 
 	ngOnInit() {
-		if (this.initialTimeValue) {
-			this.timeValue = this.initialTimeValue / 1000;
+		if (this.initialValue) {
+			this.timeValue = this.initialValue / 1000;
 		}
 	}
 
 	onTimeValueChange(timeValue: number | null) {
 		this.timeValue = timeValue;
 
-		this.onChange();
+		this.onInput();
 	}
 
 	onUnitChange(unit: string | null) {
 		this.unit = unit;
 
-		this.onChange();
+		this.onInput();
 	}
 
-	onChange() {
+	onInput() {
 		if (this.timeValue !== null && this.unit !== null) {
 			const durationInMilliseconds = this.convertDurationToMilliseconds(this.timeValue, this.unit);
 
@@ -74,5 +78,11 @@ export class DurationInputComponent {
 			default:
 				return timeValue;
 		}
+	}
+
+
+	clearInput(): void {
+		this.durationValueInput.clearInput();
+		this.durationUnitInput.clearInput();
 	}
 }

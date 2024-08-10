@@ -1,12 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CommandHistoryService } from '../../services/CommandHistory.service';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DurationInputComponent } from '../input-controls/duration-input/duration-input.component';
 import { DatetimePopupComponent } from '../focus-page/task/datetime-popup/datetime-popup.component';
 import { DatetimeInputComponent } from '../input-controls/timedate-input/datetime-input.component';
 import { TextInputComponent } from '../input-controls/text-input/text-input.component';
 import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbox-input.component';
+import InputControlComponent from '../input-controls/InputControlComponent';
+import TasksManager from '../../model/TasksManager';
+import Task from '../../model/task/Task';
 
 @Component({
   selector: 'task-creator',
@@ -16,6 +19,18 @@ import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbo
   styleUrl: './task-creator.component.css'
 })
 export class TaskCreatorComponent {
+	@ViewChild('taskDescriptionInput') taskDescriptionInput!: TextInputComponent;
+	@ViewChildren('taskStepInput') taskStepInputs: QueryList<TextInputComponent> | undefined;
+	@ViewChild('taskNextStepInput') taskNextStepInput!: TextInputComponent;
+	@ViewChild('startTimeInput') startTimeInput!: DatetimeInputComponent;
+	@ViewChild('deadlineInput') deadlineInput!: DatetimeInputComponent;
+	@ViewChild('minDurationInput') minDurationInput!: DurationInputComponent;
+	@ViewChild('maxDurationInput') maxDurationInput!: DurationInputComponent;
+	@ViewChild('repeatIntervalInput') repeatIntervalInput!: DurationInputComponent;
+	@ViewChild('mandatoryInput') mandatoryInput!: CheckboxInputComponent;
+
+	tasksManager!: TasksManager;
+
 	name: string | null = null;
 	steps: string[] = [];
 	nextStep: string | null = null;
@@ -26,9 +41,13 @@ export class TaskCreatorComponent {
 	repeatInterval: number | null = null;
 	isMandatory: boolean = false;
 
-	constructor(
-		private commandHistory: CommandHistoryService
+	constructor (
+		private activatedRoute: ActivatedRoute,
 	) {}
+
+	ngOnInit() {
+		this.tasksManager = this.activatedRoute.snapshot.data['tasksManager'];
+	}
 
 	trackStepByIndex(index: number, step: string): number {
 		return index;
@@ -70,9 +89,10 @@ export class TaskCreatorComponent {
 		this.steps.push(this.nextStep);
 		this.nextStep = null;
 
-		const taskNextStepInput = document.getElementById('taskNextStep') as HTMLInputElement;
+		const taskNextStepInput = this.taskNextStepInput.hostElement as HTMLInputElement;
 		taskNextStepInput.textContent = '';
 		taskNextStepInput.focus();
+
 	}
 
 	onMinDurationChange(minDurationInMilliseconds: number | null) {
@@ -105,12 +125,75 @@ export class TaskCreatorComponent {
 			step !== '' && step !== null
 		);
 
+		console.log({
+			hasName,
+			hasValidSteps
+		});
+
 		return hasName && hasValidSteps;
 	}
 
-	createTask() {
+	onCreateTaskButton() {
 		if (!this.hasNeededInputs()) {
 			return;
+		}
+
+		this.createTask();
+
+		this.clearValues();
+		this.clearInputComponents();
+	}
+
+	createTask() {
+		const task = this.tasksManager.addTask(this.name!);
+
+		task.editSteps(this.steps);
+
+		if (this.startTime) task.setEarliestStartTime(this.startTime);
+		if (this.deadline) task.setDeadline(this.deadline);
+
+		if (this.minDuration) task.setMinRequiredTime(this.minDuration);
+		if (this.maxDuration) task.setMaxRequiredTime(this.maxDuration);
+
+		if (this.repeatInterval) task.makeRecurring(
+			this.repeatInterval,
+			this.startTime ?? new Date(),
+		);
+
+		task.setMandatory(this.isMandatory);
+	}
+
+	clearValues() {
+		this.name = null;
+		this.steps = [];
+		this.nextStep = null;
+		this.startTime = null;
+		this.deadline = null;
+		this.minDuration = null;
+		this.maxDuration = null;
+		this.repeatInterval = null;
+		this.isMandatory = false;
+	}
+
+	clearInputComponents() {
+		const allInputComponents = [
+			this.taskDescriptionInput,
+			this.taskNextStepInput,
+			this.startTimeInput,
+			this.deadlineInput,
+			this.minDurationInput,
+			this.maxDurationInput,
+			this.repeatIntervalInput,
+			this.mandatoryInput,
+		];
+
+		this.taskStepInputs?.forEach(inputComponent => {
+			allInputComponents.push(inputComponent);
+		})
+
+
+		for (const inputComponent of allInputComponents) {
+			inputComponent.clearInput();
 		}
 	}
 }

@@ -1,4 +1,5 @@
 import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/core';
+import InputControlComponent from '../InputControlComponent';
 
 @Component({
   selector: 'datetime-input',
@@ -7,10 +8,10 @@ import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/cor
   templateUrl: './datetime-input.component.html',
   styleUrl: './datetime-input.component.css'
 })
-export class DatetimeInputComponent {
+export class DatetimeInputComponent implements InputControlComponent<Date | null> {
 	@Input() initialValue: Date | null = null;
 	@Output() onInputChange = new EventEmitter<Date | null>();
-	private hostElement: HTMLElement;
+	hostElement: HTMLElement;
 	datetimeInputElement!: HTMLInputElement;
 
 	constructor (
@@ -55,7 +56,7 @@ export class DatetimeInputComponent {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
-	onDatetimeChange(event: Event) {
+	onInput(event: Event) {
 		const selectedDateString = this.datetimeInputElement.value;
 
 		if (selectedDateString.trim() === "") {
@@ -67,5 +68,10 @@ export class DatetimeInputComponent {
 			this.onInputChange.emit(date);
 			this.removePlaceholderClass();
 		}
+	}
+
+	clearInput(): void {
+		this.datetimeInputElement.value = '';
+		this.addPlaceholderClass();
 	}
 }

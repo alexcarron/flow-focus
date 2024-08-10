@@ -1,4 +1,5 @@
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output } from '@angular/core';
+import InputControlComponent from '../InputControlComponent';
 
 @Component({
   selector: 'text-input',
@@ -14,11 +15,11 @@ import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, 
 		'(keydown)': 'onKeyDown($event)'
 	}
 })
-export class TextInputComponent {
+export class TextInputComponent implements InputControlComponent<string | null> {
 	@Input() placeholder: string | null = null;
 	@Input() initialValue: string | null = null;
 	@Output() onInputChange = new EventEmitter<string | null>();
-	private hostElement: HTMLElement;
+	hostElement: HTMLElement;
 
 	constructor (
 		hostElementReference: ElementRef<HTMLElement>,
@@ -32,15 +33,12 @@ export class TextInputComponent {
 
 	ngOnInit() {
 		if (this.initialValue !== null) {
-
 			this.hostElement.textContent = this.initialValue;
 		}
 	}
 
 	onInput() {
 		let inputText: string | null = this.hostElement.textContent ?? '';
-
-		console.log(inputText);
 
 		if (inputText.trim() === "") {
 			inputText = null;
@@ -75,5 +73,9 @@ export class TextInputComponent {
 			selection.removeAllRanges();
 			selection.addRange(range);
 		}
+	}
+
+	clearInput(): void {
+		this.hostElement.textContent = '';
 	}
 }

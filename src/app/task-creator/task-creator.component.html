@@ -10,7 +10,8 @@
 <section #mainInputs>
 	<div class="input-row">
 		<text-input
-			id="taskDescription"
+			#taskDescriptionInput
+			id="taskDescriptionInput"
 			class="xlarge-text"
 			contenteditable
 			placeholder="Enter your task's name"
@@ -23,6 +24,7 @@
 			class="input-row"
 		>
 			<text-input
+				#taskStepInput
 				class="small-text task-step-input"
 				placeholder="Enter step needed to complete task"
 				(onInputChange)="onStepChange($event, stepIndex)"
@@ -40,7 +42,8 @@
 	</section>
 	<div class="input-row">
 		<text-input
-			id="taskNextStep"
+			#taskNextStepInput
+			id="taskNextStepInput"
 			class="large-text"
 			placeholder="Enter the next step needed to complete the task"
 			(onInputChange)="onNextStepChange($event)"
@@ -60,12 +63,12 @@
 </section>
 
 <section id="timeInputs">
-
 	<div class="input-row">
 		<p>Time Doable:</p>
 
 		<div class="flex-row">
 			<datetime-input
+				#startTimeInput
 				id="startTimeInput"
 				(onInputChange)="onStartTimeChange($event)"
 			></datetime-input>
@@ -73,6 +76,7 @@
 			<p>until</p>
 
 			<datetime-input
+				#deadlineInput
 				id="deadlineInput"
 				(onInputChange)="onDeadlineChange($event)"
 			></datetime-input>
@@ -83,14 +87,16 @@
 
 		<div class="flex-row">
 			<duration-input
-				id="durationInput"
+				#minDurationInput
+				id="minDurationInput"
 				(onInputChange)="onMinDurationChange($event)"
 			></duration-input>
 
 			<p>to</p>
 
 			<duration-input
-				id="durationInput"
+				#maxDurationInput
+				id="maxDurationInput"
 				(onInputChange)="onMaxDurationChange($event)"
 			></duration-input>
 		</div>
@@ -98,12 +104,14 @@
 	<div class="input-row">
 		<p class="input-label">Repeat Interval:</p>
 		<duration-input
-			id="repeatInput"
+			#repeatIntervalInput
+			id="repeatIntervalInput"
 			(onInputChange)="onRepeatChange($event)"
 	></duration-input>
 	</div>
 	<div class="input-row">
 		<checkbox-input
+			#mandatoryInput
 			id="mandatoryInput"
 			(onInputChange)="onMandatoryChange($event)"
 		></checkbox-input>
@@ -112,5 +120,5 @@
 </section>
 <button
 	class="medium-text"
-	(click)="createTask()"
+	(click)="onCreateTaskButton()"
 >Create Task</button>

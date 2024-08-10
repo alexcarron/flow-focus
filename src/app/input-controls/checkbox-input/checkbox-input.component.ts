@@ -1,4 +1,5 @@
 import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/core';
+import InputControlComponent from '../InputControlComponent';
 
 @Component({
   selector: 'checkbox-input',
@@ -7,8 +8,8 @@ import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/cor
   templateUrl: './checkbox-input.component.html',
   styleUrl: './checkbox-input.component.css'
 })
-export class CheckboxInputComponent {
-	@Input() isChecked: boolean = false;
+export class CheckboxInputComponent implements InputControlComponent<boolean> {
+	@Input() initialValue: boolean = false;
 	@Output() onInputChange = new EventEmitter<boolean>();
 	private hostElement: HTMLElement;
 	checkboxElement!: HTMLInputElement;
@@ -22,12 +23,16 @@ export class CheckboxInputComponent {
 	ngOnInit() {
 		this.checkboxElement = this.hostElement.childNodes[0] as HTMLInputElement;
 
-		if (this.isChecked) {
+		if (this.initialValue) {
 			this.checkboxElement.checked = true;
 		}
 	}
 
-	onChange(event: Event) {
+	onInput(event: Event) {
 		this.onInputChange.emit(this.checkboxElement.checked);
+	}
+
+	clearInput(): void {
+		this.checkboxElement.checked = false;
 	}
 }

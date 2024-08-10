@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/core';
+import InputControlComponent from '../InputControlComponent';
 
 @Component({
   selector: 'select-input',
@@ -8,12 +9,13 @@ import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/cor
   templateUrl: './select-input.component.html',
   styleUrl: './select-input.component.css'
 })
-export class SelectInputComponent<ValueType> {
+export class SelectInputComponent<ValueType> implements InputControlComponent<ValueType | null> {
 	@Input() placeholder: string | null = null;
+	@Input() initialValue: ValueType | null = null;
 	@Input() options!: Map<string, ValueType>;
 	@Output() onInputChange = new EventEmitter<ValueType | null>();
 	optionKeys: string[] = [];
-	private hostElement: HTMLElement;
+	hostElement: HTMLElement;
 	selectInputElement!: HTMLSelectElement;
 
 	constructor (
@@ -30,6 +32,10 @@ export class SelectInputComponent<ValueType> {
 		if (this.placeholder) {
 			this.addPlaceholderClass();
 		}
+
+		if (this.initialValue) {
+			this.selectInputElement.selectedIndex = this.optionKeys.indexOf(this.initialValue.toString());
+		}
 	}
 
 	addPlaceholderClass() {
@@ -40,7 +46,7 @@ export class SelectInputComponent<ValueType> {
 		this.selectInputElement.classList.remove('placeholder-text');
 	}
 
-	onSelectChange(event: Event) {
+	onInput(event: Event) {
 		const option  = this.selectInputElement.value;
 		const optionValue = this.options.get(option);
 		this.onInputChange.emit(optionValue);
@@ -50,6 +56,13 @@ export class SelectInputComponent<ValueType> {
 		}
 		else {
 			this.removePlaceholderClass();
+		}
+	}
+
+	clearInput(): void {
+		this.selectInputElement.selectedIndex = 0;
+		if (this.placeholder) {
+			this.addPlaceholderClass();
 		}
 	}
 }

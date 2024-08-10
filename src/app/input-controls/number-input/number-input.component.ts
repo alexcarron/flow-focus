@@ -1,4 +1,5 @@
 import { Component, ElementRef, EventEmitter, HostBinding, Input, Output } from '@angular/core';
+import InputControlComponent from '../InputControlComponent';
 
 @Component({
   selector: 'number-input',
@@ -14,8 +15,9 @@ import { Component, ElementRef, EventEmitter, HostBinding, Input, Output } from 
 		'(keypress)': 'onKeyDown($event)'
 	}
 })
-export class NumberInputComponent {
+export class NumberInputComponent implements InputControlComponent<number | null> {
 	@Input() placeholder: string | null = null;
+	@Input() initialValue: number | null = null;
 	@Output() onInputChange = new EventEmitter<number | null>();
 	inputNumber: number | null = null;
 	savedRange: {
@@ -24,7 +26,7 @@ export class NumberInputComponent {
 		focusNode: Node,
 		focusOffset: number
 	} | null = null;
-	private hostElement: HTMLElement;
+	hostElement: HTMLElement;
 
 	constructor (
 		hostElementReference: ElementRef<HTMLElement>,
@@ -34,6 +36,12 @@ export class NumberInputComponent {
 
 	@HostBinding('attr.placeholder') get placeholderValue() {
 		return this.placeholder;
+	}
+
+	ngOnInit(): void {
+		if (this.initialValue !== null) {
+			this.hostElement.textContent = `${this.initialValue}`;
+		}
 	}
 
 	onInput() {
@@ -99,5 +107,9 @@ export class NumberInputComponent {
 
 		this.hostElement.textContent = inputNumber.toString();
 		this.onInput();
+	}
+
+	clearInput(): void {
+		this.hostElement.textContent = '';
 	}
 }
