@@ -492,6 +492,10 @@ export default class Task {
 	 * @returns Whether the task is urgent
 	 */
 	isUrgent(currentTime: Date): boolean {
+		if (this.deadline === null) {
+			return false;
+		}
+		
 		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
 	}
 
