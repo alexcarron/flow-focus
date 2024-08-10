@@ -21,30 +21,61 @@
 	border: 0;
 } */
 
+:host, section {
+	display: flex;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+:host {
+	margin: var(--margin-xlarge) 0;
+	gap: var(--margin-xxlarge);
+}
+
+section {
+	gap: var(--margin-large);
+}
+
 #taskDescription {
 	filter: drop-shadow(0 0 var(--shadow-radius-xlarge) var(--slight-text-color));
 }
 
 #taskNextStep {
 	filter: drop-shadow(0 0 var(--shadow-radius-large) var(--slight-text-color));
+
+	flex-grow: 4;
+}
+
+section#createdSteps {
+	gap: var(--margin-xsmall)
+}
+
+.task-step-input {
+	padding: var(--margin-xsmall);
+}
+
+.confirm-button {
+	flex-grow: 1;
+}
+
+.delete-button {
+	width: var(--font-size-small);
+	height: var(--font-size-small);
 }
 
 .input-row {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+
+	flex-wrap: wrap;
+
+	max-width: var(--width-without-controls);
+	gap: 0 var(--margin-small);
 }
 
-.input-wrap {
-  position: relative;
-}
-.input-wrap .input {
-  position: absolute;
-  width: 100%;
-  left: 0;
-}
-.width-machine {
-  /*   Sort of a magic number to add extra space for number spinner */
-  padding: 0 1rem;
-	visibility: false;
+.input-row * {
+	margin: 0 !important;
 }

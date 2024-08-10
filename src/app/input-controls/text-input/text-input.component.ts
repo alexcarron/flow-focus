@@ -11,11 +11,12 @@ import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, 
 		'(input)': 'onInput()',
 		'(click)': 'setCaretPosition()',
 		'(focus)': 'setCaretPosition()',
-		'(keypress)': 'setCaretPosition()'
+		'(keydown)': 'onKeyDown($event)'
 	}
 })
 export class TextInputComponent {
 	@Input() placeholder: string | null = null;
+	@Input() initialValue: string | null = null;
 	@Output() onInputChange = new EventEmitter<string | null>();
 	private hostElement: HTMLElement;
 
@@ -29,6 +30,13 @@ export class TextInputComponent {
 		return this.placeholder;
 	}
 
+	ngOnInit() {
+		if (this.initialValue !== null) {
+
+			this.hostElement.textContent = this.initialValue;
+		}
+	}
+
 	onInput() {
 		let inputText: string | null = this.hostElement.textContent ?? '';
 
@@ -39,6 +47,14 @@ export class TextInputComponent {
 		}
 
 		this.onInputChange.emit(inputText);
+	}
+
+	onKeyDown(event: KeyboardEvent) {
+		// this.setCaretPosition();
+
+		if (event.key === 'Enter') {
+			event.preventDefault();
+		}
 	}
 
 	setCaretPosition() {

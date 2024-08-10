@@ -14,7 +14,7 @@ export class DurationInputComponent {
 	@Input() initialUnit: string | null = null;
 	@Output() onInputChange = new EventEmitter<number | null>();
 	timeValue: number | null = null;
-	unit: string | null = null;
+	unit: string | null = 'Seconds';
 
 	public readonly unitOptions: Map<string, string> = new Map<string, string>(Object.entries({
 		seconds: 'Seconds',
@@ -26,12 +26,22 @@ export class DurationInputComponent {
 		years: 'Years'
 	}));
 
+	ngOnInit() {
+		if (this.initialTimeValue) {
+			this.timeValue = this.initialTimeValue / 1000;
+		}
+	}
+
 	onTimeValueChange(timeValue: number | null) {
 		this.timeValue = timeValue;
+
+		this.onChange();
 	}
 
 	onUnitChange(unit: string | null) {
 		this.unit = unit;
+
+		this.onChange();
 	}
 
 	onChange() {

@@ -12,6 +12,7 @@ export class SelectInputComponent<ValueType> {
 	@Input() placeholder: string | null = null;
 	@Input() options!: Map<string, ValueType>;
 	@Output() onInputChange = new EventEmitter<ValueType | null>();
+	optionKeys: string[] = [];
 	private hostElement: HTMLElement;
 	selectInputElement!: HTMLSelectElement;
 
@@ -23,7 +24,12 @@ export class SelectInputComponent<ValueType> {
 
 	ngOnInit() {
 		this.selectInputElement = this.hostElement.childNodes[0] as HTMLSelectElement;
-		this.addPlaceholderClass();
+
+		this.optionKeys = Array.from(this.options.keys());
+
+		if (this.placeholder) {
+			this.addPlaceholderClass();
+		}
 	}
 
 	addPlaceholderClass() {

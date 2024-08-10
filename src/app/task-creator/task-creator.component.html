@@ -7,81 +7,110 @@
 	<span class="tooltip">To Task Focus</span>
 </button>
 
-<div class="input-row">
-	<text-input
-		id="taskDescription"
-		class="xlarge-text"
-		contenteditable
-		placeholder="Enter the task name"
-		(onInputChange)="onNameChange($event)"
-	></text-input>
-	<button
-		id="confirmButton"
-		*ngIf="name !== null"
-		class="icon-button"
-		(click)="confirmName()"
-	>
-		<img src="assets/check-icon.svg" alt="Confirm">
-		<span class="tooltip">Confirm</span>
-	</button>
-</div>
-<div class="input-row">
-	<text-input
-		id="taskNextStep"
-		class="large-text"
-		type="text"
-		contenteditable
-		placeholder="Enter a step to complete the task"
-		(onInputChange)="onStepChange($event)"
-	></text-input>
+<section #mainInputs>
+	<div class="input-row">
+		<text-input
+			id="taskDescription"
+			class="xlarge-text"
+			contenteditable
+			placeholder="Enter your task's name"
+			(onInputChange)="onNameChange($event)"
+		></text-input>
+	</div>
+	<section id="createdSteps">
+		<div
+			*ngFor="let step of steps; let stepIndex = index; trackBy: trackStepByIndex"
+			class="input-row"
+		>
+			<text-input
+				class="small-text task-step-input"
+				placeholder="Enter step needed to complete task"
+				(onInputChange)="onStepChange($event, stepIndex)"
+				[initialValue]="step"
+			>
+			</text-input>
 
-	<button
-		id="confirmButton"
-		*ngIf="step !== null"
-		class="icon-button"
-		(click)="confirmStep()"
-	>
-		<img src="assets/check-icon.svg" alt="Confirm">
-		<span class="tooltip">Confirm</span>
-	</button>
-</div>
-<div class="input-row">
-	<h3 class="input-label">Start Time</h3>
-	<datetime-input
-		id="startTimeInput"
-		(onInputChange)="onStartTimeChange($event)"
-	></datetime-input>
-</div>
-<div class="input-row">
-	<h3 class="input-label">Deadline</h3>
-	<datetime-input
-		id="deadlineInput"
-		(onInputChange)="onDeadlineChange($event)"
-	></datetime-input>
-</div>
-<div class="input-row">
-	<h3 class="input-label">Duration</h3>
-	<duration-input
-		id="durationInput"
-		(onInputChange)="onDurationChange($event)"
+			<button
+				class="icon-button delete-button"
+				(click)="deleteStep(stepIndex)"
+			>
+				<img src="assets/close-icon.svg" alt="Delete">
+			</button>
+		</div>
+	</section>
+	<div class="input-row">
+		<text-input
+			id="taskNextStep"
+			class="large-text"
+			placeholder="Enter the next step needed to complete the task"
+			(onInputChange)="onNextStepChange($event)"
+			(keydown)="onNextStepKeydown($event)"
+		>
+		</text-input>
+
+		<button
+			class="confirm-button"
+			*ngIf="nextStep !== null"
+			class="icon-button"
+			(click)="confirmStep()"
+		>
+			<img src="assets/check-icon.svg" alt="Confirm">
+		</button>
+	</div>
+</section>
+
+<section id="timeInputs">
+
+	<div class="input-row">
+		<p>Time Doable:</p>
+
+		<div class="flex-row">
+			<datetime-input
+				id="startTimeInput"
+				(onInputChange)="onStartTimeChange($event)"
+			></datetime-input>
+
+			<p>until</p>
+
+			<datetime-input
+				id="deadlineInput"
+				(onInputChange)="onDeadlineChange($event)"
+			></datetime-input>
+		</div>
+	</div>
+	<div class="input-row">
+		<p>Completion Time:</p>
+
+		<div class="flex-row">
+			<duration-input
+				id="durationInput"
+				(onInputChange)="onMinDurationChange($event)"
+			></duration-input>
+
+			<p>to</p>
+
+			<duration-input
+				id="durationInput"
+				(onInputChange)="onMaxDurationChange($event)"
+			></duration-input>
+		</div>
+	</div>
+	<div class="input-row">
+		<p class="input-label">Repeat Interval:</p>
+		<duration-input
+			id="repeatInput"
+			(onInputChange)="onRepeatChange($event)"
 	></duration-input>
-</div>
-<div class="input-row">
-	<h3 class="input-label">Repeat Interval</h3>
-	<text-input
-		placeholder="Enter number"
-	></text-input>
-	<!-- <input
-		id="repeatInput"
-		type="time"
-		(change)="onRepeatChange($event)"
-	> -->
-</div>
-<div class="input-row">
-	<h3 class="input-label">Mandatory?</h3>
-	<!-- <input
-		id="mandatoryInput"
-		type="checkbox"
-		(change)="onMandatoryChange($event)"
-	> -->
-</div>
+	</div>
+	<div class="input-row">
+		<checkbox-input
+			id="mandatoryInput"
+			(onInputChange)="onMandatoryChange($event)"
+		></checkbox-input>
+		<p class="input-label">Mandatory</p>
+	</div>
+</section>
+<button
+	class="medium-text"
+	(click)="createTask()"
+>Create Task</button>

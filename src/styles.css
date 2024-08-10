@@ -4,13 +4,15 @@
 
 :root {
 	/* Margin */
+	--margin-xsmall: 0.2rem;
 	--margin-small: 0.5rem;
-	--margin-medium: 1rem;
-	--margin-large: 1.3rem;
+	--margin-medium: 0.7rem;
+	--margin-large: 1rem;
 	--margin-xlarge: 1.6rem;
+	--margin-xxlarge: 2.4rem;
 
   /* Colors */
-  --primary-color: #3498db;
+  --primary-color: #2a7ccd;
   --accent-color: #2ecc71;
   --light-background-color: #f9fbfb;
 
@@ -26,8 +28,8 @@
 	--icon-color: #000000;
 
   /* Font sizes */
-  --font-size-small: 0.875rem;
-  --font-size-medium: 1rem;
+  --font-size-small: 1rem;
+  --font-size-medium: 1.2rem;
   --font-size-xmedium: 1.2rem;
   --font-size-large: 1.7rem;
   --font-size-xlarge: 4.2rem;
@@ -50,22 +52,23 @@
 	--shadow-radius-medium: 0.25rem;
 	--shadow-radius-large: 0.32rem;
 	--shadow-radius-xlarge: 0.36rem;
+
+
+	--width-without-controls: calc(100vw - 5*var(--margin-large));
 }
 
 * {
 	font-family: 'Poppins', sans-serif;
 	text-align: center;
 	transition: 0.1s ease-out;
-	background-color: var(--background-color);
 }
 
-html, body, app-root, main {
+body {
 	display: block;
-  width: 100vw;
-  height: 100vh;
-  box-sizing: border-box;
-	margin: 0;
+
 	font-size: var(--font-size-small);
+	color: var(--text-color);
+	background-color: var(--background-color);
 }
 
 h1, .xlarge-text {
@@ -73,6 +76,8 @@ h1, .xlarge-text {
 	font-weight: 800;
 	font-size: var(--font-size-xlarge);
 	line-height: var(--line-height-xlarge);
+
+	padding: var(--margin-xlarge) !important;
 	border-radius: var(--border-radius-xlarge) !important;
 	border-width: 4px !important;
 }
@@ -81,7 +86,8 @@ h2, .large-text {
 	font-weight: normal;
 	font-size: var(--font-size-large);
 	line-height: var(--line-height-large);
-	margin: var(--margin-large);
+
+	padding: var(--margin-large) !important;
 	border-radius: var(--border-radius-large) !important;
 	border-width: 3px !important;
 }
@@ -91,6 +97,8 @@ h3, .medium-text {
 	font-size: var(--font-size-medium);
 	line-height: var(--line-height-medium);
 	margin: var(--margin-medium);
+
+	padding: var(--margin-medium) !important;
 	border-radius: var(--border-radius-medium) !important;
 	border-width: 2px !important;
 }
@@ -100,6 +108,7 @@ p, .small-text {
 	font-size: var(--font-size-small);
 	line-height: var(--line-height-small);
 	margin: var(--margin-small);
+
 	border-radius: var(--border-radius-small) !important;
 	border-width: 1px !important;
 }
@@ -132,29 +141,39 @@ p, .small-text {
 	}
 }
 
-.icon-button {
+
+
+
+button, .icon-button {
 	cursor: pointer;
+	border: none;
+	opacity: 1;
+}
+
+button {
+	background-color: var(--primary-color);
+	color: var(--background-color);
+}
+
+.icon-button {
 
 	display: flex;
 	background: none;
-	border: none;
 	padding: 0;
 	margin: var(--margin-small);
 
 	width: var(--font-size-large);
 	height: var(--font-size-large);
-
-	opacity: 1;
 }
 
 /* Animate the icon button on hover */
-.icon-button:hover {
+button:hover, .icon-button:hover {
 	opacity: 0.5;
 	transform: scale(1.1);
 }
 
 /* Animate the icon button on click */
-.icon-button:active {
+button:active, .icon-button:active {
 	opacity: 0.3;
 	transform: scale(0.9);
 }
@@ -172,11 +191,11 @@ p, .small-text {
 	width: var(--font-size-large);
 }
 
+
 /* Tooltip text */
 *>.tooltip {
 	visibility: hidden;
 	opacity: 0;
-  color: var(--text-color);
   text-align: center;
 
 	/* Position the tooltip around parent */
@@ -186,12 +205,14 @@ p, .small-text {
 	transition: opacity 0.3s ease-in-out;
 
 	font-weight: normal;
-	font-size: var(--font-size-small);
 	width: max-content;
 
-	background-color: #ffffffb0;
+	background-color: var(--background-color);
 	border-radius: var(--border-radius-small);
+	padding-left: 0.2rem;
 	padding-right: 0.2rem;
+
+	filter: drop-shadow(0 0 var(--shadow-radius-medium) var(--slight-text-color));
 }
 
 /* Show the tooltip text when you mouse over the tooltip container */
@@ -199,6 +220,7 @@ p, .small-text {
 	opacity: 1;
   visibility: visible;
 }
+
 
 .corner-button {
 	display: block;
@@ -239,37 +261,32 @@ p, .small-text {
 	top: calc(4 * (var(--font-size-medium) + 2*var(--margin-small)));
 }
 
+
 /* Displays progress of task through linear gradient */
 #taskDescription {
 	box-sizing: border-box;
-	width: min(
-		calc(100vw - 5*var(--margin-large))
-	);
+	max-width: var(--width-without-controls);
 
 	overflow-wrap: break-word;
 
 	margin: var(--margin-medium);
 	margin-bottom: var(--margin-small);
-	padding: var(--margin-xlarge);
 }
 
 #taskNextStep {
 	box-sizing: border-box;
-	width: calc(
-		100vw
-			- 5*var(--margin-large)
-	);
+	max-width: var(--width-without-controls);
 
 	margin-top: var(--margin-small);
 	margin-bottom: var(--margin-small);
-	padding: var(--margin-medium);
 }
+
 
 [contenteditable], select, input {
 	width: fit-content;
 
-	margin: 0;
-	padding: 0 var(--margin-small);
+	padding-left: var(--margin-small);
+	padding-right: var(--margin-small);
 
 	border: 1px solid var(--faint-text-color);
 	border-radius: var(--border-radius-small);
@@ -297,4 +314,18 @@ p, .small-text {
 [contenteditable]:focus, select:focus, input:focus {
 	border: 1px solid var(--text-color);
 	background-color: var(--inactive-background-color);
+}
+
+select {
+	font-size: inherit;
+}
+
+
+.flex-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+
+	gap: inherit;
 }
