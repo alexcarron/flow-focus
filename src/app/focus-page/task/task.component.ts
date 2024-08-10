@@ -8,11 +8,12 @@ import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
 import { DatetimePopupComponent } from './datetime-popup/datetime-popup.component';
 import EditTaskDeadlineCommand from '../../../model/commands/EditTaskDeadlineCommand';
 import EditTaskStartTimeCommand from '../../../model/commands/EditTaskStartTimeCommand';
+import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 
 @Component({
   selector: 'task',
   standalone: true,
-  imports: [CommonModule, TimeFormatterPipe, DatetimePopupComponent],
+  imports: [CommonModule, TimeFormatterPipe, DatetimePopupComponent, ShrinkToFitDirective],
   templateUrl: './task.component.html',
   styleUrl: './task.component.css'
 })

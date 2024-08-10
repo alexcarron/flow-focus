@@ -1,12 +1,14 @@
-
-<h1
-	id="taskDescription"
-	class="progress-bar"
-	contenteditable
-	[textContent]="getDescription()"
-	(input)="onDescriptionChange($event)"
-	[style.--progress]="getProgressPercentage()"
-> </h1>
+<div id="taskDescriptionContainer">
+	<h1
+		shrinkToFit
+		id="taskDescription"
+		class="progress-bar"
+		contenteditable
+		[textContent]="getDescription()"
+		(input)="onDescriptionChange($event)"
+		[style.--progress]="getProgressPercentage()"
+	> </h1>
+</div>
 <h2
 	id="taskNextStep"
 	*ngIf="hasSteps()"

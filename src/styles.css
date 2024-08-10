@@ -61,12 +61,10 @@
 	font-family: 'Poppins', sans-serif;
 	text-align: center;
 	transition: 0.1s ease-out;
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word;
 }
 
 body {
-	display: block;
-
 	font-size: var(--font-size-small);
 	color: var(--text-color);
 	background-color: var(--background-color);
@@ -224,7 +222,6 @@ button:active, .icon-button:active {
 
 
 .corner-button {
-	display: block;
 	position: fixed;
 	text-align: left;
 	top: 0;
@@ -262,13 +259,10 @@ button:active, .icon-button:active {
 	top: calc(4 * (var(--font-size-medium) + 2*var(--margin-small)));
 }
 
-
 /* Displays progress of task through linear gradient */
 #taskDescription {
 	box-sizing: border-box;
 	max-width: var(--width-without-controls);
-
-	overflow-wrap: break-word;
 
 	margin: var(--margin-medium);
 	margin-bottom: var(--margin-small);
@@ -284,7 +278,12 @@ button:active, .icon-button:active {
 
 
 [contenteditable], select, input {
-	width: fit-content;
+	display: inline-block;
+	/* width: min-content; */
+  white-space: normal;
+
+	/* max-width: fit-content; */
+	/* width: fit-content; */
 
 	padding-left: var(--margin-small);
 	padding-right: var(--margin-small);
