@@ -26,6 +26,7 @@ export class TaskCreatorComponent {
 	@ViewChild('deadlineInput') deadlineInput!: DatetimeInputComponent;
 	@ViewChild('minDurationInput') minDurationInput!: DurationInputComponent;
 	@ViewChild('maxDurationInput') maxDurationInput!: DurationInputComponent;
+	@ViewChild('hasRepeatIntervalInput') hasRepeatIntervalInput!: CheckboxInputComponent;
 	@ViewChild('repeatIntervalInput') repeatIntervalInput!: DurationInputComponent;
 	@ViewChild('mandatoryInput') mandatoryInput!: CheckboxInputComponent;
 
@@ -40,6 +41,7 @@ export class TaskCreatorComponent {
 	maxDuration: number | null = null;
 	repeatInterval: number | null = null;
 	isMandatory: boolean = false;
+	hasRepeatInterval: boolean = false;
 
 	constructor (
 		private activatedRoute: ActivatedRoute,
@@ -119,6 +121,14 @@ export class TaskCreatorComponent {
 		this.isMandatory = isMandatory;
 	}
 
+	onHasRepeatIntervalChange(hasRepeatInterval: boolean) {
+		if (!hasRepeatInterval) {
+			this.repeatInterval = null;
+		}
+
+		this.hasRepeatInterval = hasRepeatInterval;
+	}
+
 	private hasNeededInputs(): boolean {
 		const hasName = this.name !== null;
 		const hasValidSteps = this.steps.every(step =>
@@ -173,6 +183,7 @@ export class TaskCreatorComponent {
 		this.maxDuration = null;
 		this.repeatInterval = null;
 		this.isMandatory = false;
+		this.hasRepeatInterval = false;
 	}
 
 	clearInputComponents() {
@@ -183,6 +194,7 @@ export class TaskCreatorComponent {
 			this.deadlineInput,
 			this.minDurationInput,
 			this.maxDurationInput,
+			this.hasRepeatIntervalInput,
 			this.repeatIntervalInput,
 			this.mandatoryInput,
 		];

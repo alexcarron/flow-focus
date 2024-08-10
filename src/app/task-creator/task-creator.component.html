@@ -102,8 +102,13 @@
 		</div>
 	</div>
 	<div class="input-row">
+		<checkbox-input
+			#hasRepeatIntervalInput
+			(onInputChange)="onHasRepeatIntervalChange($event)"
+		></checkbox-input>
 		<p class="input-label">Repeat Interval:</p>
 		<duration-input
+			*ngIf="hasRepeatInterval"
 			#repeatIntervalInput
 			id="repeatIntervalInput"
 			(onInputChange)="onRepeatChange($event)"
