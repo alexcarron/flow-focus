@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import InputControlComponent from '../InputControlComponent';
 import { TextInputComponent } from '../text-input/text-input.component';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'array-input',

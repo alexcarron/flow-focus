@@ -12,13 +12,9 @@ import TaskTimingOptions from '../../../../model/task/TaskTimingOptions';
 })
 export class DatetimePopupComponent {
   @Output() closePopup = new EventEmitter<void>();
-  @Output() onConfirm = new EventEmitter<TaskTimingOptions | null>();
+  @Output() onConfirm = new EventEmitter<TaskTimingOptions>();
 	@Input() oldTimingOptions: TaskTimingOptions | null = null;
 	newTimingOptions: TaskTimingOptions | null = null;
-
-	ngOnInit(): void {
-		this.newTimingOptions = this.oldTimingOptions;
-	}
 
   onInputChange(timingOptions: TaskTimingOptions): void {
 		this.newTimingOptions = timingOptions;
@@ -28,6 +24,8 @@ export class DatetimePopupComponent {
 		if (this.newTimingOptions !== null) {
 			this.onConfirm.emit(this.newTimingOptions);
 		}
+
+		this.closePopup.emit();
 	}
 
   close(): void {

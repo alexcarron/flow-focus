@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, ViewChildren } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
 import Task from '../../../model/task/Task';
 import { CommonModule } from '@angular/common';
 import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescriptionCommand';
@@ -6,12 +6,9 @@ import { CommandHistoryService } from '../../../services/CommandHistory.service'
 import EditTaskStepCommand from '../../../model/commands/EditTaskStepCommand';
 import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
 import { DatetimePopupComponent } from './datetime-popup/datetime-popup.component';
-import EditTaskDeadlineCommand from '../../../model/commands/EditTaskDeadlineCommand';
-import EditTaskStartTimeCommand from '../../../model/commands/EditTaskStartTimeCommand';
 import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';
-import EditTaskStepsCommand from '../../../model/commands/EditTaskStepsCommand';
 
 @Component({
   selector: 'task',
@@ -197,19 +194,15 @@ export class TaskComponent {
 	}
 
   openPopup(): void {
-		console.log('Opening popup...');
     this.isPopupOpen = true;
   }
 
   closePopup(): void {
-		console.log('Closing popup...');
     this.isPopupOpen = false;
   }
 
-	onPopoutConfirm(taskTimingOptions: TaskTimingOptions | null): void {
-		if (taskTimingOptions === null) return;
+	onPopoutConfirm(taskTimingOptions: TaskTimingOptions): void {
 		this.task.setFromTaskTimingOptions(taskTimingOptions);
-		this.closePopup();
 	}
 
   @HostListener('document:click', ['$event'])

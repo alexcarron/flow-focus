@@ -7,9 +7,7 @@ import { DatetimePopupComponent } from '../focus-page/task/datetime-popup/dateti
 import { DatetimeInputComponent } from '../input-controls/timedate-input/datetime-input.component';
 import { TextInputComponent } from '../input-controls/text-input/text-input.component';
 import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbox-input.component';
-import InputControlComponent from '../input-controls/InputControlComponent';
 import TasksManager from '../../model/TasksManager';
-import Task from '../../model/task/Task';
 import { TaskTimingOptionsInputComponent } from '../input-controls/task-timing-options-input/task-timing-options-input.component';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../input-controls/array-input/array-input.component';

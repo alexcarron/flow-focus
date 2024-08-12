@@ -1,6 +1,7 @@
 import StepStatus from "../../model/task/StepStatus";
 import Task from "../../model/task/Task";
 import TaskState from "../../model/task/TaskState";
+import TaskTimingOptions from "../../model/task/TaskTimingOptions";
 import TasksManager from "../../model/TasksManager";
 import StateObserver from "./StateObserver";
 
@@ -100,6 +101,11 @@ export default class ObservedTask extends Task {
 
 	override restoreState(taskState: TaskState): void {
 		super.restoreState(taskState);
+		this.stateObserver.onStateChange();
+	}
+
+	override setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
+		super.setFromTaskTimingOptions(taskTimingOptions);
 		this.stateObserver.onStateChange();
 	}
 }

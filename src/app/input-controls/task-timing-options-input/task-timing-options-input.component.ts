@@ -41,17 +41,6 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 			this.hasRepeatInterval = this.initialValue.repeatInterval !== null;
 			this.repeatInterval = this.initialValue.repeatInterval;
 			this.isMandatory = this.initialValue.isMandatory;
-
-			console.log({
-				initialValue: this.initialValue,
-				startTime: this.startTime,
-				deadline: this.deadline,
-				minDuration: this.minDuration,
-				maxDuration: this.maxDuration,
-				hasRepeatInterval: this.hasRepeatInterval,
-				repeatInterval: this.repeatInterval,
-				isMandatory: this.isMandatory
-			})
 		}
 	}
 

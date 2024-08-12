@@ -9,9 +9,10 @@
 	<div id="buttons">
 		<button
 			id="confirmButton"
-			*ngIf="oldTimingOptions"
+			*ngIf="newTimingOptions !== null"
 			class="icon-button"
 			(click)="confirm()"
+			(keyDown)="confirm()"
 		>
 			<img src="assets/check-icon.svg" alt="Confirm">
 			<span class="tooltip">Confirm</span>
