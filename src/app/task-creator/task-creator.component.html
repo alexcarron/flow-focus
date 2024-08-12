@@ -18,28 +18,13 @@
 			(onInputChange)="onNameChange($event)"
 		></text-input>
 	</div>
-	<section id="createdSteps" class="input-column">
-		<div
-			*ngFor="let step of steps; let stepIndex = index; trackBy: trackStepByIndex"
-			class="input-row"
-		>
-			<text-input
-				#taskStepInput
-				class="small-text task-step-input"
-				placeholder="Enter step needed to complete task"
-				(onInputChange)="onStepChange($event, stepIndex)"
-				[initialValue]="step"
-			>
-			</text-input>
-
-			<button
-				class="icon-button delete-button"
-				(click)="deleteStep(stepIndex)"
-			>
-				<img src="assets/close-icon.svg" alt="Delete">
-			</button>
-		</div>
-	</section>
+	<array-input
+		#taskCreatedStepsInput
+		id="createdSteps"
+		class="input-column"
+		[initialValue]="steps"
+		(onInputChange)="onCreatedStepsChange($event)"
+	></array-input>
 	<div class="input-row">
 		<text-input
 			#taskNextStepInput

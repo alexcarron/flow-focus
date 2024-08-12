@@ -1,1 +1,20 @@
-<p>array-input works!</p>
+
+<div
+	*ngFor="let item of array; let index = index; trackBy: trackStepByIndex"
+	class="flex-row"
+>
+	<text-input
+		#itemInput
+		[placeholder]="getPlaceholderByIndex(index)"
+		(onInputChange)="onItemChange($event, index)"
+		[initialValue]="item"
+	>
+	</text-input>
+
+	<button
+		class="icon-button delete-button"
+		(click)="deleteItem(index)"
+	>
+		<img src="assets/close-icon.svg" alt="Delete">
+	</button>
+</div>

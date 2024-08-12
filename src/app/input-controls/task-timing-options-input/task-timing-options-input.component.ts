@@ -19,7 +19,7 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 	@ViewChild('minDurationInput') minDurationInput!: DurationInputComponent;
 	@ViewChild('maxDurationInput') maxDurationInput!: DurationInputComponent;
 	@ViewChild('hasRepeatIntervalInput') hasRepeatIntervalInput!: CheckboxInputComponent;
-	@ViewChild('repeatIntervalInput') repeatIntervalInput!: DurationInputComponent;
+	@ViewChild('repeatIntervalInput') repeatIntervalInput: DurationInputComponent | undefined;
 	@ViewChild('mandatoryInput') mandatoryInput!: CheckboxInputComponent;
 
 	@Input() initialValue: TaskTimingOptions | null = null;
@@ -114,15 +114,17 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 		this.isMandatory = false;
 		this.hasRepeatInterval = false;
 
-		const allInputComponents = [
+		const allInputComponents: InputControlComponent<any>[] = [
 			this.startTimeInput,
 			this.deadlineInput,
 			this.minDurationInput,
 			this.maxDurationInput,
 			this.hasRepeatIntervalInput,
-			this.repeatIntervalInput,
 			this.mandatoryInput,
 		];
+
+		if (this.repeatIntervalInput !== undefined)
+			allInputComponents.push(this.repeatIntervalInput);
 
 		for (const inputComponent of allInputComponents) {
 			inputComponent.clearInput();

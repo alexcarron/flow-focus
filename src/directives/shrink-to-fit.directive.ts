@@ -52,12 +52,8 @@ export class ShrinkToFitDirective {
 	}
 
 	private adjustWidth(): void {
-		const computedStyle = getComputedStyle(this.hostElement);
-		const maxWidth = parseFloat(computedStyle.maxWidth);
     const widthBeforeChange = this.hostElement.offsetWidth;
     let heightBeforeChange = this.hostElement.offsetHeight;
-
-		console.log({currentWidth: widthBeforeChange, maxWidth, currentHeight: heightBeforeChange, noWrapWidth: this.noWrapWidth});
 
 		let didWidthGrowthChangeHeight = true;
 		let widthToKeep = widthBeforeChange;

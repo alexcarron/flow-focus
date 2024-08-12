@@ -12,17 +12,18 @@ import TasksManager from '../../model/TasksManager';
 import Task from '../../model/task/Task';
 import { TaskTimingOptionsInputComponent } from '../input-controls/task-timing-options-input/task-timing-options-input.component';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
+import { ArrayInputComponent } from '../input-controls/array-input/array-input.component';
 
 @Component({
   selector: 'task-creator',
   standalone: true,
-  imports: [CommonModule, RouterModule, DurationInputComponent, DatetimeInputComponent, TextInputComponent, CheckboxInputComponent, TaskTimingOptionsInputComponent],
+  imports: [CommonModule, RouterModule, DurationInputComponent, DatetimeInputComponent, TextInputComponent, CheckboxInputComponent, TaskTimingOptionsInputComponent, ArrayInputComponent],
   templateUrl: './task-creator.component.html',
   styleUrl: './task-creator.component.css'
 })
 export class TaskCreatorComponent {
 	@ViewChild('taskDescriptionInput') taskDescriptionInput!: TextInputComponent;
-	@ViewChildren('taskStepInput') taskStepInputs: QueryList<TextInputComponent> | undefined;
+	@ViewChild('taskCreatedStepsInput') taskCreatedStepsInput!: ArrayInputComponent;
 	@ViewChild('taskNextStepInput') taskNextStepInput!: TextInputComponent;
 	@ViewChild('taskTimingOptionsInput') taskTimingOptionsInput!: TaskTimingOptionsInputComponent;
 
@@ -47,27 +48,12 @@ export class TaskCreatorComponent {
 		this.tasksManager = this.activatedRoute.snapshot.data['tasksManager'];
 	}
 
-	trackStepByIndex(index: number, step: string): number {
-		return index;
-	}
-
 	onNameChange(description: string | null) {
 		this.name = description;
 	}
 
-	onStepChange(step: string | null, stepIndex: number) {
-		this.steps[stepIndex] = step ?? '';
-	}
-
-	deleteStep(stepIndex: number) {
-		this.steps.splice(stepIndex, 1);
-
-		const stepElements = document.getElementsByClassName('task-step-input') as HTMLCollectionOf<HTMLElement>;
-
-		for (let i = 0; i < stepElements.length; i++) {
-			const stepElement = stepElements[i];
-			stepElement.textContent = this.steps[i] ?? '';
-		}
+	onCreatedStepsChange(steps: string[]) {
+		this.steps = steps;
 	}
 
 	onNextStepChange(nextStep: string | null) {
@@ -164,13 +150,10 @@ export class TaskCreatorComponent {
 	clearInputComponents() {
 		const allInputComponents = [
 			this.taskDescriptionInput,
+			this.taskCreatedStepsInput,
 			this.taskNextStepInput,
 			this.taskTimingOptionsInput,
 		];
-
-		this.taskStepInputs?.forEach(inputComponent => {
-			allInputComponents.push(inputComponent);
-		})
 
 		for (const inputComponent of allInputComponents) {
 			inputComponent.clearInput();
