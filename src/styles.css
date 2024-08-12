@@ -11,6 +11,9 @@
 	--margin-xlarge: 1.6rem;
 	--margin-xxlarge: 2.4rem;
 
+	/* Em Padding */
+	--text-padding: 0.5em;
+
   /* Colors */
   --primary-color: #2a7ccd;
   --accent-color: #2ecc71;

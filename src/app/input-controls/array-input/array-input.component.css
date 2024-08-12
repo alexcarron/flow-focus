@@ -4,3 +4,7 @@
 	width: var(--font-size-small);
 	height: var(--font-size-small);
 }
+
+.item-input {
+	padding: 0 var(--text-padding);
+}

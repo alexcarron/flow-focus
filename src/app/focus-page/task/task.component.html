@@ -9,15 +9,31 @@
 		[style.--progress]="getProgressPercentage()"
 	> </h1>
 </div>
-<h2
-	#taskNextStep
-	id="taskNextStep"
-	*ngIf="hasSteps()"
-	contenteditable
-	[textContent]="getNextStep()"
-	(input)="onNextStepChange($event)"
->
-</h2>
+<div #taskSteps>
+	<array-input
+		#taskPreviousSteps
+		*ngIf="isFocusedOnNextStep()"
+		[initialValue]="this.task.getPreviousSteps()"
+		(onInputChange)="onPreviousStepsChange($event)"
+	>
+	</array-input>
+	<h2
+		#taskNextStep
+		id="taskNextStep"
+		*ngIf="hasSteps()"
+		contenteditable
+		[textContent]="getNextStep()"
+		(input)="onNextStepChange($event)"
+	>
+	</h2>
+	<array-input
+		#taskUpcomingSteps
+		*ngIf="isFocusedOnNextStep()"
+		[initialValue]="this.task.getUpcomingSteps()"
+		(onInputChange)="onUpcomingStepsChange($event)"
+	>
+	</array-input>
+</div>
 
 <div id="taskControls">
 	<p

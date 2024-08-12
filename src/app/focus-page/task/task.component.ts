@@ -1,26 +1,28 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, ViewChildren } from '@angular/core';
 import Task from '../../../model/task/Task';
 import { CommonModule } from '@angular/common';
 import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescriptionCommand';
 import { CommandHistoryService } from '../../../services/CommandHistory.service';
-import EditTaskStepCommand from '../../../model/commands/EditTaskStepsCommand';
+import EditTaskStepCommand from '../../../model/commands/EditTaskStepCommand';
 import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
 import { DatetimePopupComponent } from './datetime-popup/datetime-popup.component';
 import EditTaskDeadlineCommand from '../../../model/commands/EditTaskDeadlineCommand';
 import EditTaskStartTimeCommand from '../../../model/commands/EditTaskStartTimeCommand';
 import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
+import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';
+import EditTaskStepsCommand from '../../../model/commands/EditTaskStepsCommand';
 
 @Component({
   selector: 'task',
   standalone: true,
-  imports: [CommonModule, TimeFormatterPipe, DatetimePopupComponent, ShrinkToFitDirective],
+  imports: [CommonModule, TimeFormatterPipe, DatetimePopupComponent, ShrinkToFitDirective, ArrayInputComponent],
   templateUrl: './task.component.html',
   styleUrl: './task.component.css'
 })
 export class TaskComponent {
-	@ViewChild('taskNextStep') taskNextStepReference!: ElementRef<HTMLElement>;
-	taskNextStepElement!: HTMLElement;
+	@ViewChild('taskSteps') taskStepsDiv?: ElementRef<HTMLDivElement>;
+	taskStepsDivElement?: HTMLDivElement
 
 	@Input() task!: Task;
 	@Output() taskSkipped = new EventEmitter<Task>();
@@ -43,7 +45,7 @@ export class TaskComponent {
 	}
 
 	ngAfterViewInit() {
-		this.taskNextStepElement = this.taskNextStepReference.nativeElement;
+		this.taskStepsDivElement = this.taskStepsDiv?.nativeElement;
 	}
 
 	getDescription(): string {
@@ -57,6 +59,28 @@ export class TaskComponent {
 
 	getNextStep(): string {
 		return this.task.getNextStep() ?? "";
+	}
+
+	onPreviousStepsChange(previousSteps: string[]) {
+		const upcomingSteps = this.task.getUpcomingSteps();
+		const nextStep = this.getNextStep();
+		const newSteps = [
+			...previousSteps,
+			nextStep,
+			...upcomingSteps,
+		]
+		this.task.editSteps(newSteps);
+	}
+
+	onUpcomingStepsChange(upcomingSteps: string[]) {
+		const previousSteps = this.task.getPreviousSteps();
+		const nextStep = this.getNextStep();
+		const newSteps = [
+			...previousSteps,
+			nextStep,
+			...upcomingSteps,
+		]
+		this.task.editSteps(newSteps);
 	}
 
 	/**
@@ -156,8 +180,12 @@ export class TaskComponent {
 		)
 	}
 
-	isNextStepFocus(): boolean {
-		return document.activeElement === this.taskNextStepElement;
+	isFocusedOnNextStep(): boolean {
+		if (this.taskStepsDivElement !== undefined) {
+			return this.taskStepsDivElement.contains(document.activeElement)
+		}
+
+		return false;
 	}
 
 	getDeadline(): Date | null {

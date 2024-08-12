@@ -238,6 +238,39 @@ export default class Task {
 		}
 	};
 
+	private getStepIndex(stepLookingFor: string): number {
+		const steps = this.getSteps();
+		return steps.findIndex(step => step === stepLookingFor);
+	}
+
+	getPreviousSteps(): string[] {
+		const nextStep = this.getNextStep();
+		if (nextStep === null) return [];
+
+		const nextStepIndex = this.getStepIndex(nextStep);
+		if (nextStepIndex === -1) return []
+
+		// Store entries after the next uncompleted step
+		const stepsBeforeNextStep = Array.from(this.getSteps())
+			.slice(0, nextStepIndex);
+
+		return stepsBeforeNextStep;
+	}
+
+	getUpcomingSteps(): string[] {
+		const nextStep = this.getNextStep();
+		if (nextStep === null) return [];
+
+		const nextStepIndex = this.getStepIndex(nextStep);
+		if (nextStepIndex === -1) return []
+
+		// Store entries after the next uncompleted step
+		const stepsAfterNextStep = Array.from(this.getSteps())
+			.slice(nextStepIndex + 1);
+
+		return stepsAfterNextStep;
+	}
+
 	removeDeadline(): void {
 		this.deadline = null;
 	}
@@ -254,11 +287,11 @@ export default class Task {
 		const nextStep = this.getNextStep();
 
 		if (nextStep) {
-			const nextUncompletedStepIndex = Array.from(this.stepsToStatusMap.keys()).findIndex(step => step === nextStep);
+			const nextStepIndex = this.getStepIndex(nextStep);
 
-			if (nextUncompletedStepIndex !== -1) {
+			if (nextStepIndex !== -1) {
 				// Store entries after the next uncompleted step
-				const entriesAfterNextUncompletedStep = Array.from(this.stepsToStatusMap.entries()).slice(nextUncompletedStepIndex + 1);
+				const entriesAfterNextUncompletedStep = Array.from(this.stepsToStatusMap.entries()).slice(nextStepIndex + 1);
 
 				// Remove entries after the next uncompleted step
 				entriesAfterNextUncompletedStep.forEach(
@@ -397,10 +430,21 @@ export default class Task {
 	editSteps(newSteps: string[]): void {
 		let stepStatuses = Array.from(this.stepsToStatusMap.values());
 
+		const stepsToStatusMapCopy = new Map<string, StepStatus>(this.stepsToStatusMap);
+
 		this.stepsToStatusMap.clear();
 
 		newSteps.forEach((step) => {
-			this.stepsToStatusMap.set(step, stepStatuses.shift() ?? StepStatus.UNCOMPLETE);
+			let status = stepStatuses.shift() ?? StepStatus.UNCOMPLETE;
+
+			if (stepsToStatusMapCopy.has(step)) {
+				status = stepsToStatusMapCopy.get(step) ?? StepStatus.UNCOMPLETE;
+
+				this.stepsToStatusMap.set(step, status);
+			}
+			else {
+				this.stepsToStatusMap.set(step, status);
+			}
 		});
 	}
 

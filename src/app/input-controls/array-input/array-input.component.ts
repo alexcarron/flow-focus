@@ -65,6 +65,7 @@ export class ArrayInputComponent implements InputControlComponent<string[]> {
 			if (itemInput !== undefined) {
 				itemInput.hostElement.textContent = this.array[itemInputIndex] ?? '';
 			}
+
 		}
 	}
 

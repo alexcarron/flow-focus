@@ -1,20 +1,19 @@
 import Task from "../task/Task";
 import EditTaskCommand from "./EditTaskCommand";
-import UndoableCommand from "./UndoableCommand";
 
-export default class EditTaskStepCommand extends EditTaskCommand {
+export default class EditTaskStepsCommand extends EditTaskCommand {
 
 	constructor(task: Task,
-		private newStep: string
+		private newSteps: string[]
 	) {
 		super(task);
 	}
 
 	public doAction(): void {
-		this.task.replaceNextStep(this.newStep);
+		this.task.editSteps(this.newSteps);
 	}
 
 	public toString(): string {
-		return `Replacing "${this.task.getDescription()}"'s next step with "${this.newStep}"`
+		return `Replacing "${this.task.getSteps()}" steps with "${this.newSteps}"`
 	}
 }

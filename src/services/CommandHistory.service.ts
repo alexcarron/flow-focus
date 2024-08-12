@@ -11,19 +11,6 @@ export class CommandHistoryService {
   constructor() {}
 
 	private displayCommands(): void {
-		let stringToDisplay = "\n\n";
-
-		stringToDisplay += "Done Commands: \n";
-		this.commandsToUndo.forEach((command) => {
-			stringToDisplay += command.toString() + "\n";
-		})
-
-		stringToDisplay += "\nUndone Commands: \n";
-		this.commandsToRedo.forEach((command) => {
-			stringToDisplay += command.toString() + "\n";
-		});
-
-		console.log(stringToDisplay);
 	}
 
 	public execute(command: UndoableCommand): void {
