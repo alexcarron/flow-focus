@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
 import Task from '../../../model/task/Task';
 import { CommonModule } from '@angular/common';
 import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescriptionCommand';
@@ -9,6 +9,7 @@ import { DatetimePopupComponent } from './datetime-popup/datetime-popup.componen
 import EditTaskDeadlineCommand from '../../../model/commands/EditTaskDeadlineCommand';
 import EditTaskStartTimeCommand from '../../../model/commands/EditTaskStartTimeCommand';
 import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
+import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 
 @Component({
   selector: 'task',
@@ -18,7 +19,8 @@ import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directiv
   styleUrl: './task.component.css'
 })
 export class TaskComponent {
-	private static readonly URGENT_MILLISECONDS_LEFT = 1000 * 60 * 60 * 5;
+	@ViewChild('taskNextStep') taskNextStepReference!: ElementRef<HTMLElement>;
+	taskNextStepElement!: HTMLElement;
 
 	@Input() task!: Task;
 	@Output() taskSkipped = new EventEmitter<Task>();
@@ -40,6 +42,9 @@ export class TaskComponent {
 		}, 1000);
 	}
 
+	ngAfterViewInit() {
+		this.taskNextStepElement = this.taskNextStepReference.nativeElement;
+	}
 
 	getDescription(): string {
 		return this.task.getDescription();
@@ -151,6 +156,10 @@ export class TaskComponent {
 		)
 	}
 
+	isNextStepFocus(): boolean {
+		return document.activeElement === this.taskNextStepElement;
+	}
+
 	getDeadline(): Date | null {
 		return this.task.getDeadline();
 	}
@@ -169,23 +178,11 @@ export class TaskComponent {
     this.isPopupOpen = false;
   }
 
-  changeStartTime(dateTime: string): void {
-		const newStartTime = new Date(dateTime);
-		const editStartTimeCommand = new EditTaskStartTimeCommand(
-			this.task, newStartTime
-		);
-		this.commandHistory.execute(editStartTimeCommand);
+	onPopoutConfirm(taskTimingOptions: TaskTimingOptions | null): void {
+		if (taskTimingOptions === null) return;
+		this.task.setFromTaskTimingOptions(taskTimingOptions);
 		this.closePopup();
-  }
-
-  changeDeadline(dateTime: string): void {
-		const newDeadline = new Date(dateTime);
-		const editDeadlineCommand = new EditTaskDeadlineCommand(
-			this.task, newDeadline
-		);
-		this.commandHistory.execute(editDeadlineCommand);
-		this.closePopup();
-  }
+	}
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {

@@ -1,10 +1,12 @@
 <number-input
 	#durationValueInput
 	placeholder="0"
+	[initialValue]="timeValue"
 	(onInputChange)="onTimeValueChange($event)"
 ></number-input>
 <select-input
 	#durationUnitInput
+	[initialValue]="unit"
 	[options]="unitOptions"
 	(onInputChange)="onUnitChange($event)"
 ></select-input>

@@ -1,5 +1,6 @@
 :host {
 	display: flex;
+	text-align: left;
 }
 
 select:hover {

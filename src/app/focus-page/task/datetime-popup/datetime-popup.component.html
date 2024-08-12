@@ -1,21 +1,15 @@
 <div class="overlay"></div>
 <div class="popup">
 	<div class="input-control-group">
-		<h2>Start Time</h2>
-		<div class="controls-container">
-			<input id="startTimeInput" type="datetime-local" [value]="formatDate(oldStartTime)" (change)="onStartTimeChange($event)">
-		</div>
-	</div>
-	<div class="input-control-group">
-		<h2>Deadline</h2>
-		<div class="controls-container">
-			<input id="deadlineInput" type="datetime-local" [value]="formatDate(oldDeadline)" (change)="onDeadlineChange($event)">
-		</div>
+		<task-timing-options-input
+			[initialValue]="oldTimingOptions"
+			(onInputChange)="onInputChange($event)"
+		></task-timing-options-input>
 	</div>
 	<div id="buttons">
 		<button
 			id="confirmButton"
-			*ngIf="startTime || deadline"
+			*ngIf="oldTimingOptions"
 			class="icon-button"
 			(click)="confirm()"
 		>

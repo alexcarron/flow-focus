@@ -13,7 +13,6 @@ export class ShrinkToFitDirective {
 	}
 
   ngAfterViewInit(): void {
-    const computedStyle = getComputedStyle(this.hostElement);
     this.noWrapWidth = this.getTextWidthWithoutWrapping();
 
     this.adjustWidth();
@@ -24,28 +23,61 @@ export class ShrinkToFitDirective {
     this.adjustWidth();
   }
 
+	/**
+	 * Grows the width of the element until the height changes
+	 * @param element - The element to grow
+	 * @returns True if the height changed
+	 */
+	private growWidthUntilHeightChange(element: HTMLElement): boolean {
+		const computedStyle = getComputedStyle(element);
+		const maxWidth = parseFloat(computedStyle.maxWidth);
+		const heightBeforeGrowth = element.offsetHeight;
+		const widthBeforeGrowth = element.offsetWidth;
+		let currentWidth = widthBeforeGrowth;
+		let currentHeight = heightBeforeGrowth;
+
+		let didHeightChange = false;
+
+		while (currentWidth < maxWidth && !didHeightChange) {
+			currentWidth++;
+			element.style.width = `${currentWidth}px`;
+			currentHeight = element.offsetHeight;
+
+			if (currentHeight !== heightBeforeGrowth) {
+				didHeightChange = true;
+			}
+		}
+
+		return didHeightChange;
+	}
+
 	private adjustWidth(): void {
 		const computedStyle = getComputedStyle(this.hostElement);
 		const maxWidth = parseFloat(computedStyle.maxWidth);
-    const currentWidth = this.hostElement.offsetWidth;
-    const currentHeight = this.hostElement.offsetHeight;
+    const widthBeforeChange = this.hostElement.offsetWidth;
+    let heightBeforeChange = this.hostElement.offsetHeight;
 
-		console.log({currentWidth, maxWidth, currentHeight, noWrapWidth: this.noWrapWidth});
+		console.log({currentWidth: widthBeforeChange, maxWidth, currentHeight: heightBeforeChange, noWrapWidth: this.noWrapWidth});
 
-		let width = currentWidth;
+		let didWidthGrowthChangeHeight = true;
+		let widthToKeep = widthBeforeChange;
 
-    while (width < maxWidth) {
-      this.hostElement.style.width = `${width}px`;
+		while (didWidthGrowthChangeHeight) {
+			didWidthGrowthChangeHeight = this.growWidthUntilHeightChange(this.hostElement);
 
-      if (this.hostElement.offsetHeight !== currentHeight) break;
+			if (didWidthGrowthChangeHeight) {
+				widthToKeep = this.hostElement.offsetWidth;
+			}
+		}
 
-      width++;
-    }
+		this.hostElement.style.width = `${widthToKeep}px`;
 
+		heightBeforeChange = this.hostElement.offsetHeight;
+		let width = widthToKeep;
     while (width > 0) {
       this.hostElement.style.width = `${width}px`;
 
-      if (this.hostElement.offsetHeight !== currentHeight) break;
+      if (this.hostElement.offsetHeight !== heightBeforeChange) break;
 
       width--;
     }

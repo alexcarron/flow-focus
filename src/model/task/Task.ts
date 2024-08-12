@@ -1,3 +1,4 @@
+import TaskTimingOptions from "./TaskTimingOptions";
 import TasksManager from "../TasksManager";
 import TasksManagerState from "../TasksManagerState";
 import DateRange from "../time-management/DateRange";
@@ -445,7 +446,27 @@ export default class Task {
 		return this.minRequiredTime
 	};
 
-	setMinRequiredTime(minRequiredTime: number): void {this.minRequiredTime = minRequiredTime};
+	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
+
+	getTaskTimingOptions(): TaskTimingOptions {
+		return {
+			startTime: this.earliestStartTime,
+			deadline: this.deadline,
+			minDuration: this.minRequiredTime,
+			maxDuration: this.maxRequiredTime,
+			repeatInterval: this.repeatInterval,
+			isMandatory: this.isMandatory
+		}
+	}
+
+	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
+		this.earliestStartTime = taskTimingOptions.startTime;
+		this.deadline = taskTimingOptions.deadline;
+		this.minRequiredTime = taskTimingOptions.minDuration;
+		this.maxRequiredTime = taskTimingOptions.maxDuration;
+		this.repeatInterval = taskTimingOptions.repeatInterval;
+		this.isMandatory = taskTimingOptions.isMandatory
+	}
 
 	/**
 	 * Determines the maximum amount of milliseconds it will take to complete this task
@@ -495,7 +516,7 @@ export default class Task {
 		if (this.deadline === null) {
 			return false;
 		}
-		
+
 		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
 	}
 

@@ -10,11 +10,13 @@ import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbo
 import InputControlComponent from '../input-controls/InputControlComponent';
 import TasksManager from '../../model/TasksManager';
 import Task from '../../model/task/Task';
+import { TaskTimingOptionsInputComponent } from '../input-controls/task-timing-options-input/task-timing-options-input.component';
+import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 
 @Component({
   selector: 'task-creator',
   standalone: true,
-  imports: [CommonModule, RouterModule, DurationInputComponent, DatetimeInputComponent, TextInputComponent, CheckboxInputComponent],
+  imports: [CommonModule, RouterModule, DurationInputComponent, DatetimeInputComponent, TextInputComponent, CheckboxInputComponent, TaskTimingOptionsInputComponent],
   templateUrl: './task-creator.component.html',
   styleUrl: './task-creator.component.css'
 })
@@ -22,13 +24,7 @@ export class TaskCreatorComponent {
 	@ViewChild('taskDescriptionInput') taskDescriptionInput!: TextInputComponent;
 	@ViewChildren('taskStepInput') taskStepInputs: QueryList<TextInputComponent> | undefined;
 	@ViewChild('taskNextStepInput') taskNextStepInput!: TextInputComponent;
-	@ViewChild('startTimeInput') startTimeInput!: DatetimeInputComponent;
-	@ViewChild('deadlineInput') deadlineInput!: DatetimeInputComponent;
-	@ViewChild('minDurationInput') minDurationInput!: DurationInputComponent;
-	@ViewChild('maxDurationInput') maxDurationInput!: DurationInputComponent;
-	@ViewChild('hasRepeatIntervalInput') hasRepeatIntervalInput!: CheckboxInputComponent;
-	@ViewChild('repeatIntervalInput') repeatIntervalInput!: DurationInputComponent;
-	@ViewChild('mandatoryInput') mandatoryInput!: CheckboxInputComponent;
+	@ViewChild('taskTimingOptionsInput') taskTimingOptionsInput!: TaskTimingOptionsInputComponent;
 
 	tasksManager!: TasksManager;
 
@@ -97,36 +93,15 @@ export class TaskCreatorComponent {
 
 	}
 
-	onMinDurationChange(minDurationInMilliseconds: number | null) {
-		this.minDuration = minDurationInMilliseconds;
-	}
 
-	onMaxDurationChange(maxDurationInMilliseconds: number | null) {
-		this.maxDuration = maxDurationInMilliseconds;
-	}
-
-	onStartTimeChange(startTime: Date | null) {
-		this.startTime = startTime;
-	}
-
-	onDeadlineChange(deadline: Date | null) {
-		this.deadline = deadline;
-	}
-
-	onRepeatChange(repeatInterval: number | null) {
-		this.repeatInterval = repeatInterval;
-	}
-
-	onMandatoryChange(isMandatory: boolean) {
-		this.isMandatory = isMandatory;
-	}
-
-	onHasRepeatIntervalChange(hasRepeatInterval: boolean) {
-		if (!hasRepeatInterval) {
-			this.repeatInterval = null;
-		}
-
-		this.hasRepeatInterval = hasRepeatInterval;
+	onTimingOptionsChange(timingOptions: TaskTimingOptions) {
+		this.startTime = timingOptions.startTime;
+		this.deadline = timingOptions.deadline;
+		this.minDuration = timingOptions.minDuration;
+		this.maxDuration = timingOptions.maxDuration;
+		this.repeatInterval = timingOptions.repeatInterval;
+		this.isMandatory = timingOptions.isMandatory;
+		this.hasRepeatInterval = timingOptions.repeatInterval !== null;
 	}
 
 	private hasNeededInputs(): boolean {
@@ -190,19 +165,12 @@ export class TaskCreatorComponent {
 		const allInputComponents = [
 			this.taskDescriptionInput,
 			this.taskNextStepInput,
-			this.startTimeInput,
-			this.deadlineInput,
-			this.minDurationInput,
-			this.maxDurationInput,
-			this.hasRepeatIntervalInput,
-			this.repeatIntervalInput,
-			this.mandatoryInput,
+			this.taskTimingOptionsInput,
 		];
 
 		this.taskStepInputs?.forEach(inputComponent => {
 			allInputComponents.push(inputComponent);
 		})
-
 
 		for (const inputComponent of allInputComponents) {
 			inputComponent.clearInput();

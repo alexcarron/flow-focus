@@ -10,6 +10,7 @@
 	> </h1>
 </div>
 <h2
+	#taskNextStep
 	id="taskNextStep"
 	*ngIf="hasSteps()"
 	contenteditable
@@ -50,10 +51,8 @@
 
 <datetime-popup
 	*ngIf="isPopupOpen"
+	[oldTimingOptions]="task.getTaskTimingOptions()"
 	(closePopup)="closePopup()"
-	(startTimeSelected)="changeStartTime($event)"
-	(deadlineSelected)="changeDeadline($event)"
-	[oldStartTime]="getStartTime()"
-	[oldDeadline]="getDeadline()"
+	(onConfirm)="onPopoutConfirm($event)"
 >
 </datetime-popup>

@@ -1,40 +1,44 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import InputControlComponent from '../InputControlComponent';
+import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 
 @Component({
   selector: 'select-input',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ShrinkToFitDirective],
   templateUrl: './select-input.component.html',
   styleUrl: './select-input.component.css'
 })
 export class SelectInputComponent<ValueType> implements InputControlComponent<ValueType | null> {
+	@ViewChild('selectInput') selectInput!: ElementRef<HTMLElement>;
+
 	@Input() placeholder: string | null = null;
 	@Input() initialValue: ValueType | null = null;
 	@Input() options!: Map<string, ValueType>;
 	@Output() onInputChange = new EventEmitter<ValueType | null>();
 	optionKeys: string[] = [];
-	hostElement: HTMLElement;
 	selectInputElement!: HTMLSelectElement;
 
-	constructor (
-		hostElementReference: ElementRef<HTMLElement>,
-	) {
-		this.hostElement = hostElementReference.nativeElement;
+	ngOnInit() {
+		this.optionKeys = Array.from(this.options.keys());
 	}
 
-	ngOnInit() {
-		this.selectInputElement = this.hostElement.childNodes[0] as HTMLSelectElement;
-
-		this.optionKeys = Array.from(this.options.keys());
-
+	ngAfterViewInit() {
 		if (this.placeholder) {
 			this.addPlaceholderClass();
 		}
 
+		this.selectInputElement = this.selectInput.nativeElement as HTMLSelectElement;
+
 		if (this.initialValue) {
-			this.selectInputElement.selectedIndex = this.optionKeys.indexOf(this.initialValue.toString());
+			this.options.forEach((value: ValueType, optionKey: string) => {
+				if (value === this.initialValue) {
+					const optionIndex = this.optionKeys.indexOf(optionKey);
+					this.selectInputElement.selectedIndex = optionIndex
+					this.selectInputElement.value = optionKey;
+				}
+			})
 		}
 	}
 

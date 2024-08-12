@@ -1,1 +1,69 @@
-<p>task-timing-options-input works!</p>
+<div class="flex-column main-input">
+	<h3 class="input-label">Time Frame</h3>
+
+	<div class="flex-row">
+		<datetime-input
+			#startTimeInput
+			id="startTimeInput"
+			[initialValue]="startTime"
+			(onInputChange)="onStartTimeChange($event)"
+		></datetime-input>
+
+		<p>to</p>
+
+		<datetime-input
+			#deadlineInput
+			id="deadlineInput"
+			[initialValue]="deadline"
+			(onInputChange)="onDeadlineChange($event)"
+		></datetime-input>
+	</div>
+</div>
+<div class="flex-column main-input">
+	<h3 class="input-label">Estimated Required Time</h3>
+
+	<div class="flex-row">
+		<duration-input
+			#minDurationInput
+			id="minDurationInput"
+			[initialValue]="minDuration"
+			(onInputChange)="onMinDurationChange($event)"
+		></duration-input>
+
+		<p>to</p>
+
+		<duration-input
+			#maxDurationInput
+			id="maxDurationInput"
+			[initialValue]="maxDuration"
+			(onInputChange)="onMaxDurationChange($event)"
+		></duration-input>
+	</div>
+</div>
+<div class="flex-column main-input">
+	<div class="flex-row">
+		<checkbox-input
+			#hasRepeatIntervalInput
+			id="hasRepeatIntervalInput"
+			[initialValue]="hasRepeatInterval"
+			(onInputChange)="onHasRepeatIntervalChange($event)"
+		></checkbox-input>
+		<h3 class="input-label">Repeat Interval</h3>
+	</div>
+	<duration-input
+		*ngIf="hasRepeatInterval"
+		#repeatIntervalInput
+		id="repeatIntervalInput"
+		[initialValue]="repeatInterval"
+		(onInputChange)="onRepeatChange($event)"
+></duration-input>
+</div>
+<div class="flex-row main-input">
+	<checkbox-input
+		#mandatoryInput
+		id="mandatoryInput"
+		[initialValue]="isMandatory"
+		(onInputChange)="onMandatoryChange($event)"
+	></checkbox-input>
+	<h3 class="input-label">Mandatory</h3>
+</div>

@@ -7,7 +7,7 @@
 	<span class="tooltip">To Task Focus</span>
 </button>
 
-<section #mainInputs>
+<section class="input-column">
 	<div class="input-row">
 		<text-input
 			#taskDescriptionInput
@@ -18,7 +18,7 @@
 			(onInputChange)="onNameChange($event)"
 		></text-input>
 	</div>
-	<section id="createdSteps">
+	<section id="createdSteps" class="input-column">
 		<div
 			*ngFor="let step of steps; let stepIndex = index; trackBy: trackStepByIndex"
 			class="input-row"
@@ -62,67 +62,10 @@
 	</div>
 </section>
 
-<section id="timeInputs">
-	<div class="input-row">
-		<p>Time Doable:</p>
-
-		<div class="flex-row">
-			<datetime-input
-				#startTimeInput
-				id="startTimeInput"
-				(onInputChange)="onStartTimeChange($event)"
-			></datetime-input>
-
-			<p>until</p>
-
-			<datetime-input
-				#deadlineInput
-				id="deadlineInput"
-				(onInputChange)="onDeadlineChange($event)"
-			></datetime-input>
-		</div>
-	</div>
-	<div class="input-row">
-		<p>Completion Time:</p>
-
-		<div class="flex-row">
-			<duration-input
-				#minDurationInput
-				id="minDurationInput"
-				(onInputChange)="onMinDurationChange($event)"
-			></duration-input>
-
-			<p>to</p>
-
-			<duration-input
-				#maxDurationInput
-				id="maxDurationInput"
-				(onInputChange)="onMaxDurationChange($event)"
-			></duration-input>
-		</div>
-	</div>
-	<div class="input-row">
-		<checkbox-input
-			#hasRepeatIntervalInput
-			(onInputChange)="onHasRepeatIntervalChange($event)"
-		></checkbox-input>
-		<p class="input-label">Repeat Interval:</p>
-		<duration-input
-			*ngIf="hasRepeatInterval"
-			#repeatIntervalInput
-			id="repeatIntervalInput"
-			(onInputChange)="onRepeatChange($event)"
-	></duration-input>
-	</div>
-	<div class="input-row">
-		<checkbox-input
-			#mandatoryInput
-			id="mandatoryInput"
-			(onInputChange)="onMandatoryChange($event)"
-		></checkbox-input>
-		<p class="input-label">Mandatory</p>
-	</div>
-</section>
+<task-timing-options-input class="input-column"
+	#taskTimingOptionsInput
+	(onInputChange)="onTimingOptionsChange($event)"
+></task-timing-options-input>
 <button
 	class="medium-text"
 	(click)="onCreateTaskButton()"

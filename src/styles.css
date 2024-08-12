@@ -29,8 +29,8 @@
 
   /* Font sizes */
   --font-size-small: 1rem;
-  --font-size-medium: 1.2rem;
-  --font-size-xmedium: 1.2rem;
+  --font-size-medium: 1.3rem;
+  --font-size-xmedium: 1.3rem;
   --font-size-large: 1.7rem;
   --font-size-xlarge: 4.2rem;
 
@@ -59,7 +59,6 @@
 
 * {
 	font-family: 'Poppins', sans-serif;
-	text-align: center;
 	transition: 0.1s ease-out;
 	overflow-wrap: break-word;
 }
@@ -68,6 +67,11 @@ body {
 	font-size: var(--font-size-small);
 	color: var(--text-color);
 	background-color: var(--background-color);
+	text-align: center;
+}
+
+input {
+	text-align: center;
 }
 
 h1, .xlarge-text {
@@ -76,7 +80,7 @@ h1, .xlarge-text {
 	font-size: var(--font-size-xlarge);
 	line-height: var(--line-height-xlarge);
 
-	padding: var(--margin-xlarge) !important;
+	padding: var(--margin-xlarge);
 	border-radius: var(--border-radius-xlarge) !important;
 	border-width: 4px !important;
 }
@@ -86,18 +90,18 @@ h2, .large-text {
 	font-size: var(--font-size-large);
 	line-height: var(--line-height-large);
 
-	padding: var(--margin-large) !important;
+	padding: var(--margin-large);
 	border-radius: var(--border-radius-large) !important;
 	border-width: 3px !important;
 }
 
 h3, .medium-text {
-	font-weight: normal;
+	font-weight: bold;
 	font-size: var(--font-size-medium);
 	line-height: var(--line-height-medium);
 	margin: var(--margin-medium);
 
-	padding: var(--margin-medium) !important;
+	padding: var(--margin-medium);
 	border-radius: var(--border-radius-medium) !important;
 	border-width: 2px !important;
 }
@@ -106,7 +110,9 @@ p, .small-text {
 	font-weight: normal;
 	font-size: var(--font-size-small);
 	line-height: var(--line-height-small);
-	margin: var(--margin-small);
+
+	padding-left: var(--margin-small);
+	padding-right: var(--margin-small);
 
 	border-radius: var(--border-radius-small) !important;
 	border-width: 1px !important;
@@ -204,8 +210,10 @@ button:active, .icon-button:active {
 	transition: opacity 0.3s ease-in-out;
 
 	font-weight: normal;
-	width: max-content;
+	color: var(--inactive-text-color);
+	font-size: var(--font-size-small);
 
+	width: max-content;
 	background-color: var(--background-color);
 	border-radius: var(--border-radius-small);
 	padding-left: 0.2rem;
@@ -239,8 +247,7 @@ button:active, .icon-button:active {
 
 .corner-button .tooltip {
 	margin-top: 0.1rem;
-	margin-left: 0.2rem;
-	color: var(--icon-color)
+	margin-left: 1.8rem;
 }
 
 .corner-button:nth-child(2) {
@@ -285,9 +292,6 @@ button:active, .icon-button:active {
 	/* max-width: fit-content; */
 	/* width: fit-content; */
 
-	padding-left: var(--margin-small);
-	padding-right: var(--margin-small);
-
 	border: 1px solid var(--faint-text-color);
 	border-radius: var(--border-radius-small);
 
@@ -324,6 +328,16 @@ select {
 .flex-row {
 	display: flex;
 	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+
+	gap: inherit;
+}
+
+
+.flex-column {
+	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 

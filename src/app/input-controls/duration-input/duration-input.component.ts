@@ -2,6 +2,8 @@ import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core
 import { NumberInputComponent } from '../number-input/number-input.component';
 import { SelectInputComponent } from '../select-input/select-input.component';
 import InputControlComponent from '../InputControlComponent';
+import Duration from '../../../model/time-management/Duration';
+import { TimeUnitName } from '../../../model/time-management/StandardTimeUnit';
 
 @Component({
   selector: 'duration-input',
@@ -20,19 +22,24 @@ export class DurationInputComponent implements InputControlComponent<number | nu
 	timeValue: number | null = null;
 	unit: string | null = 'Seconds';
 
-	public readonly unitOptions: Map<string, string> = new Map<string, string>(Object.entries({
-		seconds: 'Seconds',
-		minutes: 'Minutes',
-		hours: 'Hours',
-		days: 'Days',
-		weeks: 'Weeks',
-		months: 'Months',
-		years: 'Years'
-	}));
+	public readonly unitOptions: Map<string, string> =
+		new Map<string, string>(
+			Object.entries(TimeUnitName)
+				.map(([key, value]) => [value, value])
+		);
 
 	ngOnInit() {
 		if (this.initialValue) {
-			this.timeValue = this.initialValue / 1000;
+			const initialDuration = Duration.fromMilliseconds(this.initialValue);
+			this.timeValue = initialDuration.getAmountOfUnits();
+			this.unit = initialDuration.getTimeUnit().name;
+
+			console.log({
+				initialValue: this.initialValue,
+				initialDuration: initialDuration,
+				timeValue: this.timeValue,
+				unit: this.unit
+			});
 		}
 	}
 

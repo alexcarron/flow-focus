@@ -1,27 +1,4 @@
-/* Displays progress of task through linear gradient */
-/* #taskDescription {
-	width: clamp(var(--font-size-large), min-content, var(--font-size-xlarge));
-	color: var(--text-color);
-	margin-bottom: var(--margin-medium);
-	font-family: 'Montserrat', sans-serif;
-	font-weight: 800;
-	font-size: var(--font-size-xlarge);
-	line-height: var(--line-height-xlarge);
-	padding: var(--margin-xlarge);
-	border: 0;
-}
-
-#taskNextStep {
-	width: min-content;
-	margin-top: var(--margin-medium);
-	margin-bottom: var(--margin-small);
-	font-weight: normal;
-	font-size: var(--font-size-large);
-	line-height: var(--line-height-large);
-	border: 0;
-} */
-
-:host, section {
+:host, .input-column {
 	display: flex;
 	display: flex;
 	flex-direction: column;
@@ -34,7 +11,7 @@
 	gap: var(--margin-xxlarge);
 }
 
-section {
+.input-column {
 	gap: var(--margin-large);
 }
 
@@ -48,7 +25,7 @@ section {
 	flex-grow: 4;
 }
 
-section#createdSteps {
+.input-column#createdSteps {
 	gap: var(--margin-xsmall)
 }
 
@@ -74,8 +51,4 @@ section#createdSteps {
 
 	max-width: var(--width-without-controls);
 	gap: 0 var(--margin-small);
-}
-
-.input-row * {
-	margin: 0 !important;
 }
