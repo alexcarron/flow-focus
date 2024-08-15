@@ -12,6 +12,7 @@ export default class Task {
 	protected description: string;
 	protected stepsToStatusMap: Map<string, StepStatus> = new Map();
 	protected startTime: Date | null = null;
+	protected endTime: Date | null = null;
 	protected deadline: Date | null = null;
 	protected minRequiredTime: number | null = null;
 	protected maxRequiredTime: number | null = null;
@@ -45,6 +46,8 @@ export default class Task {
 
 	getStartTime(): Date | null {return this.startTime};
 	setStartTime(startTime: Date | null): void {this.startTime = startTime};
+
+	setEndTime(endTime: Date | null): void {this.endTime = endTime};
 
 	getDeadline(): Date | null {return this.deadline};
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
