@@ -44,7 +44,7 @@ export default class Task {
 	};
 
 	getEarliestStartTime(): Date | null {return this.earliestStartTime};
-	setEarliestStartTime(earliestStartTime: Date): void {this.earliestStartTime = earliestStartTime};
+	setEarliestStartTime(earliestStartTime: Date | null): void {this.earliestStartTime = earliestStartTime};
 
 	getDeadline(): Date | null {return this.deadline};
 	setDeadline(deadline: Date): void {this.deadline = deadline};
@@ -61,9 +61,9 @@ export default class Task {
 	 */
 	makeRecurring(repeatInterval: number, intervalStartTime: Date): void {
 		this.repeatInterval = repeatInterval;
-		this.earliestStartTime = intervalStartTime;
+		this.setEarliestStartTime(intervalStartTime);
 
-		const intervalEndTime = new Date(this.earliestStartTime.getTime() + repeatInterval);
+		const intervalEndTime = new Date(this.earliestStartTime!.getTime() + repeatInterval);
 
 		// If deadline is not set or if deadline is after the end of the interval set it to the end of the interval
 		if (
@@ -107,7 +107,7 @@ export default class Task {
 				isNextIntervalStartTimeInFuture = true;
 			}
 			else {
-				this.earliestStartTime = nextIntervalStartTime;
+				this.setEarliestStartTime(nextIntervalStartTime);
 
 				if (this.deadline !== null) {
 					const nextIntervalDeadline =
@@ -286,7 +286,7 @@ export default class Task {
 	}
 
 	removeEarliestStartTime(): void {
-		this.earliestStartTime = null;
+		this.setEarliestStartTime(null);
 	}
 
 	/**
@@ -508,7 +508,7 @@ export default class Task {
 	}
 
 	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
-		this.earliestStartTime = taskTimingOptions.startTime;
+		this.setEarliestStartTime(taskTimingOptions.startTime);
 		this.deadline = taskTimingOptions.deadline;
 		this.minRequiredTime = taskTimingOptions.minDuration;
 		this.maxRequiredTime = taskTimingOptions.maxDuration;
@@ -638,7 +638,7 @@ export default class Task {
 		this.isComplete = taskState.isComplete;
 		this.isMandatory = taskState.isMandatory;
 		this.isSkipped = taskState.isSkipped;
-		this.earliestStartTime = taskState.earliestStartTime;
+		this.setEarliestStartTime(taskState.earliestStartTime);
 		this.deadline = taskState.deadline;
 		this.minRequiredTime = taskState.minRequiredTime;
 		this.maxRequiredTime = taskState.maxRequiredTime;

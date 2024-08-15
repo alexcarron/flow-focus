@@ -19,6 +19,21 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>): void {
+		super.setStepsToStatusMap(stepsToStatusObject);
+		this.stateObserver.onStateChange();
+	}
+
+	override setEarliestStartTime(earliestStartTime: Date | null): void {
+		super.setEarliestStartTime(earliestStartTime);
+		this.stateObserver.onStateChange();
+	}
+
+	override setDeadline(deadline: Date): void {
+		super.setDeadline(deadline);
+		this.stateObserver.onStateChange();
+	}
+
 	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
 		super.makeRecurring(repeatInterval, repeatStartTime);
 		this.stateObserver.onStateChange();
@@ -31,11 +46,6 @@ export default class ObservedTask extends Task {
 
 	override resetProgress(): void {
 		super.resetProgress();
-		this.stateObserver.onStateChange();
-	}
-
-	override setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>): void {
-		super.setStepsToStatusMap(stepsToStatusObject);
 		this.stateObserver.onStateChange();
 	}
 
@@ -61,16 +71,6 @@ export default class ObservedTask extends Task {
 
 	override editSteps(newSteps: string[]): void {
 		super.editSteps(newSteps);
-		this.stateObserver.onStateChange();
-	}
-
-	override setEarliestStartTime(earliestStartTime: Date): void {
-		super.setEarliestStartTime(earliestStartTime);
-		this.stateObserver.onStateChange();
-	}
-
-	override setDeadline(deadline: Date): void {
-		super.setDeadline(deadline);
 		this.stateObserver.onStateChange();
 	}
 
