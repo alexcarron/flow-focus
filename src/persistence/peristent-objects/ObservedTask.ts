@@ -1,7 +1,5 @@
 import StepStatus from "../../model/task/StepStatus";
 import Task from "../../model/task/Task";
-import TaskState from "../../model/task/TaskState";
-import TaskTimingOptions from "../../model/task/TaskTimingOptions";
 import TasksManager from "../../model/TasksManager";
 import StateObserver from "./StateObserver";
 
@@ -66,66 +64,6 @@ export default class ObservedTask extends Task {
 
 	override setLastActionedStep(lastActionedStep: { step: string; status: StepStatus; } | null): void {
 		super.setLastActionedStep(lastActionedStep);
-		this.stateObserver.onStateChange();
-	}
-
-	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
-		super.makeRecurring(repeatInterval, repeatStartTime);
-		this.stateObserver.onStateChange();
-	}
-
-	override onPastIntervalEndTime(currentTime: Date): void {
-		super.onPastIntervalEndTime(currentTime);
-		this.stateObserver.onStateChange();
-	}
-
-	override resetProgress(): void {
-		super.resetProgress();
-		this.stateObserver.onStateChange();
-	}
-
-	override replaceNextStep(newNextStep: string): void {
-		super.replaceNextStep(newNextStep);
-		this.stateObserver.onStateChange();
-	}
-
-	override addStep(step: string): void {
-		super.addStep(step);
-		this.stateObserver.onStateChange();
-	}
-
-	override completeStep(step: string): void {
-		super.completeStep(step);
-		this.stateObserver.onStateChange();
-	}
-
-	override skipStep(step: string): void {
-		super.skipStep(step);
-		this.stateObserver.onStateChange();
-	}
-
-	override editSteps(newSteps: string[]): void {
-		super.editSteps(newSteps);
-		this.stateObserver.onStateChange();
-	}
-
-	override complete(): void {
-		super.complete();
-		this.stateObserver.onStateChange();
-	}
-
-	override skip(): void {
-		super.skip();
-		this.stateObserver.onStateChange();
-	}
-
-	override restoreState(taskState: TaskState): void {
-		super.restoreState(taskState);
-		this.stateObserver.onStateChange();
-	}
-
-	override setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
-		super.setFromTaskTimingOptions(taskTimingOptions);
 		this.stateObserver.onStateChange();
 	}
 }
