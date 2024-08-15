@@ -59,6 +59,11 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setSkipped(isSkipped: boolean): void {
+		super.setSkipped(isSkipped);
+		this.stateObserver.onStateChange();
+	}
+
 	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
 		super.makeRecurring(repeatInterval, repeatStartTime);
 		this.stateObserver.onStateChange();
