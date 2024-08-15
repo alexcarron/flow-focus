@@ -34,7 +34,7 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
-	override setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]>): void {
+	override setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>): void {
 		super.setStepsToStatusMap(stepsToStatusObject);
 		this.stateObserver.onStateChange();
 	}

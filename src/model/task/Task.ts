@@ -9,28 +9,45 @@ export default class Task {
 	/**
 	 * A map of steps to their status in order of completion. All steps are set to 'Uncomplete' by default.
 	 */
+	protected description: string;
 	protected stepsToStatusMap: Map<string, StepStatus> = new Map();
-
 	protected earliestStartTime: Date | null = null;
 	protected deadline: Date | null = null;
 	protected minRequiredTime: number | null = null;
 	protected maxRequiredTime: number | null = null;
-
 	protected repeatInterval: number | null = null;
-
 	protected isMandatory: boolean = false;
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
-
 	protected lastActionedStep: {step: string, status: StepStatus} | null = null;
 
 	constructor(
 		protected tasksManager: TasksManager,
-		protected description: string,
-	) {};
+		description: string,
+	) {
+		this.description = description;
+	};
 
 	getDescription(): string {return this.description};
 	setDescription(description: string): void {this.description = description};
+
+	setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>) {
+		if (stepsToStatusObject instanceof Map) {
+			this.stepsToStatusMap = stepsToStatusObject;
+		}
+		else {
+			this.stepsToStatusMap = new Map();
+			stepsToStatusObject.forEach(([step, status]) => {
+				this.stepsToStatusMap.set(step, status as StepStatus);
+			});
+		}
+	};
+
+	getEarliestStartTime(): Date | null {return this.earliestStartTime};
+	setEarliestStartTime(earliestStartTime: Date): void {this.earliestStartTime = earliestStartTime};
+
+	getDeadline(): Date | null {return this.deadline};
+	setDeadline(deadline: Date): void {this.deadline = deadline};
 
 	isRecurring(): boolean {return this.repeatInterval !== null};
 	getRepeatInterval(): number | null {return this.repeatInterval};
@@ -114,13 +131,6 @@ export default class Task {
 		this.isSkipped = false;
 		this.lastActionedStep = null;
 	}
-
-	setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]>) {
-		this.stepsToStatusMap = new Map();
-		stepsToStatusObject.forEach(([step, status]) => {
-			this.stepsToStatusMap.set(step, status as StepStatus);
-		});
-	};
 
 	getSteps(): string[] {
 		const steps = this.stepsToStatusMap.keys();
@@ -448,12 +458,6 @@ export default class Task {
 		});
 	}
 
-	getEarliestStartTime(): Date | null {return this.earliestStartTime};
-	setEarliestStartTime(earliestStartTime: Date): void {this.earliestStartTime = earliestStartTime};
-
-	getDeadline(): Date | null {return this.deadline};
-	setDeadline(deadline: Date): void {this.deadline = deadline};
-
 
 	/**
 	 * Calculates the time you have to complete the task not including blocked time (Sleeping, etc).
@@ -639,7 +643,7 @@ export default class Task {
 		this.minRequiredTime = taskState.minRequiredTime;
 		this.maxRequiredTime = taskState.maxRequiredTime;
 		this.repeatInterval = taskState.repeatInterval;
-		this.stepsToStatusMap = new Map(taskState.stepsToStatusMap);
+		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));
 		this.lastActionedStep = taskState.lastActionedStep;
 	}
 
