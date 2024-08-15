@@ -661,4 +661,27 @@ export default class Task {
 	restoreTasksManagerState(taskManagerState: TasksManagerState) {
 		this.tasksManager.restoreState(taskManagerState);
 	}
+
+	/**
+	 * Determines if the task is active at the given time
+	 * @param currentTime - The current time
+	 * @returns Whether the task is active
+	 */
+	isActive(currentTime: Date): boolean {
+		if (
+			this.startTime !== null &&
+			this.startTime > currentTime
+		) {
+			return false;
+		}
+
+		if (
+			this.endTime !== null &&
+			this.endTime < currentTime
+		) {
+			return false;
+		}
+
+		return true;
+	}
 }
