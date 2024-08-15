@@ -538,6 +538,7 @@ export default class Task {
 
 	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
 		this.setStartTime(taskTimingOptions.startTime);
+		this.setEndTime(taskTimingOptions.endTime);
 		this.setDeadline(taskTimingOptions.deadline);
 		this.setMinRequiredTime(taskTimingOptions.minRequiredTime);
 		this.setMaxRequiredTime(taskTimingOptions.maxRequiredTime);
