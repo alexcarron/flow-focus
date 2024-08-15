@@ -3,7 +3,7 @@ import StepStatus from "./StepStatus";
 type TaskState = {
 	description: string,
 	stepsToStatusMap: Map<string, StepStatus>,
-	earliestStartTime: Date | null,
+	startTime: Date | null,
 	deadline: Date | null,
 	minRequiredTime: number | null,
 	maxRequiredTime: number | null,

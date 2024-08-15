@@ -22,8 +22,8 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
-	override setEarliestStartTime(earliestStartTime: Date | null): void {
-		super.setEarliestStartTime(earliestStartTime);
+	override setStartTime(startTime: Date | null): void {
+		super.setStartTime(startTime);
 		this.stateObserver.onStateChange();
 	}
 

@@ -9,10 +9,10 @@ export default class EditTaskStartTimeCommand extends EditTaskCommand {
 	}
 
 	public doAction(): void {
-		this.task.setEarliestStartTime(this.newStartTime);
+		this.task.setStartTime(this.newStartTime);
 	}
 
 	public toString(): string {
-		return `Editing "${this.task.getDescription()}"'s start time from "${this.getTaskStateBefore()?.earliestStartTime}" to "${this.getTaskStateAfter()?.earliestStartTime}"`
+		return `Editing "${this.task.getDescription()}"'s start time from "${this.getTaskStateBefore()?.startTime}" to "${this.getTaskStateAfter()?.startTime}"`
 	}
 }

@@ -190,7 +190,7 @@ export class TaskComponent {
 	}
 
 	getStartTime(): Date | null {
-		return this.task.getEarliestStartTime();
+		return this.task.getStartTime();
 	}
 
   openPopup(): void {

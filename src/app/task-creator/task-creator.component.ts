@@ -118,7 +118,7 @@ export class TaskCreatorComponent {
 
 		task.editSteps(this.steps);
 
-		if (this.startTime) task.setEarliestStartTime(this.startTime);
+		if (this.startTime) task.setStartTime(this.startTime);
 		if (this.deadline) task.setDeadline(this.deadline);
 
 		if (this.minDuration) task.setMinRequiredTime(this.minDuration);

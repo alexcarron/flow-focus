@@ -154,11 +154,11 @@ export default class TaskPrioritizer {
 
 	private filterOutUnstartableTasks(tasks: Task[], currentTime: Date): Task[] {
 		return tasks.filter(task => {
-			if (task.getEarliestStartTime() === null) {
+			if (task.getStartTime() === null) {
 				return true;
 			}
 
-			return task.getEarliestStartTime()!.getTime() <= currentTime.getTime();
+			return task.getStartTime()!.getTime() <= currentTime.getTime();
 		});
 	}
 

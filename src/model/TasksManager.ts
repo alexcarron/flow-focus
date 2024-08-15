@@ -59,7 +59,7 @@ export default class TasksManager {
 		const task = new Task(this, "Go To Sleep");
 		const day = 1000 * 60 * 60 * 24;
 		task.makeRecurring(day, sleepDateRange.getStartDate());
-		task.setEarliestStartTime(sleepDateRange.getStartDate());
+		task.setStartTime(sleepDateRange.getStartDate());
 		task.setDeadline(sleepDateRange.getEndDate());
 
 		return task;

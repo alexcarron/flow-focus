@@ -26,36 +26,36 @@ describe('Task', () => {
 
 	it('isRecurring should return false if task is not recurring', () => {
 		task.setDeadline(new Date());
-		task.setEarliestStartTime(new Date());
+		task.setStartTime(new Date());
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
 		expect(task.isRecurring()).toBe(false);
 	})
 
-	it('makeRecurring should set repeat interval and earliest start time', () => {
+	it('makeRecurring should set repeat interval and start time', () => {
 		const currentTime = new Date();
 		task.makeRecurring(1000, currentTime);
 
 		expect(task.getRepeatInterval()).toEqual(1000);
-		expect(task.getEarliestStartTime()).toEqual(currentTime);
+		expect(task.getStartTime()).toEqual(currentTime);
 	});
 
-	it('makeRecurring should set deadline to earliest start time + repeat interval if deadline is not set', () => {
+	it('makeRecurring should set deadline to start time + repeat interval if deadline is not set', () => {
 		task.makeRecurring(1000, new Date());
 
-		const intervalEndTime = new Date(task.getEarliestStartTime()!.getTime() + 1000);
+		const intervalEndTime = new Date(task.getStartTime()!.getTime() + 1000);
 
 		expect(task.getDeadline()).toEqual(intervalEndTime);
 	});
 
-	it('makeRecurring should set deadline to earliest start time + repeat interval if deadline is past interval end time', () => {
+	it('makeRecurring should set deadline to start time + repeat interval if deadline is past interval end time', () => {
 		task.setDeadline(
 			new Date(Date.now() + 2000)
 		);
 
 		task.makeRecurring(1000, new Date());
 
-		const intervalEndTime = new Date(task.getEarliestStartTime()!.getTime() + 1000);
+		const intervalEndTime = new Date(task.getStartTime()!.getTime() + 1000);
 
 		expect(task.getDeadline()).toEqual(intervalEndTime);
 	});
@@ -88,7 +88,7 @@ describe('Task', () => {
 	it('isPastIntervalEndTime should return false if task is not recurring', () => {
 		const currentTime = new Date();
 		task.setDeadline(currentTime);
-		task.setEarliestStartTime(new Date());
+		task.setStartTime(new Date());
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
 		expect(task.isPastIntervalEndTime(currentTime)).toBe(false);
@@ -97,9 +97,9 @@ describe('Task', () => {
 	it('onPastIntervalEndTime should do nothing if task is not recurring', () => {
 		const currentTime = new Date();
 		const deadline = currentTime;
-		const earliestStartTime = currentTime;
+		const startTime = currentTime;
 		task.setDeadline(deadline);
-		task.setEarliestStartTime(earliestStartTime);
+		task.setStartTime(startTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
 		task.addStep('Step 1');
@@ -112,7 +112,7 @@ describe('Task', () => {
 		expect(task.getIsComplete()).toBe(false);
 		expect(task.getNextStep()).toEqual('Step 2');
 		expect(task.getDeadline()).toEqual(deadline);
-		expect(task.getEarliestStartTime()).toEqual(earliestStartTime);
+		expect(task.getStartTime()).toEqual(startTime);
 	});
 
 	it('onPastIntervalEndTime should reset progress if task is recurring', () => {
@@ -129,22 +129,22 @@ describe('Task', () => {
 		expect(task.getNextStep()).toEqual('Step 1');
 	});
 
-	it('onPastIntervalEndTime should set earliest start time and deadline to most recent time not in the future if task is recurring', () => {
+	it('onPastIntervalEndTime should set start time and deadline to most recent time not in the future if task is recurring', () => {
 		const currentTime = new Date();
 
 		const repeatInterval = 1000;
 		const intervalStartTime = new Date(currentTime.getTime() - 2000);
 		const deadline = new Date(intervalStartTime.getTime() + 500);
 
-		const expectedEarliestStartTime = new Date(currentTime.getTime());
-		const expectedDeadline = new Date(expectedEarliestStartTime.getTime() + 500);
+		const expectedStartTime = new Date(currentTime.getTime());
+		const expectedDeadline = new Date(expectedStartTime.getTime() + 500);
 
 		task.setDeadline(deadline);
 		task.makeRecurring(repeatInterval, intervalStartTime);
 
 		task.onPastIntervalEndTime(currentTime);
 
-		expect(task.getEarliestStartTime()).toEqual(expectedEarliestStartTime);
+		expect(task.getStartTime()).toEqual(expectedStartTime);
 		expect(task.getDeadline()).toEqual(expectedDeadline);
 	});
 
@@ -487,11 +487,11 @@ describe('Task', () => {
 		expect(task.getTimeToComplete(currentTime)).toBe(1000);
 	});
 
-	it('getTimeToComplete should return the number of milliseconds between the deadline and earliest start time if the earliest start time is in the future', () => {
+	it('getTimeToComplete should return the number of milliseconds between the deadline and start time if the start time is in the future', () => {
 		const currentTime = new Date();
-		const earliestStartTime = new Date(currentTime.getTime() + 1000);
+		const startTime = new Date(currentTime.getTime() + 1000);
 		const deadline = new Date(currentTime.getTime() + 2000);
-		task.setEarliestStartTime(earliestStartTime);
+		task.setStartTime(startTime);
 		task.setDeadline(deadline);
 		expect(task.getTimeToComplete(currentTime)).toBe(1000);
 	});
@@ -548,7 +548,7 @@ describe('Task', () => {
 		expect(state.isMandatory).toEqual(task.getIsMandatory());
 		expect(state.isSkipped).toEqual(task.getIsSkipped());
 
-		expect(state.earliestStartTime).toEqual(task.getEarliestStartTime());
+		expect(state.startTime).toEqual(task.getStartTime());
 		expect(state.deadline).toEqual(task.getDeadline());
 		expect(state.minRequiredTime).toEqual(task.getMinRequiredTime());
 		expect(state.maxRequiredTime).toEqual(task.getMaxRequiredTime(currentTime));
@@ -588,7 +588,7 @@ describe('Task', () => {
 		task.setMaxRequiredTime(3000);
 		task.setMinRequiredTime(2000);
 		task.setDeadline(new Date(currentTime.getTime() + 1000));
-		task.setEarliestStartTime(new Date(currentTime.getTime() + 2000));
+		task.setStartTime(new Date(currentTime.getTime() + 2000));
 		task.setMandatory(true);
 
 		task.restoreState(state);
@@ -598,7 +598,7 @@ describe('Task', () => {
 		expect(task.getIsMandatory()).toEqual(false);
 		expect(task.getIsSkipped()).toEqual(false);
 		expect(task.getDeadline()).toEqual(currentTime);
-		expect(task.getEarliestStartTime()).toEqual(currentTime);
+		expect(task.getStartTime()).toEqual(currentTime);
 		expect(task.getMinRequiredTime()).toEqual(1000);
 		expect(task.getMaxRequiredTime(currentTime)).toEqual(2000);
 		expect(task.getRepeatInterval()).toEqual(1000);

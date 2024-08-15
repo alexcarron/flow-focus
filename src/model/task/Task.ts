@@ -11,7 +11,7 @@ export default class Task {
 	 */
 	protected description: string;
 	protected stepsToStatusMap: Map<string, StepStatus> = new Map();
-	protected earliestStartTime: Date | null = null;
+	protected startTime: Date | null = null;
 	protected deadline: Date | null = null;
 	protected minRequiredTime: number | null = null;
 	protected maxRequiredTime: number | null = null;
@@ -43,8 +43,8 @@ export default class Task {
 		}
 	};
 
-	getEarliestStartTime(): Date | null {return this.earliestStartTime};
-	setEarliestStartTime(earliestStartTime: Date | null): void {this.earliestStartTime = earliestStartTime};
+	getStartTime(): Date | null {return this.startTime};
+	setStartTime(startTime: Date | null): void {this.startTime = startTime};
 
 	getDeadline(): Date | null {return this.deadline};
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
@@ -95,9 +95,9 @@ export default class Task {
 	 */
 	makeRecurring(repeatInterval: number, intervalStartTime: Date): void {
 		this.setRepeatInterval(repeatInterval);
-		this.setEarliestStartTime(intervalStartTime);
+		this.setStartTime(intervalStartTime);
 
-		const intervalEndTime = new Date(this.earliestStartTime!.getTime() + repeatInterval);
+		const intervalEndTime = new Date(this.startTime!.getTime() + repeatInterval);
 
 		// If deadline is not set or if deadline is after the end of the interval set it to the end of the interval
 		if (
@@ -113,11 +113,11 @@ export default class Task {
 	 * @returns {boolean} - Whether the task is past its interval end time.
 	 */
 	isPastIntervalEndTime(currentTime: Date): boolean {
-		if (!this.isRecurring() || !this.earliestStartTime || !this.repeatInterval) {
+		if (!this.isRecurring() || !this.startTime || !this.repeatInterval) {
 			return false;
 		}
 
-		const intervalEndTime = new Date(this.earliestStartTime.getTime() + this.repeatInterval);
+		const intervalEndTime = new Date(this.startTime.getTime() + this.repeatInterval);
 
 		return currentTime.getTime() > intervalEndTime.getTime();
 	};
@@ -126,7 +126,7 @@ export default class Task {
 	 * Handles resetting a task's interval and progress when the current time passes the end of a task interval.
 	 */
 	onPastIntervalEndTime(currentTime: Date): void {
-		if (!this.isRecurring() || !this.earliestStartTime || !this.repeatInterval) {
+		if (!this.isRecurring() || !this.startTime || !this.repeatInterval) {
 			return;
 		}
 
@@ -135,13 +135,13 @@ export default class Task {
 		let isNextIntervalStartTimeInFuture: boolean = false;
 		while (!isNextIntervalStartTimeInFuture) {
 			const nextIntervalStartTime: Date =
-				new Date(this.earliestStartTime.getTime() + this.repeatInterval);
+				new Date(this.startTime.getTime() + this.repeatInterval);
 
 			if (nextIntervalStartTime.getTime() > currentTime.getTime()) {
 				isNextIntervalStartTimeInFuture = true;
 			}
 			else {
-				this.setEarliestStartTime(nextIntervalStartTime);
+				this.setStartTime(nextIntervalStartTime);
 
 				if (this.deadline !== null) {
 					const nextIntervalDeadline =
@@ -319,8 +319,8 @@ export default class Task {
 		this.setDeadline(null);
 	}
 
-	removeEarliestStartTime(): void {
-		this.setEarliestStartTime(null);
+	removeStartTime(): void {
+		this.setStartTime(null);
 	}
 
 	/**
@@ -504,16 +504,16 @@ export default class Task {
 			return Number.POSITIVE_INFINITY;
 		}
 
-		const earliestStartDate = this.getEarliestStartTime()
+		const startTime = this.getStartTime()
 		const deadlineDate = this.getDeadline()!;
 
 		let taskDateRange = new DateRange(currentTime, deadlineDate);
 
 		if (
-			earliestStartDate !== null &&
-			currentTime.getTime() < earliestStartDate.getTime()
+			startTime !== null &&
+			currentTime.getTime() < startTime.getTime()
 		) {
-			taskDateRange = new DateRange(earliestStartDate, deadlineDate);
+			taskDateRange = new DateRange(startTime, deadlineDate);
 		}
 
 		return taskDateRange.getDurationWithoutTimeWindow(
@@ -523,7 +523,7 @@ export default class Task {
 
 	getTaskTimingOptions(): TaskTimingOptions {
 		return {
-			startTime: this.earliestStartTime,
+			startTime: this.startTime,
 			deadline: this.deadline,
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
@@ -533,7 +533,7 @@ export default class Task {
 	}
 
 	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
-		this.setEarliestStartTime(taskTimingOptions.startTime);
+		this.setStartTime(taskTimingOptions.startTime);
 		this.setDeadline(taskTimingOptions.deadline);
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
@@ -612,7 +612,7 @@ export default class Task {
 			isComplete: this.isComplete,
 			isMandatory: this.isMandatory,
 			isSkipped: this.isSkipped,
-			earliestStartTime: this.earliestStartTime,
+			startTime: this.startTime,
 			deadline: this.deadline,
 			minRequiredTime: this.minRequiredTime,
 			maxRequiredTime: this.maxRequiredTime,
@@ -639,7 +639,7 @@ export default class Task {
 		this.setComplete(taskState.isComplete);
 		this.setMandatory(taskState.isMandatory);
 		this.setSkipped(taskState.isSkipped);
-		this.setEarliestStartTime(taskState.earliestStartTime);
+		this.setStartTime(taskState.startTime);
 		this.setDeadline(taskState.deadline);
 		this.setMinRequiredTime(taskState.minRequiredTime);
 		this.setMaxRequiredTime(taskState.maxRequiredTime);
