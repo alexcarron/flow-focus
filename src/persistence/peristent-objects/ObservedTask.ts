@@ -29,7 +29,7 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
-	override setDeadline(deadline: Date): void {
+	override setDeadline(deadline: Date | null): void {
 		super.setDeadline(deadline);
 		this.stateObserver.onStateChange();
 	}
