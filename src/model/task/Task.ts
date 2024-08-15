@@ -527,9 +527,10 @@ export default class Task {
 	getTaskTimingOptions(): TaskTimingOptions {
 		return {
 			startTime: this.startTime,
+			endTime: this.endTime,
 			deadline: this.deadline,
-			minDuration: this.minRequiredTime,
-			maxDuration: this.maxRequiredTime,
+			minRequiredTime: this.minRequiredTime,
+			maxRequiredTime: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
 			isMandatory: this.isMandatory
 		}
@@ -538,8 +539,8 @@ export default class Task {
 	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
 		this.setStartTime(taskTimingOptions.startTime);
 		this.setDeadline(taskTimingOptions.deadline);
-		this.setMinRequiredTime(taskTimingOptions.minDuration);
-		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
+		this.setMinRequiredTime(taskTimingOptions.minRequiredTime);
+		this.setMaxRequiredTime(taskTimingOptions.maxRequiredTime);
 		this.setRepeatInterval(taskTimingOptions.repeatInterval);
 		this.setMandatory(taskTimingOptions.isMandatory)
 	}
@@ -616,6 +617,7 @@ export default class Task {
 			isMandatory: this.isMandatory,
 			isSkipped: this.isSkipped,
 			startTime: this.startTime,
+			endTime: this.endTime,
 			deadline: this.deadline,
 			minRequiredTime: this.minRequiredTime,
 			maxRequiredTime: this.maxRequiredTime,
@@ -643,6 +645,7 @@ export default class Task {
 		this.setMandatory(taskState.isMandatory);
 		this.setSkipped(taskState.isSkipped);
 		this.setStartTime(taskState.startTime);
+		this.setEndTime(taskState.endTime);
 		this.setDeadline(taskState.deadline);
 		this.setMinRequiredTime(taskState.minRequiredTime);
 		this.setMaxRequiredTime(taskState.maxRequiredTime);

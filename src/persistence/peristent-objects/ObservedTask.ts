@@ -27,6 +27,11 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setEndTime(endTime: Date | null): void {
+		super.setEndTime(endTime);
+		this.stateObserver.onStateChange();	
+	}
+
 	override setDeadline(deadline: Date | null): void {
 		super.setDeadline(deadline);
 		this.stateObserver.onStateChange();

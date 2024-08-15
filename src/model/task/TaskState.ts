@@ -1,17 +1,12 @@
 import StepStatus from "./StepStatus";
+import TaskTimingOptions from "./TaskTimingOptions";
 
 type TaskState = {
 	description: string,
 	stepsToStatusMap: Map<string, StepStatus>,
-	startTime: Date | null,
-	deadline: Date | null,
-	minRequiredTime: number | null,
-	maxRequiredTime: number | null,
-	repeatInterval: number | null,
-	isMandatory: boolean,
 	isComplete: boolean,
 	isSkipped: boolean,
 	lastActionedStep: {step: string, status: StepStatus} | null,
-}
+} & TaskTimingOptions;
 
 export default TaskState;

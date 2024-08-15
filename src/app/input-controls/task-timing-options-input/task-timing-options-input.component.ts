@@ -36,8 +36,8 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 		if (this.initialValue) {
 			this.startTime = this.initialValue.startTime;
 			this.deadline = this.initialValue.deadline;
-			this.minDuration = this.initialValue.minDuration;
-			this.maxDuration = this.initialValue.maxDuration;
+			this.minDuration = this.initialValue.minRequiredTime;
+			this.maxDuration = this.initialValue.maxRequiredTime;
 			this.hasRepeatInterval = this.initialValue.repeatInterval !== null;
 			this.repeatInterval = this.initialValue.repeatInterval;
 			this.isMandatory = this.initialValue.isMandatory;
@@ -87,8 +87,8 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 		this.onInputChange.emit({
 			startTime: this.startTime,
 			deadline: this.deadline,
-			minDuration: this.minDuration,
-			maxDuration: this.maxDuration,
+			minRequiredTime: this.minDuration,
+			maxRequiredTime: this.maxDuration,
 			repeatInterval: this.repeatInterval,
 			isMandatory: this.isMandatory
 		});

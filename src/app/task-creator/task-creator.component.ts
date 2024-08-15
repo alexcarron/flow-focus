@@ -81,8 +81,8 @@ export class TaskCreatorComponent {
 	onTimingOptionsChange(timingOptions: TaskTimingOptions) {
 		this.startTime = timingOptions.startTime;
 		this.deadline = timingOptions.deadline;
-		this.minDuration = timingOptions.minDuration;
-		this.maxDuration = timingOptions.maxDuration;
+		this.minDuration = timingOptions.minRequiredTime;
+		this.maxDuration = timingOptions.maxRequiredTime;
 		this.repeatInterval = timingOptions.repeatInterval;
 		this.isMandatory = timingOptions.isMandatory;
 		this.hasRepeatInterval = timingOptions.repeatInterval !== null;
