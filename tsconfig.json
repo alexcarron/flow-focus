@@ -22,7 +22,13 @@
     "lib": [
       "ES2022",
       "dom"
-    ]
+    ],
+		"types": [
+			"node",
+			"jest",
+			"jasmine",
+			"mocha"
+		]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

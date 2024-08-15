@@ -5,19 +5,27 @@
 		<datetime-input
 			#startTimeInput
 			id="startTimeInput"
-			[initialValue]="startTime"
+			[initialValue]="enteredValue.startTime"
 			(onInputChange)="onStartTimeChange($event)"
 		></datetime-input>
 
 		<p>to</p>
 
 		<datetime-input
-			#deadlineInput
-			id="deadlineInput"
-			[initialValue]="deadline"
-			(onInputChange)="onDeadlineChange($event)"
+			#endTimeInput
+			id="endTimeInput"
+			[initialValue]="enteredValue.endTime"
+			(onInputChange)="onEndTimeChange($event)"
 		></datetime-input>
 	</div>
+</div><div class="flex-column main-input">
+	<h3 class="input-label">Deadline</h3>
+	<datetime-input
+		#deadlineInput
+		id="deadlineInput"
+		[initialValue]="enteredValue.deadline"
+		(onInputChange)="onDeadlineChange($event)"
+	></datetime-input>
 </div>
 <div class="flex-column main-input">
 	<h3 class="input-label">Estimated Required Time</h3>
@@ -26,7 +34,7 @@
 		<duration-input
 			#minDurationInput
 			id="minDurationInput"
-			[initialValue]="minDuration"
+			[initialValue]="enteredValue.minRequiredTime"
 			(onInputChange)="onMinDurationChange($event)"
 		></duration-input>
 
@@ -35,7 +43,7 @@
 		<duration-input
 			#maxDurationInput
 			id="maxDurationInput"
-			[initialValue]="maxDuration"
+			[initialValue]="enteredValue.maxRequiredTime"
 			(onInputChange)="onMaxDurationChange($event)"
 		></duration-input>
 	</div>
@@ -54,7 +62,7 @@
 		*ngIf="hasRepeatInterval"
 		#repeatIntervalInput
 		id="repeatIntervalInput"
-		[initialValue]="repeatInterval"
+		[initialValue]="enteredValue.repeatInterval"
 		(onInputChange)="onRepeatChange($event)"
 ></duration-input>
 </div>
@@ -62,7 +70,7 @@
 	<checkbox-input
 		#mandatoryInput
 		id="mandatoryInput"
-		[initialValue]="isMandatory"
+		[initialValue]="enteredValue.isMandatory"
 		(onInputChange)="onMandatoryChange($event)"
 	></checkbox-input>
 	<h3 class="input-label">Mandatory</h3>
