@@ -47,7 +47,6 @@ export default class TaskPrioritizer {
 		let priorityTasks: Task[] = tasksToPrioritize;
 
 		priorityTasks = priorityTasks.filter(task => task.isActive(currentTime));
-		priorityTasks = this.filterOutCompletedTasks(priorityTasks);
 		priorityTasks = this.filterOutNonUrgentSkippedTasks(priorityTasks, currentTime);
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
@@ -150,10 +149,6 @@ export default class TaskPrioritizer {
 			mandatoryTask.getMinSlackTime(currentTime) <
 			optionalTask.getMaxRequiredTime(currentTime)
 		);
-	}
-
-	private filterOutCompletedTasks(tasks: Task[]): Task[] {
-		return tasks.filter(task => !task.getIsComplete());
 	}
 
 	private filterOutNonUrgentSkippedTasks(tasks: Task[], currentTime: Date): Task[] {
