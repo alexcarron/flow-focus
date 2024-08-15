@@ -82,6 +82,8 @@ export default class Task {
 	getIsSkipped(): boolean {return this.isSkipped}
 	setSkipped(isSkipped: boolean): void {this.isSkipped = isSkipped}
 
+	setLastActionedStep(lastActionedStep: {step: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
+
 	isRecurring(): boolean {return this.repeatInterval !== null};
 
 	/**
@@ -161,7 +163,7 @@ export default class Task {
 		});
 		this.setComplete(false);
 		this.setSkipped(false);
-		this.lastActionedStep = null;
+		this.setLastActionedStep(null);
 	}
 
 	getSteps(): string[] {
@@ -387,10 +389,10 @@ export default class Task {
 			this.complete();
 		}
 
-		this.lastActionedStep = {
+		this.setLastActionedStep({
 			step: step,
 			status: StepStatus.COMPLETED
-		}
+		});
 	}
 
 	/**
@@ -444,10 +446,10 @@ export default class Task {
 			this.skip();
 		}
 
-		this.lastActionedStep = {
+		this.setLastActionedStep({
 			step: step,
 			status: StepStatus.SKIPPED
-		}
+		})
 	}
 
 	/**
@@ -633,7 +635,7 @@ export default class Task {
 	 * @param taskState - The state to restore.
 	 */
 	restoreState(taskState: TaskState) {
-		this.description = taskState.description;
+		this.setDescription(taskState.description);
 		this.setComplete(taskState.isComplete);
 		this.setMandatory(taskState.isMandatory);
 		this.setSkipped(taskState.isSkipped);
@@ -643,7 +645,7 @@ export default class Task {
 		this.setMaxRequiredTime(taskState.maxRequiredTime);
 		this.setRepeatInterval(taskState.repeatInterval);
 		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));
-		this.lastActionedStep = taskState.lastActionedStep;
+		this.setLastActionedStep(taskState.lastActionedStep);
 	}
 
 	/**

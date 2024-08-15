@@ -64,6 +64,11 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setLastActionedStep(lastActionedStep: { step: string; status: StepStatus; } | null): void {
+		super.setLastActionedStep(lastActionedStep);
+		this.stateObserver.onStateChange();
+	}
+
 	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
 		super.makeRecurring(repeatInterval, repeatStartTime);
 		this.stateObserver.onStateChange();
