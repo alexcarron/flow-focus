@@ -49,6 +49,14 @@ export default class Task {
 	getDeadline(): Date | null {return this.deadline};
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
 
+	getMinRequiredTime(): number {
+		if (this.minRequiredTime === null) {
+			return 0;
+		}
+		return this.minRequiredTime
+	};
+	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
+
 	isRecurring(): boolean {return this.repeatInterval !== null};
 	getRepeatInterval(): number | null {return this.repeatInterval};
 
@@ -487,15 +495,6 @@ export default class Task {
 		);
 	}
 
-	getMinRequiredTime(): number {
-		if (this.minRequiredTime === null) {
-			return 0;
-		}
-		return this.minRequiredTime
-	};
-
-	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
-
 	getTaskTimingOptions(): TaskTimingOptions {
 		return {
 			startTime: this.earliestStartTime,
@@ -510,7 +509,7 @@ export default class Task {
 	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
 		this.setEarliestStartTime(taskTimingOptions.startTime);
 		this.setDeadline(taskTimingOptions.deadline);
-		this.minRequiredTime = taskTimingOptions.minDuration;
+		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.maxRequiredTime = taskTimingOptions.maxDuration;
 		this.repeatInterval = taskTimingOptions.repeatInterval;
 		this.isMandatory = taskTimingOptions.isMandatory
@@ -640,7 +639,7 @@ export default class Task {
 		this.isSkipped = taskState.isSkipped;
 		this.setEarliestStartTime(taskState.earliestStartTime);
 		this.setDeadline(taskState.deadline);
-		this.minRequiredTime = taskState.minRequiredTime;
+		this.setMinRequiredTime(taskState.minRequiredTime);
 		this.maxRequiredTime = taskState.maxRequiredTime;
 		this.repeatInterval = taskState.repeatInterval;
 		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));

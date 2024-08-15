@@ -34,6 +34,21 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setMinRequiredTime(minDuration: number): void {
+		super.setMinRequiredTime(minDuration);
+		this.stateObserver.onStateChange();
+	}
+
+	override setMaxRequiredTime(maxDuration: number): void {
+		super.setMaxRequiredTime(maxDuration);
+		this.stateObserver.onStateChange();
+	}
+
+	override setMandatory(isMandatory: boolean): void {
+		super.setMandatory(isMandatory);
+		this.stateObserver.onStateChange();
+	}
+
 	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
 		super.makeRecurring(repeatInterval, repeatStartTime);
 		this.stateObserver.onStateChange();
@@ -71,21 +86,6 @@ export default class ObservedTask extends Task {
 
 	override editSteps(newSteps: string[]): void {
 		super.editSteps(newSteps);
-		this.stateObserver.onStateChange();
-	}
-
-	override setMinRequiredTime(minDuration: number): void {
-		super.setMinRequiredTime(minDuration);
-		this.stateObserver.onStateChange();
-	}
-
-	override setMaxRequiredTime(maxDuration: number): void {
-		super.setMaxRequiredTime(maxDuration);
-		this.stateObserver.onStateChange();
-	}
-
-	override setMandatory(isMandatory: boolean): void {
-		super.setMandatory(isMandatory);
 		this.stateObserver.onStateChange();
 	}
 
