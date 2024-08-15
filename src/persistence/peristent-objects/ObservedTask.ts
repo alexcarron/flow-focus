@@ -44,6 +44,11 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setRepeatInterval(repeatInterval: number | null): void {
+		super.setRepeatInterval(repeatInterval);
+		this.stateObserver.onStateChange();
+	}
+
 	override setMandatory(isMandatory: boolean): void {
 		super.setMandatory(isMandatory);
 		this.stateObserver.onStateChange();

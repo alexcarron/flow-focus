@@ -70,8 +70,10 @@ export default class Task {
 	};
 	setMaxRequiredTime(maxRequriedTime: number | null): void {this.maxRequiredTime = maxRequriedTime};
 
-	isRecurring(): boolean {return this.repeatInterval !== null};
 	getRepeatInterval(): number | null {return this.repeatInterval};
+	setRepeatInterval(repeatInterval: number | null): void {this.repeatInterval = repeatInterval};
+
+	isRecurring(): boolean {return this.repeatInterval !== null};
 
 	/**
 	 * Makes the task recurring by setting the repeat interval and time the interval should start.
@@ -81,7 +83,7 @@ export default class Task {
 	 * @param {Date} intervalStartTime - The time at which the task should start repeating.
 	 */
 	makeRecurring(repeatInterval: number, intervalStartTime: Date): void {
-		this.repeatInterval = repeatInterval;
+		this.setRepeatInterval(repeatInterval);
 		this.setEarliestStartTime(intervalStartTime);
 
 		const intervalEndTime = new Date(this.earliestStartTime!.getTime() + repeatInterval);
@@ -524,7 +526,7 @@ export default class Task {
 		this.setDeadline(taskTimingOptions.deadline);
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
-		this.repeatInterval = taskTimingOptions.repeatInterval;
+		this.setRepeatInterval(taskTimingOptions.repeatInterval);
 		this.isMandatory = taskTimingOptions.isMandatory
 	}
 
@@ -635,7 +637,7 @@ export default class Task {
 		this.setDeadline(taskState.deadline);
 		this.setMinRequiredTime(taskState.minRequiredTime);
 		this.setMaxRequiredTime(taskState.maxRequiredTime);
-		this.repeatInterval = taskState.repeatInterval;
+		this.setRepeatInterval(taskState.repeatInterval);
 		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));
 		this.lastActionedStep = taskState.lastActionedStep;
 	}
