@@ -668,6 +668,10 @@ export default class Task {
 	 * @returns Whether the task is active
 	 */
 	isActive(currentTime: Date): boolean {
+		if (this.isComplete) {
+			return false;
+		}
+
 		if (
 			this.startTime !== null &&
 			this.startTime > currentTime

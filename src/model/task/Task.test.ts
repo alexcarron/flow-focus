@@ -636,23 +636,23 @@ describe('Task', () => {
 	describe('isActive', () => {
 		const currentTime = new Date();
 
-		it('isActive should return true if the start and end time is not set', () => {
+		it('should return true if the start and end time is not set', () => {
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
 
-		it('isActive should return false if the start time is after the current time', () => {
+		it('should return false if the start time is after the current time', () => {
 			task.setStartTime(new Date(currentTime.getTime() + 1));
 
 			expect(task.isActive(currentTime)).toEqual(false);
 		});
 
-		it('isActive should return false if the end time is before the current time', () => {
+		it('should return false if the end time is before the current time', () => {
 			task.setEndTime(new Date(currentTime.getTime() - 1));
 
 			expect(task.isActive(currentTime)).toEqual(false);
 		});
 
-		it('isActive should return true if the time is between the start and end time', () => {
+		it('should return true if the time is between the start and end time', () => {
 			const startTime = new Date(currentTime.getTime() - 1000);
 			const endTime = new Date(currentTime.getTime() + 1000);
 
@@ -662,16 +662,21 @@ describe('Task', () => {
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
 
-		it('isActive should return true ifthe end time is after the current time', () => {
+		it('should return true ifthe end time is after the current time', () => {
 			task.setEndTime(new Date(currentTime.getTime() + 1000));
 
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
 
-		it('isActive should return true if the start time is before the current time', () => {
+		it('should return true if the start time is before the current time', () => {
 			task.setStartTime(new Date(currentTime.getTime() - 1000));
 
 			expect(task.isActive(currentTime)).toEqual(true);
+		});
+
+		it('should return false if the task is completed', () => {
+			task.completeNextStep();
+			expect(task.isActive(currentTime)).toEqual(false);
 		});
 	});
 });
