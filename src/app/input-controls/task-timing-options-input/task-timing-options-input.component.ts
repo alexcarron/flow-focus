@@ -15,6 +15,7 @@ import { CommonModule } from '@angular/common';
 })
 export class TaskTimingOptionsInputComponent implements InputControlComponent<TaskTimingOptions> {
 	@ViewChild('startTimeInput') startTimeInput!: DatetimeInputComponent;
+	@ViewChild('endTimeInput') endTimeInput!: DatetimeInputComponent;
 	@ViewChild('deadlineInput') deadlineInput!: DatetimeInputComponent;
 	@ViewChild('minDurationInput') minDurationInput!: DurationInputComponent;
 	@ViewChild('maxDurationInput') maxDurationInput!: DurationInputComponent;
@@ -24,59 +25,64 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 
 	@Input() initialValue: TaskTimingOptions | null = null;
 	@Output() onInputChange = new EventEmitter<TaskTimingOptions>();
-	startTime: Date | null = null;
-	deadline: Date | null = null;
-	minDuration: number | null = null;
-	maxDuration: number | null = null;
+	private static readonly DEFAULT_VALUE: TaskTimingOptions = {
+		startTime: null,
+		endTime: null,
+		deadline: null,
+		minRequiredTime: null,
+		maxRequiredTime: null,
+		repeatInterval: null,
+		isMandatory: false
+
+	}
+	enteredValue: TaskTimingOptions = TaskTimingOptionsInputComponent.DEFAULT_VALUE;
 	hasRepeatInterval: boolean = false;
-	repeatInterval: number | null = null;
-	isMandatory: boolean = false;
 
 	ngOnInit(): void {
 		if (this.initialValue) {
-			this.startTime = this.initialValue.startTime;
-			this.deadline = this.initialValue.deadline;
-			this.minDuration = this.initialValue.minRequiredTime;
-			this.maxDuration = this.initialValue.maxRequiredTime;
+			this.enteredValue = this.initialValue;
 			this.hasRepeatInterval = this.initialValue.repeatInterval !== null;
-			this.repeatInterval = this.initialValue.repeatInterval;
-			this.isMandatory = this.initialValue.isMandatory;
 		}
 	}
 
 	onMinDurationChange(minDurationInMilliseconds: number | null) {
-		this.minDuration = minDurationInMilliseconds;
+		this.enteredValue.minRequiredTime = minDurationInMilliseconds;
 		this.onInput();
 	}
 
 	onMaxDurationChange(maxDurationInMilliseconds: number | null) {
-		this.maxDuration = maxDurationInMilliseconds;
+		this.enteredValue.maxRequiredTime = maxDurationInMilliseconds;
 		this.onInput();
 	}
 
 	onStartTimeChange(startTime: Date | null) {
-		this.startTime = startTime;
+		this.enteredValue.startTime = startTime;
+		this.onInput();
+	}
+
+	onEndTimeChange(endTime: Date | null) {
+		this.enteredValue.endTime = endTime;
 		this.onInput();
 	}
 
 	onDeadlineChange(deadline: Date | null) {
-		this.deadline = deadline;
+		this.enteredValue.deadline = deadline;
 		this.onInput();
 	}
 
 	onRepeatChange(repeatInterval: number | null) {
-		this.repeatInterval = repeatInterval;
+		this.enteredValue.repeatInterval = repeatInterval;
 		this.onInput();
 	}
 
 	onMandatoryChange(isMandatory: boolean) {
-		this.isMandatory = isMandatory;
+		this.enteredValue.isMandatory = isMandatory;
 		this.onInput();
 	}
 
 	onHasRepeatIntervalChange(hasRepeatInterval: boolean) {
 		if (!hasRepeatInterval) {
-			this.repeatInterval = null;
+			this.enteredValue.repeatInterval = null;
 		}
 
 		this.hasRepeatInterval = hasRepeatInterval;
@@ -84,27 +90,15 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 	}
 
 	onInput(): void {
-		this.onInputChange.emit({
-			startTime: this.startTime,
-			deadline: this.deadline,
-			minRequiredTime: this.minDuration,
-			maxRequiredTime: this.maxDuration,
-			repeatInterval: this.repeatInterval,
-			isMandatory: this.isMandatory
-		});
+		this.onInputChange.emit(this.enteredValue);
 	}
 
 	clearInput(): void {
-		this.startTime = null;
-		this.deadline = null;
-		this.minDuration = null;
-		this.maxDuration = null;
-		this.repeatInterval = null;
-		this.isMandatory = false;
-		this.hasRepeatInterval = false;
+		this.enteredValue = TaskTimingOptionsInputComponent.DEFAULT_VALUE;
 
 		const allInputComponents: InputControlComponent<any>[] = [
 			this.startTimeInput,
+			this.endTimeInput,
 			this.deadlineInput,
 			this.minDurationInput,
 			this.maxDurationInput,
