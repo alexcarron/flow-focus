@@ -57,6 +57,19 @@ export default class Task {
 	};
 	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
 
+	getMaxRequiredTime(currentTime: Date): number {
+		if (this.maxRequiredTime === null) {
+			if (this.deadline === null) {
+				return Number.POSITIVE_INFINITY;
+			}
+			else {
+				return this.getTimeToComplete(currentTime);
+			}
+		}
+		return this.maxRequiredTime
+	};
+	setMaxRequiredTime(maxRequriedTime: number | null): void {this.maxRequiredTime = maxRequriedTime};
+
 	isRecurring(): boolean {return this.repeatInterval !== null};
 	getRepeatInterval(): number | null {return this.repeatInterval};
 
@@ -510,29 +523,10 @@ export default class Task {
 		this.setEarliestStartTime(taskTimingOptions.startTime);
 		this.setDeadline(taskTimingOptions.deadline);
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
-		this.maxRequiredTime = taskTimingOptions.maxDuration;
+		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
 		this.repeatInterval = taskTimingOptions.repeatInterval;
 		this.isMandatory = taskTimingOptions.isMandatory
 	}
-
-	/**
-	 * Determines the maximum amount of milliseconds it will take to complete this task
-	 * @param currentTime - The current time
-	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks
-	 * @returns The maximum amount of milliseconds it will take to complete this task
-	 */
-	getMaxRequiredTime(currentTime: Date): number {
-		if (this.maxRequiredTime === null) {
-			if (this.deadline === null) {
-				return Number.POSITIVE_INFINITY;
-			}
-			else {
-				return this.getTimeToComplete(currentTime);
-			}
-		}
-		return this.maxRequiredTime
-	};
-	setMaxRequiredTime(maxRequriedTime: number): void {this.maxRequiredTime = maxRequriedTime};
 
 	/**
 	 * Determines the minimum amount of milliseconds you can spend not completing the task
@@ -640,7 +634,7 @@ export default class Task {
 		this.setEarliestStartTime(taskState.earliestStartTime);
 		this.setDeadline(taskState.deadline);
 		this.setMinRequiredTime(taskState.minRequiredTime);
-		this.maxRequiredTime = taskState.maxRequiredTime;
+		this.setMaxRequiredTime(taskState.maxRequiredTime);
 		this.repeatInterval = taskState.repeatInterval;
 		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));
 		this.lastActionedStep = taskState.lastActionedStep;

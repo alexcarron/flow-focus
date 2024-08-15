@@ -34,12 +34,12 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
-	override setMinRequiredTime(minDuration: number): void {
+	override setMinRequiredTime(minDuration: number | null): void {
 		super.setMinRequiredTime(minDuration);
 		this.stateObserver.onStateChange();
 	}
 
-	override setMaxRequiredTime(maxDuration: number): void {
+	override setMaxRequiredTime(maxDuration: number | null): void {
 		super.setMaxRequiredTime(maxDuration);
 		this.stateObserver.onStateChange();
 	}
