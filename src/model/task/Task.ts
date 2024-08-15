@@ -76,6 +76,9 @@ export default class Task {
 	getIsMandatory(): boolean {return this.isMandatory}
 	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
+	getIsComplete(): boolean {return this.isComplete}
+	setComplete(isComplete: boolean): void {this.isComplete = isComplete}
+
 	isRecurring(): boolean {return this.repeatInterval !== null};
 
 	/**
@@ -153,7 +156,7 @@ export default class Task {
 		this.getSteps().forEach((step) => {
 			this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 		});
-		this.isComplete = false;
+		this.setComplete(false);
 		this.isSkipped = false;
 		this.lastActionedStep = null;
 	}
@@ -566,9 +569,8 @@ export default class Task {
 		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
 	}
 
-	getIsComplete(): boolean {return this.isComplete}
 	protected complete(): void {
-		this.isComplete = true;
+		this.setComplete(true);
 		this.tasksManager.unSkipSkippedTasks();
 	}
 
@@ -630,7 +632,7 @@ export default class Task {
 	 */
 	restoreState(taskState: TaskState) {
 		this.description = taskState.description;
-		this.isComplete = taskState.isComplete;
+		this.setComplete(taskState.isComplete);
 		this.setMandatory(taskState.isMandatory);
 		this.isSkipped = taskState.isSkipped;
 		this.setEarliestStartTime(taskState.earliestStartTime);

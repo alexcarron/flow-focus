@@ -54,6 +54,11 @@ export default class ObservedTask extends Task {
 		this.stateObserver.onStateChange();
 	}
 
+	override setComplete(isComplete: boolean): void {
+		super.setComplete(isComplete);
+		this.stateObserver.onStateChange();
+	}
+
 	override makeRecurring(repeatInterval: number, repeatStartTime: Date): void {
 		super.makeRecurring(repeatInterval, repeatStartTime);
 		this.stateObserver.onStateChange();
