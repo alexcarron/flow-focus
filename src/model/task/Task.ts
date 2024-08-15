@@ -73,6 +73,9 @@ export default class Task {
 	getRepeatInterval(): number | null {return this.repeatInterval};
 	setRepeatInterval(repeatInterval: number | null): void {this.repeatInterval = repeatInterval};
 
+	getIsMandatory(): boolean {return this.isMandatory}
+	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
+
 	isRecurring(): boolean {return this.repeatInterval !== null};
 
 	/**
@@ -527,7 +530,7 @@ export default class Task {
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
 		this.setRepeatInterval(taskTimingOptions.repeatInterval);
-		this.isMandatory = taskTimingOptions.isMandatory
+		this.setMandatory(taskTimingOptions.isMandatory)
 	}
 
 	/**
@@ -562,9 +565,6 @@ export default class Task {
 
 		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
 	}
-
-	getIsMandatory(): boolean {return this.isMandatory}
-	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	getIsComplete(): boolean {return this.isComplete}
 	protected complete(): void {
@@ -631,7 +631,7 @@ export default class Task {
 	restoreState(taskState: TaskState) {
 		this.description = taskState.description;
 		this.isComplete = taskState.isComplete;
-		this.isMandatory = taskState.isMandatory;
+		this.setMandatory(taskState.isMandatory);
 		this.isSkipped = taskState.isSkipped;
 		this.setEarliestStartTime(taskState.earliestStartTime);
 		this.setDeadline(taskState.deadline);
