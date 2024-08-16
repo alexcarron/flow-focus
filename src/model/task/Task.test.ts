@@ -3,11 +3,11 @@ import StepStatus from "./StepStatus";
 import Task from "./Task";
 
 describe('Task', () => {
-	const tasksManager: TasksManager = new TasksManager();
+	const tasksManager: TasksManager = new TasksManager( { onStateChange: () => {} } );
 	let task: Task;
 
 	beforeEach(() => {
-			task = tasksManager.addTask('Sample Task');
+			task = tasksManager.addCreatedTask('Sample Task');
 	});
 
 	it('should initialize with description', () => {

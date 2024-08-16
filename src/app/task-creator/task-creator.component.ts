@@ -114,7 +114,7 @@ export class TaskCreatorComponent {
 	}
 
 	createTask() {
-		const task = this.tasksManager.addTask(this.name!);
+		const task = this.tasksManager.addCreatedTask(this.name!);
 
 		task.editSteps(this.steps);
 

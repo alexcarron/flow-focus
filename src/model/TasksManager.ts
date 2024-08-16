@@ -1,3 +1,6 @@
+import NotifyStateChange from "../persistence/observer/NotifyStateChangeDecorator";
+import StateObservable from "../persistence/observer/StateObservable";
+import StateObserver from "../persistence/observer/StateObserver";
 import Task from "./task/Task";
 import TaskPrioritizer from './TaskPrioritizer';
 import TasksManagerState from "./TasksManagerState";
@@ -7,7 +10,7 @@ import TimeWindow from "./time-management/TimeWindow";
 import Weekday from "./time-management/Weekday";
 import WeeklyDateRange from "./time-management/WeeklyDateRange";
 
-export default class TasksManager {
+export default class TasksManager implements StateObservable {
 	protected tasks: Task[] = [];
 	private asleepTimeWindow: TimeWindow = new TimeWindow("0:00", "8:00");
 	private downtimeTime: RecurringDateRange = new WeeklyDateRange(
@@ -16,8 +19,15 @@ export default class TasksManager {
 	)
 	private sleepTask: Task;
 
-	constructor() {
+	constructor(
+		public stateObserver: StateObserver,
+	) {
 		this.sleepTask = this.createSleepTask(new Date());
+	}
+
+	@NotifyStateChange
+	private addTask(task: Task) {
+		this.tasks.push(task);
 	}
 
 	/**
@@ -26,7 +36,7 @@ export default class TasksManager {
 	 * @returns The new task
 	 */
 	protected createNewTask(taskDescription: string): Task {
-		return new Task(this, taskDescription);
+		return new Task(this, taskDescription, this.stateObserver);
 	}
 
 	/**
@@ -34,9 +44,9 @@ export default class TasksManager {
 	 * @param taskDescription - The description of the task
 	 * @returns The new task
 	 */
-	public addTask(taskDescription: string): Task {
+	public addCreatedTask(taskDescription: string): Task {
 		const task = this.createNewTask(taskDescription);
-		this.tasks.push(task);
+		this.addTask(task);
 		return task;
 	}
 
@@ -56,7 +66,7 @@ export default class TasksManager {
 	private createSleepTask(currentTime: Date): Task {
 		const sleepDateRange = this.asleepTimeWindow.toDateRange(currentTime);
 
-		const task = new Task(this, "Go To Sleep");
+		const task = new Task(this, "Go To Sleep", this.stateObserver);
 		const day = 1000 * 60 * 60 * 24;
 		task.makeRecurring(day, sleepDateRange.getStartDate());
 		task.setStartTime(sleepDateRange.getStartDate());
@@ -120,6 +130,7 @@ export default class TasksManager {
 		}
 	}
 
+	@NotifyStateChange
 	async restoreState(tasksManagerState: TasksManagerState) {
 		const unFoundTasks = tasksManagerState.tasks.filter(state => {
 			const task = this.tasks.find(task => task.getDescription() === state.description);

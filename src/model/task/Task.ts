@@ -4,8 +4,11 @@ import TasksManagerState from "../TasksManagerState";
 import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
 import TaskState from "./TaskState";
+import StateObserver from '../../persistence/observer/StateObserver';
+import NotifyStateChange from "../../persistence/observer/NotifyStateChangeDecorator";
+import StateObservable from "../../persistence/observer/StateObservable";
 
-export default class Task {
+export default class Task implements StateObservable {
 	/**
 	 * A map of steps to their status in order of completion. All steps are set to 'Uncomplete' by default.
 	 */
@@ -25,13 +28,17 @@ export default class Task {
 	constructor(
 		protected tasksManager: TasksManager,
 		description: string,
+		public stateObserver: StateObserver,
 	) {
 		this.description = description;
 	};
 
 	getDescription(): string {return this.description};
+
+	@NotifyStateChange
 	setDescription(description: string): void {this.description = description};
 
+	@NotifyStateChange
 	setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>) {
 		if (stepsToStatusObject instanceof Map) {
 			this.stepsToStatusMap = stepsToStatusObject;
@@ -45,11 +52,16 @@ export default class Task {
 	};
 
 	getStartTime(): Date | null {return this.startTime};
+
+	@NotifyStateChange
 	setStartTime(startTime: Date | null): void {this.startTime = startTime};
 
+	@NotifyStateChange
 	setEndTime(endTime: Date | null): void {this.endTime = endTime};
 
 	getDeadline(): Date | null {return this.deadline};
+
+	@NotifyStateChange
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
 
 	getMinRequiredTime(): number {
@@ -58,6 +70,8 @@ export default class Task {
 		}
 		return this.minRequiredTime
 	};
+
+	@NotifyStateChange
 	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
 
 	getMaxRequiredTime(currentTime: Date): number {
@@ -71,20 +85,32 @@ export default class Task {
 		}
 		return this.maxRequiredTime
 	};
+
+	@NotifyStateChange
 	setMaxRequiredTime(maxRequriedTime: number | null): void {this.maxRequiredTime = maxRequriedTime};
 
 	getRepeatInterval(): number | null {return this.repeatInterval};
+
+	@NotifyStateChange
 	setRepeatInterval(repeatInterval: number | null): void {this.repeatInterval = repeatInterval};
 
 	getIsMandatory(): boolean {return this.isMandatory}
+
+	@NotifyStateChange
 	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	getIsComplete(): boolean {return this.isComplete}
+
+	@NotifyStateChange
 	setComplete(isComplete: boolean): void {this.isComplete = isComplete}
 
 	getIsSkipped(): boolean {return this.isSkipped}
+
+	@NotifyStateChange
 	setSkipped(isSkipped: boolean): void {this.isSkipped = isSkipped}
 
+
+	@NotifyStateChange
 	setLastActionedStep(lastActionedStep: {step: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
 
 	isRecurring(): boolean {return this.repeatInterval !== null};

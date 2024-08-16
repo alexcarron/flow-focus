@@ -1,4 +1,4 @@
-import StateObserver from "../peristent-objects/StateObserver";
+import StateObserver from "../observer/StateObserver";
 
 /**
  * An interface for converting a JSON object into an instance of a class with a state observer and vice versa.

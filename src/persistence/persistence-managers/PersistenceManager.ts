@@ -1,4 +1,4 @@
-import StateObserver from "../peristent-objects/StateObserver";
+import StateObserver from "../observer/StateObserver";
 
 /**
  * Interface for a class that handles persistence of objects.

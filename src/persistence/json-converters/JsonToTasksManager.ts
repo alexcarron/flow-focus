@@ -1,7 +1,6 @@
 import Task from '../../model/task/Task';
 import TasksManager from '../../model/TasksManager';
-import ObservedTasksManager from '../peristent-objects/ObservedTasksManager';
-import StateObserver from '../peristent-objects/StateObserver';
+import StateObserver from '../observer/StateObserver';
 import JsonSerializer from "./JsonToObservableConverter";
 
 export default class JsonToTasksManager implements JsonSerializer<TasksManager> {
@@ -55,7 +54,7 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 	 * @throws {Error} If the JSON object is not an array.
 	 */
 	convertJsonToObject(jsonObject: object, stateObserver: StateObserver): TasksManager {
-		const tasksManager = new ObservedTasksManager(
+		const tasksManager = new TasksManager(
 			stateObserver
 		);
 
@@ -76,7 +75,7 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 				throw new Error('Task JSON object is missing string description property');
 			}
 
-			const task = tasksManager.addTask(jsonTaskObject.description);
+			const task = tasksManager.addCreatedTask(jsonTaskObject.description);
 			this.assignWithDateConversion(task, jsonTaskObject);
 
 			// Check if jsonTaskObject has object stepsToStatusMap property
@@ -147,7 +146,7 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 		if (tasksManager.getTasks().length === 0) {
 			return {};
 		}
-		
+
 		const excludedProperties = [
 			JsonToTasksManager.STATE_OBSERVER_PROPERTY_NAME,
 			JsonToTasksManager.TASKS_MANAGER_PROPERTY_NAME,
