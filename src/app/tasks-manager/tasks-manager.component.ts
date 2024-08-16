@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { CommandHistoryService } from '../../services/CommandHistory.service';
 import TasksManager from '../../model/TasksManager';
 import Task from '../../model/task/Task';
 import { FormsModule } from '@angular/forms';
@@ -17,8 +16,7 @@ export class TasksManagerComponent {
 	tasksManager!: TasksManager;
 
 	constructor(
-		private activatedRoute: ActivatedRoute,
-		private commandHistory: CommandHistoryService,
+		private activatedRoute: ActivatedRoute
 	) {}
 
 	ngOnInit() {

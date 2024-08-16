@@ -5,7 +5,10 @@
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
     "types": [
-      "jasmine"
+      "jasmine",
+			"node",
+			"jest",
+			"mocha"
     ],
 		"module": "commonjs",
 		"target": "es6",
@@ -15,6 +18,8 @@
   },
   "include": [
     "src/**/*.spec.ts",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+		"./src",
+		"./scripts"
   ]
 }

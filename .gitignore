@@ -46,3 +46,6 @@ json-server
 
 # Local Executables
 *.sh
+
+# Enviorment Variables
+.env
