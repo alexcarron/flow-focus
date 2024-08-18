@@ -195,6 +195,13 @@ export default class Task implements StateObservable, Clonable<Task> {
 
 					this.setDeadline(nextIntervalDeadline);
 				}
+
+				if (this.endTime !== null) {
+					const nextIntervalEndTime =
+						new Date(this.endTime.getTime() + this.repeatInterval);
+
+					this.setEndTime(nextIntervalEndTime);
+				}
 			}
 		}
 
