@@ -619,6 +619,10 @@ export default class Task implements StateObservable, Clonable<Task> {
 			return false;
 		}
 
+		if (!this.isMandatory) {
+			return false;
+		}
+
 		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
 	}
 
