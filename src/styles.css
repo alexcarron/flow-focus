@@ -34,15 +34,15 @@
   --font-size-small: 1rem;
   --font-size-medium: 1.3rem;
   --font-size-xmedium: 1.3rem;
-  --font-size-large: 1.7rem;
-  --font-size-xlarge: 4.2rem;
+  --font-size-large: 1.5rem;
+  --font-size-xlarge: 3.2rem;
 
 	/* Line height */
 	--line-height-xsmall: 1rem;
 	--line-height-small: 1.25rem;
 	--line-height-medium: 1.5rem;
-	--line-height-large: 1.9rem;
-	--line-height-xlarge: 3.5rem;
+	--line-height-large: 1.7rem;
+	--line-height-xlarge: 2.8rem;
 
 	/* Border Radius */
 	--border-radius-small: 0.25rem;

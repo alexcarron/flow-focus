@@ -28,7 +28,7 @@
               "src/styles.css"
             ],
             "scripts": [],
-						"baseHref": "/"
+						"baseHref": "/flow-focus/"
           },
           "configurations": {
             "production": {
