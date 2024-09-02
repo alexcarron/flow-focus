@@ -45,7 +45,7 @@
 		>
 			<img id="unfilledCompleteIcon" src="assets/complete-unfilled-icon.svg" alt="Complete">
 			<img id="filledCompleteIcon" src="assets/complete-filled-icon.svg" alt="Complete">
-			<span class="tooltip">Complete</span>
+			<span class="tooltip">Complete Step</span>
 		</button>
 	</div>
 	<array-input
@@ -73,6 +73,16 @@
 	>
 		<img src="assets/skip-over-icon.svg" alt="Skip Task">
 		<span class="tooltip">Skip Task</span>
+	</button>
+
+	<button
+		#completeTaskButton
+		id="completeTaskButton"
+		class="icon-button"
+		(click)="completeTask()"
+	>
+		<img src="assets/complete-filled-icon.svg" alt="Complete Task">
+		<span class="tooltip">Complete Task</span>
 	</button>
 </div>
 

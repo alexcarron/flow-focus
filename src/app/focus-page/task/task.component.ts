@@ -12,6 +12,7 @@ import { ArrayInputComponent } from '../../input-controls/array-input/array-inpu
 import { SkipTaskPopupComponent } from '../../base-popup/skip-task-popup/skip-task-popup.component';
 import Duration from '../../../model/time-management/Duration';
 import DeferTaskCommand from '../../../model/commands/DeferTaskCommand';
+import CompleteAllTaskCommand from '../../../model/commands/CompleteAllTaskCommand';
 
 @Component({
   selector: 'task',
@@ -154,6 +155,12 @@ export class TaskComponent {
 
 	complete() {
 		this.taskCompleted.emit(this.task);
+	}
+
+	completeTask() {
+		this.commandHistory.execute(
+			new CompleteAllTaskCommand(this.task)
+		);
 	}
 
 	getProgressPercentage(): string {
