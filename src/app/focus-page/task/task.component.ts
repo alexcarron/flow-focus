@@ -19,7 +19,9 @@ import { ArrayInputComponent } from '../../input-controls/array-input/array-inpu
 })
 export class TaskComponent {
 	@ViewChild('taskSteps') taskStepsDiv?: ElementRef<HTMLDivElement>;
+	@ViewChild('skipButton') skipButton?: ElementRef<HTMLDivElement>;
 	taskStepsDivElement?: HTMLDivElement
+	skipButtonElement?: HTMLDivElement
 
 	@Input() task!: Task;
 	@Output() taskSkipped = new EventEmitter<Task>();
@@ -43,12 +45,12 @@ export class TaskComponent {
 
 	ngAfterViewInit() {
 		this.taskStepsDivElement = this.taskStepsDiv?.nativeElement;
+		this.skipButtonElement = this.skipButton?.nativeElement;
 	}
 
 	getDescription(): string {
 		return this.task.getDescription();
 	}
-
 
 	hasSteps(): boolean {
 		return this.task.hasNextStep();
@@ -178,8 +180,11 @@ export class TaskComponent {
 	}
 
 	isFocusedOnNextStep(): boolean {
-		if (this.taskStepsDivElement !== undefined) {
-			return this.taskStepsDivElement.contains(document.activeElement)
+		if (this.taskStepsDivElement !== undefined && this.skipButtonElement !== undefined) {
+			return (
+				this.taskStepsDivElement.contains(document.activeElement) &&
+				!this.skipButtonElement.contains(document.activeElement)
+			);
 		}
 
 		return false;

@@ -17,15 +17,26 @@
 		(onInputChange)="onPreviousStepsChange($event)"
 	>
 	</array-input>
-	<h2
-		#taskNextStep
-		id="taskNextStep"
-		*ngIf="hasSteps()"
-		contenteditable
-		[textContent]="getNextStep()"
-		(input)="onNextStepChange($event)"
-	>
-	</h2>
+	<div class="flex-row">
+		<h2
+			#taskNextStep
+			id="taskNextStep"
+			*ngIf="hasSteps()"
+			contenteditable
+			[textContent]="getNextStep()"
+			(input)="onNextStepChange($event)"
+		>
+		</h2>
+		<button
+			#skipButton
+			id="skipButton"
+			class="icon-button"
+			(click)="skip()"
+		>
+			<img src="assets/skip-icon.svg" alt="Skip">
+			<span class="tooltip">Skip</span>
+		</button>
+	</div>
 	<array-input
 		#taskUpcomingSteps
 		*ngIf="isFocusedOnNextStep()"
@@ -42,15 +53,6 @@
 		(click)="openPopup()"
 		(keyDown)="openPopup()"
 	>{{ this.timeLeft }}</p>
-
-	<button
-		id="skipButton"
-		class="icon-button"
-		(click)="skip()"
-	>
-		<img src="assets/skip-icon.svg" alt="Skip">
-		<span class="tooltip">Skip</span>
-	</button>
 
 	<button
 		id="completeButton"
