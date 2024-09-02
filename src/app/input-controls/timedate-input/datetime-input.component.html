@@ -1,16 +1,30 @@
 <input
 	type="datetime-local"
-	(change)="onInput($event)"
+	(change)="onInput()"
 >
-<button
-	class="icon-button"
-	(click)="incrementDay()"
->
-	<img src="assets/positive-1-icon.svg" alt="Add a day">
-</button>
-<button
-	class="icon-button"
-	(click)="decrementDay()"
->
-	<img src="assets/negative-1-icon.svg" alt="Substract a day">
-</button>
+<div class="flex-row">
+	<button
+		class="icon-button"
+		(click)="incrementDay()"
+	>
+		<img src="assets/positive-1-icon.svg" alt="Add a day">
+	</button>
+	<button
+		class="icon-button"
+		(click)="decrementDay()"
+	>
+		<img src="assets/negative-1-icon.svg" alt="Substract a day">
+	</button>
+	<button
+		class="icon-button"
+		(click)="setMorningTime()"
+	>
+		<img src="assets/morning-icon.svg" alt="Set to morning">
+	</button>
+	<button
+		class="icon-button"
+		(click)="setNightTime()"
+	>
+		<img src="assets/night-icon.svg" alt="Set to night">
+	</button>
+</div>

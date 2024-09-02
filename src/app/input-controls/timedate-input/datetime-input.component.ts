@@ -14,6 +14,9 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
 	hostElement: HTMLElement;
 	datetimeInputElement!: HTMLInputElement;
 
+	private static readonly MORNING_HOUR = 7;
+	private static readonly NIGHT_HOUR = 23;
+
 	constructor (
 		hostElementReference: ElementRef<HTMLElement>,
 	) {
@@ -56,13 +59,52 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
+	private getInputtedDate(): Date {
+		const selectedDateString = this.datetimeInputElement.value;
+		if (selectedDateString.trim() === "") {
+			return new Date();
+		}
+
+		let date = new Date(selectedDateString);
+		return date;
+	}
+
+	private setDate(date: Date) {
+		this.datetimeInputElement.value = this.formatDate(date);
+		this.removePlaceholderClass();
+	}
+
 	incrementDay() {
+		const date = this.getInputtedDate();
+		date.setDate(date.getDate() + 1);
+		this.setDate(date);
+		this.onInput();
 	}
 
 	decrementDay() {
+		const date = this.getInputtedDate();
+		date.setDate(date.getDate() - 1);
+		this.setDate(date);
+		this.onInput();
 	}
 
-	onInput(event: Event) {
+	setMorningTime() {
+		const date = this.getInputtedDate();
+		date.setHours(DatetimeInputComponent.MORNING_HOUR);
+		date.setMinutes(0);
+		this.setDate(date);
+		this.onInput();
+	}
+
+	setNightTime() {
+		const date = this.getInputtedDate();
+		date.setHours(DatetimeInputComponent.NIGHT_HOUR);
+		date.setMinutes(0);
+		this.setDate(date);
+		this.onInput();
+	}
+
+	onInput() {
 		const selectedDateString = this.datetimeInputElement.value;
 
 		if (selectedDateString.trim() === "") {
