@@ -5,7 +5,7 @@ import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescript
 import { CommandHistoryService } from '../../../services/CommandHistory.service';
 import EditTaskStepCommand from '../../../model/commands/EditTaskStepCommand';
 import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
-import { TaskTimingOptionsPopupComponent } from './datetime-popup/task-timing-options-popup.component';
+import { TaskTimingOptionsPopupComponent } from '../../base-popup/datetime-popup/task-timing-options-popup.component';
 import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';

@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import TaskTimingOptions from '../../../../model/task/TaskTimingOptions';
-import { BasePopupComponent } from '../../../base-popup/base-popup.component';
-import { TaskTimingOptionsInputComponent } from '../../../input-controls/task-timing-options-input/task-timing-options-input.component';
+import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
+import { BasePopupComponent } from '../base-popup.component';
+import { TaskTimingOptionsInputComponent } from '../../input-controls/task-timing-options-input/task-timing-options-input.component';
 
 @Component({
   selector: 'task-timing-options-popup',

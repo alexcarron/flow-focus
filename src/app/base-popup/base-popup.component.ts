@@ -32,14 +32,12 @@ export class BasePopupComponent<ConfirmationEmitType> {
 	}
 
   open(): void {
-		console.log(this.hostElement);
     this.onOpenPopup.emit();
     this.isOpen = true;
     this.hostElement.style.display = 'block';
   }
 
   close(): void {
-		console.log(this.hostElement);
     this.onClosePopup.emit();
     this.isOpen = false;
     this.hostElement.style.display = 'none';
