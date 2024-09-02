@@ -289,11 +289,7 @@ button:active, .icon-button:active {
 
 [contenteditable], select, input {
 	display: inline-block;
-	/* width: min-content; */
   white-space: normal;
-
-	/* max-width: fit-content; */
-	/* width: fit-content; */
 
 	border: 1px solid var(--faint-text-color);
 	border-radius: var(--border-radius-small);

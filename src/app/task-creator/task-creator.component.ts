@@ -1,9 +1,7 @@
-import { Component, ElementRef, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CommandHistoryService } from '../../services/CommandHistory.service';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DurationInputComponent } from '../input-controls/duration-input/duration-input.component';
-import { DatetimePopupComponent } from '../focus-page/task/datetime-popup/datetime-popup.component';
 import { DatetimeInputComponent } from '../input-controls/timedate-input/datetime-input.component';
 import { TextInputComponent } from '../input-controls/text-input/text-input.component';
 import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbox-input.component';
