@@ -11,5 +11,9 @@ import { DurationInputComponent } from '../../input-controls/duration-input/dura
   styleUrl: './skip-task-popup.component.css'
 })
 export class SkipTaskPopupComponent extends BasePopupComponent<Duration> {
-
+  onInputChange(durationMilliseconds: number | null): void {
+		if (durationMilliseconds === null) return;
+		const duration = Duration.fromMilliseconds(durationMilliseconds);
+		this.emittedConfirmation = duration;
+	}
 }

@@ -14,7 +14,7 @@ export class BasePopupComponent<ConfirmationEmitType> {
   @Output() onClosePopup = new EventEmitter<void>();
   @Output() onConfirm = new EventEmitter<ConfirmationEmitType>();
   @Input() isOpen: boolean = false;
-	emittedConfirmation: ConfirmationEmitType | null = null;
+	@Input() emittedConfirmation: ConfirmationEmitType | null = null;
 	isConfirmButtonVisible: boolean = true;
 	@Input() hostElement: HTMLElement;
 

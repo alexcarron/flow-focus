@@ -446,6 +446,14 @@ export default class Task implements StateObservable {
 		}
 	}
 
+	completeAllSteps() {
+		this.stepsToStatusMap.forEach((status, step) => {
+			this.completeStep(step);
+		});
+
+		this.complete();
+	}
+
 	/**
 	 * Determines if all steps are completed or skipped.
 	 * @returns Whether all steps are completed or skipped.

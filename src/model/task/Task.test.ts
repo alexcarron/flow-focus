@@ -411,6 +411,25 @@ describe('Task', () => {
 		});
 	});
 
+	describe('completeAllSteps', () => {
+
+		beforeEach(() => {
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.addStep('Step 3');
+
+			task.completeAllSteps();
+		})
+
+		it('should mark all steps as completed', () => {
+			expect(task.getNextStep()).toBeNull();
+		})
+
+		it('should complete the task', () => {
+			expect(task.getIsComplete()).toBe(true);
+		})
+	})
+
 	describe('skipNextStep', () => {
 		it('skipNextStep should skip the task if there are no steps', () => {
 			task.skipNextStep();

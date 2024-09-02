@@ -3,10 +3,14 @@
 	(onClosePopup)="onClosePopup.emit()"
 	(onConfirm)="confirm()"
 	[isOpen]="isOpen"
+	[emittedConfirmation]="emittedConfirmation"
 	[hostElement]="hostElement"
 >
 	<div popup-content class="flex-column main-input">
 		<h3 class="input-label">Put off for</h3>
-		<duration-input></duration-input>
+		<duration-input
+			[initialValue]="1000 * 60 * 60"
+			(onInputChange)="onInputChange($event)"
+		></duration-input>
 	</div>
 </base-popup>

@@ -11,6 +11,7 @@ import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';
 import { SkipTaskPopupComponent } from '../../base-popup/skip-task-popup/skip-task-popup.component';
 import Duration from '../../../model/time-management/Duration';
+import DeferTaskCommand from '../../../model/commands/DeferTaskCommand';
 
 @Component({
   selector: 'task',
@@ -22,10 +23,12 @@ import Duration from '../../../model/time-management/Duration';
 export class TaskComponent {
 	@ViewChild('taskSteps') taskStepsDiv?: ElementRef<HTMLDivElement>;
 	@ViewChild('skipButton') skipButton?: ElementRef<HTMLDivElement>;
+	@ViewChild('completeButton') completeButton?: ElementRef<HTMLDivElement>;
 	@ViewChild('timingOptionsPopup') timingOptionsPopup?: TaskTimingOptionsPopupComponent;
 	@ViewChild('skipTaskPopup') skipTaskPopup?: SkipTaskPopupComponent;
 	taskStepsDivElement?: HTMLDivElement
 	skipButtonElement?: HTMLDivElement
+	completeButtonElement?: HTMLDivElement
 
 	@Input() task!: Task;
 	@Output() taskSkipped = new EventEmitter<Task>();
@@ -50,6 +53,7 @@ export class TaskComponent {
 	ngAfterViewInit() {
 		this.taskStepsDivElement = this.taskStepsDiv?.nativeElement;
 		this.skipButtonElement = this.skipButton?.nativeElement;
+		this.completeButtonElement = this.completeButton?.nativeElement;
 	}
 
 	getDescription(): string {
@@ -184,10 +188,16 @@ export class TaskComponent {
 	}
 
 	isFocusedOnNextStep(): boolean {
-		if (this.taskStepsDivElement !== undefined && this.skipButtonElement !== undefined) {
+		if (
+			this.taskStepsDivElement !== undefined &&
+			this.skipButtonElement !== undefined &&
+			this.completeButtonElement !== undefined
+
+		) {
 			return (
 				this.taskStepsDivElement.contains(document.activeElement) &&
-				!this.skipButtonElement.contains(document.activeElement)
+				!this.skipButtonElement.contains(document.activeElement) &&
+				!this.completeButtonElement.contains(document.activeElement)
 			);
 		}
 
@@ -219,6 +229,11 @@ export class TaskComponent {
 	}
 
 	onSkipTaskConfirm(skipDuration: Duration): void {
+		console.log({skipDuration});
 		const milliseconds = skipDuration.toMilliseconds();
+		console.log({milliseconds});
+		this.commandHistory.execute(
+			new DeferTaskCommand(this.task, milliseconds)
+		);
 	}
 }
