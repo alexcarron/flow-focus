@@ -1,6 +1,5 @@
 <div id="taskDescriptionContainer">
 	<h1
-		shrinkToFit
 		id="taskDescription"
 		class="progress-bar"
 		contenteditable
@@ -45,7 +44,6 @@
 
 	<button
 		id="skipButton"
-		*ngIf="isSkippable()"
 		class="icon-button"
 		(click)="skip()"
 	>

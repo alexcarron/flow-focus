@@ -9,9 +9,7 @@
     "test": "jest --watch",
     "predeploy": "ng build --configuration production",
     "deploy": "gh-pages -d docs/browser",
-		"start-server": "json-server --watch json-server/tasksDatabase.json --port 3004",
-		"start-tunnel": "ssh -R 80:localhost:3004 ssh.localhost.run",
-		"server": "concurrently \"npm run start-tunnel\" \"npm run start-server\"",
+		"server": "json-server --watch json-server/tasksDatabase.json --port 3004",
     "dev": "npm run server & npm run start & npm run test"
   },
   "private": true,

@@ -81,10 +81,7 @@ export default class TasksManager implements StateObservable {
 	 * @returns The task with the highest priority
 	 */
 	public getPriorityTask(currentTime: Date): Task | null {
-		if (this.asleepTimeWindow.isInWindow(currentTime)) {
-			return this.sleepTask;
-		}
-		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
+			const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
 		return taskPrioritizer.getMostImportantTask(currentTime);
 	}
 

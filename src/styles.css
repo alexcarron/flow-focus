@@ -63,7 +63,7 @@
 * {
 	font-family: 'Poppins', sans-serif;
 	transition: 0.1s ease-out;
-	overflow-wrap: normal;
+	overflow-wrap: break-word;
 }
 
 body {

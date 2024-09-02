@@ -6,16 +6,15 @@ import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 export const tasksManagerResolver: ResolveFn<any> = async (route, state) => {
-	const API_URL = "https://1d89ff6b3f96df.lhr.life/tasksManager";
+	const API_URL = "http://localhost:3004/tasksManager";
 	const httpClient = inject(HttpClient);
 	const jsonToTasksManagerConverter = new JsonToTasksManager();
 
-	const tasksManagerJsonServer =
-		new JsonServer<TasksManager>(
-			API_URL,
-			httpClient,
-			jsonToTasksManagerConverter
-		);
+	const tasksManagerJsonServer = new JsonServer<TasksManager>(
+		API_URL,
+		httpClient,
+		jsonToTasksManagerConverter
+	);
 
 	console.log("Persistent Json Server Object Created in Resolver",{tasksManagerJsonServer});
 
