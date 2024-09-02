@@ -7,9 +7,8 @@ import TaskState from "./TaskState";
 import StateObserver from '../../persistence/observer/StateObserver';
 import NotifyStateChange from "../../persistence/observer/NotifyStateChangeDecorator";
 import StateObservable from "../../persistence/observer/StateObservable";
-import Clonable from "../Clonable";
 
-export default class Task implements StateObservable, Clonable<Task> {
+export default class Task implements StateObservable {
 	/**
 	 * A map of steps to their status in order of completion. All steps are set to 'Uncomplete' by default.
 	 */
@@ -32,22 +31,6 @@ export default class Task implements StateObservable, Clonable<Task> {
 		public stateObserver: StateObserver,
 	) {
 		this.description = description;
-	}
-
-	getClone(): Task {
-		const task = new Task(this.tasksManager, this.description, this.stateObserver);
-		task.stepsToStatusMap = new Map(this.stepsToStatusMap);
-		task.startTime = this.startTime;
-		task.endTime = this.endTime;
-		task.deadline = this.deadline;
-		task.minRequiredTime = this.minRequiredTime;
-		task.maxRequiredTime = this.maxRequiredTime;
-		task.repeatInterval = this.repeatInterval;
-		task.isMandatory = this.isMandatory;
-		task.isComplete = this.isComplete;
-		task.isSkipped = this.isSkipped;
-		task.lastActionedStep = this.lastActionedStep;
-		return task;
 	}
 
 	getDescription(): string {return this.description};
