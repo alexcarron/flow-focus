@@ -236,9 +236,7 @@ export class TaskComponent {
 	}
 
 	onSkipTaskConfirm(skipDuration: Duration): void {
-		console.log({skipDuration});
 		const milliseconds = skipDuration.toMilliseconds();
-		console.log({milliseconds});
 		this.commandHistory.execute(
 			new DeferTaskCommand(this.task, milliseconds)
 		);

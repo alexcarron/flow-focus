@@ -11,6 +11,17 @@ import { DurationInputComponent } from '../../input-controls/duration-input/dura
   styleUrl: './skip-task-popup.component.css'
 })
 export class SkipTaskPopupComponent extends BasePopupComponent<Duration> {
+	private static readonly DEFAULT_DURATION = 1000 * 60 * 60;
+
+	getDefaultDuration(): number {
+		return SkipTaskPopupComponent.DEFAULT_DURATION;
+	}
+
+	override ngOnInit(): void {
+		super.ngOnInit();
+		this.emittedConfirmation = Duration.fromMilliseconds(SkipTaskPopupComponent.DEFAULT_DURATION);
+	}
+
   onInputChange(durationMilliseconds: number | null): void {
 		if (durationMilliseconds === null) return;
 		const duration = Duration.fromMilliseconds(durationMilliseconds);

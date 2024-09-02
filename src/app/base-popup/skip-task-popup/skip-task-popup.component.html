@@ -9,7 +9,7 @@
 	<div popup-content class="flex-column main-input">
 		<h3 class="input-label">Put off for</h3>
 		<duration-input
-			[initialValue]="1000 * 60 * 60"
+			[initialValue]="this.getDefaultDuration()"
 			(onInputChange)="onInputChange($event)"
 		></duration-input>
 	</div>
