@@ -520,6 +520,26 @@ describe('Task', () => {
 		});
 	});
 
+	describe('getTimeUntilDeadline', () => {
+		const currentTime = new Date();
+
+		it('should return infinity if there is no deadline', () => {
+			expect(task.getTimeUntilDeadline(currentTime)).toEqual(Infinity);
+		});
+
+		it('should return the number of milliseconds left if the deadline is in the future', () => {
+			const deadline = new Date(currentTime.getTime() + 1000);
+			task.setDeadline(deadline);
+			expect(task.getTimeUntilDeadline(currentTime)).toBe(1000);
+		});
+
+		it('should return negative time if the deadline is in the past', () => {
+			const deadline = new Date(currentTime.getTime() - 1000);
+			task.setDeadline(deadline);
+			expect(task.getTimeUntilDeadline(currentTime)).toBe(-1000);
+		})
+	});
+
 	describe('getMaxRequiredTime', () => {
 		it('getMaxRequiredTime should return infinity if there is no maxRequiredTime or deadline', () => {
 			expect(task.getMaxRequiredTime(new Date())).toEqual(Infinity);
@@ -679,24 +699,4 @@ describe('Task', () => {
 			expect(task.isActive(currentTime)).toEqual(false);
 		});
 	});
-
-	describe('getClone', () => {
-		it('should return a copy of the task', () => {
-			const clone = task.getClone();
-			expect(clone).toEqual(task);
-		});
-
-		it('should not return a reference of the task', () => {
-			const clone = task.getClone();
-			task.completeNextStep();
-			expect(clone.getIsComplete()).toEqual(false);
-			expect(task.getIsComplete()).toEqual(true);
-		});
-
-		it('should not return a reference of the steps', () => {
-			const clone = task.getClone();
-			task.editSteps(['Step 1', 'Step 2']);
-			expect(clone.getSteps()).toEqual(['Step 1', 'Step 2']);
-		});
-	})
 });

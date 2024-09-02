@@ -528,6 +528,17 @@ export default class Task implements StateObservable {
 		});
 	}
 
+	/**
+	 * Calculates the time until the deadline of the task.
+	 * @param currentTime - The current time.
+	 * @returns The time until the deadline of the task in milliseconds.
+	 */
+	getTimeUntilDeadline(currentTime: Date): number {
+		if (this.getDeadline() === null) {
+			return Number.POSITIVE_INFINITY;
+		}
+		return this.getDeadline()!.getTime() - currentTime.getTime();
+	}
 
 	/**
 	 * Calculates the time you have to complete the task not including blocked time (Sleeping, etc).
