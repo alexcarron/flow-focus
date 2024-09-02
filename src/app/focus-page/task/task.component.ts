@@ -5,7 +5,7 @@ import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescript
 import { CommandHistoryService } from '../../../services/CommandHistory.service';
 import EditTaskStepCommand from '../../../model/commands/EditTaskStepCommand';
 import { TimeFormatterPipe } from '../../../pipes/TimeFormatter.pipe';
-import { DatetimePopupComponent } from './datetime-popup/datetime-popup.component';
+import { TaskTimingOptionsPopupComponent } from './datetime-popup/task-timing-options-popup.component';
 import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';
@@ -13,14 +13,14 @@ import { ArrayInputComponent } from '../../input-controls/array-input/array-inpu
 @Component({
   selector: 'task',
   standalone: true,
-  imports: [CommonModule, TimeFormatterPipe, DatetimePopupComponent, ShrinkToFitDirective, ArrayInputComponent],
+  imports: [CommonModule, TimeFormatterPipe, TaskTimingOptionsPopupComponent, ShrinkToFitDirective, ArrayInputComponent],
   templateUrl: './task.component.html',
   styleUrl: './task.component.css'
 })
 export class TaskComponent {
 	@ViewChild('taskSteps') taskStepsDiv?: ElementRef<HTMLDivElement>;
 	@ViewChild('skipButton') skipButton?: ElementRef<HTMLDivElement>;
-	@ViewChild('timingOptionsPopup') timingOptionsPopup?: DatetimePopupComponent;
+	@ViewChild('timingOptionsPopup') timingOptionsPopup?: TaskTimingOptionsPopupComponent;
 	taskStepsDivElement?: HTMLDivElement
 	skipButtonElement?: HTMLDivElement
 
@@ -202,6 +202,7 @@ export class TaskComponent {
 	}
 
   openTimingOptionsPopup(): void {
+		console.log(this.timingOptionsPopup);
 		if (this.timingOptionsPopup) {
 			this.timingOptionsPopup.open();
 		}

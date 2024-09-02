@@ -1,0 +1,14 @@
+<base-popup
+	(onOpenPopup)="onOpenPopup.emit()"
+	(onClosePopup)="onClosePopup.emit()"
+	(onConfirm)="confirm()"
+	[isOpen]="isOpen"
+	[hostElement]="hostElement"
+>
+	<div popup-content class="input-control-group">
+		<task-timing-options-input
+			[initialValue]="oldTimingOptions"
+			(onInputChange)="onInputChange($event)"
+		></task-timing-options-input>
+	</div>
+</base-popup>

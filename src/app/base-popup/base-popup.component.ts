@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { TaskTimingOptionsInputComponent } from '../input-controls/task-timing-options-input/task-timing-options-input.component';
 
 @Component({
   selector: 'base-popup',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TaskTimingOptionsInputComponent],
   templateUrl: './base-popup.component.html',
   styleUrl: './base-popup.component.css'
 })
@@ -15,7 +16,7 @@ export class BasePopupComponent<ConfirmationEmitType> {
   @Input() isOpen: boolean = false;
 	emittedConfirmation: ConfirmationEmitType | null = null;
 	isConfirmButtonVisible: boolean = true;
-	hostElement: HTMLElement;
+	@Input() hostElement: HTMLElement;
 
 	constructor(private hostElementReference: ElementRef) {
 		this.hostElement = hostElementReference.nativeElement;
@@ -31,12 +32,14 @@ export class BasePopupComponent<ConfirmationEmitType> {
 	}
 
   open(): void {
+		console.log(this.hostElement);
     this.onOpenPopup.emit();
     this.isOpen = true;
     this.hostElement.style.display = 'block';
   }
 
   close(): void {
+		console.log(this.hostElement);
     this.onClosePopup.emit();
     this.isOpen = false;
     this.hostElement.style.display = 'none';
@@ -46,6 +49,8 @@ export class BasePopupComponent<ConfirmationEmitType> {
 		if (this.emittedConfirmation !== null) {
 			this.onConfirm.emit(this.emittedConfirmation);
 		}
+
+		this.close();
 	}
 
 

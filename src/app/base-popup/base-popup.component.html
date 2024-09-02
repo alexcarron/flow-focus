@@ -1,7 +1,7 @@
-<div class="overlay"></div>
+<div class="overlay" #overlayElement></div>
 <div class="popup" #popupElement>
   <ng-content select="[popup-content]"></ng-content>
-  <div id="buttons">
+  <div id="buttons" class="flex-row">
     <button
       id="confirmButton"
 			class="icon-button"
