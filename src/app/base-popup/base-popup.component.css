@@ -1,0 +1,25 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  z-index: 999; /* Below the popup but above the rest of the content */
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--light-background-color);
+  z-index: 1000;
+	border-radius: var(--border-radius-large);
+	padding: var(--margin-medium) var(--margin-medium);
+	width: clamp(
+		calc(var(--font-size-large)*3)
+		calc(100% - 80px),
+		calc(var(--font-size-large)*15)
+	);
+}

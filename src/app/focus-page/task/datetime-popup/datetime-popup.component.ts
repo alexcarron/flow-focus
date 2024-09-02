@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { TaskTimingOptionsInputComponent } from '../../../input-controls/task-timing-options-input/task-timing-options-input.component';
 import TaskTimingOptions from '../../../../model/task/TaskTimingOptions';
 
@@ -53,6 +53,7 @@ export class DatetimePopupComponent {
   }
 
   @HostListener('document:click', ['$event'])
+
   onDocumentClick(event: MouseEvent): void {
 		if (this.isOpen) {
 			const elementClicked = event.target as HTMLElement;

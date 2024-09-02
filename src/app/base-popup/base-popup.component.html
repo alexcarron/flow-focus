@@ -1,0 +1,24 @@
+<div class="overlay"></div>
+<div class="popup" #popupElement>
+  <ng-content select="[popup-content]"></ng-content>
+  <div id="buttons">
+    <button
+      id="confirmButton"
+			class="icon-button"
+			*ngIf="isConfirmButtonVisible"
+			(click)="confirm()"
+			(keyDown)="confirm()"
+    >
+      <img src="assets/check-icon.svg" alt="Confirm">
+      <span class="tooltip">Confirm</span>
+    </button>
+    <button
+      id="closeButton"
+      class="icon-button"
+      (click)="close()"
+    >
+      <img src="assets/close-icon.svg" alt="Close">
+      <span class="tooltip">Close</span>
+    </button>
+  </div>
+</div>
