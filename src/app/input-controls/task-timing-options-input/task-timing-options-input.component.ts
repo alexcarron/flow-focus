@@ -47,6 +47,9 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 
 	onMinDurationChange(minDurationInMilliseconds: number | null) {
 		this.enteredValue.minRequiredTime = minDurationInMilliseconds;
+		this.enteredValue.maxRequiredTime = minDurationInMilliseconds;
+		this.maxDurationInput.setValue(minDurationInMilliseconds);
+
 		this.onInput();
 	}
 

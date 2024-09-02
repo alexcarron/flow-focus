@@ -48,6 +48,22 @@ export class DurationInputComponent implements InputControlComponent<number | nu
 		this.onInput();
 	}
 
+	setValue(milliseconds: number | null) {
+		if (milliseconds === null) {
+			this.clearInput();
+			return;
+		}
+
+		const initialDuration = Duration.fromMilliseconds(milliseconds);
+		this.amountOfUnit = initialDuration.getAmountOfUnits();
+		this.unit = initialDuration.getTimeUnit().name;
+
+		this.durationUnitInput.setValue(this.unit);
+		this.durationValueInput.setValue(this.amountOfUnit);
+
+		this.onInput();
+	}
+
 	onInput() {
 		if (this.amountOfUnit !== null && this.unit !== null) {
 			const unitInMilliseconds = timeUnits[this.unit].milliseconds;

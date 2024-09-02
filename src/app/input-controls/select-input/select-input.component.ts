@@ -50,7 +50,24 @@ export class SelectInputComponent<ValueType> implements InputControlComponent<Va
 		this.selectInputElement.classList.remove('placeholder-text');
 	}
 
-	onInput(event: Event) {
+	setValue(value: ValueType | null) {
+		if (value === null) {
+			this.clearInput();
+			return;
+		}
+
+		this.options.forEach((optionValue: ValueType, optionKey: string) => {
+			if (optionValue === value) {
+				const optionIndex = this.optionKeys.indexOf(optionKey);
+				this.selectInputElement.selectedIndex = optionIndex
+				this.selectInputElement.value = optionKey;
+			}
+		});
+
+		this.onInput();
+	}
+
+	onInput() {
 		const option  = this.selectInputElement.value;
 		const optionValue = this.options.get(option);
 		this.onInputChange.emit(optionValue);
