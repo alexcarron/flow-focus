@@ -20,6 +20,7 @@ import { ArrayInputComponent } from '../../input-controls/array-input/array-inpu
 export class TaskComponent {
 	@ViewChild('taskSteps') taskStepsDiv?: ElementRef<HTMLDivElement>;
 	@ViewChild('skipButton') skipButton?: ElementRef<HTMLDivElement>;
+	@ViewChild('timingOptionsPopup') timingOptionsPopup?: DatetimePopupComponent;
 	taskStepsDivElement?: HTMLDivElement
 	skipButtonElement?: HTMLDivElement
 
@@ -201,25 +202,12 @@ export class TaskComponent {
 	}
 
   openTimingOptionsPopup(): void {
-    this.isTimingOptionsPopupOpen = true;
-  }
-
-  closePopups(): void {
-    this.isTimingOptionsPopupOpen = false;
+		if (this.timingOptionsPopup) {
+			this.timingOptionsPopup.open();
+		}
   }
 
 	onTimingOptionsPopoutConfirm(taskTimingOptions: TaskTimingOptions): void {
 		this.task.setFromTaskTimingOptions(taskTimingOptions);
 	}
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-		if (this.isTimingOptionsPopupOpen) {
-			const target = event.target as HTMLElement;
-			// if clicked on element with overlay class
-			if (target?.classList.contains('overlay')) {
-				this.closePopups();
-			}
-		}
-  }
 }

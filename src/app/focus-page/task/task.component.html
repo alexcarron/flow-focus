@@ -77,9 +77,8 @@
 
 
 <datetime-popup
-	*ngIf="isTimingOptionsPopupOpen"
+	#timingOptionsPopup
 	[oldTimingOptions]="task.getTaskTimingOptions()"
-	(closePopup)="closePopups()"
 	(onConfirm)="onTimingOptionsPopoutConfirm($event)"
 >
 </datetime-popup>
