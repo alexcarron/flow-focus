@@ -28,7 +28,7 @@ export class TaskComponent {
 	@Output() taskCompleted = new EventEmitter<Task>();
 	timeLeft: string | null = null;
 	currentTime: Date = new Date();
-	isPopupOpen = false;
+	isTimingOptionsPopupOpen = false;
 
 	constructor(
 		private commandHistory: CommandHistoryService
@@ -144,6 +144,8 @@ export class TaskComponent {
 		this.taskSkipped.emit(this.task);
 	}
 
+	skipTask() {}
+
 	complete() {
 		this.taskCompleted.emit(this.task);
 	}
@@ -198,25 +200,25 @@ export class TaskComponent {
 		return this.task.getStartTime();
 	}
 
-  openPopup(): void {
-    this.isPopupOpen = true;
+  openTimingOptionsPopup(): void {
+    this.isTimingOptionsPopupOpen = true;
   }
 
-  closePopup(): void {
-    this.isPopupOpen = false;
+  closePopups(): void {
+    this.isTimingOptionsPopupOpen = false;
   }
 
-	onPopoutConfirm(taskTimingOptions: TaskTimingOptions): void {
+	onTimingOptionsPopoutConfirm(taskTimingOptions: TaskTimingOptions): void {
 		this.task.setFromTaskTimingOptions(taskTimingOptions);
 	}
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-		if (this.isPopupOpen) {
+		if (this.isTimingOptionsPopupOpen) {
 			const target = event.target as HTMLElement;
 			// if clicked on element with overlay class
 			if (target?.classList.contains('overlay')) {
-				this.closePopup();
+				this.closePopups();
 			}
 		}
   }

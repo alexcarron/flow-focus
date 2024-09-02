@@ -34,7 +34,7 @@
 			(click)="skip()"
 		>
 			<img src="assets/skip-icon.svg" alt="Skip">
-			<span class="tooltip">Skip</span>
+			<span class="tooltip">Skip Step</span>
 		</button>
 	</div>
 	<array-input
@@ -50,9 +50,19 @@
 	<p
 		*ngIf="this.timeLeft"
 		class="popup-opener"
-		(click)="openPopup()"
-		(keyDown)="openPopup()"
+		(click)="openTimingOptionsPopup()"
+		(keyDown)="openTimingOptionsPopup()"
 	>{{ this.timeLeft }}</p>
+
+	<button
+		#skipTaskButton
+		id="skipTaskButton"
+		class="icon-button"
+		(click)="skipTask()"
+	>
+		<img src="assets/skip-over-icon.svg" alt="Skip Task">
+		<span class="tooltip">Skip Task</span>
+	</button>
 
 	<button
 		id="completeButton"
@@ -67,9 +77,9 @@
 
 
 <datetime-popup
-	*ngIf="isPopupOpen"
+	*ngIf="isTimingOptionsPopupOpen"
 	[oldTimingOptions]="task.getTaskTimingOptions()"
-	(closePopup)="closePopup()"
-	(onConfirm)="onPopoutConfirm($event)"
+	(closePopup)="closePopups()"
+	(onConfirm)="onTimingOptionsPopoutConfirm($event)"
 >
 </datetime-popup>
