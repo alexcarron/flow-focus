@@ -578,8 +578,8 @@ describe('Task', () => {
 
 		expect(state.startTime).toEqual(task.getStartTime());
 		expect(state.deadline).toEqual(task.getDeadline());
-		expect(state.minRequiredTime).toEqual(task.getMinRequiredTime());
-		expect(state.maxRequiredTime).toEqual(task.getMaxRequiredTime(currentTime));
+		expect(state.minDuration).toEqual(task.getMinRequiredTime());
+		expect(state.maxDuration).toEqual(task.getMaxRequiredTime(currentTime));
 		expect(state.repeatInterval).toEqual(1000);
 		expect(state.stepsToStatusMap).toEqual(
 			new Map(

@@ -2,8 +2,8 @@ type TaskTimingOptions = {
 	startTime: Date | null;
 	endTime: Date | null;
 	deadline: Date | null;
-	minRequiredTime: number | null;
-	maxRequiredTime: number | null;
+	minDuration: number | null;
+	maxDuration: number | null;
 	repeatInterval: number | null;
 	isMandatory: boolean;
 }

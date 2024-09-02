@@ -69,6 +69,17 @@ export class ArrayInputComponent implements InputControlComponent<string[]> {
 		}
 	}
 
+	setValue(value: string[] | null): void {
+		if (value === null) {
+			this.clearInput();
+		}
+		else {
+			this.array = value;
+		}
+
+		this.onInput();
+	}
+
 	onInput(): void {
 		this.onInputChange.emit(this.array);
 	}

@@ -28,7 +28,18 @@ export class CheckboxInputComponent implements InputControlComponent<boolean> {
 		}
 	}
 
-	onInput(event: Event) {
+	setValue(value: boolean | null): void {
+		if (value === null) {
+			this.clearInput();
+		}
+		else {
+			this.checkboxElement.checked = value;
+		}
+
+		this.onInput();
+	}
+
+	onInput() {
 		this.onInputChange.emit(this.checkboxElement.checked);
 	}
 

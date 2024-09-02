@@ -69,39 +69,41 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
 		return date;
 	}
 
-	private setDate(date: Date) {
-		this.datetimeInputElement.value = this.formatDate(date);
-		this.removePlaceholderClass();
+	setValue(date: Date | null) {
+		if (date === null) {
+			this.clearInput();
+		}
+		else {
+			this.datetimeInputElement.value = this.formatDate(date);
+			this.removePlaceholderClass();
+		}
+		this.onInput();
 	}
 
 	incrementDay() {
 		const date = this.getInputtedDate();
 		date.setDate(date.getDate() + 1);
-		this.setDate(date);
-		this.onInput();
+		this.setValue(date);
 	}
 
 	decrementDay() {
 		const date = this.getInputtedDate();
 		date.setDate(date.getDate() - 1);
-		this.setDate(date);
-		this.onInput();
+		this.setValue(date);
 	}
 
 	setMorningTime() {
 		const date = this.getInputtedDate();
 		date.setHours(DatetimeInputComponent.MORNING_HOUR);
 		date.setMinutes(0);
-		this.setDate(date);
-		this.onInput();
+		this.setValue(date);
 	}
 
 	setNightTime() {
 		const date = this.getInputtedDate();
 		date.setHours(DatetimeInputComponent.NIGHT_HOUR);
 		date.setMinutes(0);
-		this.setDate(date);
-		this.onInput();
+		this.setValue(date);
 	}
 
 	onInput() {

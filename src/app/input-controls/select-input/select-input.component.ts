@@ -53,16 +53,16 @@ export class SelectInputComponent<ValueType> implements InputControlComponent<Va
 	setValue(value: ValueType | null) {
 		if (value === null) {
 			this.clearInput();
-			return;
 		}
-
-		this.options.forEach((optionValue: ValueType, optionKey: string) => {
-			if (optionValue === value) {
-				const optionIndex = this.optionKeys.indexOf(optionKey);
-				this.selectInputElement.selectedIndex = optionIndex
-				this.selectInputElement.value = optionKey;
-			}
-		});
+		else {
+			this.options.forEach((optionValue: ValueType, optionKey: string) => {
+				if (optionValue === value) {
+					const optionIndex = this.optionKeys.indexOf(optionKey);
+					this.selectInputElement.selectedIndex = optionIndex
+					this.selectInputElement.value = optionKey;
+				}
+			});
+		}
 
 		this.onInput();
 	}

@@ -47,10 +47,11 @@ export class NumberInputComponent implements InputControlComponent<number | null
 	setValue(value: number | null) {
 		if (value === null) {
 			this.clearInput();
-			return;
+		}
+		else {
+			this.hostElement.textContent = `${value}`;
 		}
 
-		this.hostElement.textContent = `${value}`;
 		this.onInput();
 	}
 

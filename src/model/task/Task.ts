@@ -579,8 +579,8 @@ export default class Task implements StateObservable, Clonable<Task> {
 			startTime: this.startTime,
 			endTime: this.endTime,
 			deadline: this.deadline,
-			minRequiredTime: this.minRequiredTime,
-			maxRequiredTime: this.maxRequiredTime,
+			minDuration: this.minRequiredTime,
+			maxDuration: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
 			isMandatory: this.isMandatory
 		}
@@ -590,8 +590,8 @@ export default class Task implements StateObservable, Clonable<Task> {
 		this.setStartTime(taskTimingOptions.startTime);
 		this.setEndTime(taskTimingOptions.endTime);
 		this.setDeadline(taskTimingOptions.deadline);
-		this.setMinRequiredTime(taskTimingOptions.minRequiredTime);
-		this.setMaxRequiredTime(taskTimingOptions.maxRequiredTime);
+		this.setMinRequiredTime(taskTimingOptions.minDuration);
+		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
 		this.setRepeatInterval(taskTimingOptions.repeatInterval);
 		this.setMandatory(taskTimingOptions.isMandatory)
 	}
@@ -674,8 +674,8 @@ export default class Task implements StateObservable, Clonable<Task> {
 			startTime: this.startTime,
 			endTime: this.endTime,
 			deadline: this.deadline,
-			minRequiredTime: this.minRequiredTime,
-			maxRequiredTime: this.maxRequiredTime,
+			minDuration: this.minRequiredTime,
+			maxDuration: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
 			stepsToStatusMap: new Map(this.stepsToStatusMap),
 			lastActionedStep: this.lastActionedStep
@@ -702,8 +702,8 @@ export default class Task implements StateObservable, Clonable<Task> {
 		this.setStartTime(taskState.startTime);
 		this.setEndTime(taskState.endTime);
 		this.setDeadline(taskState.deadline);
-		this.setMinRequiredTime(taskState.minRequiredTime);
-		this.setMaxRequiredTime(taskState.maxRequiredTime);
+		this.setMinRequiredTime(taskState.minDuration);
+		this.setMaxRequiredTime(taskState.maxDuration);
 		this.setRepeatInterval(taskState.repeatInterval);
 		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));
 		this.setLastActionedStep(taskState.lastActionedStep);
