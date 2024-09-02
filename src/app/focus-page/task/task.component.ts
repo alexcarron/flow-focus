@@ -125,7 +125,7 @@ export class TaskComponent {
 	 * @return {string} A string representing the time left in appropriate units.
 	 */
 	getTimeLeft(): string | null {
-		const millisecondsLeft = this.task.getTimeToComplete(this.currentTime);
+		const millisecondsLeft = this.task.getTimeUntilDeadline(this.currentTime);
 		if (millisecondsLeft === null) {
 			return null;
 		}
