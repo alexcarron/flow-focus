@@ -1,12 +1,40 @@
-<number-input
-	#durationValueInput
-	placeholder="0"
-	[initialValue]="amountOfUnit"
-	(onInputChange)="onTimeValueChange($event)"
-></number-input>
-<select-input
-	#durationUnitInput
-	[initialValue]="unit"
-	[options]="unitOptions"
-	(onInputChange)="onUnitChange($event)"
-></select-input>
+<div class="flex-row">
+	<number-input
+		#durationValueInput
+		placeholder="0"
+		[initialValue]="amountOfUnit"
+		(onInputChange)="onTimeValueChange($event)"
+	></number-input>
+	<select-input
+		#durationUnitInput
+		[initialValue]="unit"
+		[options]="unitOptions"
+		(onInputChange)="onUnitChange($event)"
+	></select-input>
+</div>
+<div class="flex-row">
+	<button
+		class="icon-button"
+		(click)="incrementBy(1)"
+	>
+		<img src="assets/positive-1-icon.svg" alt="Add 1">
+	</button>
+	<button
+		class="icon-button"
+		(click)="incrementBy(-1)"
+	>
+		<img src="assets/negative-1-icon.svg" alt="Substract 1">
+	</button>
+	<button
+		class="icon-button"
+		(click)="incrementBy(10)"
+	>
+		<img src="assets/plus-ten-circle-icon.svg" alt="Add 10">
+	</button>
+	<button
+		class="icon-button"
+		(click)="incrementBy(-10)"
+	>
+		<img src="assets/minus-ten-circle-icon.svg" alt="Substract 10">
+	</button>
+</div>

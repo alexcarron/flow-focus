@@ -37,6 +37,17 @@ export class TextInputComponent implements InputControlComponent<string | null> 
 		}
 	}
 
+	setValue(value: string | null): void {
+		if (value === null) {
+			this.clearInput();
+		}
+		else {
+			this.hostElement.textContent = value;
+		}
+
+		this.onInput();
+	}
+
 	onInput() {
 		let inputText: string | null = this.hostElement.textContent ?? '';
 

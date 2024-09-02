@@ -26,6 +26,10 @@ export default class Duration {
 	}
 
 	static fromMilliseconds(milliseconds: number): Duration {
+		if (milliseconds <= 0) {
+			return new Duration(0, timeUnits.seconds);
+		}
+		
 		const largestDivisibleUnit = Duration.getLargestDivisibleUnit(milliseconds);
 
 		const amountOfUnits = Math.floor(milliseconds / largestDivisibleUnit.milliseconds);

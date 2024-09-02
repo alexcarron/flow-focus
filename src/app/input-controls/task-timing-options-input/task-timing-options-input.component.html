@@ -1,4 +1,4 @@
-<div class="flex-column main-input">
+ra<div class="flex-column main-input">
 	<h3 class="input-label">Time Frame</h3>
 
 	<div class="flex-row">
@@ -34,7 +34,7 @@
 		<duration-input
 			#minDurationInput
 			id="minDurationInput"
-			[initialValue]="enteredValue.minRequiredTime"
+			[initialValue]="enteredValue.minDuration"
 			(onInputChange)="onMinDurationChange($event)"
 		></duration-input>
 
@@ -43,7 +43,7 @@
 		<duration-input
 			#maxDurationInput
 			id="maxDurationInput"
-			[initialValue]="enteredValue.maxRequiredTime"
+			[initialValue]="enteredValue.maxDuration"
 			(onInputChange)="onMaxDurationChange($event)"
 		></duration-input>
 	</div>
