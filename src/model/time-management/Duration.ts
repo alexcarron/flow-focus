@@ -9,6 +9,10 @@ export default class Duration {
 	public getAmountOfUnits(): number {return this.amountOfUnits}
 	public getTimeUnit(): TimeUnit {return this.timeUnit}
 
+	public toMilliseconds(): number {
+		return this.timeUnit.milliseconds * this.amountOfUnits;
+	}
+
 	private static getLargestDivisibleUnit(milliseconds: number): TimeUnit {
 		const longestToShortestTimeUnits = Object.values(timeUnits)
 			.sort((timeUnitLeft, timeUnitRight) =>
@@ -29,7 +33,7 @@ export default class Duration {
 		if (milliseconds <= 0) {
 			return new Duration(0, timeUnits.seconds);
 		}
-		
+
 		const largestDivisibleUnit = Duration.getLargestDivisibleUnit(milliseconds);
 
 		const amountOfUnits = Math.floor(milliseconds / largestDivisibleUnit.milliseconds);

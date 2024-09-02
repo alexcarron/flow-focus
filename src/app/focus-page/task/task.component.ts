@@ -10,6 +10,7 @@ import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directiv
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';
 import { SkipTaskPopupComponent } from '../../base-popup/skip-task-popup/skip-task-popup.component';
+import Duration from '../../../model/time-management/Duration';
 
 @Component({
   selector: 'task',
@@ -215,5 +216,9 @@ export class TaskComponent {
 
 	onTimingOptionsPopoutConfirm(taskTimingOptions: TaskTimingOptions): void {
 		this.task.setFromTaskTimingOptions(taskTimingOptions);
+	}
+
+	onSkipTaskConfirm(skipDuration: Duration): void {
+		const milliseconds = skipDuration.toMilliseconds();
 	}
 }
