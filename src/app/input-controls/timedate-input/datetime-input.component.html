@@ -2,3 +2,15 @@
 	type="datetime-local"
 	(change)="onInput($event)"
 >
+<button
+	class="icon-button"
+	(click)="incrementDay()"
+>
+	<img src="assets/positive-1-icon.svg" alt="Add a day">
+</button>
+<button
+	class="icon-button"
+	(click)="decrementDay()"
+>
+	<img src="assets/negative-1-icon.svg" alt="Substract a day">
+</button>

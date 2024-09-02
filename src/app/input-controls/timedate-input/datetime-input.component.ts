@@ -56,6 +56,12 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
+	incrementDay() {
+	}
+
+	decrementDay() {
+	}
+
 	onInput(event: Event) {
 		const selectedDateString = this.datetimeInputElement.value;
 
