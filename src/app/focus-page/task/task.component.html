@@ -58,7 +58,7 @@
 		#skipTaskButton
 		id="skipTaskButton"
 		class="icon-button"
-		(click)="skipTask()"
+		(click)="openSkipTaskPopup()"
 	>
 		<img src="assets/skip-over-icon.svg" alt="Skip Task">
 		<span class="tooltip">Skip Task</span>
@@ -82,3 +82,8 @@
 	(onConfirm)="onTimingOptionsPopoutConfirm($event)"
 >
 </task-timing-options-popup>
+
+<skip-task-popup
+	#skipTaskPopup
+>
+</skip-task-popup>

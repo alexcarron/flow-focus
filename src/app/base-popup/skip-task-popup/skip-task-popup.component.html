@@ -1,1 +1,10 @@
-<p>skip-task-popup works!</p>
+<base-popup
+	(onOpenPopup)="onOpenPopup.emit()"
+	(onClosePopup)="onClosePopup.emit()"
+	(onConfirm)="confirm()"
+	[isOpen]="isOpen"
+	[hostElement]="hostElement"
+>
+	<div popup-content>
+	</div>
+</base-popup>

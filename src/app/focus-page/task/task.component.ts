@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import Task from '../../../model/task/Task';
 import { CommonModule } from '@angular/common';
 import EditTaskDescriptionCommand from '../../../model/commands/EditTaskDescriptionCommand';
@@ -9,11 +9,12 @@ import { TaskTimingOptionsPopupComponent } from '../../base-popup/task-timing-op
 import { ShrinkToFitDirective } from '../../../directives/shrink-to-fit.directive';
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { ArrayInputComponent } from '../../input-controls/array-input/array-input.component';
+import { SkipTaskPopupComponent } from '../../base-popup/skip-task-popup/skip-task-popup.component';
 
 @Component({
   selector: 'task',
   standalone: true,
-  imports: [CommonModule, TimeFormatterPipe, TaskTimingOptionsPopupComponent, ShrinkToFitDirective, ArrayInputComponent],
+  imports: [CommonModule, TimeFormatterPipe, TaskTimingOptionsPopupComponent, ShrinkToFitDirective, ArrayInputComponent, SkipTaskPopupComponent],
   templateUrl: './task.component.html',
   styleUrl: './task.component.css'
 })
@@ -21,6 +22,7 @@ export class TaskComponent {
 	@ViewChild('taskSteps') taskStepsDiv?: ElementRef<HTMLDivElement>;
 	@ViewChild('skipButton') skipButton?: ElementRef<HTMLDivElement>;
 	@ViewChild('timingOptionsPopup') timingOptionsPopup?: TaskTimingOptionsPopupComponent;
+	@ViewChild('skipTaskPopup') skipTaskPopup?: SkipTaskPopupComponent;
 	taskStepsDivElement?: HTMLDivElement
 	skipButtonElement?: HTMLDivElement
 
@@ -145,8 +147,6 @@ export class TaskComponent {
 		this.taskSkipped.emit(this.task);
 	}
 
-	skipTask() {}
-
 	complete() {
 		this.taskCompleted.emit(this.task);
 	}
@@ -202,11 +202,16 @@ export class TaskComponent {
 	}
 
   openTimingOptionsPopup(): void {
-		console.log(this.timingOptionsPopup);
 		if (this.timingOptionsPopup) {
 			this.timingOptionsPopup.open();
 		}
   }
+
+	openSkipTaskPopup(): void {
+		if (this.skipTaskPopup) {
+			this.skipTaskPopup.open();
+		}
+	}
 
 	onTimingOptionsPopoutConfirm(taskTimingOptions: TaskTimingOptions): void {
 		this.task.setFromTaskTimingOptions(taskTimingOptions);

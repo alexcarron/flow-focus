@@ -3,7 +3,7 @@ import Duration from '../../../model/time-management/Duration';
 import { BasePopupComponent } from '../base-popup.component';
 
 @Component({
-  selector: 'app-skip-task-popup',
+  selector: 'skip-task-popup',
   standalone: true,
   imports: [BasePopupComponent],
   templateUrl: './skip-task-popup.component.html',
