@@ -9,11 +9,8 @@ export default class DeferTaskCommand extends EditTaskCommand {
 	}
 
 	public doAction(): void {
-		let currentStartTime = this.task.getStartTime();
-		if (currentStartTime === null) {
-			currentStartTime = new Date();
-		}
-		const newStartTime = new Date(currentStartTime.getTime() + this.deferMilliseconds);
+		let currentTime = new Date();
+		const newStartTime = new Date(currentTime.getTime() + this.deferMilliseconds);
 		this.task.setStartTime(newStartTime);
 	}
 
