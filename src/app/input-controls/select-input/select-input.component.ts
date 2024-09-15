@@ -67,6 +67,22 @@ export class SelectInputComponent<ValueType> implements InputControlComponent<Va
 		this.onInput();
 	}
 
+	/**
+	 * Cycle to the next option
+	 */
+	cycle() {
+		this.selectInputElement.selectedIndex = (this.selectInputElement.selectedIndex + 1) % this.optionKeys.length;
+		this.onInput();
+	}
+
+	/**
+	 * Cycle to the previous option
+	 */
+	cycleBack() {
+		this.selectInputElement.selectedIndex = (this.selectInputElement.selectedIndex - 1 + this.optionKeys.length) % this.optionKeys.length;
+		this.onInput();
+	}
+
 	onInput() {
 		const option  = this.selectInputElement.value;
 		const optionValue = this.options.get(option);

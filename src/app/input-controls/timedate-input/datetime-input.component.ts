@@ -120,7 +120,7 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
 		}
 	}
 
-	onKeyUp(event: KeyboardEvent) {
+	onKeyDown(event: KeyboardEvent) {
 		// Check if pressed up arrow
 		if (event.shiftKey) {
 

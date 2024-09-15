@@ -1,6 +1,7 @@
 <div class="flex-row">
 	<number-input
 		#durationValueInput
+		(keydown)="onKeyDown($event)"
 		placeholder="0"
 		[initialValue]="amountOfUnit"
 		(onInputChange)="onTimeValueChange($event)"

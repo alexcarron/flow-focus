@@ -88,6 +88,36 @@ export class DurationInputComponent implements InputControlComponent<number | nu
 		}
 	}
 
+	onKeyDown(event: KeyboardEvent) {
+		if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			if (event.shiftKey) {
+				this.incrementBy(10);
+			}
+			else {
+				this.incrementBy(1);
+			}
+		}
+		else if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			if (event.shiftKey) {
+				this.incrementBy(-10);
+			}
+			else {
+				this.incrementBy(-1);
+			}
+		}
+		else if (event.shiftKey) {
+			if (event.key === 'ArrowRight') {
+				event.preventDefault();
+				this.durationUnitInput.cycle();
+			}
+			else if (event.key === 'ArrowLeft') {
+				event.preventDefault();
+				this.durationUnitInput.cycleBack();
+			}
+		}
+	}
 
 	clearInput(): void {
 		this.durationValueInput.clearInput();
