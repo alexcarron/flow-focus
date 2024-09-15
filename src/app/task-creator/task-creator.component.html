@@ -48,12 +48,21 @@
 </section>
 
 <task-timing-options-input
+	id="taskTimingOptionsInput"
 	class="input-column"
 	#taskTimingOptionsInput
 	[initialValue]="getDefaultTimingOptions()"
 	(onInputChange)="onTimingOptionsChange($event)"
 ></task-timing-options-input>
-<button
-	class="medium-text"
-	(click)="onCreateTaskButton()"
->Create Task</button>
+<div class="flex-row">
+	<button
+		class="medium-text"
+		(click)="onCreateTaskButton()"
+	>Create Task</button>
+	<button
+		class="icon-button"
+		(click)="clearInputComponents()"
+	>
+		<img src="assets/close-icon.svg" alt="Clear">
+	</button>
+</div>

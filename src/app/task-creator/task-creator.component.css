@@ -1,18 +1,22 @@
 :host, .input-column {
 	display: flex;
-	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
+	gap: var(--margin-medium);
+}
+
+#taskTimingOptionsInput {
+	width: 80%;
+	flex-direction: row;
+	flex-wrap: wrap;
+	column-gap: var(--margin-xlarge);
+	row-gap: var(--margin-large);
 }
 
 :host {
 	margin: var(--margin-xlarge) 0;
 	gap: var(--margin-xxlarge);
-}
-
-.input-column {
-	gap: var(--margin-large);
 }
 
 #taskDescription {
