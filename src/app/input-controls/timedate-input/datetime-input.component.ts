@@ -120,6 +120,34 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
 		}
 	}
 
+	onKeyUp(event: KeyboardEvent) {
+		// Check if pressed up arrow
+		if (event.shiftKey) {
+
+			if (event.key === 'ArrowUp') {
+				event.preventDefault();
+				this.incrementDay();
+			}
+			else if (event.key === 'ArrowDown') {
+				event.preventDefault();
+				this.decrementDay();
+			}
+			else if (event.key === 'ArrowLeft') {
+				event.preventDefault();
+				this.setMorningTime();
+			}
+			else if (event.key === 'ArrowRight') {
+				event.preventDefault();
+				this.setNightTime();
+			}
+		}
+		// Check for backspace or delete
+		else if (event.key === 'Backspace' || event.key === 'Delete') {
+			event.preventDefault();
+			this.clearInput();
+		}
+	}
+
 	clearInput(): void {
 		this.datetimeInputElement.value = '';
 		this.addPlaceholderClass();

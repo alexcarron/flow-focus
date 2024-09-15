@@ -1,6 +1,7 @@
 <input
 	type="datetime-local"
 	(change)="onInput()"
+	(keydown)="onKeyUp($event)"
 >
 <div class="flex-row">
 	<button
