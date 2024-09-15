@@ -49,10 +49,15 @@ export class TaskCreatorComponent {
 	}
 
 	getDefaultTimingOptions(): TaskTimingOptions {
-		let defaultTimingOptions: TaskTimingOptions = TaskTimingOptionsInputComponent.DEFAULT_VALUE;
-		defaultTimingOptions.minDuration = TaskCreatorComponent.DEFAULT_DURATION;
-		defaultTimingOptions.maxDuration = TaskCreatorComponent.DEFAULT_DURATION;
-		return defaultTimingOptions;
+		return {
+			startTime: null,
+			endTime: null,
+			deadline: null,
+			minDuration: TaskCreatorComponent.DEFAULT_DURATION,
+			maxDuration: TaskCreatorComponent.DEFAULT_DURATION,
+			repeatInterval: null,
+			isMandatory: false
+		};
 	}
 
 	onNameChange(description: string | null) {
@@ -117,9 +122,6 @@ export class TaskCreatorComponent {
 		}
 
 		this.createTask();
-
-		this.clearValues();
-		this.clearInputComponents();
 	}
 
 	createTask() {
@@ -139,6 +141,11 @@ export class TaskCreatorComponent {
 		);
 
 		task.setMandatory(this.isMandatory);
+	}
+
+	clearAll() {
+		this.clearInputComponents();
+		this.clearValues();
 	}
 
 	clearValues() {
@@ -161,6 +168,7 @@ export class TaskCreatorComponent {
 			this.taskNextStepInput,
 			this.taskTimingOptionsInput,
 		];
+
 
 		for (const inputComponent of allInputComponents) {
 			inputComponent.clearInput();
