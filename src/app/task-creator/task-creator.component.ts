@@ -23,6 +23,8 @@ export class TaskCreatorComponent {
 	@ViewChild('taskNextStepInput') taskNextStepInput!: TextInputComponent;
 	@ViewChild('taskTimingOptionsInput') taskTimingOptionsInput!: TaskTimingOptionsInputComponent;
 
+	private static readonly DEFAULT_DURATION = 1000 * 60 * 30;
+
 	tasksManager!: TasksManager;
 
 	name: string | null = null;
@@ -42,6 +44,15 @@ export class TaskCreatorComponent {
 
 	ngOnInit() {
 		this.tasksManager = this.activatedRoute.snapshot.data['tasksManager'];
+		this.minDuration = TaskCreatorComponent.DEFAULT_DURATION;
+		this.maxDuration = TaskCreatorComponent.DEFAULT_DURATION;
+	}
+
+	getDefaultTimingOptions(): TaskTimingOptions {
+		let defaultTimingOptions: TaskTimingOptions = TaskTimingOptionsInputComponent.DEFAULT_VALUE;
+		defaultTimingOptions.minDuration = TaskCreatorComponent.DEFAULT_DURATION;
+		defaultTimingOptions.maxDuration = TaskCreatorComponent.DEFAULT_DURATION;
+		return defaultTimingOptions;
 	}
 
 	onNameChange(description: string | null) {
@@ -136,8 +147,8 @@ export class TaskCreatorComponent {
 		this.nextStep = null;
 		this.startTime = null;
 		this.deadline = null;
-		this.minDuration = null;
-		this.maxDuration = null;
+		this.minDuration = TaskCreatorComponent.DEFAULT_DURATION;
+		this.maxDuration = TaskCreatorComponent.DEFAULT_DURATION;
 		this.repeatInterval = null;
 		this.isMandatory = false;
 		this.hasRepeatInterval = false;
@@ -154,5 +165,7 @@ export class TaskCreatorComponent {
 		for (const inputComponent of allInputComponents) {
 			inputComponent.clearInput();
 		}
+
+		this.taskTimingOptionsInput.setValue(this.getDefaultTimingOptions());
 	}
 }

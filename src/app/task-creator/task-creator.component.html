@@ -47,8 +47,10 @@
 	</div>
 </section>
 
-<task-timing-options-input class="input-column"
+<task-timing-options-input
+	class="input-column"
 	#taskTimingOptionsInput
+	[initialValue]="getDefaultTimingOptions()"
 	(onInputChange)="onTimingOptionsChange($event)"
 ></task-timing-options-input>
 <button

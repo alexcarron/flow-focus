@@ -25,7 +25,7 @@ export class TaskTimingOptionsInputComponent implements InputControlComponent<Ta
 
 	@Input() initialValue: TaskTimingOptions | null = null;
 	@Output() onInputChange = new EventEmitter<TaskTimingOptions>();
-	private static readonly DEFAULT_VALUE: TaskTimingOptions = {
+	public static readonly DEFAULT_VALUE: TaskTimingOptions = {
 		startTime: null,
 		endTime: null,
 		deadline: null,
