@@ -122,6 +122,13 @@ export class TaskCreatorComponent {
 		}
 
 		this.createTask();
+
+		this.taskDescriptionInput.clearInput();
+		this.taskNextStepInput.clearInput();
+
+		this.name = null;
+		this.steps = [];
+		this.nextStep = null;
 	}
 
 	createTask() {
