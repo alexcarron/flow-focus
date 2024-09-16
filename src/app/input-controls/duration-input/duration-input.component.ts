@@ -122,5 +122,7 @@ export class DurationInputComponent implements InputControlComponent<number | nu
 	clearInput(): void {
 		this.durationValueInput.clearInput();
 		this.durationUnitInput.clearInput();
+		this.amountOfUnit = null;
+		this.unit = null;
 	}
 }
