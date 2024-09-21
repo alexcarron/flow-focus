@@ -125,6 +125,7 @@ export class TaskCreatorComponent {
 
 		this.taskDescriptionInput.clearInput();
 		this.taskNextStepInput.clearInput();
+		this.taskCreatedStepsInput.clearInput();
 
 		this.name = null;
 		this.steps = [];
