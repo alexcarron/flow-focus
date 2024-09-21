@@ -17,11 +17,14 @@
   /* Colors */
   --primary-color: #2a7ccd;
   --accent-color: #2ecc71;
+  --warning-color: #e4c129;
   --light-background-color: #f9fbfb;
 
   --background-color: #f3f7f8;
   --faint-background-color: #ebf1f2;
   --inactive-background-color: #e3e6e6;
+  --warning-background-color: #f3e8b9;
+  --faint-warning-background-color: #e1d6a6;
 
   --text-color: #2c3e50;
 	--inactive-text-color: #2c3e50a0;
@@ -31,6 +34,7 @@
 	--icon-color: #000000;
 
   /* Font sizes */
+  --font-size-xsmall: 0.85rem;
   --font-size-small: 1rem;
   --font-size-medium: 1.3rem;
   --font-size-xmedium: 1.3rem;
@@ -348,19 +352,21 @@ input[type="checkbox"] {
 	box-sizing: border-box;
 	background-color: var(--background-color);
 	width: var(--margin-large);
-	aspect-ratio: 1;
+	height: var(--margin-large);
 	margin: 0;
-	margin-top: calc(var(--margin-large)/4);
 
 	border-color: var(--inactive-background-color);
 	border-width: calc(var(--margin-large)/10);
 	border-radius: var(--border-radius-small);
+
+	flex-grow: 1;
 }
 
 input[type="checkbox"]:checked {
 	background-color: var(--primary-color);
 	background-image: url("assets/checkbox-icon.svg");
 	background-position: 50% 50%;
+	background-repeat: no-repeat;
 
 	border: none;
 }
@@ -378,4 +384,51 @@ input[type="checkbox"]:checked {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+}
+
+/* Table Styles */
+table {
+  border-collapse: collapse;
+	width: 100%;
+
+  background: var(--primary-color);
+  background: -webkit-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+  background: -o-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+  background: -moz-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+  background: linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+
+	border-radius: var(--border-radius-large);
+
+	text-align: left;
+}
+
+table th:not(:first-child) {
+	border-left: rgba(0, 0, 0, 0.18) 1px solid;
+}
+table td:not(:first-child) {
+	border-left: rgba(0, 0, 0, 0.08) 1px solid;
+}
+
+table thead {
+  background-color: rgba(0,0,0, 0.1);
+}
+
+table td, table th {
+	text-wrap: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	padding: var(--margin-small);
+}
+
+table tbody tr:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+table tbody td:hover {
+  background-color: rgba(255,255,255,0.2);
+}
+
+table thead th:hover {
+  background-color: rgba(0,0,0,0.1);
 }

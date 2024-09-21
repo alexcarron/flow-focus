@@ -7,16 +7,77 @@
 	<span class="tooltip">To Task Focus</span>
 </button>
 
-<header id="taskHeader">
-	<h2 class="task-header-item">Name</h2>
-	<h2 class="task-header-item">Steps</h2>
-	<h2 class="task-header-item">Start Time</h2>
-	<h2 class="task-header-item">Deadline</h2>
-	<h2 class="task-header-item">Duration</h2>
-	<h2 class="task-header-item">Repeat</h2>
-	<h2 class="task-header-item">Mandatory</h2>
-	<h2 class="task-header-item">Complete</h2>
-</header>
+<table data-vertable="ver6">
+	<thead>
+		<tr id="task-header">
+			<th class="task-header-item"></th>
+			<th class="task-header-item description-column">Name</th>
+			<th class="task-header-item steps-column">Steps</th>
+			<th class="task-header-item time-available-column">Time Available</th>
+			<th class="task-header-item deadline-column">Deadline</th>
+			<th class="task-header-item duration-column">Duration</th>
+			<th class="task-header-item repeat-column">Repeat</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr class="task-row">
+			<td class="task-row-item">
+				<div>
+					<input id="completedCheckbox" type="checkbox" value="">
+					<input id="mandatoryCheckbox" type="checkbox" value="">
+				</div>
+			</td>
+			<td class="task-row-item description-column">
+				Complete Week 2 of Cultural Anthropology
+			</td>
+			<td class="task-row-item steps-column">
+				<div>
+					<button
+						id="stepsDisplayButton"
+						class="icon-button"
+					>
+						<img id="displayStepsIcon" src="assets/arrowhead-right-icon.svg" alt="Display Steps">
+						<img id="hideStepsIcon" src="assets/arrowhead-down-icon.svg" alt="Hide Steps">
+					</button>
+					<div class="steps-preview-container flex-row">
+						<p>Read Chapter 1</p>
+						<p>Complete Exercises 1.3</p>
+						<p>Read Ulin chapter 1.3 pg.46-58 (Take Notes)</p>
+						<p>Answer Discussion Questions 2</p>
+					</div>
+					<ul class="steps-list" style="display:none;">
+						<li draggable="true">Read Chapter 1</li>
+						<li draggable="true">Complete Exercises 1-3</li>
+						<li draggable="true">Prepare for Quiz</li>
+					</ul>
+				</div>
+			</td>
+			<td class="task-row-item time-available-column">
+				<div>
+					<p class="table-time-value">Sep 5 11:32 AM</p>
+					to
+					<p class="table-time-value">Sep 7 3PM</p>
+				</div>
+			</td>
+			<td class="task-row-item deadline-column">
+				<p class="table-time-value">Sep 6 11:30 PM</p>
+			</td>
+			<td class="task-row-item duration-column">
+				<div>
+					<p class="table-time-value">30 minutes</p>
+					to
+					<p class="table-time-value">2 hours</p>
+				</div>
+			</td>
+			<td class="task-row-item repeat-column">
+				<div>
+					Every
+					<p class="table-time-value">Week</p>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
 
 <!-- Example Display: Do Dishes | Preview of first step | Jul 24 2023 5PM | 8PM | 30 min - 4 hours | Daily | ! | ✅ -->
 
