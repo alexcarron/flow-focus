@@ -73,6 +73,7 @@ body {
 	text-align: center;
 }
 
+/* Input Controls Styling */
 input {
 	text-align: center;
 }
@@ -304,7 +305,7 @@ button:active, .icon-button:active {
 	margin-bottom: var(--margin-small);
 }
 
-
+/* Input Controls Styling */
 [contenteditable], select, input {
 	display: inline-block;
   white-space: normal;
@@ -341,14 +342,36 @@ select {
 	font-size: inherit;
 }
 
+input[type="checkbox"] {
+	appearance: none;
 
+	box-sizing: border-box;
+	background-color: var(--background-color);
+	width: var(--margin-large);
+	aspect-ratio: 1;
+	margin: 0;
+	margin-top: calc(var(--margin-large)/4);
+
+	border-color: var(--inactive-background-color);
+	border-width: calc(var(--margin-large)/10);
+	border-radius: var(--border-radius-small);
+}
+
+input[type="checkbox"]:checked {
+	background-color: var(--primary-color);
+	background-image: url("assets/checkbox-icon.svg");
+	background-position: 50% 50%;
+
+	border: none;
+}
+
+/* Flex Styling */
 .flex-row {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	justify-content: center;
 }
-
 
 .flex-column {
 	display: flex;
