@@ -34,7 +34,7 @@
 	--icon-color: #000000;
 
   /* Font sizes */
-  --font-size-xsmall: 0.85rem;
+  --font-size-xsmall: 0.8rem;
   --font-size-small: 1rem;
   --font-size-medium: 1.3rem;
   --font-size-xmedium: 1.3rem;
@@ -351,8 +351,8 @@ input[type="checkbox"] {
 
 	box-sizing: border-box;
 	background-color: var(--background-color);
-	width: var(--margin-large);
 	height: var(--margin-large);
+	width: var(--margin-large);
 	margin: 0;
 
 	border-color: var(--inactive-background-color);

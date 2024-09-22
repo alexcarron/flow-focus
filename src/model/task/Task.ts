@@ -51,10 +51,16 @@ export default class Task implements StateObservable {
 		}
 	};
 
+	hasSingletonDuration(): boolean {
+		return this.minRequiredTime === this.maxRequiredTime;
+	}
+
 	getStartTime(): Date | null {return this.startTime};
 
 	@NotifyStateChange
 	setStartTime(startTime: Date | null): void {this.startTime = startTime};
+
+	getEndTime(): Date | null {return this.endTime}
 
 	@NotifyStateChange
 	setEndTime(endTime: Date | null): void {this.endTime = endTime};
@@ -73,6 +79,10 @@ export default class Task implements StateObservable {
 
 	@NotifyStateChange
 	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
+
+	hasMaxRequiredTime(): boolean {
+		return this.maxRequiredTime !== null;
+	}
 
 	getMaxRequiredTime(currentTime: Date): number {
 		if (this.maxRequiredTime === null) {

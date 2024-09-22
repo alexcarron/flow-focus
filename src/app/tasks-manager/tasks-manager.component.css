@@ -13,6 +13,10 @@
 	font-weight: 600;
 }
 
+.checkbox-column {
+	width: calc(var(--margin-large)*2 + var(--margin-small));
+}
+
 #stepsDisplayButton {
 	margin: 0;
 }
@@ -23,19 +27,15 @@
 	display: none;
 }
 
-#stepsDisplayButton:hover img#displayStepsIcon {
+#stepsDisplayButton:active img#displayStepsIcon {
 	display: none;
 }
-#stepsDisplayButton:hover img#hideStepsIcon {
+#stepsDisplayButton:active img#hideStepsIcon {
 	display: inline;
 }
 
 .description-column {
-	max-width: 15em;
-}
-
-.steps-column {
-	max-width: 20em;
+	max-width: 12em;
 }
 
 td div {
@@ -46,6 +46,10 @@ td div {
 	gap: var(--margin-small);
 }
 
+
+.steps-column {
+	max-width: 16em;
+}
 
 .steps-preview-container p {
 	height: 100%;
@@ -68,9 +72,17 @@ td div {
 
 .table-time-value {
 	padding: var(--margin-xsmall) var(--margin-small);
+	width: min-content;
 	margin: 0;
 
 	background-color: rgba(0, 0, 0, 0.08);
+}
+
+input[type="checkbox"] {
+	opacity: 0.5
+}
+input[type="checkbox"]:checked {
+	opacity: 1
 }
 
 #mandatoryCheckbox:not(:checked) {
@@ -81,4 +93,13 @@ td div {
 	background-color: var(--warning-color);
 	background-image: url("/assets/exclamation-icon.svg");
 	background-size: 90%;
+}
+
+.middle-label {
+	margin: 0;
+	padding: 0;
+}
+
+.repeat-column div {
+	gap: 0.25em;
 }
