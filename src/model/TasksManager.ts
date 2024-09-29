@@ -81,8 +81,13 @@ export default class TasksManager implements StateObservable {
 	 * @returns The task with the highest priority
 	 */
 	public getPriorityTask(currentTime: Date): Task | null {
-			const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
+		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
 		return taskPrioritizer.getMostImportantTask(currentTime);
+	}
+
+	getTasksInPriorityOrder(currentTime: Date): Task[] {
+		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
+		return taskPrioritizer.getTasksInPriorityOrder(this.tasks, currentTime);
 	}
 
 	/**

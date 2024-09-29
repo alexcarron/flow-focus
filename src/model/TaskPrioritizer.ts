@@ -1,3 +1,4 @@
+import SortOrder from './SortOrder';
 import Task from './task/Task'; // Assume this is your task model
 import TasksManager from './TasksManager';
 
@@ -12,7 +13,10 @@ export default class TaskPrioritizer {
 	}
 
 	public getMostImportantTask(currentTime: Date): Task | null {
-		const prioritizedTasks = this.prioritizeTasks(this.getTasks(), currentTime);
+		let prioritizedTasks = this.getTasksInPriorityOrder(this.getTasks(), currentTime);
+
+		prioritizedTasks = prioritizedTasks.filter(task => task.isActive(currentTime));
+		prioritizedTasks = this.filterOutNonUrgentSkippedTasks(prioritizedTasks, currentTime);
 
 		if (prioritizedTasks.length === 0) {
 				return null;
@@ -43,112 +47,158 @@ export default class TaskPrioritizer {
 		}
 	}
 
-	private prioritizeTasks(tasksToPrioritize: Task[], currentTime: Date): Task[] {
+	/**
+	 *
+	 */
+	public getTasksInPriorityOrder(tasksToPrioritize: Task[], currentTime: Date): Task[] {
 		let priorityTasks: Task[] = tasksToPrioritize;
 
-		priorityTasks = priorityTasks.filter(task => task.isActive(currentTime));
-		priorityTasks = this.filterOutNonUrgentSkippedTasks(priorityTasks, currentTime);
-
 		priorityTasks = priorityTasks.sort((task1, task2) => {
-			let downtimeTaskCompareValue = this.compareTasksDuringDowntime(task1, task2, currentTime);
-			if (downtimeTaskCompareValue !== undefined) {
-				return downtimeTaskCompareValue
-			}
-
-			// Prioritize mandatory tasks
-			if (
-				task1.getIsMandatory() && !task2.getIsMandatory() &&
-				this.shouldPrioritizeMandatoryTask(task1, task2, currentTime)
-			) {
-				this.logPriotizedTask(task1, task2, -1, "Had less slack time than optional task's required time");
-				return -1
-			}
-			else if (
-				!task1.getIsMandatory() && task2.getIsMandatory() &&
-				this.shouldPrioritizeMandatoryTask(task2, task1, currentTime)
-			) {
-				this.logPriotizedTask(task1, task2, 1, "Had less slack time than optional task's required time");
-				return 1
-			}
-
-			// Prioritize task with less time to complete
-			const timeToCompleteDifference =
-				task1.getTimeToComplete(currentTime) -
-				task2.getTimeToComplete(currentTime);
-
-			if (timeToCompleteDifference !== 0 && !isNaN(timeToCompleteDifference)) {
-				this.logPriotizedTask(task1, task2, timeToCompleteDifference, "Had less time to complete");
-				return timeToCompleteDifference;
-			}
-
-			// Priotize task with less minimum slack time
-			const minSlackTimeDifference =
-				task1.getMinSlackTime(currentTime) -
-				task2.getMinSlackTime(currentTime);
-
-
-			if (minSlackTimeDifference !== 0 && !isNaN(timeToCompleteDifference)) {
-				this.logPriotizedTask(task1, task2, minSlackTimeDifference, "Had less minimum slack time");
-				return minSlackTimeDifference;
-			}
-
-
-			// Priotize task with less maximum slack time
-			const maxBufferTimeDifference =
-				task1.getMaxSlackTime(currentTime) -
-				task2.getMaxSlackTime(currentTime);
-
-			if (maxBufferTimeDifference !== 0 && !isNaN(timeToCompleteDifference)) {
-				this.logPriotizedTask(task1, task2, maxBufferTimeDifference, "Had less maximum slack time");
-				return maxBufferTimeDifference;
-			}
-
-			// Priortize tasks that are closer to being complete since we're closer to getting them done
-			const progressDifference =
-				task1.getProgress() - task2.getProgress();
-
-			if (progressDifference !== 0 && !isNaN(timeToCompleteDifference)) {
-				this.logPriotizedTask(task1, task2, progressDifference, "Had more progress");
-				return -progressDifference; // Higher progress should be prioritized first
-			}
-
-			return 0;
+			return (
+				this.compareBy(
+					this.compareByActiveStatus.bind(this), task1, task2, currentTime,
+					"Is active while other is completed, skipped, or in the future"
+				) ||
+				/* this.compareBy(
+					this.compareDuringDowntime, task1, task2, currentTime,
+					"Is mandatory with not downtime to skip it"
+				) || */
+				this.compareBy(
+					this.compareByMandatoryStatus.bind(this), task1, task2, currentTime,
+					"Is mandatory with not enough slack time to complete optional tasks first"
+				) ||
+				this.compareBy(
+					this.compareByTimeToComplete.bind(this), task1, task2, currentTime,
+					"Had less time to complete task"
+				) ||
+				this.compareBy(
+					this.compareBySlackTime.bind(this), task1, task2, currentTime,
+					"Had less minimum slack time"
+				) ||
+				this.compareBy(
+					this.compareByProgress.bind(this), task1, task2, currentTime,
+					"Had more completed steps"
+				)
+			)
 		});
 
 		return priorityTasks;
 	}
 
-	private compareTasksDuringDowntime(task1: Task, task2: Task, currentTime: Date): 1 | -1 | undefined {
+	private compareBy(
+		compareFunction:
+			((task1: Task, task2: Task, currentTime: Date) => SortOrder) |
+			((task1: Task, task2: Task) => SortOrder),
+		task1: Task, task2: Task, currentTime: Date, comparisonReason: string
+	) {
+		const comparison = compareFunction(task1, task2, currentTime);
+		if (comparison != 0) this.logPriotizedTask(task1, task2, comparison, comparisonReason);
+		return comparison;
+	}
+
+	private compareByActiveStatus(task1: Task, task2: Task, currentTime: Date): SortOrder {
+    if (task1.isActive(currentTime) && !task2.isActive(currentTime)) {
+        return SortOrder.FIRST_BEFORE_SECOND;  // task1 is active, task2 is not, so task1 comes first
+    } else if (!task1.isActive(currentTime) && task2.isActive(currentTime)) {
+        return SortOrder.SECOND_BEFORE_FIRST;   // task2 is active, task1 is not, so task2 comes first
+    }
+    return SortOrder.UNDETERMINED; // both tasks are either active or inactive
+	}
+
+	private compareDuringDowntime(task1: Task, task2: Task, currentTime: Date): SortOrder {
 		if (this.tasksManager.getDowntime().isInRange(currentTime)) {
 			if (
 				task1.getIsMandatory() && !task2.getIsMandatory() &&
 				!task1.isUrgent(currentTime)
 			) {
-				return 1
+				return SortOrder.SECOND_BEFORE_FIRST
 			}
 			else if (
 				!task1.getIsMandatory() && task2.getIsMandatory() &&
 				!task2.isUrgent(currentTime)
 			) {
-				return -1
+				return SortOrder.FIRST_BEFORE_SECOND
 			}
 		}
 
-		return undefined
+		return SortOrder.UNDETERMINED
+	}
+
+	private compareByMandatoryStatus(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		if (
+			task1.getIsMandatory() && !task2.getIsMandatory() &&
+			this.shouldPrioritizeMandatoryTask(task1, currentTime)
+		) {
+			return SortOrder.FIRST_BEFORE_SECOND;
+		}
+		else if (
+			!task1.getIsMandatory() && task2.getIsMandatory() &&
+			this.shouldPrioritizeMandatoryTask(task2, currentTime)
+		) {
+			return SortOrder.SECOND_BEFORE_FIRST;
+		}
+
+		return SortOrder.UNDETERMINED;
 	}
 
 	/**
 	 * Decides whether a mandatory task should be priortized over an optional one or if we should continue. If the first task is the optional task, you should reverse the return value.
 	 *
 	 * @param mandatoryTask - The mandatory task.
-	 * @param optionalTask - The optional task.
 	 * @return - Whether the mandatory task should be priortized over the optional task.
 	 */
-	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, optionalTask: Task, currentTime: Date): boolean {
+	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, currentTime: Date): boolean {
+    let totalOptionalTasksDuration = 0;
+
+    for (const optionalTask of this.tasksManager.getTasks()) {
+			if (
+				!optionalTask.getIsMandatory() &&
+				optionalTask.isActive(currentTime) &&
+				optionalTask.getDeadline() !== null &&
+				mandatoryTask.getDeadline() !== null &&
+				optionalTask.getDeadline()! < mandatoryTask.getDeadline()!
+			) {
+					totalOptionalTasksDuration += optionalTask.getMaxRequiredTime(currentTime);
+			}
+    }
+
 		return (
 			mandatoryTask.getMinSlackTime(currentTime) <
-			optionalTask.getMaxRequiredTime(currentTime)
+			totalOptionalTasksDuration
 		);
+	}
+
+	private compareByTimeToComplete(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		if (task1.getTimeToComplete(currentTime) > task2.getTimeToComplete(currentTime)) {
+			return SortOrder.SECOND_BEFORE_FIRST;
+		}
+		else if (task1.getTimeToComplete(currentTime) < task2.getTimeToComplete(currentTime)) {
+			return SortOrder.FIRST_BEFORE_SECOND;
+		}
+
+		return SortOrder.UNDETERMINED;
+	}
+
+	private compareBySlackTime(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		if (task1.getMinSlackTime(currentTime) < task2.getMinSlackTime(currentTime)) {
+			return SortOrder.FIRST_BEFORE_SECOND;
+		}
+		else if (task2.getMinSlackTime(currentTime) < task1.getMinSlackTime(currentTime)) {
+			return SortOrder.SECOND_BEFORE_FIRST;
+		}
+
+		return SortOrder.UNDETERMINED;
+	}
+
+	private compareByProgress(task1: Task, task2: Task): SortOrder {
+		if (task1.getProgress() > task2.getProgress()) {
+			return SortOrder.FIRST_BEFORE_SECOND;
+		}
+		else if (task2.getProgress() > task1.getProgress()) {
+			return SortOrder.SECOND_BEFORE_FIRST;
+		}
+
+		return SortOrder.UNDETERMINED;
 	}
 
 	private filterOutNonUrgentSkippedTasks(tasks: Task[], currentTime: Date): Task[] {

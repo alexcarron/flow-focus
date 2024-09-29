@@ -49,6 +49,8 @@ td div {
 
 .steps-column {
 	max-width: 16em;
+	overflow-x: scroll;
+	scrollbar-width: none;
 }
 
 .steps-preview-container p {

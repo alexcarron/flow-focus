@@ -26,7 +26,7 @@ export class TasksManagerComponent {
 	}
 
 	getTasks(): Task[] {
-		return this.tasksManager.getTasks();
+		return this.tasksManager.getTasksInPriorityOrder(new Date());
 	}
 
 	getCurrentTime(): Date {
