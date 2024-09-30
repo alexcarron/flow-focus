@@ -68,12 +68,12 @@ export default class TaskPrioritizer {
 					"Is mandatory with not enough slack time to complete optional tasks first"
 				) ||
 				this.compareBy(
-					this.compareByTimeToComplete.bind(this), task1, task2, currentTime,
-					"Had less time to complete task"
-				) ||
-				this.compareBy(
 					this.compareBySlackTime.bind(this), task1, task2, currentTime,
 					"Had less minimum slack time"
+				) ||
+				this.compareBy(
+					this.compareByTimeToComplete.bind(this), task1, task2, currentTime,
+					"Had less time to complete task"
 				) ||
 				this.compareBy(
 					this.compareByProgress.bind(this), task1, task2, currentTime,
