@@ -4,6 +4,7 @@
 
 :root {
 	/* Margin */
+	--margin-xxsmall: 0.1rem;
 	--margin-xsmall: 0.2rem;
 	--margin-small: 0.5rem;
 	--margin-medium: 0.7rem;
@@ -256,17 +257,20 @@ button:active, .icon-button:active {
 
 
 .corner-button {
+	box-sizing:content-box;
+
 	position: fixed;
 	text-align: left;
 	top: 0;
 	left: 0;
 	margin: var(--margin-small);
+	padding: var(--margin-xxsmall);
 	font-size: var(--font-size-medium);
 	font-weight: bold;
 	color: var(--text-color);
 	background-color: var(--background-color);
 	border: 0;
-	border-radius: var(--border-radius-medium);
+	border-radius: var(--border-radius-small);
 
 	z-index: 10;
 }
@@ -348,6 +352,7 @@ select {
 
 input[type="checkbox"] {
 	appearance: none;
+	opacity: 50%;
 
 	box-sizing: border-box;
 	background-color: var(--background-color);
@@ -363,12 +368,25 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
+	opacity: 100%;
+
 	background-color: var(--primary-color);
 	background-image: url("assets/checkbox-icon.svg");
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
 
 	border: none;
+}
+
+.mandatoryCheckbox input:not(:checked) {
+	background-color: var(--warning-background-color);
+	border-color: var(--faint-warning-background-color);
+}
+
+.mandatoryCheckbox input:checked {
+	background-color: var(--warning-color);
+	background-image: url("/assets/exclamation-icon.svg");
+	background-size: 90%;
 }
 
 /* Flex Styling */
@@ -416,7 +434,6 @@ table thead {
 table td, table th {
 	text-wrap: nowrap;
 	overflow: hidden;
-	text-overflow: ellipsis;
 
 	padding: var(--margin-small);
 }

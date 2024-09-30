@@ -370,6 +370,46 @@ export default class Task implements StateObservable {
 	}
 
 	/**
+	 * Replaces an existing step with a new step description
+	 * @param oldStep The description of the old step
+	 * @param newStep The new description of the step
+	 */
+	@NotifyStateChange
+	editStep(oldStep: string, newStep: string) {
+		const currentSteps = this.getSteps();
+
+		const newSteps = currentSteps.map(step => {
+			if (step === oldStep)
+				return newStep
+
+			return step
+		});
+
+		this.editSteps(newSteps);
+	}
+
+	/**
+	 * Determines if the task is currently available
+	 * @param currentTime The current time
+	 * @returns if the task is currently available
+	 */
+	hasTaskStarted(currentTime: Date): boolean {
+		return (
+			this.getStartTime() === null || this.getStartTime()! <= currentTime &&
+			this.getEndTime() === null || this.getEndTime()! >= currentTime
+		);
+	}
+
+	/**
+	 * Determines if the task will always be available from now on
+	 * @param currentTime The current time
+	 * @returns if the task will always be available
+	 */
+	willAlwaysBeAvailable(currentTime: Date): boolean {
+		return this.hasTaskStarted(currentTime) && this.getEndTime() === null;
+	}
+
+	/**
 	 * Replaces the next step with a different step.
 	 * @param newNextStep - The step to replace the first uncompleted step.
 	 */
@@ -754,5 +794,16 @@ export default class Task implements StateObservable {
 		}
 
 		return true;
+	}
+
+	equals(otherTask: Task) {
+		return (
+			this.getDescription() == otherTask.getDescription() &&
+			this.getSteps().join(",") == otherTask.getSteps().join(",") &&
+			this.getStartTime() == otherTask.getStartTime() &&
+			this.getEndTime() == otherTask.getEndTime() &&
+			this.getDeadline() == otherTask.getDeadline() &&
+			this.getRepeatInterval() == otherTask.getRepeatInterval()
+		)
 	}
 }

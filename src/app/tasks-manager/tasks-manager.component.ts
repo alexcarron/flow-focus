@@ -6,11 +6,13 @@ import Task from '../../model/task/Task';
 import { FormsModule } from '@angular/forms';
 import { DateFormatterPipe } from '../../pipes/DateFormatter.pipe';
 import Duration from '../../model/time-management/Duration';
+import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbox-input.component';
+import { TextInputComponent } from '../input-controls/text-input/text-input.component';
 
 @Component({
   selector: 'app-tasks-manager',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule, DateFormatterPipe],
+  imports: [RouterModule, CommonModule, FormsModule, DateFormatterPipe, CheckboxInputComponent, TextInputComponent],
   templateUrl: './tasks-manager.component.html',
   styleUrl: './tasks-manager.component.css'
 })
@@ -33,6 +35,20 @@ export class TasksManagerComponent {
 		return new Date();
 	}
 
+	willTaskBeAlwaysAvailable(task: Task): boolean {
+		return task.willAlwaysBeAvailable(new Date());
+	}
+
+	getTaskStartTime(task: Task): Date | null {
+		const startTime = task.getStartTime();
+
+		if (startTime === null || startTime <= new Date()) {
+			return null;
+		}
+
+		return startTime;
+	}
+
 	getDurationRangeStrings(startMilliseconds: number, endMilliseconds: number) {
 		const startDuration = Duration.fromMilliseconds(startMilliseconds)
 		const endDuration = Duration.fromMilliseconds(endMilliseconds)
@@ -46,5 +62,32 @@ export class TasksManagerComponent {
 			return duration.getTimeUnit().name.slice(0, -1);
 
 		return `${amount} ${duration.getTimeUnit().name}`
+	}
+
+	onCompleteChange(task: Task, isComplete: boolean) {
+		task.setComplete(isComplete);
+	}
+
+	onMandatoryChange(task: Task, isMandatory: boolean) {
+		task.setMandatory(isMandatory);
+	}
+
+	onDescriptionChange(task: Task, newDescription: string | null) {
+		if (newDescription === null) return;
+
+		task.setDescription(newDescription);
+	}
+
+	onStepChange(task: Task, oldStep: string, newStep: string | null) {
+		if (newStep === null) return;
+
+		console.log({task, oldStep, newStep});
+		task.editStep(oldStep, newStep);
+		console.log(task.getSteps());
+	}
+
+	deleteTask(task: Task) {
+		console.log("Deleting", task);
+		this.tasksManager.deleteTask(task);
 	}
 }

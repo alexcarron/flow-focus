@@ -17,22 +17,32 @@
 			<th class="task-header-item deadline-column">Deadline</th>
 			<th class="task-header-item duration-column">Duration</th>
 			<th class="task-header-item repeat-column">Repeat</th>
+			<th class="task-header-item action-column"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr class="task-row" *ngFor="let task of getTasks();">
 			<td class="task-row-item checkbox-column">
 				<div>
-					<input id="completedCheckbox"
-						type="checkbox"
-						[checked]="task.getIsComplete()">
-					<input id="mandatoryCheckbox"
-						type="checkbox"
-						[checked]="task.getIsMandatory()">
+					<checkbox-input
+						class="completedCheckbox"
+						[initialValue]="task.getIsComplete()"
+						(onInputChange)="onCompleteChange(task, $event)"
+					></checkbox-input>
+					<checkbox-input
+						class="mandatoryCheckbox"
+						[initialValue]="task.getIsMandatory()"
+						(onInputChange)="onMandatoryChange(task, $event)"
+					></checkbox-input>
 				</div>
 			</td>
 			<td class="task-row-item description-column">
-				{{task.getDescription()}}
+				<text-input
+					class="description-input"
+					[initialValue]="task.getDescription()"
+					(onInputChange)="onDescriptionChange(task, $event)"
+				>
+				</text-input>
 			</td>
 			<td class="task-row-item steps-column">
 				<div>
@@ -45,23 +55,29 @@
 						<img id="hideStepsIcon" src="assets/arrowhead-down-icon.svg" alt="Hide Steps">
 					</button>
 					<div class="steps-preview-container flex-row">
-						<p *ngFor="let step of task.getSteps()">{{step}}</p>
+						<text-input
+							*ngFor="let step of task.getSteps()"
+							class="step-item step-input"
+							[initialValue]="step"
+							(onInputChange)="onStepChange(task, step, $event)"
+						>
+						</text-input>
 					</div>
 				</div>
 			</td>
 			<td class="task-row-item time-available-column">
 				<div>
-					<p class="table-time-value">
-						{{task.getStartTime() | dateFormatter:'Now'}}
+					<p *ngIf="!willTaskBeAlwaysAvailable(task)" class="table-time-value">
+						{{this.getTaskStartTime(task) | dateFormatter:'Now'}}
 					</p>
-					to
-					<p class="table-time-value">
+					<p *ngIf="task.getEndTime()" class="middle-label">to</p>
+					<p *ngIf="task.getEndTime()" class="table-time-value">
 						{{task.getEndTime() | dateFormatter:'Forever'}}
 					</p>
 				</div>
 			</td>
 			<td class="task-row-item deadline-column">
-				<p class="table-time-value">{{task.getDeadline() | dateFormatter:'None'}}</p>
+				<p *ngIf="task.getDeadline()" class="table-time-value">{{task.getDeadline() | dateFormatter:'None'}}</p>
 			</td>
 			<td class="task-row-item duration-column">
 				<div>
@@ -88,19 +104,16 @@
 					</p>
 				</div>
 			</td>
+			<td class="task-row-item action-column">
+				<button
+					#deleteButton
+					id="deleteButton"
+					class="icon-button delete-button"
+					(click)="deleteTask(task)"
+				>
+					<img src="assets/delete-icon.svg" alt="Skip">
+				</button>
+			</td>
 		</tr>
 	</tbody>
 </table>
-
-<!-- Example Display: Do Dishes | Preview of first step | Jul 24 2023 5PM | 8PM | 30 min - 4 hours | Daily | ! | ✅ -->
-
-<div
-	id="taskList"
->
-	<!-- <task-item
-		*ngFor="let task of getTasks()"
-		[task]="task"
-		class="task-item"
-	>
-	</task-item> -->
-</div>

@@ -35,7 +35,22 @@
 }
 
 .description-column {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+
 	max-width: 12em;
+}
+
+.description-column * {
+	background: none;
+	border: none;
+}
+
+.description-column, .description-column * {
+	overflow-x: scroll;
+	scrollbar-width: none;
+	text-wrap: nowrap;
 }
 
 td div {
@@ -53,15 +68,21 @@ td div {
 	scrollbar-width: none;
 }
 
-.steps-preview-container p {
+.steps-preview-container .step-input {
 	height: 100%;
 	max-width: 8em;
 	margin: 0;
 
-	overflow: hidden;
-	text-overflow: ellipsis;
+	background: none;
+	border: none;
+
+	overflow-x: scroll;
+	scrollbar-width: none;
+	text-wrap: nowrap;
+
 	font-size: var(--font-size-xsmall);
 
+	padding: 0 var(--margin-xsmall);
 	margin-left: var(-margin-xsmall);
 	margin-right: var(--margin-small);
 
@@ -80,23 +101,6 @@ td div {
 	background-color: rgba(0, 0, 0, 0.08);
 }
 
-input[type="checkbox"] {
-	opacity: 0.5
-}
-input[type="checkbox"]:checked {
-	opacity: 1
-}
-
-#mandatoryCheckbox:not(:checked) {
-	background-color: var(--warning-background-color);
-	border-color: var(--faint-warning-background-color);
-}
-#mandatoryCheckbox:checked {
-	background-color: var(--warning-color);
-	background-image: url("/assets/exclamation-icon.svg");
-	background-size: 90%;
-}
-
 .middle-label {
 	margin: 0;
 	padding: 0;
@@ -104,4 +108,10 @@ input[type="checkbox"]:checked {
 
 .repeat-column div {
 	gap: 0.25em;
+}
+
+.delete-button {
+	opacity: 50%;
+	margin: 0;
+	padding: 0;
 }

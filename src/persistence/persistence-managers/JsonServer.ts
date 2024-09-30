@@ -16,6 +16,7 @@ export default class JsonServer<PersistentObject extends object> extends Persist
 	 * Saves the object to the json server.
 	 */
 	public async saveNonNullObject(): Promise<void> {
+		console.log("Saved");
 		const jsonObject = this.jsonToObjectConverter.convertObjectToJson(this.persistentObject!);
 		await lastValueFrom(this.httpClient.put(this.apiURL, jsonObject));
 	}

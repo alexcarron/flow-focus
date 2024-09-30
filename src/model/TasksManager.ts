@@ -155,6 +155,23 @@ export default class TasksManager implements StateObservable {
 		this.asleepTimeWindow = tasksManagerState.asleepTimeWindow;
 		this.downtimeTime = tasksManagerState.downtimeTime;
 	}
+
+	@NotifyStateChange
+	public deleteTask(taskDeleting: Task): boolean {
+		const currentNumTasks = this.tasks.length;
+		this.tasks = this.tasks.filter((task) => {
+			return !task.equals(taskDeleting);
+		});
+		const newNumTasks = this.tasks.length;
+
+		console.log({
+			currentNumTasks,
+			newNumTasks,
+			tasks: this.tasks
+		});
+
+		return newNumTasks < currentNumTasks;
+	}
 }
 
 
