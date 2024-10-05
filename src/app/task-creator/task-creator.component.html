@@ -1,9 +1,18 @@
 <button
+	id="leaveFocusButton"
+	class="fade-in-on-hover icon-button corner-button"
+	[routerLink]="['/tasks']"
+>
+	<img src="assets/checklist-icon.svg" alt="Manage Tasks">
+	<span class="tooltip">Manage Tasks</span>
+</button>
+
+<button
 	id="goToFocusButton"
 	class="fade-in-on-hover icon-button corner-button"
 	[routerLink]="['/']"
 >
-	<img src="assets/assistant.svg" alt="To Task Focus">
+	<img src="assets/magnify-check-icon.svg" alt="To Task Focus">
 	<span class="tooltip">To Task Focus</span>
 </button>
 

@@ -222,7 +222,7 @@ export class TaskComponent {
   openTimingOptionsPopup(): void {
 		if (this.timingOptionsPopup) {
 			this.timingOptionsPopup.open();
-			this.timingOptionsPopup.setOldTimingOptions(this.task.getTaskTimingOptions());
+			this.timingOptionsPopup.setTask(this.task);
 		}
   }
 

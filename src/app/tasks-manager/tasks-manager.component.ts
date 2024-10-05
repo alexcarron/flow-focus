@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import TasksManager from '../../model/TasksManager';
 import Task from '../../model/task/Task';
@@ -8,15 +8,19 @@ import { DateFormatterPipe } from '../../pipes/DateFormatter.pipe';
 import Duration from '../../model/time-management/Duration';
 import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbox-input.component';
 import { TextInputComponent } from '../input-controls/text-input/text-input.component';
+import { TaskTimingOptionsPopupComponent } from '../base-popup/task-timing-options-popup/task-timing-options-popup.component';
+import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 
 @Component({
   selector: 'app-tasks-manager',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule, DateFormatterPipe, CheckboxInputComponent, TextInputComponent],
+  imports: [RouterModule, CommonModule, FormsModule, DateFormatterPipe, CheckboxInputComponent, TextInputComponent, TaskTimingOptionsPopupComponent],
   templateUrl: './tasks-manager.component.html',
   styleUrl: './tasks-manager.component.css'
 })
 export class TasksManagerComponent {
+	@ViewChild('timingOptionsPopup') timingOptionsPopup?: TaskTimingOptionsPopupComponent;
+
 	tasksManager!: TasksManager;
 
 	constructor(
@@ -84,6 +88,13 @@ export class TasksManagerComponent {
 		console.log({task, oldStep, newStep});
 		task.editStep(oldStep, newStep);
 		console.log(task.getSteps());
+	}
+
+	openTimingOptionsPopup(task: Task): void {
+		if (this.timingOptionsPopup) {
+			this.timingOptionsPopup.open();
+			this.timingOptionsPopup.setTask(task);
+		}
 	}
 
 	deleteTask(task: Task) {

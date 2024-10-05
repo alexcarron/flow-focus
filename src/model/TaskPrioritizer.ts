@@ -3,7 +3,8 @@ import Task from './task/Task'; // Assume this is your task model
 import TasksManager from './TasksManager';
 
 export default class TaskPrioritizer {
-	private static readonly LOG_PRIORITIES = false;
+	private static readonly DO_LOG_PRIORITIES = false;
+
 	constructor(
 		private tasksManager: TasksManager
 	) {}
@@ -27,7 +28,7 @@ export default class TaskPrioritizer {
 	}
 
 	private logPriotizedTask(task1: Task, task2: Task, priorityNumber: number, reason: string) {
-		if (TaskPrioritizer.LOG_PRIORITIES) {
+		if (TaskPrioritizer.DO_LOG_PRIORITIES) {
 			let prioritizedTask, unprioritizedTask;
 
 			if (priorityNumber > 0) {
@@ -69,7 +70,7 @@ export default class TaskPrioritizer {
 				) ||
 				this.compareBy(
 					this.compareBySlackTime.bind(this), task1, task2, currentTime,
-					"Had less minimum slack time"
+					`Had less minimum slack time: ${task1.getMinSlackTime(currentTime)} VS ${task2.getMinSlackTime(currentTime)}`
 				) ||
 				this.compareBy(
 					this.compareByTimeToComplete.bind(this), task1, task2, currentTime,
@@ -82,6 +83,8 @@ export default class TaskPrioritizer {
 			)
 		});
 
+		if (TaskPrioritizer.DO_LOG_PRIORITIES) console.log("Sorted all tasks by priority");
+
 		return priorityTasks;
 	}
 
@@ -92,7 +95,7 @@ export default class TaskPrioritizer {
 		task1: Task, task2: Task, currentTime: Date, comparisonReason: string
 	) {
 		const comparison = compareFunction(task1, task2, currentTime);
-		if (comparison != 0) this.logPriotizedTask(task1, task2, comparison, comparisonReason);
+		if (comparison != SortOrder.UNDETERMINED) this.logPriotizedTask(task1, task2, comparison, comparisonReason);
 		return comparison;
 	}
 

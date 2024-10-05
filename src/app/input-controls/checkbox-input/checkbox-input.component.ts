@@ -11,7 +11,7 @@ import InputControlComponent from '../InputControlComponent';
 export class CheckboxInputComponent implements InputControlComponent<boolean> {
 	@Input() initialValue: boolean = false;
 	@Output() onInputChange = new EventEmitter<boolean>();
-	private hostElement: HTMLElement;
+	private readonly hostElement: HTMLElement;
 	checkboxElement!: HTMLInputElement;
 
 	constructor (

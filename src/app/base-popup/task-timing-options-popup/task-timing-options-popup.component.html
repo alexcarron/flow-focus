@@ -9,7 +9,7 @@
 	<div popup-content class="input-control-group">
 		<task-timing-options-input
 			#taskTimingOptionsInput
-			[initialValue]="oldTimingOptions"
+			[initialValue]="task?.getTaskTimingOptions() || null"
 			(onInputChange)="onInputChange($event)"
 		></task-timing-options-input>
 	</div>

@@ -3,8 +3,17 @@
 	class="fade-in-on-hover icon-button corner-button"
 	[routerLink]="['/']"
 >
-	<img src="assets/assistant.svg" alt="To Task Focus">
+	<img src="assets/magnify-check-icon.svg" alt="To Task Focus">
 	<span class="tooltip">To Task Focus</span>
+</button>
+
+<button
+	id="createTaskButton"
+	class="fade-in-on-hover icon-button corner-button"
+	[routerLink]="['/create-task']"
+>
+	<img src="assets/plus-icon.svg" alt="Create Task">
+	<span class="tooltip">Create Task</span>
 </button>
 
 <table data-vertable="ver6">
@@ -105,15 +114,31 @@
 				</div>
 			</td>
 			<td class="task-row-item action-column">
-				<button
-					#deleteButton
-					id="deleteButton"
-					class="icon-button delete-button"
-					(click)="deleteTask(task)"
-				>
-					<img src="assets/delete-icon.svg" alt="Skip">
-				</button>
+				<div>
+					<button
+						#editButton
+						id="editButton"
+						class="icon-button edit-button"
+						(click)="openTimingOptionsPopup(task)"
+						(keyDown)="openTimingOptionsPopup(task)"
+					>
+						<img src="assets/pencil-icon.svg" alt="Edit">
+					</button>
+					<button
+						#deleteButton
+						id="deleteButton"
+						class="icon-button delete-button"
+						(click)="deleteTask(task)"
+					>
+						<img src="assets/delete-icon.svg" alt="Delete">
+					</button>
+				</div>
 			</td>
 		</tr>
 	</tbody>
 </table>
+
+<task-timing-options-popup
+	#timingOptionsPopup
+>
+</task-timing-options-popup>

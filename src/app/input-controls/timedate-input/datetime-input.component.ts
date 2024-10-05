@@ -115,6 +115,7 @@ export class DatetimeInputComponent implements InputControlComponent<Date | null
 		}
 		else {
 			const date = new Date(selectedDateString);
+			console.log({date});
 			this.onInputChange.emit(date);
 			this.removePlaceholderClass();
 		}

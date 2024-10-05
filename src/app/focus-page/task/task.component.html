@@ -89,7 +89,7 @@
 
 <task-timing-options-popup
 	#timingOptionsPopup
-	[oldTimingOptions]="task.getTaskTimingOptions()"
+	[task]="task"
 	(onConfirm)="onTimingOptionsPopoutConfirm($event)"
 >
 </task-timing-options-popup>

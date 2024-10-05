@@ -110,7 +110,7 @@ td div {
 	gap: 0.25em;
 }
 
-.delete-button {
+.delete-button, .edit-button {
 	opacity: 50%;
 	margin: 0;
 	padding: 0;

@@ -49,21 +49,21 @@ export default class DateUtils {
 
 		// Get the start and end of the current week
 		const startOfWeek = new Date(now);
-		startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+		startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Start of current week (Monday)
+		startOfWeek.setHours(0, 0, 0, 0);
 		const endOfWeek = new Date(startOfWeek);
-		endOfWeek.setDate(startOfWeek.getDate() + 6); // End of current week (Saturday)
+		endOfWeek.setDate(startOfWeek.getDate() + 7); // End of current week (Sunday)
+		endOfWeek.setHours(0, 0, 0, 0);
 
 		// Get the start and end of the last week
 		const startOfLastWeek = new Date(startOfWeek);
 		startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-		const endOfLastWeek = new Date(startOfWeek);
-		endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+		const endOfLastWeek = startOfWeek
 
 		// Get the start and end of the next week
-		const startOfNextWeek = new Date(endOfWeek);
-		startOfNextWeek.setDate(startOfNextWeek.getDate() + 1);
+		const startOfNextWeek = endOfWeek
 		const endOfNextWeek = new Date(startOfNextWeek);
-		endOfNextWeek.setDate(endOfNextWeek.getDate() + 6);
+		endOfNextWeek.setDate(endOfNextWeek.getDate() + 7);
 
 		// Check if date is within the current week
 		if (date >= startOfWeek && date <= endOfWeek) {

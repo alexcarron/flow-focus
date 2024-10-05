@@ -44,8 +44,6 @@ export class BasePopupComponent<ConfirmationEmitType> {
   }
 
 	confirm(): void {
-		console.log("Confirming", this.emittedConfirmation);
-		
 		if (this.emittedConfirmation !== null) {
 			this.onConfirm.emit(this.emittedConfirmation);
 		}
