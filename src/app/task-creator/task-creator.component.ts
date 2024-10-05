@@ -31,6 +31,7 @@ export class TaskCreatorComponent {
 	steps: string[] = [];
 	nextStep: string | null = null;
 	startTime: Date | null = null;
+	endTime: Date | null = null;
 	deadline: Date | null = null;
 	minDuration: number | null = null;
 	maxDuration: number | null = null;
@@ -94,6 +95,7 @@ export class TaskCreatorComponent {
 
 	onTimingOptionsChange(timingOptions: TaskTimingOptions) {
 		this.startTime = timingOptions.startTime;
+		this.endTime = timingOptions.endTime;
 		this.deadline = timingOptions.deadline;
 		this.minDuration = timingOptions.minDuration;
 		this.maxDuration = timingOptions.maxDuration;
@@ -138,6 +140,7 @@ export class TaskCreatorComponent {
 		task.editSteps(this.steps);
 
 		if (this.startTime) task.setStartTime(this.startTime);
+		if (this.endTime) task.setEndTime(this.endTime);
 		if (this.deadline) task.setDeadline(this.deadline);
 
 		if (this.minDuration) task.setMinRequiredTime(this.minDuration);
