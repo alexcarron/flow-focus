@@ -21,20 +21,88 @@
 	class="fade-in-on-hover icon-button row-corner-button"
 	(click)="toggleFliter()"
 >
-	<img src="assets/filter-icon.svg" alt="Show Today's Tasks">
-	<span class="tooltip">Show Today's Tasks</span>
+	<img src="assets/filter-icon.svg" alt="Toggle Filters">
+	<span class="tooltip">Toggle Filters</span>
 </button>
 
 <table data-vertable="ver6">
 	<thead>
 		<tr id="task-header">
-			<th class="task-header-item checkbox-column"></th>
-			<th class="task-header-item description-column">Name</th>
-			<th class="task-header-item steps-column">Steps</th>
-			<th class="task-header-item time-available-column">Time Available</th>
-			<th class="task-header-item deadline-column">Deadline</th>
-			<th class="task-header-item duration-column">Duration</th>
-			<th class="task-header-item repeat-column">Repeat</th>
+			<th class="task-header-item checkbox-column">
+				<button
+					class="icon-button"
+					(click)="toggleColumnSort($event, 0)"
+				>
+					<img class="unsorted" src="assets/clock-icon.svg" alt="Sort Column">
+					<img class="sorted-ascending" src="assets/clock-sort-ascending-icon.svg" alt="Sort Column">
+					<img class="sorted-descending" src="assets/clock-sort-descending-icon.svg" alt="Sort Column">
+				</button>
+			</th>
+			<th class="task-header-item description-column">
+				<div>
+					<p>Name</p>
+					<button
+						class="icon-button"
+						(click)="toggleColumnSort($event, 1)"
+					>
+						<img class="unsorted" src="assets/sort-lines-icon.svg" alt="Sort Column">
+						<img class="sorted-ascending" src="assets/sort-ascending-icon.svg" alt="Sort Column">
+						<img class="sorted-descending" src="assets/sort-descending-icon.svg" alt="Sort Column">
+					</button>
+				</div>
+			</th>
+			<th class="task-header-item steps-column">
+				<div>
+					<p>Steps</p>
+					<button
+						class="icon-button"
+						(click)="toggleColumnSort($event, 2)"
+					>
+						<img class="unsorted" src="assets/sort-lines-icon.svg" alt="Sort Column">
+						<img class="sorted-ascending" src="assets/sort-ascending-icon.svg" alt="Sort Column">
+						<img class="sorted-descending" src="assets/sort-descending-icon.svg" alt="Sort Column">
+					</button>
+				</div>
+			</th>
+			<th class="task-header-item time-available-column">
+				<div>
+					<p>Time Available</p>
+					<button
+						class="icon-button"
+						(click)="toggleColumnSort($event, 3)"
+					>
+						<img class="unsorted" src="assets/sort-lines-icon.svg" alt="Sort Column">
+						<img class="sorted-ascending" src="assets/sort-ascending-icon.svg" alt="Sort Column">
+						<img class="sorted-descending" src="assets/sort-descending-icon.svg" alt="Sort Column">
+					</button>
+				</div>
+			</th>
+			<th class="task-header-item duration-column">
+				<div>
+					<p>Duration</p>
+					<button
+						class="icon-button"
+						(click)="toggleColumnSort($event, 4)"
+					>
+						<img class="unsorted" src="assets/sort-lines-icon.svg" alt="Sort Column">
+						<img class="sorted-ascending" src="assets/sort-ascending-icon.svg" alt="Sort Column">
+						<img class="sorted-descending" src="assets/sort-descending-icon.svg" alt="Sort Column">
+					</button>
+				</div>
+			</th>
+			<th class="task-header-item repeat-column">
+				<div>
+					<p>Repeat</p>
+					<button
+						class="icon-button"
+						(click)="toggleColumnSort($event, 5)"
+					>
+						<img class="unsorted" src="assets/sort-lines-icon.svg" alt="Sort Column">
+						<img class="sorted-ascending" src="assets/sort-ascending-icon.svg" alt="Sort Column">
+						<img class="sorted-descending" src="assets/sort-descending-icon.svg" alt="Sort Column">
+					</button>
+				</div>
+			</th>
 			<th class="task-header-item action-column"></th>
 		</tr>
 	</thead>
@@ -80,14 +148,15 @@
 					<p *ngIf="!willTaskBeAlwaysAvailable(task)" class="table-time-value">
 						{{this.getTaskStartTime(task) | dateFormatter:'Now'}}
 					</p>
-					<p *ngIf="task.getEndTime()" class="middle-label">to</p>
-					<p *ngIf="task.getEndTime()" class="table-time-value">
+					<p *ngIf="task.getDeadline()" class="middle-label deadline-label">
+						{{ !willTaskBeAlwaysAvailable(task) ? "due" : "Due" }}
+					</p>
+					<p *ngIf="task.getDeadline()" class="table-time-value deadline-value">{{task.getDeadline() | dateFormatter:'None'}}</p>
+					<p *ngIf="task.getEndTime()" class="middle-label"> until </p>
+					<p *ngIf="task.getEndTime()" class="table-time-value end-time-value">
 						{{task.getEndTime() | dateFormatter:'Forever'}}
 					</p>
 				</div>
-			</td>
-			<td class="task-row-item deadline-column">
-				<p *ngIf="task.getDeadline()" class="table-time-value">{{task.getDeadline() | dateFormatter:'None'}}</p>
 			</td>
 			<td class="task-row-item duration-column">
 				<div>

@@ -31,6 +31,7 @@
 	--inactive-text-color: #2c3e50a0;
 	--faint-text-color: #2c3e5060;
 	--slight-text-color: #2c3e5020;
+  --red-text-color: #383a4b;
 
 	--icon-color: #000000;
 
@@ -464,4 +465,8 @@ table tbody td:hover {
 
 table thead th:hover {
   background-color: rgba(0,0,0,0.1);
+}
+
+.hidden {
+	display: none;
 }

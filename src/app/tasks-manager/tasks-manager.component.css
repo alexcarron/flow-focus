@@ -1,3 +1,7 @@
+table {
+	margin-top: calc(var(--font-size-medium) + 3*var(--margin-small));
+}
+
 #taskHeader,
 .task-item {
   display: flex;
@@ -6,11 +10,13 @@
 	padding: 0 calc(2 * var(--margin-large));
 }
 
-.task-header-item {
+.task-header-item p {
 	font-size: var(--font-size-medium);
 	line-height: var(--line-height-medium);
-	margin: var(--margin-small);
 	font-weight: 600;
+
+	padding: 0;
+	margin: 0;
 }
 
 .checkbox-column {
@@ -53,7 +59,7 @@
 	text-wrap: nowrap;
 }
 
-td div {
+td div,th div {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -99,6 +105,14 @@ td div {
 	margin: 0;
 
 	background-color: rgba(0, 0, 0, 0.08);
+}
+
+.deadline-value, .deadline-label {
+	color: #423848;
+}
+
+.deadline-value {
+	background-color: rgba(255, 0, 0, 0.1);
 }
 
 .middle-label {
