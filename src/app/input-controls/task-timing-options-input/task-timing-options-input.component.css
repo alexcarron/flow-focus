@@ -6,3 +6,7 @@ p {
 .input-separator {
 	margin: 0 var(--margin-small);
 }
+
+.checkbox-input {
+	gap: var(--margin-small);
+}
