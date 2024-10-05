@@ -256,7 +256,7 @@ button:active, .icon-button:active {
 }
 
 
-.corner-button {
+.corner-button, .row-corner-button {
 	box-sizing:content-box;
 
 	position: fixed;
@@ -280,20 +280,36 @@ button:active, .icon-button:active {
 	margin-left: 1.8rem;
 }
 
+.row-corner-button .tooltip {
+	margin-top: 1.8rem;
+}
+
 .corner-button:nth-child(2) {
 	top: calc(var(--font-size-medium) + 2*var(--margin-small));
+}
+.row-corner-button:nth-child(2) {
+	left: calc(var(--font-size-medium) + 2*var(--margin-small));
 }
 
 .corner-button:nth-child(3) {
 	top: calc(2 * (var(--font-size-medium) + 2*var(--margin-small)));
 }
+.row-corner-button:nth-child(3) {
+	left: calc(2 * (var(--font-size-medium) + 2*var(--margin-small)));
+}
 
 .corner-button:nth-child(4) {
 	top: calc(3 * (var(--font-size-medium) + 2*var(--margin-small)));
 }
+.row-corner-button:nth-child(4) {
+	left: calc(3 * (var(--font-size-medium) + 2*var(--margin-small)));
+}
 
 .corner-button:nth-child(5) {
 	top: calc(4 * (var(--font-size-medium) + 2*var(--margin-small)));
+}
+.row-corner-button:nth-child(5) {
+	left: calc(4 * (var(--font-size-medium) + 2*var(--margin-small)));
 }
 
 /* Displays progress of task through linear gradient */

@@ -796,6 +796,27 @@ export default class Task implements StateObservable {
 		return true;
 	}
 
+	/**
+	 * Determines if the task must be started today to be completed on time
+	 * @param currentTime - The current time
+	 * @returns Whether the task must be started today
+	 */
+	mustStartToday(currentTime: Date): boolean {
+		const endOfDay = new Date(currentTime);
+		endOfDay.setHours(23, 59, 59, 999);
+
+		const millisecondsUntilEndOfDay = endOfDay.getTime() - currentTime.getTime();
+
+		const minSlackTime = this.getMinSlackTime(currentTime);
+		const mustStartTaskToday = minSlackTime <= millisecondsUntilEndOfDay;
+
+		const isTaskActive = this.isActive(currentTime);
+
+		return (
+			isTaskActive && mustStartTaskToday
+		)
+	}
+
 	equals(otherTask: Task) {
 		return (
 			this.getDescription() == otherTask.getDescription() &&

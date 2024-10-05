@@ -9,7 +9,22 @@ import Duration from '../../model/time-management/Duration';
 import { CheckboxInputComponent } from '../input-controls/checkbox-input/checkbox-input.component';
 import { TextInputComponent } from '../input-controls/text-input/text-input.component';
 import { TaskTimingOptionsPopupComponent } from '../base-popup/task-timing-options-popup/task-timing-options-popup.component';
-import TaskTimingOptions from '../../model/task/TaskTimingOptions';
+
+enum Filter {
+	None,
+	Active,
+	MustStartToday
+}
+
+const filterToFunction: Record<Filter, (tasks: Task[]) => Task[]> = {
+	[Filter.None]: (tasks: Task[]) => tasks,
+	[Filter.Active]: (tasks: Task[]) => tasks.filter(
+		task => task.isActive(new Date())
+	),
+	[Filter.MustStartToday]: (tasks: Task[]) => tasks.filter(task =>
+		task.mustStartToday(new Date())
+	)
+};
 
 @Component({
   selector: 'app-tasks-manager',
@@ -22,6 +37,7 @@ export class TasksManagerComponent {
 	@ViewChild('timingOptionsPopup') timingOptionsPopup?: TaskTimingOptionsPopupComponent;
 
 	tasksManager!: TasksManager;
+	currentFilter: Filter = Filter.None;
 
 	constructor(
 		private activatedRoute: ActivatedRoute
@@ -32,11 +48,23 @@ export class TasksManagerComponent {
 	}
 
 	getTasks(): Task[] {
-		return this.tasksManager.getTasksInPriorityOrder(new Date());
+		const tasksInPriorityOrder = this.tasksManager.getTasksInPriorityOrder(new Date());
+		const filterFunction = filterToFunction[this.currentFilter];
+		return filterFunction(tasksInPriorityOrder);
 	}
 
 	getCurrentTime(): Date {
 		return new Date();
+	}
+
+	/**
+	 * Cycles through all the different task filters
+	 */
+	toggleFliter(): void {
+		const oldFilterNum = this.currentFilter;
+		const numFilters = Object.keys(Filter).length / 2;
+		const newFilterNum = (oldFilterNum + 1) % numFilters;
+		this.currentFilter = newFilterNum;
 	}
 
 	willTaskBeAlwaysAvailable(task: Task): boolean {

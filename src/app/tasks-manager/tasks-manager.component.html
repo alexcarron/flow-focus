@@ -1,6 +1,6 @@
 <button
 	id="goToFocusButton"
-	class="fade-in-on-hover icon-button corner-button"
+	class="fade-in-on-hover icon-button row-corner-button"
 	[routerLink]="['/']"
 >
 	<img src="assets/magnify-check-icon.svg" alt="To Task Focus">
@@ -9,11 +9,20 @@
 
 <button
 	id="createTaskButton"
-	class="fade-in-on-hover icon-button corner-button"
+	class="fade-in-on-hover icon-button row-corner-button"
 	[routerLink]="['/create-task']"
 >
 	<img src="assets/plus-icon.svg" alt="Create Task">
 	<span class="tooltip">Create Task</span>
+</button>
+
+<button
+	id="toggleFilterButton"
+	class="fade-in-on-hover icon-button row-corner-button"
+	(click)="toggleFliter()"
+>
+	<img src="assets/filter-icon.svg" alt="Show Today's Tasks">
+	<span class="tooltip">Show Today's Tasks</span>
 </button>
 
 <table data-vertable="ver6">
