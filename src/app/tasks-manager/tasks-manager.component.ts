@@ -82,6 +82,10 @@ export class TasksManagerComponent {
 		task.setDescription(newDescription);
 	}
 
+	trackStepByIndex(index: number): number {
+		return index;
+	}
+
 	onStepChange(task: Task, oldStep: string, newStep: string | null) {
 		if (newStep === null) return;
 

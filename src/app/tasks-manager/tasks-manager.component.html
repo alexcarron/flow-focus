@@ -55,17 +55,9 @@
 			</td>
 			<td class="task-row-item steps-column">
 				<div>
-					<button
-						*ngIf="task.getSteps().length > 0"
-						id="stepsDisplayButton"
-						class="icon-button"
-					>
-						<img id="displayStepsIcon" src="assets/arrowhead-right-icon.svg" alt="Display Steps">
-						<img id="hideStepsIcon" src="assets/arrowhead-down-icon.svg" alt="Hide Steps">
-					</button>
 					<div class="steps-preview-container flex-row">
 						<text-input
-							*ngFor="let step of task.getSteps()"
+							*ngFor="let step of task.getSteps();  let index = index; trackBy: trackStepByIndex"
 							class="step-item step-input"
 							[initialValue]="step"
 							(onInputChange)="onStepChange(task, step, $event)"
