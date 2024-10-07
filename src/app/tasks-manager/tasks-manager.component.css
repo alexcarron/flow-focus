@@ -99,6 +99,10 @@ td div,th div {
 	background-color: rgba(0, 0, 0, 0.05);
 }
 
+.completed {
+	background-color: rgba(0, 150, 100, 0.5) !important;
+}
+
 .table-time-value {
 	padding: var(--margin-xsmall) var(--margin-small);
 	width: min-content;

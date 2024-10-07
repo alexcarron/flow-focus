@@ -388,6 +388,10 @@ export default class Task implements StateObservable {
 		this.editSteps(newSteps);
 	}
 
+	isStepComplete(step: string) {
+		return this.stepsToStatusMap.get(step) === StepStatus.COMPLETED
+	}
+
 	/**
 	 * Determines if the task is currently available
 	 * @param currentTime The current time
@@ -479,6 +483,13 @@ export default class Task implements StateObservable {
 			step: step,
 			status: StepStatus.COMPLETED
 		});
+	}
+	/**
+	 * Uncompletes a specified step.
+	 * @param step - The step to uncomplete.
+	 */
+	uncompleteStep(step: string) {
+		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 	}
 
 	/**

@@ -131,11 +131,19 @@
 				</text-input>
 			</td>
 			<td class="task-row-item steps-column">
-				<div>
-					<div class="steps-preview-container flex-row">
+				<div class="steps-preview-container flex-row">
+					<div
+						class="flex-row step-container"
+						*ngFor="let step of task.getSteps();  let index = index; trackBy: trackStepByIndex"
+					>
+						<checkbox-input
+							class="stepCompletedCheckbox"
+							[initialValue]="task.isStepComplete(step)"
+							(onInputChange)="onStepCompleteChange(task, step, $event)"
+						></checkbox-input>
 						<text-input
-							*ngFor="let step of task.getSteps();  let index = index; trackBy: trackStepByIndex"
 							class="step-item step-input"
+							[ngClass]="{'completed': task.isStepComplete(step)}"
 							[initialValue]="step"
 							(onInputChange)="onStepChange(task, step, $event)"
 						>

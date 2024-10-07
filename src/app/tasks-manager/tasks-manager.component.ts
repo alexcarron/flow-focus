@@ -202,6 +202,13 @@ export class TasksManagerComponent {
 		task.setComplete(isComplete);
 	}
 
+	onStepCompleteChange(task: Task, step: string, isComplete:boolean) {
+		if (isComplete)
+			task.completeStep(step)
+		else
+			task.uncompleteStep(step)
+	}
+
 	onMandatoryChange(task: Task, isMandatory: boolean) {
 		task.setMandatory(isMandatory);
 	}
