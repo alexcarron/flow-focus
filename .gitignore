@@ -45,7 +45,7 @@ Thumbs.db
 json-server
 
 # Local Executables
-*.sh
+# *.sh
 
 # Enviorment Variables
 .env
