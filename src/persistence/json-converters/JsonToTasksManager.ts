@@ -144,7 +144,7 @@ export default class JsonToTasksManager implements JsonSerializer<TasksManager> 
 	 */
 	convertObjectToJson(tasksManager: TasksManager): object {
 		if (tasksManager.getTasks().length === 0) {
-			return {};
+			return {"tasks": []};
 		}
 
 		const excludedProperties = [
