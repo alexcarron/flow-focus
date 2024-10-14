@@ -213,9 +213,8 @@ export class TasksManagerComponent {
 		task.setDescription(newDescription);
 	}
 
-	trackStepByIndex(index: number, step: string, task: Task): number {
-		console.log(index, step, task);
-		return task.getStepIndex(step);
+	trackStepByIndex(index: number, step: string): number {
+		return index;
 	}
 
 	onStepChange(task: Task, oldStep: string, newStep: string | null) {
