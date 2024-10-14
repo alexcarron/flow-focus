@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS tasks (
   id SERIAL PRIMARY KEY,
-  action VARCHAR(512) NOT NULL,
+  action VARCHAR(1024) NOT NULL,
 	start_time TIMESTAMP WITH TIME ZONE,
 	end_time TIMESTAMP WITH TIME ZONE,
 	deadline TIMESTAMP WITH TIME ZONE,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 	is_mandatory BOOLEAN DEFAULT FALSE,
 	is_complete BOOLEAN DEFAULT FALSE,
 	is_skipped BOOLEAN DEFAULT FALSE,
-	last_actioned_step_id INT
+	last_actioned_step_position INT NULL
 
 	CHECK (
 		(min_duration IS NULL OR max_duration IS NULL) OR
@@ -41,15 +41,13 @@ EXCEPTION
 END $$;
 
 CREATE TABLE IF NOT EXISTS steps (
-	task_id INT NOT NULL REFERENCES tasks(id),
-	position INT UNIQUE NOT NULL CHECK (position > 0),
-	instruction VARCHAR(512) NOT NULL,
+	task_id INT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+	position INT NOT NULL CHECK (position > 0),
+	instruction VARCHAR(1024) NOT NULL,
 	status step_status DEFAULT 'UNCOMPLETED' NOT NULL,
 
 	PRIMARY KEY (task_id, position)
 );
 
 ALTER TABLE tasks ADD CONSTRAINT fk_last_actioned_step
-FOREIGN KEY (last_actioned_step_id) REFERENCES steps(position);
-
-
+	FOREIGN KEY (id, last_actioned_step_position) REFERENCES steps(task_id, position) ON DELETE SET NULL;
