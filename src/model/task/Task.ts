@@ -328,7 +328,7 @@ export default class Task implements StateObservable {
 		}
 	};
 
-	private getStepIndex(stepLookingFor: string): number {
+	public getStepIndex(stepLookingFor: string): number {
 		const steps = this.getSteps();
 		return steps.findIndex(step => step === stepLookingFor);
 	}
@@ -367,25 +367,6 @@ export default class Task implements StateObservable {
 
 	removeStartTime(): void {
 		this.setStartTime(null);
-	}
-
-	/**
-	 * Replaces an existing step with a new step description
-	 * @param oldStep The description of the old step
-	 * @param newStep The new description of the step
-	 */
-	@NotifyStateChange
-	editStep(oldStep: string, newStep: string) {
-		const currentSteps = this.getSteps();
-
-		const newSteps = currentSteps.map(step => {
-			if (step === oldStep)
-				return newStep
-
-			return step
-		});
-
-		this.editSteps(newSteps);
 	}
 
 	isStepComplete(step: string) {
@@ -451,6 +432,44 @@ export default class Task implements StateObservable {
 	addStep(step: string): void {
 		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 	};
+
+	/**
+	 * Inserts a step at the given index.
+	 * @param step - The step to add.
+	 * @param index - The index at which to add the step.
+	 */
+	insertStep(step: string, index: number) {
+		const currentSteps = this.getSteps();
+		const newSteps = [
+			...currentSteps.slice(0, index),
+			step,
+			...currentSteps.slice(index)
+		]
+		console.log({currentSteps, newSteps});
+		this.editSteps(newSteps);
+	}
+
+	/**
+	 * Creates a new step to the left of the given adjacent step.
+	 * @param adjacentStep - The step to the right of the new step.
+	 */
+	createStepLeftOfStep(adjacentStep: string) {
+		console.log(this.stepsToStatusMap);
+		const adjacentStepIndex = this.getStepIndex(adjacentStep);
+		this.insertStep("", adjacentStepIndex);
+		console.log(this.stepsToStatusMap);
+	}
+
+	/**
+	 * Creates a new step to the right of the given adjacent step.
+	 * @param adjacentStep - The step to the left of the new step.
+	 */
+	createStepRightOfStep(adjacentStep: string) {
+		console.log(this.stepsToStatusMap);
+		const adjacentStepIndex = this.getStepIndex(adjacentStep);
+		this.insertStep("", adjacentStepIndex + 1);
+		console.log(this.stepsToStatusMap);
+	}
 
 	/**
 	 * Determines if the last action taken was a skip.
@@ -576,6 +595,7 @@ export default class Task implements StateObservable {
 	 * Edits the steps of the task.
 	 * @param newSteps - The new steps of the task.
 	 */
+	@NotifyStateChange
 	editSteps(newSteps: string[]): void {
 		let stepStatuses = Array.from(this.stepsToStatusMap.values());
 
@@ -595,6 +615,24 @@ export default class Task implements StateObservable {
 				this.stepsToStatusMap.set(step, status);
 			}
 		});
+	}
+
+	/**
+	 * Replaces an existing step with a new step description
+	 * @param oldStep The description of the old step
+	 * @param newStep The new description of the step
+	 */
+	editStep(oldStep: string, newStep: string) {
+		const currentSteps = this.getSteps();
+
+		const newSteps = currentSteps.map(step => {
+			if (step === oldStep)
+				return newStep
+
+			return step
+		});
+
+		this.editSteps(newSteps);
 	}
 
 	/**

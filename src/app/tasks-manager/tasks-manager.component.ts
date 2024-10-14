@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import TasksManager from '../../model/TasksManager';
 import Task from '../../model/task/Task';
@@ -81,7 +81,8 @@ export class TasksManagerComponent {
 	currentSortDirection: SortDirection = SortDirection.Ascending;
 
 	constructor(
-		private readonly activatedRoute: ActivatedRoute
+		private readonly activatedRoute: ActivatedRoute,
+		private changeDetection: ChangeDetectorRef,
 	) {}
 
 	ngOnInit() {
@@ -153,13 +154,6 @@ export class TasksManagerComponent {
 		const sorted_asc_image = buttonElement.querySelector(".sorted-ascending");
 		const sorted_desc_image = buttonElement.querySelector(".sorted-descending");
 
-		console.log({
-			buttonElement,
-			unsorted_image,
-			sorted_asc_image,
-			sorted_desc_image,
-		})
-
 		unsorted_image?.classList.add('hidden');
 		if (this.currentSortDirection === SortDirection.Ascending) {
 			sorted_asc_image?.classList.remove('hidden');
@@ -219,16 +213,31 @@ export class TasksManagerComponent {
 		task.setDescription(newDescription);
 	}
 
-	trackStepByIndex(index: number): number {
-		return index;
+	trackStepByIndex(index: number, step: string, task: Task): number {
+		console.log(index, step, task);
+		return task.getStepIndex(step);
 	}
 
 	onStepChange(task: Task, oldStep: string, newStep: string | null) {
 		if (newStep === null) return;
-
-		console.log({task, oldStep, newStep});
 		task.editStep(oldStep, newStep);
-		console.log(task.getSteps());
+	}
+
+	onStepInputKeypress(task: Task, step: string, event: KeyboardEvent) {
+		if (event.altKey) {
+			if (event.key === 'ArrowLeft') {
+				console.log('Alt+ArrowLeft');
+				event.preventDefault();
+				task.createStepLeftOfStep(step);
+				this.changeDetection.detectChanges();
+			}
+			else if (event.key === 'ArrowRight') {
+				console.log('Alt+ArrowRight');
+				event.preventDefault();
+				task.createStepRightOfStep(step);
+				this.changeDetection.detectChanges();
+			}
+		}
 	}
 
 	openTimingOptionsPopup(task: Task): void {
@@ -239,7 +248,6 @@ export class TasksManagerComponent {
 	}
 
 	deleteTask(task: Task) {
-		console.log("Deleting", task);
 		this.tasksManager.deleteTask(task);
 	}
 }

@@ -146,6 +146,7 @@
 							[ngClass]="{'completed': task.isStepComplete(step)}"
 							[initialValue]="step"
 							(onInputChange)="onStepChange(task, step, $event)"
+							(keydown)="onStepInputKeypress(task, step, $event)"
 						>
 						</text-input>
 					</div>
