@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 	is_mandatory BOOLEAN DEFAULT FALSE,
 	is_complete BOOLEAN DEFAULT FALSE,
 	is_skipped BOOLEAN DEFAULT FALSE,
-	last_actioned_step_id INT REFERENCES steps(id)
+	last_actioned_step_id INT
 
 	CHECK (
 		(min_duration IS NULL OR max_duration IS NULL) OR
@@ -27,14 +27,18 @@ CREATE TABLE IF NOT EXISTS tasks (
 	CHECK (
 		(deadline IS NULL OR end_time IS NULL) OR
 		(deadline <= end_time)
-	),
+	)
 );
 
-CREATE TYPE IF NOT EXISTS step_status AS ENUM (
-	'COMPLETED',
-	'SKIPPED',
-	'UNCOMPLETED'
-);
+DO $$ BEGIN
+	CREATE TYPE step_status AS ENUM (
+		'COMPLETED',
+		'SKIPPED',
+		'UNCOMPLETED'
+	);
+EXCEPTION
+	WHEN duplicate_object THEN null;
+END $$;
 
 CREATE TABLE IF NOT EXISTS steps (
 	task_id INT NOT NULL REFERENCES tasks(id),
@@ -42,9 +46,10 @@ CREATE TABLE IF NOT EXISTS steps (
 	instruction VARCHAR(512) NOT NULL,
 	status step_status DEFAULT 'UNCOMPLETED' NOT NULL,
 
-	PRIMARY KEY (task_id, index)
-)
+	PRIMARY KEY (task_id, position)
+);
 
-
+ALTER TABLE tasks ADD CONSTRAINT fk_last_actioned_step
+FOREIGN KEY (last_actioned_step_id) REFERENCES steps(position);
 
 
