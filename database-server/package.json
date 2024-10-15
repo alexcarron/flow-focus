@@ -1,0 +1,22 @@
+{
+  "name": "database-server",
+  "version": "1.0.0",
+  "main": "start-dv-server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Alex Carron",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "chai": "^5.1.1",
+    "mocha": "^10.7.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.0"
+  }
+}

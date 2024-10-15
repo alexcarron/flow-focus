@@ -9,7 +9,7 @@
     "test": "jest --watch",
     "predeploy": "ng build --configuration production",
     "deploy": "gh-pages -d docs/browser",
-		"server": "json-server --watch json-server/tasksDatabase.json --port 3004",
+    "server": "json-server --watch json-server/tasksDatabase.json --port 3004",
     "dev": "npm run server & npm run start & npm run test"
   },
   "private": true,

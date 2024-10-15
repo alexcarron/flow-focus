@@ -1,4 +1,4 @@
-const dbUtils = require("./db-utils");
+const dbUtils = require("./modules/db-utils");
 
 async function recreateTables() {
 	await dbUtils.executeSQLFile('cleanup_tables.sql');
