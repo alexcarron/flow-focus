@@ -49,5 +49,17 @@ CREATE TABLE IF NOT EXISTS steps (
 	PRIMARY KEY (task_id, position)
 );
 
-ALTER TABLE tasks ADD CONSTRAINT fk_last_actioned_step
-	FOREIGN KEY (id, last_actioned_step_position) REFERENCES steps(task_id, position) ON DELETE SET NULL;
+DO $$ BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM information_schema.table_constraints
+		WHERE constraint_type = 'FOREIGN KEY'
+			AND table_name = 'tasks'
+			AND constraint_name = 'fk_last_actioned_step'
+	) THEN
+		ALTER TABLE tasks
+		ADD CONSTRAINT fk_last_actioned_step
+			FOREIGN KEY (id, last_actioned_step_position)
+			REFERENCES steps(task_id, position)
+			ON DELETE SET NULL;
+	END IF;
+END $$;

@@ -5,8 +5,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 const ENV = process.env;
 
-console.log(ENV.NODE_ENV);
-
 // Create a new client
 const connectionPool = new Pool({
   user: ENV.DB_USER,

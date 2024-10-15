@@ -7,15 +7,17 @@
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node start-db-server.js",
-    "test": "cross-env NODE_ENV=test mocha --require test/setup.mjs"
+    "test": "cross-env NODE_ENV=test mocha --require test/setup.mjs  --require mocha-suppress-logs"
   },
   "author": "Alex Carron",
   "license": "MIT",
   "description": "",
   "devDependencies": {
     "chai": "^5.1.1",
+    "chai-as-promised": "^8.0.0",
     "cross-env": "^7.0.3",
-    "mocha": "^10.7.3"
+    "mocha": "^10.7.3",
+    "mocha-suppress-logs": "^0.5.1"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
