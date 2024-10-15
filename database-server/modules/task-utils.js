@@ -54,7 +54,7 @@ async function getTask(taskId) {
  * @param {boolean} [taskData.is_skipped=dbUtils.DEFAULT] - Whether the task has been skipped (true if skipped).
  * @param {number} [taskData.last_actioned_step_position=dbUtils.DEFAULT] - The position of the last actioned step in the task.
  *
- * @returns {Promise<Object>} A promise that resolves to the inserted task row, which contains all task details including the assigned `id`.
+ * @returns {Promise<Object>} A The inserted task row
  *
  * @throws {Error} If there is a database query error or if required task data is missing.
  *

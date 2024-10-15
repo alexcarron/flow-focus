@@ -53,3 +53,76 @@ describe('getStep', () => {
 		expect(step).to.be.undefined;
 	});
 });
+
+
+describe('addStep', () => {
+	it('SHOULD add step with default values', async () => {
+		const step = await stepUtils.addStep({
+			taskId: 9,
+			position: 7,
+			instruction: 'A new step',
+		});
+
+		expect(step).to.be.a('object')
+		expect(step).to.have.keys(stepUtils.COLUMN_NAMES);
+		expect(step.task_id).to.equal(9);
+		expect(step.position).to.equal(7);
+		expect(step.instruction).to.equal('A new step');
+		expect(step.status).to.equal('UNCOMPLETED');
+	});
+
+	it('SHOULD add step with step status', async () => {
+		const step = await stepUtils.addStep({
+			taskId: 9,
+			position: 8,
+			instruction: 'A new step',
+			status: 'SKIPPED',
+		});
+
+		expect(step).to.have.keys(stepUtils.COLUMN_NAMES);
+		expect(step.task_id).to.equal(9);
+		expect(step.position).to.equal(8);
+		expect(step.instruction).to.equal('A new step');
+		expect(step.status).to.equal('SKIPPED');
+	});
+
+	it('SHOULD throw error when no taskId', async () => {
+		expect(stepUtils.addStep({
+			position: 8,
+			instruction: 'A new step',
+			status: 'SKIPPED',
+		}))
+			.to.eventually.throw(Error);
+	});
+
+	it('SHOULD to add to latest position whe no position', async () => {
+		const step = await stepUtils.addStep({
+			taskId: 12,
+			instruction: 'A new step',
+			status: 'SKIPPED',
+		});
+
+		expect(step).to.have.keys(stepUtils.COLUMN_NAMES);
+		expect(step.task_id).to.equal(12);
+		expect(step.position).to.equal(6);
+		expect(step.instruction).to.equal('A new step');
+		expect(step.status).to.equal('SKIPPED');
+	});
+});
+
+
+describe('getNumStepsInTask', () => {
+	it('SHOULD get number of steps in task', async () => {
+		const numSteps = await stepUtils.getNumStepsInTask(13);
+		expect(numSteps).to.equal(12);
+	});
+
+	it('SHOULD return 0 for task with no steps', async () => {
+		const numSteps = await stepUtils.getNumStepsInTask(10);
+		expect(numSteps).to.equal(0);
+	});
+
+	it('SHOULD throw error with invalid task', async () => {
+		expect(stepUtils.getNumStepsInTask(-13)).to.eventually.throw(Error);
+	});
+});

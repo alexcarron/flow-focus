@@ -51,4 +51,61 @@ async function getStep(taskId, position) {
 	return stepRow;
 }
 
-module.exports = {COLUMN_NAMES, getSteps, getStepsOfTask, getStep}
+/**
+ * Retrieves the number of steps a task has
+ * @param {number} taskId - The id of the task
+ * @returns The number of steps the task has
+ */
+async function getNumStepsInTask(taskId) {
+	const numStepsString = await dbUtils.getFirstValueOfQuery(
+		`
+		SELECT COUNT(*) FROM steps
+			WHERE task_id = \${task_id}
+		`,
+		{'task_id': taskId}
+	)
+
+	return parseInt(numStepsString);
+}
+
+/**
+ * Adds a step to a task with the specified properties
+ *
+ * @param {Object} stepData - The object containing the step properties
+ * @param {number} stepData.taskId - The id of the task the step is being added to
+ * @param {number} stepData.position - The position number of the step
+ * @param {string} stepData.instruction - The instruction text for the step
+ * @param {string} stepData.stepStatus - The status of the step. UNCOMPLETE by default
+ *
+ * @returns {Promise<Object>} The inserted step row
+ *
+ * @throws {Error} If there is a database query error or if required step data is missing.
+ */
+async function addStep({
+	taskId,
+	position,
+	instruction,
+	status=dbUtils.DEFAULT,
+}) {
+	if (position === undefined) {
+		position = await getNumStepsInTask(taskId) + 1;
+	}
+
+	const stepRow = await dbUtils.getFirstRowOfQuery(
+		`
+		INSERT INTO steps (task_id, position, instruction, status) VALUES
+			(\${task_id}, \${position}, \${instruction}, \${status})
+			RETURNING *
+		`,
+		{
+			'task_id': taskId,
+			'position': position,
+			'instruction': instruction,
+			'status': status,
+		}
+	)
+
+	return stepRow;
+}
+
+module.exports = {COLUMN_NAMES, getSteps, getStepsOfTask, getStep, addStep, getNumStepsInTask}
