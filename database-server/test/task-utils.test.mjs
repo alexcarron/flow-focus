@@ -22,6 +22,14 @@ describe('getTask', () => {
 	});
 });
 
+describe('getTask', () => {
+	it('SHOULD return undefined with invalid id', async () => {
+		const task1 = await taskUtils.getTask(-1);
+
+		expect(task1).to.be.undefined;
+	});
+});
+
 describe('addTask', () => {
 	it('SHOULD add task with default values', async () => {
 		const task = await taskUtils.addTask({
@@ -231,5 +239,28 @@ describe('updateTask', () => {
 
 		const stepInstructions = stepRows.map(stepRow => stepRow.instruction);
 		expect(stepInstructions).to.have.members(taskSteps);
+	});
+});
+
+describe('deleteTask', () => {
+	it('SHOULD remove task from database', async () => {
+		const deletedTask = await taskUtils.deleteTask(7);
+
+		expect(deletedTask).to.have.keys(taskUtils.COLUMN_NAMES);
+		expect(deletedTask.id).to.equal(7);
+
+		const task = await taskUtils.getTask(7);
+		expect(task).to.be.undefined;
+
+		const stepRows = await dbUtils.getRowsOfQuery(
+			"SELECT * FROM steps WHERE task_id = ${task_id}",
+			{'task_id': deletedTask.id}
+		);
+		expect(stepRows).to.have.lengthOf(0);
+	});
+
+	it('SHOULD do nothing with invalid id', async () => {
+		const deletedTask = await taskUtils.deleteTask(-10);
+		expect(deletedTask).to.be.undefined;
 	});
 });

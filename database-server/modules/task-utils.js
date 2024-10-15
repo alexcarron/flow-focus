@@ -252,5 +252,17 @@ async function updateTask({
 	return updatedTaskRow;
 }
 
+async function deleteTask(taskId) {
+	const deletedTask = await dbUtils.getFirstRowOfQuery(
+		`
+		DELETE FROM tasks
+			WHERE id = \${task_id}
+			RETURNING *
+		`,
+		{'task_id': taskId}
+	);
 
-module.exports = {COLUMN_NAMES, getTasks, getTask, addTask, updateTask}
+	return deletedTask;
+}
+
+module.exports = {COLUMN_NAMES, getTasks, getTask, addTask, updateTask, deleteTask}
