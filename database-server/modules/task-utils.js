@@ -138,4 +138,119 @@ async function addTask({
 	return taskRow;
 }
 
-module.exports = {COLUMN_NAMES, getTasks, getTask, addTask}
+/**
+ * Updates a task with the specified properties
+ *
+ * @param {Object} updatedTaskData - The object containing updated task details.
+ * @param {number} [taskData.id] - The id of the task you're updating
+ * @param {string} [taskData.action] - The updated action or description of the task.
+ * @param {Array<string>} [taskData.steps] - An array of updated step instructions for the task. Each step is added to the database.
+ * @param {string} [taskData.start_time] - The updated task's start time (ISO format).
+ * @param {string} [taskData.end_time] - The updated task's end time (ISO format).
+ * @param {string} [taskData.deadline] - The updated task's deadline (ISO format).
+ * @param {number} [taskData.min_duration] - The updated minimum duration of the task, in minutes or other units.
+ * @param {number} [taskData.max_duration] - The updated maximum duration of the task, in minutes or other units.
+ * @param {string} [taskData.repeat_interval] - The updated interval at which the task repeats (e.g., daily, weekly).
+ * @param {boolean} [taskData.is_mandatory] - Whether the task is mandatory (true or false).
+ * @param {boolean} [taskData.is_complete] - The updated completion status of the task (true if complete).
+ * @param {boolean} [taskData.is_skipped] - Whether the task has been skipped (true if skipped).
+ * @param {number} [taskData.last_actioned_step_position] - The position of the last actioned step in the task.
+ *
+ * @returns {Promise<Object>} A promise that resolves to the updated task row, which contains all task details including the assigned `id`.
+ *
+ * @throws {Error} If there is a database query error or if the required task data is missing.
+ *
+ * @example
+ * const updatedTask = await updateTask({
+ *   id: 1,
+ *   action: 'Update project status',
+ *   steps: ['Review', 'Update', 'Submit'],
+ *   start_time: '2024-10-10T10:00:00Z',
+ *   end_time: '2024-10-10T18:00:00Z',
+ *   min_duration: 30,
+ *   max_duration: 300,
+ *   is_complete: true,
+ * });
+ */
+async function updateTask({
+	id,
+	action,
+	steps,
+	startTime,
+	endTime,
+	deadline,
+	minDuration,
+	maxDuration,
+	repeatInterval,
+	isMandatory,
+	isComplete,
+	isSkipped,
+	lastActionedStepPosition,
+}) {
+	if (id === undefined) {
+		throw Error('ID not specified for updated task');
+	}
+
+	if (steps !== undefined) {
+		console.log({id});
+		// Clear existing steps associated with the task
+		await dbUtils.executeQuery(
+			`DELETE FROM ONLY steps WHERE steps.task_id = \${task_id}`,
+			{'task_id': id}
+		);
+
+		// Insert the updated steps
+		for (const stepIndex in steps) {
+			const stepInstruction = steps[stepIndex];
+
+			await dbUtils.executeQuery(
+				`INSERT INTO steps (task_id, position, instruction) VALUES
+					(\${task_id}, \${position}, \${instruction})`,
+				{
+					'task_id': id,
+					'position': stepIndex+1,
+					'instruction': stepInstruction,
+				}
+			);
+		}
+	}
+
+	const updatedTaskRow = await dbUtils.getFirstRowOfQuery(
+		`
+		UPDATE tasks
+			SET
+				action = COALESCE(\${action}, action),
+				start_time = COALESCE(\${start_time}, start_time),
+				end_time = COALESCE(\${end_time}, end_time),
+				deadline = COALESCE(\${deadline}, deadline),
+				min_duration = COALESCE(\${min_duration}, min_duration),
+				max_duration = COALESCE(\${max_duration}, max_duration),
+				repeat_interval = COALESCE(\${repeat_interval}, repeat_interval),
+				is_mandatory = COALESCE(\${is_mandatory}, is_mandatory),
+				is_complete = COALESCE(\${is_complete}, is_complete),
+				is_skipped = COALESCE(\${is_skipped}, is_skipped),
+				last_actioned_step_position = COALESCE(\${last_actioned_step_position}, last_actioned_step_position)
+			WHERE id = \${task_id}
+			RETURNING *;
+		`,
+		{
+			'action': action,
+			'start_time': startTime,
+			'end_time': endTime,
+			'deadline': deadline,
+			'min_duration': minDuration,
+			'max_duration': maxDuration,
+			'repeat_interval': repeatInterval,
+			'is_mandatory': isMandatory,
+			'is_complete': isComplete,
+			'is_skipped': isSkipped,
+			'last_actioned_step_position': lastActionedStepPosition,
+			'task_id': id,
+		}
+	);
+
+	return updatedTaskRow;
+}
+
+
+module.exports = {COLUMN_NAMES, getTasks, getTask, addTask, updateTask}
