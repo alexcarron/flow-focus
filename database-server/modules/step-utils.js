@@ -108,4 +108,52 @@ async function addStep({
 	return stepRow;
 }
 
-module.exports = {COLUMN_NAMES, getSteps, getStepsOfTask, getStep, addStep, getNumStepsInTask}
+/**
+ * Updates a step with the specified properties
+ *
+ * @param {Object} stepData - The object containing the step properties
+ * @param {number} stepData.taskId - The id of the task the step is a part of
+ * @param {number} stepData.position - The position number of the step
+ * @param {string} stepData.instruction - The new instruction text for the step
+ * @param {string} stepData.stepStatus - The new status of the step.
+ *
+ * @returns {Promise<Object>} The updated step row
+ *
+ * @throws {Error} If there is a database query error or if required step data is missing.
+ */
+async function updateStep({
+	taskId,
+	position,
+	instruction,
+	status,
+}) {
+	if (taskId === undefined) {
+		throw Error('Task ID is not specified for step updating');
+	}
+	else if (position === undefined) {
+		throw Error('Position is not specified for step updating');
+	}
+
+	const updatedStepRow = await dbUtils.getFirstRowOfQuery(
+		`
+		UPDATE steps
+			SET
+				instruction = COALESCE(\${instruction}, instruction),
+				status = COALESCE(\${status}, status)
+			WHERE
+				task_id = \${task_id} AND
+				position = \${position}
+			RETURNING *
+		`,
+		{
+			'task_id': taskId,
+			'position': position,
+			'instruction': instruction,
+			'status': status,
+		}
+	)
+
+	return updatedStepRow;
+}
+
+module.exports = {COLUMN_NAMES, getSteps, getStepsOfTask, getStep, addStep, getNumStepsInTask, updateStep}

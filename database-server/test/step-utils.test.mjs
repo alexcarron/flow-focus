@@ -126,3 +126,65 @@ describe('getNumStepsInTask', () => {
 		expect(stepUtils.getNumStepsInTask(-13)).to.eventually.throw(Error);
 	});
 });
+
+describe('updateStep', () => {
+	it('SHOULD update only specified values', async () => {
+		const newTaskInstruction = 'New Instruction';
+
+		const oldStep = await stepUtils.getStep(1, 4);
+		const updatedStep = await stepUtils.updateStep({
+			taskId: 1,
+			position: 4,
+			instruction: newTaskInstruction,
+		});
+
+		expect(updatedStep).to.have.keys(stepUtils.COLUMN_NAMES);
+		expect(updatedStep.task_id).to.equal(1);
+		expect(updatedStep.position).to.equal(4);
+		expect(updatedStep.instruction).to.equal(newTaskInstruction);
+		expect(updatedStep.status).to.equal(oldStep.status);
+	});
+
+	it('SHOULD update all columns', async () => {
+		const newTaskInstruction = 'New Instruction';
+		const newTaskStatus = 'COMPLETED';
+
+		const updatedStep = await stepUtils.updateStep({
+			taskId: 1,
+			position: 4,
+			instruction: newTaskInstruction,
+			status: newTaskStatus,
+		});
+
+		expect(updatedStep).to.have.keys(stepUtils.COLUMN_NAMES);
+		expect(updatedStep.task_id).to.equal(1);
+		expect(updatedStep.position).to.equal(4);
+		expect(updatedStep.instruction).to.equal(newTaskInstruction);
+		expect(updatedStep.status).to.equal(newTaskStatus);
+	});
+
+	it('SHOULD throw error when task id not specified', async () => {
+		const newTaskInstruction = 'New Instruction';
+		const newTaskStatus = 'COMPLETED';
+
+		expect(stepUtils.updateStep({
+			position: 4,
+			instruction: newTaskInstruction,
+			status: newTaskStatus,
+		}))
+			.to.eventually.throw(Error);
+	});
+
+	it('SHOULD throw error when positoin not specified', async () => {
+		const newTaskInstruction = 'New Instruction';
+		const newTaskStatus = 'COMPLETED';
+
+		expect(stepUtils.updateStep({
+			taskId: 4,
+			instruction: newTaskInstruction,
+			status: newTaskStatus,
+		}))
+			.to.eventually.throw(Error);
+	});
+});
+
