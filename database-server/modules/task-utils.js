@@ -252,6 +252,11 @@ async function updateTask({
 	return updatedTaskRow;
 }
 
+/**
+ * Deletes a task from the database
+ * @param {number} taskId - The id of the task deleting
+ * @returns The deleted task
+ */
 async function deleteTask(taskId) {
 	const deletedTask = await dbUtils.getFirstRowOfQuery(
 		`

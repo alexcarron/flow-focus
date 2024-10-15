@@ -156,4 +156,25 @@ async function updateStep({
 	return updatedStepRow;
 }
 
-module.exports = {COLUMN_NAMES, getSteps, getStepsOfTask, getStep, addStep, getNumStepsInTask, updateStep}
+/**
+ * Deletes a step from the database
+ * @param {number} taskId - The id of the task the step belongs to
+ * @param {number} position - The position number of the step
+ * @returns The deleted step
+ */
+async function deleteStep(taskId, position) {
+	const deletedStep = await dbUtils.getFirstRowOfQuery(
+		`
+		DELETE FROM steps
+			WHERE
+				task_id = \${task_id} AND
+				position = \${position}
+			RETURNING *
+		`,
+		{'task_id': taskId, 'position': position}
+	);
+
+	return deletedStep;
+}
+
+module.exports = {COLUMN_NAMES, getSteps, getStepsOfTask, getStep, addStep, getNumStepsInTask, updateStep, deleteStep}

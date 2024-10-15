@@ -188,3 +188,25 @@ describe('updateStep', () => {
 	});
 });
 
+describe('deleteStep', () => {
+	it('SHOULD remove step from database', async () => {
+		const deletedTask = await stepUtils.deleteStep(7, 5);
+
+		expect(deletedTask).to.have.keys(stepUtils.COLUMN_NAMES);
+		expect(deletedTask.task_id).to.equal(7);
+		expect(deletedTask.position).to.equal(5);
+
+		const step = await stepUtils.getStep(7, 5);
+		expect(step).to.be.undefined;
+	});
+
+	it('SHOULD do nothing with invalid task id', async () => {
+		const deletedStep = await stepUtils.deleteStep(-1, 5);
+		expect(deletedStep).to.be.undefined;
+	});
+
+	it('SHOULD do nothing with invalid position', async () => {
+		const deletedStep = await stepUtils.deleteStep(7, -5);
+		expect(deletedStep).to.be.undefined;
+	});
+});
