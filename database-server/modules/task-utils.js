@@ -9,4 +9,17 @@ async function getTasks() {
 	return taskRows;
 }
 
-module.exports = {getTasks}
+/**
+ * Retrieve a task by id
+ * @param {number} The id number of the task
+ * @returns {Promise<{[key: string]: any}>} The task object with that specified id.
+ */
+async function getTask(taskId) {
+	const taskRow = await dbUtils.getFirstRowOfQuery(
+		"SELECT * FROM tasks WHERE id = ${task_id}",
+		{'task_id': taskId}
+	);
+	return taskRow;
+}
+
+module.exports = {getTasks, getTask}
