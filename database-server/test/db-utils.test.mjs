@@ -25,6 +25,22 @@ describe('getRowsOfQuery', () => {
 	})
 })
 
+describe('getFirstRowOfQuery', () => {
+	it('SHOULD return an array of all retrieved rows', async () => {
+		const firstRow  = await dbUtils.getFirstRowOfQuery('SELECT VERSION()');
+
+		expect(firstRow).to.be.a('object');
+		expect(firstRow).to.have.property('version')
+		expect(firstRow['version']).to.be.a('string')
+	})
+
+	it('SHOULD return undefined if retrieved no rows', async () => {
+		const firstRow = await dbUtils.getFirstRowOfQuery('SELECT * FROM tasks WHERE id = -1');
+
+		expect(firstRow).to.be.undefined;
+	})
+})
+
 describe('getFirstValueOfQuery', () => {
 	it('SHOULD return first value of first row', async () => {
 		const version = await dbUtils.getFirstValueOfQuery('SELECT VERSION()');

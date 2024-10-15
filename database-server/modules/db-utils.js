@@ -53,16 +53,24 @@ async function getRowsOfQuery(sqlQuery) {
 }
 
 /**
+ * Executes an SQL query and retrieves the first row of the rows returned;
+ * @param {string} sqlQuery The SQL query executing.
+ * @returns {Promise<{[key: string]: any;}[]>} The first row retrieved
+ */
+async function getFirstRowOfQuery(sqlQuery) {
+	const returnedRows = await getRowsOfQuery(sqlQuery);
+	if (returnedRows.length <= 0) return undefined;
+
+	return returnedRows[0];
+}
+
+/**
  * Executes an SQL query and retrieves the first value of the first row returned.
  * @param {string} sqlQuery The SQL query executing.
  * @returns {Promise<any>} The first value of the first row.
  */
 async function getFirstValueOfQuery(sqlQuery) {
-	const returnedRows = await getRowsOfQuery(sqlQuery);
-
-	if (returnedRows.length <= 0) return undefined;
-
-	const firstRow = returnedRows[0];
+	const firstRow = await getFirstRowOfQuery(sqlQuery);
 	if (typeof firstRow !== 'object') return undefined;
 
 	const firstRowValues = Object.values(firstRow);
@@ -71,4 +79,4 @@ async function getFirstValueOfQuery(sqlQuery) {
 	return firstRowValues[0];
 }
 
-module.exports = {executeSQLFile, executeQuery, getFirstValueOfQuery, getRowsOfQuery}
+module.exports = {executeSQLFile, executeQuery, getFirstValueOfQuery, getFirstRowOfQuery, getRowsOfQuery}
