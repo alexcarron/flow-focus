@@ -20,9 +20,7 @@ describe('getTask', () => {
 		expect(task1.id).to.equal(1);
 		expect(task1.action).to.equal('Apply New Concepts to Flow Focus');
 	});
-});
 
-describe('getTask', () => {
 	it('SHOULD return undefined with invalid id', async () => {
 		const task1 = await taskUtils.getTask(-1);
 

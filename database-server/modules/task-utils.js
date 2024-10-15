@@ -25,8 +25,8 @@ async function getTasks() {
 }
 
 /**
- * Retrieve a task by id
- * @param {number} The id number of the task
+ * Retrieves a task by id
+ * @param {number} taskId - The id number of the task
  * @returns {Promise<{[key: string]: any}>} The task object with that specified id.
  */
 async function getTask(taskId) {
