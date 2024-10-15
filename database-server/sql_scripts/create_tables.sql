@@ -12,19 +12,19 @@ CREATE TABLE IF NOT EXISTS tasks (
 	is_skipped BOOLEAN DEFAULT FALSE,
 	last_actioned_step_position INT NULL
 
-	CHECK (
+	CONSTRAINT min_less_than_max_duration CHECK (
 		(min_duration IS NULL OR max_duration IS NULL) OR
 		(min_duration <= max_duration)
 	),
-	CHECK (
+	CONSTRAINT start_less_than_end_time CHECK (
 		(start_time IS NULL OR end_time IS NULL) OR
 		(start_time <= end_time)
 	),
-	CHECK (
+	CONSTRAINT start_time_less_than_deadline CHECK (
 		(start_time IS NULL OR deadline IS NULL) OR
 		(start_time <= deadline)
 	),
-	CHECK (
+	CONSTRAINT deadline_less_than_end_time CHECK (
 		(deadline IS NULL OR end_time IS NULL) OR
 		(deadline <= end_time)
 	)

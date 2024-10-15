@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const SQL_SCRIPTS_DIRECTORY = 'sql_scripts';
+const DEFAULT = Symbol('default');
+const DEFAULT_STRING = 'DEFAULT'
 
 /**
  * Executes an SQL file and retrieves the result.
@@ -22,6 +24,83 @@ async function executeSQLFile(sqlFileName) {
 		console.error(`Error executing SQL file ${sqlFileName}`);
 		throw error;
 	}
+}
+
+/**
+ * Removes leading tabs from a string while keeping tabs relative to the base.
+ *
+ * @param {string} string - The string from which to remove leading tabs.
+ * @returns {string} - The modified string with leading tabs removed.
+ */
+function removeLeadingTabs(string) {
+	const lines = string.split('\n');
+
+	// Remove leading empty lines
+	let startIndex = 0;
+	while (startIndex < lines.length && lines[startIndex].trim() === '') {
+			startIndex++;
+	}
+
+	// Remove trailing empty lines
+	let endIndex = lines.length - 1;
+	while (endIndex >= 0 && lines[endIndex].trim() === '') {
+			endIndex--;
+	}
+
+	// Slice the lines array to only include non-empty lines
+	const nonEmptyLines = lines.slice(startIndex, endIndex + 1);
+
+	// Find the minimum number of leading tabs
+	const minLeadingTabs = nonEmptyLines
+			.map(line => line.match(/^(\t*)/)[0].length) // Get leading tabs count
+			.reduce((min, count) => Math.min(min, count), Infinity);
+
+	// Remove leading tabs based on the minimum count
+	const modifiedLines = nonEmptyLines.map(line => {
+			return line.replace(new RegExp(`^\\t{0,${minLeadingTabs}}`), '');
+	});
+
+	// Join the modified lines back into a single string
+	return modifiedLines.join('\n');
+}
+
+/**
+ * Inserts default values into a SQL query template and removes corresponding parameters. It replaces named parameters with the default value in the SQL query template with DEFAULT.
+ *
+ * @param {string} sqlQuery - The SQL query template containing named parameters (e.g., `${paramName}`).
+ * @param {{[parameterKey: string]: any}} parametersToValues - An object mapping parameter names to their corresponding values.
+ * @returns {{templateText: string, parametersToValues: Object}}
+ *   An object containing:
+ *   - `templateText`: The formatted SQL query with parameter values inserted, and defaults where applicable.
+ *   - `parametersToValues`: The modified object with parameters that had a default value removed.
+ *
+ * @throws {Error} If a parameter in the template is not found in the `parametersToValues` object.
+ */
+function insertDefaultParamtersInQuery(sqlQuery, parametersToValues) {
+	const parameterKeysToRemove = []
+
+	const formattedQuery = sqlQuery.replace(/\${(.*?)}/g,
+		(originalParameter, parameterKey) => {
+			if (parametersToValues.hasOwnProperty(parameterKey)) {
+				const parameterValue = parametersToValues[parameterKey];
+
+				if (parameterValue === DEFAULT) {
+					parameterKeysToRemove.push(parameterKey);
+					return DEFAULT_STRING;
+				}
+				else {
+					return originalParameter;
+				}
+			}
+			throw new Error(`Key '${parameterKey}' not found in values object`);
+		}
+	);
+
+	for (const parameterKeyToRemove of parameterKeysToRemove) {
+		delete parametersToValues[parameterKeyToRemove];
+	}
+
+	return {templateText: formattedQuery, parametersToValues}
 }
 
 /**
@@ -62,12 +141,14 @@ function getPositionalParamsFromNamed(templateText, parametersToValues) {
  * @returns {Promise<import("pg").QueryResult>} A result object including information about the outcome of that query.
  */
 async function executeQuery(sqlQuery, parametersToValues=undefined) {
-	console.log(parametersToValues);
 	let parameterValues;
 
 	if (parametersToValues !== undefined) {
+		const parameterizedQuery = insertDefaultParamtersInQuery(sqlQuery, parametersToValues);
+		sqlQuery = parameterizedQuery.templateText;
+		parametersToValues = parameterizedQuery.parametersToValues;
+
 		const positionalParameterizedQuery = getPositionalParamsFromNamed(sqlQuery, parametersToValues);
-		console.log(positionalParameterizedQuery);
 		sqlQuery = positionalParameterizedQuery.text;
 		parameterValues = positionalParameterizedQuery.values;
 	}
@@ -75,15 +156,15 @@ async function executeQuery(sqlQuery, parametersToValues=undefined) {
 	try {
 		const result = await connectionPool.query(sqlQuery, parameterValues);
 		console.log(
-			`> ${sqlQuery}`,
-			parameterValues ? `\n  [${parameterValues}]` : ""
+			`> ${removeLeadingTabs(sqlQuery)}`,
+			parameterValues ? `\n  [${parameterValues}]\n` : ""
 		);
 		return result;
 	}
 	catch (error) {
 		console.error(
-			`Error executing query:\n`, sqlQuery,
-			parameterValues ? `\n  [${parameterValues}]` : ""
+			`Error executing query:\n`, removeLeadingTabs(sqlQuery),
+			parameterValues ? `\n  [${parameterValues}]\n` : ""
 		);
 		throw error;
 	}
@@ -130,4 +211,4 @@ async function getFirstValueOfQuery(sqlQuery, parametersToValues=undefined) {
 	return firstRowValues[0];
 }
 
-module.exports = {executeSQLFile, executeQuery, getFirstValueOfQuery, getFirstRowOfQuery, getRowsOfQuery}
+module.exports = {DEFAULT, executeSQLFile, executeQuery, getFirstValueOfQuery, getFirstRowOfQuery, getRowsOfQuery}
