@@ -6,13 +6,15 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha"
+    "start": "cross-env NODE_ENV=production node start-db-server.js",
+    "test": "cross-env NODE_ENV=test mocha --require test/setup.mjs"
   },
   "author": "Alex Carron",
   "license": "MIT",
   "description": "",
   "devDependencies": {
     "chai": "^5.1.1",
+    "cross-env": "^7.0.3",
     "mocha": "^10.7.3"
   },
   "dependencies": {
