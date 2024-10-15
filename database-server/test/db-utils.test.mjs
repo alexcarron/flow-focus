@@ -11,6 +11,20 @@ describe('executeSQLFile', () => {
 	});
 });
 
+describe('getRowsOfQuery', () => {
+	it('SHOULD return an array of all retrieved rows', async () => {
+		const retrievedRows  = await dbUtils.getRowsOfQuery('SELECT VERSION()');
+
+		expect(retrievedRows).to.be.a('array');
+		expect(retrievedRows).to.have.lengthOf(1);
+
+		const firstRow = retrievedRows[0];
+		expect(firstRow).to.be.a('object');
+		expect(firstRow).to.have.property('version')
+		expect(firstRow['version']).to.be.a('string')
+	})
+})
+
 describe('getFirstValueOfQuery', () => {
 	it('SHOULD return first value of first row', async () => {
 		const version = await dbUtils.getFirstValueOfQuery('SELECT VERSION()');

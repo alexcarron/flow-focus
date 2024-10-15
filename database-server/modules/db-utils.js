@@ -25,7 +25,7 @@ async function executeSQLFile(sqlFileName) {
 }
 
 /**
- * Execute an SQL Query.
+ * Execute an SQL query.
  * @param {string} sqlQuery The SQL query executing.
  * @returns {Promise<import("pg").QueryResult>} A result object including information about the outcome of that query.
  */
@@ -42,13 +42,23 @@ async function executeQuery(sqlQuery) {
 }
 
 /**
- * Executes an SQL Query and retrieves the first value of the first row returned.
+ * Executes an SQL query and retrieves the rows returned;
+ * @param {string} sqlQuery The SQL query executing.
+ * @returns {Promise<{[key: string]: any;}[]>} The retrieved rows
+ */
+async function getRowsOfQuery(sqlQuery) {
+	const queryResult = await executeQuery(sqlQuery);
+	const returnedRows = queryResult.rows;
+	return returnedRows;
+}
+
+/**
+ * Executes an SQL query and retrieves the first value of the first row returned.
  * @param {string} sqlQuery The SQL query executing.
  * @returns {Promise<any>} The first value of the first row.
  */
 async function getFirstValueOfQuery(sqlQuery) {
-	const queryResult = await executeQuery(sqlQuery);
-	const returnedRows = queryResult.rows;
+	const returnedRows = await getRowsOfQuery(sqlQuery);
 
 	if (returnedRows.length <= 0) return undefined;
 
@@ -61,4 +71,4 @@ async function getFirstValueOfQuery(sqlQuery) {
 	return firstRowValues[0];
 }
 
-module.exports = {executeSQLFile, executeQuery, getFirstValueOfQuery}
+module.exports = {executeSQLFile, executeQuery, getFirstValueOfQuery, getRowsOfQuery}
