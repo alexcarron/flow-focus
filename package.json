@@ -9,7 +9,7 @@
     "test": "jest --watch",
     "predeploy": "ng build --configuration production",
     "deploy": "gh-pages -d docs/browser",
-		"server": "json-server --watch json-server/tasksDatabase.json --port 3004",
+    "server": "json-server --watch json-server/tasksDatabase.json --port 3004",
     "dev": "npm run server & npm run start & npm run test"
   },
   "private": true,
@@ -38,6 +38,7 @@
     "angular-cli-ghpages": "^2.0.1",
     "gh-pages": "^6.1.1",
     "jasmine-core": "~5.1.0",
+    "json-server": "^1.0.0-beta.3",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
