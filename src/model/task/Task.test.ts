@@ -1,9 +1,10 @@
+import StateObserver from "../../persistence/observer/StateObserver";
 import TasksManager from "../TasksManager";
 import StepStatus from "./StepStatus";
 import Task from "./Task";
 
 describe('Task', () => {
-	const tasksManager: TasksManager = new TasksManager( { onStateChange: () => {} } );
+	let tasksManager: TasksManager = new TasksManager( { onStateChange: () => {} } );
 	let task: Task;
 
 	beforeEach(() => {
@@ -34,16 +35,18 @@ describe('Task', () => {
 		});
 	})
 
-	describe('setStartTime', () => {
-		it('makeRecurring should set repeat interval and start time', () => {
-			const currentTime = new Date();
-			task.makeRecurring(1000, currentTime);
+	describe('makeReccuring', () => {
+		it('should set repeat interval and start time', () => {
+			const repeatInterval = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
 
-			expect(task.getRepeatInterval()).toEqual(1000);
-			expect(task.getStartTime()).toEqual(currentTime);
+			task.makeRecurring(repeatInterval, intervalStartTime);
+
+			expect(task.getRepeatInterval()).toBe(repeatInterval);
+			expect(task.getStartTime()).toEqual(intervalStartTime);
 		});
 
-		it('makeRecurring should set deadline to start time + repeat interval if deadline is not set', () => {
+		it('should set deadline to start time + repeat interval if deadline is not set', () => {
 			task.makeRecurring(1000, new Date());
 
 			const intervalEndTime = new Date(task.getStartTime()!.getTime() + 1000);
@@ -51,7 +54,7 @@ describe('Task', () => {
 			expect(task.getDeadline()).toEqual(intervalEndTime);
 		});
 
-		it('makeRecurring should set deadline to start time + repeat interval if deadline is past interval end time', () => {
+		it('should set deadline to start time + repeat interval if deadline is past interval end time', () => {
 			task.setDeadline(
 				new Date(Date.now() + 2000)
 			);
@@ -63,7 +66,7 @@ describe('Task', () => {
 			expect(task.getDeadline()).toEqual(intervalEndTime);
 		});
 
-		it('makeReccuring should not set deadline if deadline is not past interval end time', () => {
+		it('should not set deadline if deadline is not past interval end time', () => {
 			const deadline = new Date(Date.now() + 500);
 			task.setDeadline(deadline);
 
@@ -71,26 +74,40 @@ describe('Task', () => {
 
 			expect(task.getDeadline()).toEqual(deadline);
 		});
-	})
+	});
 
 	describe('isPastIntervalEndTime', () => {
-		it('isPastIntervalEndTime should return true if current time is past interval end time', () => {
-			const currentTime = new Date();
-			const intervalStartTime = new Date(currentTime.getTime() - 2000);
-			task.makeRecurring(1000, intervalStartTime);
+		it('should return true if current time is past interval end time', () => {
+			// 1 day
+			const repeatInterval = 24 * 60 * 60 * 1000;
+
+			// Jan 1, 8 AM
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
+
+			// Jan 2, 9 AM
+			const currentTime = new Date('2023-01-02T09:00:00Z');
+
+			task.makeRecurring(repeatInterval, intervalStartTime);
 
 			expect(task.isPastIntervalEndTime(currentTime)).toBe(true);
 		})
 
-		it('isPastIntervalEndTime should return false if current time is not past interval end time', () => {
-			const currentTime = new Date();
-			const intervalStartTime = new Date(currentTime.getTime() + 2000);
-			task.makeRecurring(1000, intervalStartTime);
+		it('should return false if current time is not past interval end time', () => {
+			// 1 day
+			const repeatInterval = 24 * 60 * 60 * 1000;
+
+			// Jan 1, 8 AM
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
+
+			// Jan 1, 9 AM
+			const currentTime = new Date('2023-01-01T09:00:00Z');
+
+			task.makeRecurring(repeatInterval, intervalStartTime);
 
 			expect(task.isPastIntervalEndTime(currentTime)).toBe(false);
 		});
 
-		it('isPastIntervalEndTime should return false if task is not recurring', () => {
+		it('should return false if task is not recurring', () => {
 			const currentTime = new Date();
 			task.setDeadline(currentTime);
 			task.setStartTime(new Date());
@@ -101,7 +118,7 @@ describe('Task', () => {
 	});
 
 	describe('onPastIntervalEndTime', () => {
-		it('onPastIntervalEndTime should do nothing if task is not recurring', () => {
+		it('should do nothing if task is not recurring', () => {
 			const currentTime = new Date();
 			const deadline = currentTime;
 			const startTime = currentTime;
@@ -122,9 +139,12 @@ describe('Task', () => {
 			expect(task.getStartTime()).toEqual(startTime);
 		});
 
-		it('onPastIntervalEndTime should reset progress if task is recurring', () => {
-			const currentTime = new Date();
-			task.makeRecurring(1000, currentTime);
+		it('should reset progress if task is recurring', () => {
+			const repeatInterval = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
+			let currentTime = intervalStartTime;
+
+			task.makeRecurring(repeatInterval, intervalStartTime);
 			task.addStep('Step 1');
 			task.addStep('Step 2');
 			task.completeNextStep();
@@ -132,27 +152,73 @@ describe('Task', () => {
 			task.onPastIntervalEndTime(currentTime);
 
 			expect(task.getSteps()).toEqual(['Step 1', 'Step 2']);
+			expect(task.getProgress()).toBe(0);
 			expect(task.getIsComplete()).toBe(false);
 			expect(task.getNextStep()).toEqual('Step 1');
 		});
 
-		it('onPastIntervalEndTime should set start time and deadline to most recent time not in the future if task is recurring', () => {
-			const currentTime = new Date();
+		it('should update start time and deadline when past interval end time', () => {
+			// 1 Day
+			const repeatInterval = 24 * 60 * 60 * 1000;
 
-			const repeatInterval = 1000;
-			const intervalStartTime = new Date(currentTime.getTime() - 2000);
-			const deadline = new Date(intervalStartTime.getTime() + 500);
+			// Jan 1, 8 AM
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
 
-			const expectedStartTime = new Date(currentTime.getTime());
-			const expectedDeadline = new Date(expectedStartTime.getTime() + 500);
+			// Jan 2, 9 AM (Past interval end time)
+			const currentTime = new Date('2023-01-02T09:00:00Z');
 
-			task.setDeadline(deadline);
+			// Jan 2, 8 AM
+			const expectedNewStartTime = new Date('2023-01-02T08:00:00Z');
+
+			// Jan 3, 8 AM
+			const expectedNewDeadline = new Date('2023-01-03T08:00:00Z');
+
+			// Task repeats every day at 8 AM
 			task.makeRecurring(repeatInterval, intervalStartTime);
+			task.setStepsToStatusMap([['Step 1', StepStatus.COMPLETED]]);
+			task.setComplete(true);
 
 			task.onPastIntervalEndTime(currentTime);
 
-			expect(task.getStartTime()).toEqual(expectedStartTime);
-			expect(task.getDeadline()).toEqual(expectedDeadline);
+			expect(task.getStartTime()).toEqual(expectedNewStartTime);
+			expect(task.getDeadline()).toEqual(expectedNewDeadline);
+		});
+
+		it('should update start time, deadline, and end time if they are set to most recent possible values', () => {
+			// 1 Day
+			const repeatInterval = 24 * 60 * 60 * 1000;
+
+			// Jan 1, 8 AM
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
+
+			// Jan 3, 9 AM (Past interval end time)
+			const currentTime = new Date('2023-01-03T09:00:00Z');
+
+			// Jan 1, 10 AM
+			const deadline = new Date('2023-01-01T10:00:00Z');
+
+			// Jan 1, 2 PM
+			const endTime = new Date('2023-01-01T14:00:00Z');
+
+			// Jan 3, 8 AM
+			const expectedNewStartTime = new Date('2023-01-03T08:00:00Z');
+
+			// Jan 3, 10 AM
+			const expectedNewDeadline = new Date('2023-01-03T10:00:00Z');
+
+			// Jan 3, 2 PM
+			const expectedNewEndTime = new Date('2023-01-03T14:00:00Z');
+
+			// Task repeats every day at 8 AM
+			task.makeRecurring(repeatInterval, intervalStartTime);
+			task.setDeadline(deadline);
+			task.setEndTime(endTime);
+
+			task.onPastIntervalEndTime(currentTime);
+
+			expect(task.getStartTime()).toEqual(expectedNewStartTime);
+			expect(task.getDeadline()).toEqual(expectedNewDeadline);
+			expect(task.getEndTime()).toEqual(expectedNewEndTime);
 		});
 	})
 

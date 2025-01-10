@@ -9,6 +9,7 @@ import InputControlComponent from '../InputControlComponent';
   styleUrl: './datetime-input.component.css'
 })
 export class DatetimeInputComponent implements InputControlComponent<Date | null> {
+	@Input() placeholder: string | null = null;
 	@Input() initialValue: Date | null = null;
 	@Output() onInputChange = new EventEmitter<Date | null>();
 	hostElement: HTMLElement;

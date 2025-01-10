@@ -1,17 +1,19 @@
-:host, .input-column {
+:host {
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
 	align-items: center;
 	gap: var(--margin-medium);
 }
 
+.input-column {
+	display: flex;
+	flex-direction: column;
+	gap: var(--margin-medium);
+}
+
 #taskTimingOptionsInput {
-	width: 80%;
-	flex-direction: row;
-	flex-wrap: wrap;
-	column-gap: var(--margin-xlarge);
-	row-gap: var(--margin-large);
+	flex-direction: column;
+	gap: var(--margin-medium);
 }
 
 :host {

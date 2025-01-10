@@ -18,7 +18,7 @@ export class BasePopupComponent<ConfirmationEmitType> {
 	isConfirmButtonVisible: boolean = true;
 	@Input() hostElement: HTMLElement;
 
-	constructor(private hostElementReference: ElementRef) {
+	constructor(hostElementReference: ElementRef) {
 		this.hostElement = hostElementReference.nativeElement;
 	}
 

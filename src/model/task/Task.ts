@@ -747,6 +747,13 @@ export default class Task implements StateObservable {
 		this.setSkipped(false);
 	}
 
+	/**
+	 * Calculates the progress of the task as a value between 0 and 1.
+	 * The progress is the ratio of the number of completed steps to the total number of steps.
+	 * If the task has no steps, the progress is 0.
+	 * If the task is complete, the progress is 1.
+	 * @returns The progress of the task as a value between 0 and 1.
+	 */
 	getProgress(): number {
 		if (this.getIsComplete()) {
 			return 1;

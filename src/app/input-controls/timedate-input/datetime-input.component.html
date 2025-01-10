@@ -2,8 +2,9 @@
 	type="datetime-local"
 	(change)="onInput()"
 	(keydown)="onKeyDown($event)"
+	placeholder="Now"
 >
-<div class="flex-row">
+<div class="input-helper-buttons">
 	<button
 		class="icon-button"
 		(click)="incrementDay()"

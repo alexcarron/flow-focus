@@ -82,6 +82,7 @@ body {
 /* Input Controls Styling */
 input {
 	text-align: center;
+	font-size: unset;
 }
 
 .input-label {
@@ -90,16 +91,17 @@ input {
 }
 
 .main-input {
-	gap: var(--margin-medium);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
 
-	padding: var(--margin-medium);
+	gap: var(--margin-xsmall);
+}
 
-	background-color: var(--faint-background-color);
-
-	border-color: var(--faint-text-color);
-	border-style: solid;
-	border-width: 1px;
-	border-radius: var(--border-radius-small);
+.input-helper-buttons {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
 }
 
 h1, .xlarge-text {
@@ -377,7 +379,7 @@ input[type="checkbox"] {
 	width: var(--margin-large);
 	margin: 0;
 
-	border-color: var(--inactive-background-color);
+	border-color: var(--text-color);
 	border-width: calc(var(--margin-large)/10);
 	border-radius: var(--border-radius-small);
 

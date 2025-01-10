@@ -1,54 +1,49 @@
-<div class="flex-column main-input">
-	<h3 class="input-label">Time Frame</h3>
-
-	<div class="flex-row">
-		<datetime-input
-			#startTimeInput
-			id="startTimeInput"
-			[initialValue]="enteredValue.startTime"
-			(onInputChange)="onStartTimeChange($event)"
-		></datetime-input>
-
-		<p class="input-separator">to</p>
-
-		<datetime-input
-			#endTimeInput
-			id="endTimeInput"
-			[initialValue]="enteredValue.endTime"
-			(onInputChange)="onEndTimeChange($event)"
-		></datetime-input>
-	</div>
-</div><div class="flex-column main-input">
-	<h3 class="input-label">Deadline</h3>
+<div class="main-input">
+	<h3 class="input-label">Starts</h3>
 	<datetime-input
-		#deadlineInput
-		id="deadlineInput"
-		[initialValue]="enteredValue.deadline"
-		(onInputChange)="onDeadlineChange($event)"
+		#startTimeInput
+		id="startTimeInput"
+		[initialValue]="enteredValue.startTime"
+		(onInputChange)="onStartTimeChange($event)"
 	></datetime-input>
 </div>
-<div class="flex-column main-input">
-	<h3 class="input-label">Estimated Required Time</h3>
-
-	<div class="flex-row">
-		<duration-input
-			#minDurationInput
-			id="minDurationInput"
-			[initialValue]="enteredValue.minDuration"
-			(onInputChange)="onMinDurationChange($event)"
-		></duration-input>
-
-		<p class="input-separator">to</p>
-
-		<duration-input
-			#maxDurationInput
-			id="maxDurationInput"
-			[initialValue]="enteredValue.maxDuration"
-			(onInputChange)="onMaxDurationChange($event)"
-		></duration-input>
-	</div>
+<div class="main-input">
+	<h3 class="input-label">Complete By</h3>
+	<datetime-input
+	#deadlineInput
+	id="deadlineInput"
+	[initialValue]="enteredValue.deadline"
+	(onInputChange)="onDeadlineChange($event)"
+	></datetime-input>
 </div>
-<div class="flex-column main-input">
+<div class="main-input">
+	<h3 class="input-label">Expires</h3>
+	<datetime-input
+		#endTimeInput
+		id="endTimeInput"
+		[initialValue]="enteredValue.endTime"
+		(onInputChange)="onEndTimeChange($event)"
+	></datetime-input>
+</div>
+<div class="main-input">
+	<h3 class="input-label">Minimum Duration</h3>
+	<duration-input
+		#minDurationInput
+		id="minDurationInput"
+		[initialValue]="enteredValue.minDuration"
+		(onInputChange)="onMinDurationChange($event)"
+	></duration-input>
+</div>
+<div class="main-input">
+	<h3 class="input-label">Maximum Duration</h3>
+	<duration-input
+		#maxDurationInput
+		id="maxDurationInput"
+		[initialValue]="enteredValue.maxDuration"
+		(onInputChange)="onMaxDurationChange($event)"
+	></duration-input>
+</div>
+<div class="main-input">
 	<div class="flex-row checkbox-input">
 		<checkbox-input
 			#hasRepeatIntervalInput
@@ -56,7 +51,7 @@
 			[initialValue]="hasRepeatInterval"
 			(onInputChange)="onHasRepeatIntervalChange($event)"
 		></checkbox-input>
-		<h3 class="input-label">Repeat Interval</h3>
+		<h3 class="input-label">Repeats</h3>
 	</div>
 	<duration-input
 		*ngIf="hasRepeatInterval"

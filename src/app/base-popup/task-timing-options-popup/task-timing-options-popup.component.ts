@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import TaskTimingOptions from '../../../model/task/TaskTimingOptions';
 import { BasePopupComponent } from '../base-popup.component';
 import { TaskTimingOptionsInputComponent } from '../../input-controls/task-timing-options-input/task-timing-options-input.component';
@@ -15,6 +15,10 @@ import Task from '../../../model/task/Task';
 export class TaskTimingOptionsPopupComponent extends BasePopupComponent<TaskTimingOptions> {
 	@ViewChild('taskTimingOptionsInput') taskTimingOptionsInput!: TaskTimingOptionsInputComponent;
 	@Input() task: Task | null = null;
+
+	constructor(hostElementReference: ElementRef) {
+		super(hostElementReference)
+	}
 
   onInputChange(timingOptions: TaskTimingOptions): void {
 		this.emittedConfirmation = timingOptions;
