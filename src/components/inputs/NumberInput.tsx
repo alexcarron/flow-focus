@@ -1,0 +1,27 @@
+interface Props {
+  value: number | null;
+  onChange: (value: number | null) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+  className?: string;
+}
+
+export default function NumberInput({ value, onChange, min, max, step = 1, placeholder, className = '' }: Props) {
+  return (
+    <input
+      type="number"
+      value={value ?? ''}
+      min={min}
+      max={max}
+      step={step}
+      placeholder={placeholder}
+      className={`bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500 ${className}`}
+      onChange={e => {
+        const v = e.target.value;
+        onChange(v === '' ? null : parseFloat(v));
+      }}
+    />
+  );
+}

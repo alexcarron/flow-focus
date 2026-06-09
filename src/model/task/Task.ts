@@ -1,17 +1,15 @@
+import { immerable } from 'immer';
 import TaskTimingOptions from "./TaskTimingOptions";
 import TasksManager from "../TasksManager";
-import TasksManagerState from "../TasksManagerState";
 import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
 import TaskState from "./TaskState";
-import StateObserver from '../../persistence/observer/StateObserver';
-import NotifyStateChange from "../../persistence/observer/NotifyStateChangeDecorator";
-import StateObservable from "../../persistence/observer/StateObservable";
 
-export default class Task implements StateObservable {
-	/**
-	 * A map of steps to their status in order of completion. All steps are set to 'Uncomplete' by default.
-	 */
+export default class Task {
+	static [immerable] = true;
+
+	dbId: number | undefined = undefined;
+
 	protected description: string;
 	protected stepsToStatusMap: Map<string, StepStatus> = new Map();
 	protected startTime: Date | null = null;
@@ -28,17 +26,14 @@ export default class Task implements StateObservable {
 	constructor(
 		protected tasksManager: TasksManager,
 		description: string,
-		public stateObserver: StateObserver,
 	) {
 		this.description = description;
 	}
 
 	getDescription(): string {return this.description};
 
-	@NotifyStateChange
 	setDescription(description: string): void {this.description = description};
 
-	@NotifyStateChange
 	setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>) {
 		if (stepsToStatusObject instanceof Map) {
 			this.stepsToStatusMap = stepsToStatusObject;
@@ -57,17 +52,14 @@ export default class Task implements StateObservable {
 
 	getStartTime(): Date | null {return this.startTime};
 
-	@NotifyStateChange
 	setStartTime(startTime: Date | null): void {this.startTime = startTime};
 
 	getEndTime(): Date | null {return this.endTime}
 
-	@NotifyStateChange
 	setEndTime(endTime: Date | null): void {this.endTime = endTime};
 
 	getDeadline(): Date | null {return this.deadline};
 
-	@NotifyStateChange
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
 
 	getMinRequiredTime(): number {
@@ -77,7 +69,6 @@ export default class Task implements StateObservable {
 		return this.minRequiredTime
 	};
 
-	@NotifyStateChange
 	setMinRequiredTime(minRequiredTime: number | null): void {this.minRequiredTime = minRequiredTime};
 
 	hasMaxRequiredTime(): boolean {
@@ -96,49 +87,34 @@ export default class Task implements StateObservable {
 		return this.maxRequiredTime
 	};
 
-	@NotifyStateChange
 	setMaxRequiredTime(maxRequriedTime: number | null): void {this.maxRequiredTime = maxRequriedTime};
 
 	getRepeatInterval(): number | null {return this.repeatInterval};
 
-	@NotifyStateChange
 	setRepeatInterval(repeatInterval: number | null): void {this.repeatInterval = repeatInterval};
 
 	getIsMandatory(): boolean {return this.isMandatory}
 
-	@NotifyStateChange
 	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	getIsComplete(): boolean {return this.isComplete}
 
-	@NotifyStateChange
 	setComplete(isComplete: boolean): void {this.isComplete = isComplete}
 
 	getIsSkipped(): boolean {return this.isSkipped}
 
-	@NotifyStateChange
 	setSkipped(isSkipped: boolean): void {this.isSkipped = isSkipped}
 
-
-	@NotifyStateChange
 	setLastActionedStep(lastActionedStep: {step: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
 
 	isRecurring(): boolean {return this.repeatInterval !== null};
 
-	/**
-	 * Makes the task recurring by setting the repeat interval and time the interval should start.
-	 * If the deadline is not set or is after the end of the interval, it is set to the end of the interval.
-	 *
-	 * @param {number} repeatInterval - The interval in milliseconds at which the task should repeat.
-	 * @param {Date} intervalStartTime - The time at which the task should start repeating.
-	 */
 	makeRecurring(repeatInterval: number, intervalStartTime: Date): void {
 		this.setRepeatInterval(repeatInterval);
 		this.setStartTime(intervalStartTime);
 
 		const intervalEndTime = new Date(this.startTime!.getTime() + repeatInterval);
 
-		// If deadline is not set or if deadline is after the end of the interval set it to the end of the interval
 		if (
 			this.deadline === null ||
 			this.deadline.getTime() > intervalEndTime.getTime()
@@ -147,10 +123,6 @@ export default class Task implements StateObservable {
 		}
 	};
 
-	/**
-	 * Checks if the task is past its interval end time.
-	 * @returns {boolean} - Whether the task is past its interval end time.
-	 */
 	isPastIntervalEndTime(currentTime: Date): boolean {
 		if (!this.isRecurring() || !this.startTime || !this.repeatInterval) {
 			return false;
@@ -161,9 +133,6 @@ export default class Task implements StateObservable {
 		return currentTime.getTime() > intervalEndTime.getTime();
 	};
 
-	/**
-	 * Handles resetting a task's interval and progress when the current time passes the end of a task interval.
-	 */
 	onPastIntervalEndTime(currentTime: Date): void {
 		if (!this.isRecurring() || !this.startTime || !this.repeatInterval) {
 			return;
@@ -200,9 +169,6 @@ export default class Task implements StateObservable {
 
 	};
 
-	/**
-	 * Resets the progress and completion status of the task.
-	 */
 	protected resetProgress() {
 		this.getSteps().forEach((step) => {
 			this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
@@ -217,10 +183,6 @@ export default class Task implements StateObservable {
 		return Array.from(steps);
 	};
 
-	/**
-	 * Checks if the task has steps.
-	 * @returns Whether the task has steps.
-	 */
 	protected hasSteps(): boolean {
 		return this.stepsToStatusMap.size > 0;
 	};
@@ -233,10 +195,6 @@ export default class Task implements StateObservable {
 		return this.stepsToStatusMap.size;
 	}
 
-	/**
-	 * Gets the first step that hasn't been completed
-	 * @returns The first step that hasn't been completed or null if there are no steps or all steps are completed.
-	 */
 	getFirstNotCompletedStep(): string | null {
 		const firstNonCompletedStepEntry =
 			Array.from(this.stepsToStatusMap.entries())
@@ -250,10 +208,6 @@ export default class Task implements StateObservable {
 		}
 	}
 
-	/**
-	 * Gets the first step that is not complete or skipped
-	 * @returns The first step that is not complete or skipped or null if there are no uncomplete step
-	 */
 	getFirstUncompleteStep(): string | null {
 		const firstUncompletedStepEntry =
 		Array.from(this.stepsToStatusMap.entries())
@@ -267,10 +221,6 @@ export default class Task implements StateObservable {
 		}
 	}
 
-	/**
-	 * Gets the next skipped step after the last step that was completed or skipped
-	 * @returns The next skipped step after the last step that was completed or skipped or null if there has been no action or skipped steps
-	 */
 	getNextSkippedStep(): string | null {
 		if (this.lastActionedStep === null) {
 			return null;
@@ -280,7 +230,6 @@ export default class Task implements StateObservable {
 
 		let foundLastStepActioned = false;
 
-		// Get next step skipped after last step skipped if any
 		const nextSkippedStep = Array.from(this.stepsToStatusMap.entries())
 			.find(([step, status]) => {
 				if (foundLastStepActioned) {
@@ -302,12 +251,6 @@ export default class Task implements StateObservable {
 		}
 	}
 
-
-
-	/**
-	 * Gets the next step that the user should focus on
-	 * @returns The next step the uesr should focus on or null if there are no steps or all are completed.
-	 */
 	getNextStep(): string | null {
 		if (this.wasLastActionASkip()) {
 			const nextSkippedStep = this.getNextSkippedStep();
@@ -340,7 +283,6 @@ export default class Task implements StateObservable {
 		const nextStepIndex = this.getStepIndex(nextStep);
 		if (nextStepIndex === -1) return []
 
-		// Store entries after the next uncompleted step
 		const stepsBeforeNextStep = Array.from(this.getSteps())
 			.slice(0, nextStepIndex);
 
@@ -354,7 +296,6 @@ export default class Task implements StateObservable {
 		const nextStepIndex = this.getStepIndex(nextStep);
 		if (nextStepIndex === -1) return []
 
-		// Store entries after the next uncompleted step
 		const stepsAfterNextStep = Array.from(this.getSteps())
 			.slice(nextStepIndex + 1);
 
@@ -373,11 +314,6 @@ export default class Task implements StateObservable {
 		return this.stepsToStatusMap.get(step) === StepStatus.COMPLETED
 	}
 
-	/**
-	 * Determines if the task is currently available
-	 * @param currentTime The current time
-	 * @returns if the task is currently available
-	 */
 	hasTaskStarted(currentTime: Date): boolean {
 		return (
 			this.getStartTime() === null || this.getStartTime()! <= currentTime &&
@@ -385,19 +321,10 @@ export default class Task implements StateObservable {
 		);
 	}
 
-	/**
-	 * Determines if the task will always be available from now on
-	 * @param currentTime The current time
-	 * @returns if the task will always be available
-	 */
 	willAlwaysBeAvailable(currentTime: Date): boolean {
 		return this.hasTaskStarted(currentTime) && this.getEndTime() === null;
 	}
 
-	/**
-	 * Replaces the next step with a different step.
-	 * @param newNextStep - The step to replace the first uncompleted step.
-	 */
 	replaceNextStep(newNextStep: string) {
 		const nextStep = this.getNextStep();
 
@@ -405,39 +332,25 @@ export default class Task implements StateObservable {
 			const nextStepIndex = this.getStepIndex(nextStep);
 
 			if (nextStepIndex !== -1) {
-				// Store entries after the next uncompleted step
 				const entriesAfterNextUncompletedStep = Array.from(this.stepsToStatusMap.entries()).slice(nextStepIndex + 1);
 
-				// Remove entries after the next uncompleted step
 				entriesAfterNextUncompletedStep.forEach(
 					([step, status]) => this.stepsToStatusMap.delete(step)
 				);
 
-				// Remove the next uncompleted step
 				this.stepsToStatusMap.delete(nextStep);
 
-				// Replace the next uncompleted step with the new step
 				this.stepsToStatusMap.set(newNextStep, StepStatus.UNCOMPLETE);
 
-				// Add the remaining entries
 				entriesAfterNextUncompletedStep.forEach(([step, status]) => this.stepsToStatusMap.set(step, status));
 			}
 		}
 	};
 
-	/**
-	 * Adds a step to the task.
-	 * @param step - The step to add.
-	 */
 	addStep(step: string): void {
 		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 	};
 
-	/**
-	 * Inserts a step at the given index.
-	 * @param step - The step to add.
-	 * @param index - The index at which to add the step.
-	 */
 	insertStep(step: string, index: number) {
 		const currentSteps = this.getSteps();
 		const newSteps = [
@@ -449,10 +362,6 @@ export default class Task implements StateObservable {
 		this.editSteps(newSteps);
 	}
 
-	/**
-	 * Creates a new step to the left of the given adjacent step.
-	 * @param adjacentStep - The step to the right of the new step.
-	 */
 	createStepLeftOfStep(adjacentStep: string) {
 		console.log(this.stepsToStatusMap);
 		const adjacentStepIndex = this.getStepIndex(adjacentStep);
@@ -460,10 +369,6 @@ export default class Task implements StateObservable {
 		console.log(this.stepsToStatusMap);
 	}
 
-	/**
-	 * Creates a new step to the right of the given adjacent step.
-	 * @param adjacentStep - The step to the left of the new step.
-	 */
 	createStepRightOfStep(adjacentStep: string) {
 		console.log(this.stepsToStatusMap);
 		const adjacentStepIndex = this.getStepIndex(adjacentStep);
@@ -471,26 +376,15 @@ export default class Task implements StateObservable {
 		console.log(this.stepsToStatusMap);
 	}
 
-	/**
-	 * Determines if the last action taken was a skip.
-	 */
 	protected wasLastActionASkip(): boolean {
 		return this.lastActionedStep?.status === StepStatus.SKIPPED;
 	}
 
-	/**
-	 * Determines if all steps are completed.
-	 * @returns Whether all steps are completed.
-	 */
 	protected areAllStepsCompleted(): boolean {
 		return Array.from(this.stepsToStatusMap.values())
 			.every((status) => status === StepStatus.COMPLETED);
 	}
 
-	/**
-	 * Completes a specified step.
-	 * @param step - The step to complete.
-	 */
 	completeStep(step: string) {
 		this.stepsToStatusMap.set(step, StepStatus.COMPLETED);
 
@@ -503,17 +397,11 @@ export default class Task implements StateObservable {
 			status: StepStatus.COMPLETED
 		});
 	}
-	/**
-	 * Uncompletes a specified step.
-	 * @param step - The step to uncomplete.
-	 */
+
 	uncompleteStep(step: string) {
 		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 	}
 
-	/**
-	 * Completes the next step, completing the task if all steps are completed
-	 */
 	completeNextStep() {
 		if (!this.hasSteps()) {
 			this.complete();
@@ -534,19 +422,11 @@ export default class Task implements StateObservable {
 		this.complete();
 	}
 
-	/**
-	 * Determines if all steps are completed or skipped.
-	 * @returns Whether all steps are completed or skipped.
-	 */
 	protected areAllStepsActioned(): boolean {
 		return Array.from(this.stepsToStatusMap.values())
 			.every((status) => status !== StepStatus.UNCOMPLETE);
 	}
 
-	/**
-	 * Gets the last skipped step.
-	 * @returns The last skipped step or null if there are no skipped steps
-	 */
 	getLastSkippedStep(): string | null {
 		const lastSkippedStep = Array.from(this.stepsToStatusMap.entries())
 			.reverse()
@@ -555,11 +435,6 @@ export default class Task implements StateObservable {
 		return lastSkippedStep?.[0] ?? null;
 	}
 
-
-	/**
-	 * Skips a specified step.
-	 * @param step - The step to skip.
-	 */
 	skipStep(step: string) {
 		this.stepsToStatusMap.set(step, StepStatus.SKIPPED);
 
@@ -576,9 +451,6 @@ export default class Task implements StateObservable {
 		})
 	}
 
-	/**
-	 * Skips the next uncompleted step, skipping the task if no steps are uncompleted.
-	 */
 	skipNextStep() {
 		if (!this.hasSteps()) {
 			this.skip();
@@ -591,11 +463,6 @@ export default class Task implements StateObservable {
 		}
 	}
 
-	/**
-	 * Edits the steps of the task.
-	 * @param newSteps - The new steps of the task.
-	 */
-	@NotifyStateChange
 	editSteps(newSteps: string[]): void {
 		let stepStatuses = Array.from(this.stepsToStatusMap.values());
 
@@ -617,11 +484,6 @@ export default class Task implements StateObservable {
 		});
 	}
 
-	/**
-	 * Replaces an existing step with a new step description
-	 * @param oldStep The description of the old step
-	 * @param newStep The new description of the step
-	 */
 	editStep(oldStep: string, newStep: string) {
 		const currentSteps = this.getSteps();
 
@@ -635,11 +497,6 @@ export default class Task implements StateObservable {
 		this.editSteps(newSteps);
 	}
 
-	/**
-	 * Calculates the time until the deadline of the task.
-	 * @param currentTime - The current time.
-	 * @returns The time until the deadline of the task in milliseconds.
-	 */
 	getTimeUntilDeadline(currentTime: Date): number {
 		if (this.getDeadline() === null) {
 			return Number.POSITIVE_INFINITY;
@@ -647,12 +504,6 @@ export default class Task implements StateObservable {
 		return this.getDeadline()!.getTime() - currentTime.getTime();
 	}
 
-	/**
-	 * Calculates the time you have to complete the task not including blocked time (Sleeping, etc).
-	 * @param currentTime - The current time.
-	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks.
-	 * @returns
-	 */
 	getTimeToComplete(currentTime: Date): number {
 		if (this.getDeadline() === null) {
 			return Number.POSITIVE_INFINITY;
@@ -697,31 +548,14 @@ export default class Task implements StateObservable {
 		this.setMandatory(taskTimingOptions.isMandatory)
 	}
 
-	/**
-	 * Determines the minimum amount of milliseconds you can spend not completing the task
-	 * @param currentTime - The current time
-	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks
-	 * @returns The minimum amount of milliseconds you can spend not completing the task
-	 */
 	getMinSlackTime(currentTime: Date): number {
 		return this.getTimeToComplete(currentTime) - this.getMaxRequiredTime(currentTime);
 	}
 
-	/**
-	 * Determines the maximum amount of milliseconds you can spend not completing the task
-	 * @param currentTime - The current time
-	 * @param nonTaskableTimePerDay - The number of milliseconds per day that you can't spend completing tasks
-	 * @returns The maximum amount of milliseconds you can spend not completing the task
-	 */
 	getMaxSlackTime(currentTime: Date): number {
 		return this.getTimeToComplete(currentTime) - this.getMinRequiredTime();
 	}
 
-	/**
-	 * Determines if the task is urgent
-	 * @param currentTime - The current time
-	 * @returns Whether the task is urgent
-	 */
 	isUrgent(currentTime: Date): boolean {
 		if (this.deadline === null) {
 			return false;
@@ -747,13 +581,6 @@ export default class Task implements StateObservable {
 		this.setSkipped(false);
 	}
 
-	/**
-	 * Calculates the progress of the task as a value between 0 and 1.
-	 * The progress is the ratio of the number of completed steps to the total number of steps.
-	 * If the task has no steps, the progress is 0.
-	 * If the task is complete, the progress is 1.
-	 * @returns The progress of the task as a value between 0 and 1.
-	 */
 	getProgress(): number {
 		if (this.getIsComplete()) {
 			return 1;
@@ -770,9 +597,6 @@ export default class Task implements StateObservable {
 		return completedSteps / this.getNumSteps();
 	}
 
-	/**
-	 * Gets a deep copy of the current state of the task.
-	 */
 	getState(): TaskState {
 		return {
 			description: this.description,
@@ -790,18 +614,6 @@ export default class Task implements StateObservable {
 		};
 	}
 
-	/**
-	 * Gets a deep copy of the current state of the task's tasks manager
-	 * @returns The state of the tasks manager
-	 */
-	getTasksManagerState(): TasksManagerState {
-		return this.tasksManager.getState();
-	}
-
-	/**
-	 * Restores the state of the task from the given state.
-	 * @param taskState - The state to restore.
-	 */
 	restoreState(taskState: TaskState) {
 		this.setDescription(taskState.description);
 		this.setComplete(taskState.isComplete);
@@ -817,19 +629,6 @@ export default class Task implements StateObservable {
 		this.setLastActionedStep(taskState.lastActionedStep);
 	}
 
-	/**
-	 * Restores the state of the task from the given state.
-	 * @param taskState - The state to restore.
-	 */
-	restoreTasksManagerState(taskManagerState: TasksManagerState) {
-		this.tasksManager.restoreState(taskManagerState);
-	}
-
-	/**
-	 * Determines if the task is active at the given time
-	 * @param currentTime - The current time
-	 * @returns Whether the task is active
-	 */
 	isActive(currentTime: Date): boolean {
 		if (this.isComplete) {
 			return false;
@@ -852,11 +651,6 @@ export default class Task implements StateObservable {
 		return true;
 	}
 
-	/**
-	 * Determines if the task must be started today to be completed on time
-	 * @param currentTime - The current time
-	 * @returns Whether the task must be started today
-	 */
 	mustStartToday(currentTime: Date): boolean {
 		const endOfDay = new Date(currentTime);
 		endOfDay.setHours(23, 59, 59, 999);

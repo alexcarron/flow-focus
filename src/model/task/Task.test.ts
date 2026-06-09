@@ -1,10 +1,9 @@
-import StateObserver from "../../persistence/observer/StateObserver";
 import TasksManager from "../TasksManager";
 import StepStatus from "./StepStatus";
 import Task from "./Task";
 
 describe('Task', () => {
-	let tasksManager: TasksManager = new TasksManager( { onStateChange: () => {} } );
+	let tasksManager: TasksManager = new TasksManager();
 	let task: Task;
 
 	beforeEach(() => {
