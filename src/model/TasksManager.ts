@@ -33,6 +33,10 @@ export default class TasksManager {
 		return task;
 	}
 
+	public clearTasks(): void {
+		this.tasks = [];
+	}
+
 	public unSkipSkippedTasks() {
 		const skippedTasks = this.tasks.filter(task => task.getIsSkipped());
 		skippedTasks.forEach(task => task.unSkip());

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTasksStore } from '../stores/tasksStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import ArrayInput from '../components/inputs/ArrayInput';
 import TimingOptionsInput, { DEFAULT_DURATION } from '../components/inputs/TimingOptionsInput';
+import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
 
 const DEFAULT_TIMING: TaskTimingOptions = {
   startTime: null,
@@ -23,6 +24,23 @@ export default function TaskCreatorPage() {
   const [steps, setSteps] = useState<string[]>([]);
   const [timing, setTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
   const [error, setError] = useState<string | null>(null);
+
+  const handleCreateRef = useRef(handleCreate);
+  useEffect(() => { handleCreateRef.current = handleCreate; });
+
+  useEffect(() => {
+    const sc = SHORTCUTS.taskCreator;
+    function onKeyDown(e: KeyboardEvent) {
+      if (matchesShortcut(e, sc.submit)) {
+        e.preventDefault();
+        handleCreateRef.current();
+      } else if (matchesShortcut(e, sc.blur)) {
+        (document.activeElement as HTMLElement)?.blur();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   async function handleCreate() {
     if (!name.trim()) {
@@ -46,7 +64,9 @@ export default function TaskCreatorPage() {
     await useTasksStore.getState().persistChangedTasks([task]);
     useTasksStore.getState().refreshTasks();
 
-    navigate('/');
+    // Stay on the page; only clear the name so timing/steps can be reused
+    setName('');
+    setError(null);
   }
 
   function handleReset() {
@@ -96,6 +116,7 @@ export default function TaskCreatorPage() {
       <div className="flex gap-2">
         <button
           onClick={handleCreate}
+          title="Create Task (Ctrl+Enter)"
           className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
         >
           Create Task

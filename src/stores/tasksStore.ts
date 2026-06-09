@@ -84,6 +84,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
     async loadTasks() {
       try {
+        tasksManager.clearTasks();
         const rows = await db.tasks.toArray();
         rows.forEach(row => {
           const data = deserializeRow(row);
