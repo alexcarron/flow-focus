@@ -1,4 +1,6 @@
 import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../config/shortcuts';
+import { useSettingsStore } from '../../stores/settingsStore';
+import Time from '../../model/time-management/Time';
 
 interface Props {
   value: Date | null;
@@ -37,6 +39,11 @@ function toToday(base: Date | null): Date {
 const sc = SHORTCUTS.datetime;
 
 export default function DatetimeInput({ value, onChange, label, className = '' }: Props) {
+  const morningTime = useSettingsStore(s => s.morningTime);
+  const nightTime = useSettingsStore(s => s.nightTime);
+  const morning = Time.fromString(morningTime);
+  const night = Time.fromString(nightTime);
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -57,10 +64,10 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
       onChange(toToday(value));
     } else if (matchesShortcut(e, sc.morning)) {
       e.preventDefault();
-      onChange(setTimeOfDay(value, 7, 0));
+      onChange(setTimeOfDay(value, morning.getHour(), morning.getMinute()));
     } else if (matchesShortcut(e, sc.night)) {
       e.preventDefault();
-      onChange(setTimeOfDay(value, 23, 0));
+      onChange(setTimeOfDay(value, night.getHour(), night.getMinute()));
     } else if (matchesShortcut(e, sc.nextDay)) {
       e.preventDefault();
       onChange(adjustDate(value, 1));
@@ -116,8 +123,8 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
         <button
           type="button"
           tabIndex={-1}
-          title={`Morning 07:00 (${formatShortcut(sc.morning)})`}
-          onClick={() => onChange(setTimeOfDay(value, 7, 0))}
+          title={`Morning ${morningTime} (${formatShortcut(sc.morning)})`}
+          onClick={() => onChange(setTimeOfDay(value, morning.getHour(), morning.getMinute()))}
           className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
         >
           Morning
@@ -125,8 +132,8 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
         <button
           type="button"
           tabIndex={-1}
-          title={`Night 23:00 (${formatShortcut(sc.night)})`}
-          onClick={() => onChange(setTimeOfDay(value, 23, 0))}
+          title={`Night ${nightTime} (${formatShortcut(sc.night)})`}
+          onClick={() => onChange(setTimeOfDay(value, night.getHour(), night.getMinute()))}
           className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
         >
           Night

@@ -52,7 +52,10 @@ interface TasksActions {
 }
 
 // Single TasksManager instance shared across the store
-const tasksManager = new TasksManager();
+export const tasksManager = new TasksManager();
+
+// Guard against concurrent loadTasks calls (e.g. React StrictMode double-effect)
+let loadTasksInProgress = false;
 
 async function persistTask(task: Task): Promise<void> {
   try {
@@ -83,6 +86,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
     redoStack: [],
 
     async loadTasks() {
+      if (loadTasksInProgress) return;
+      loadTasksInProgress = true;
       try {
         tasksManager.clearTasks();
         const rows = await db.tasks.toArray();
@@ -113,6 +118,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
       } catch (err) {
         console.error('Failed to load tasks from Dexie:', err);
         set(state => { state.isLoading = false; });
+      } finally {
+        loadTasksInProgress = false;
       }
     },
 

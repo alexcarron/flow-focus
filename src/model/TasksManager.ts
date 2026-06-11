@@ -46,6 +46,11 @@ export default class TasksManager {
 		return this.asleepTimeWindow;
 	}
 
+	public setAsleepTimeWindow(timeWindow: TimeWindow): void {
+		this.asleepTimeWindow = timeWindow;
+		this.sleepTask = this.createSleepTask(new Date());
+	}
+
 	public getDowntime(): RecurringDateRange {
 		return this.downtimeTime;
 	}

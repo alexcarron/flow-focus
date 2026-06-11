@@ -1,4 +1,5 @@
 import Dexie, { Table } from 'dexie';
+import { AppSettings } from '../model/AppSettings';
 
 export interface PlainTaskRow {
   id?: number;
@@ -16,13 +17,22 @@ export interface PlainTaskRow {
   lastActionedStep: { step: string; status: string } | null;
 }
 
+export interface SettingsRow extends AppSettings {
+  id: number;
+}
+
 export class FlowFocusDB extends Dexie {
   tasks!: Table<PlainTaskRow, number>;
+  settings!: Table<SettingsRow, number>;
 
   constructor() {
     super('FlowFocusDB');
     this.version(1).stores({
       tasks: '++id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime',
+    });
+    this.version(2).stores({
+      tasks: '++id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime',
+      settings: 'id',
     });
   }
 }

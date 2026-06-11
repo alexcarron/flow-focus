@@ -1,17 +1,21 @@
 import { useEffect } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import { useTasksStore } from './stores/tasksStore';
+import { useSettingsStore } from './stores/settingsStore';
 import FocusPage from './pages/FocusPage';
 import TasksManagerPage from './pages/TasksManagerPage';
 import TaskCreatorPage from './pages/TaskCreatorPage';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   const isLoading = useTasksStore(s => s.isLoading);
   const loadTasks = useTasksStore(s => s.loadTasks);
+  const loadSettings = useSettingsStore(s => s.loadSettings);
 
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+    loadSettings();
+  }, [loadTasks, loadSettings]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
@@ -47,6 +51,16 @@ export default function App() {
         >
           + Create
         </NavLink>
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `px-3 py-1 rounded text-sm font-medium transition-colors ${
+              isActive ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+            }`
+          }
+        >
+          Settings
+        </NavLink>
       </nav>
 
       {isLoading ? (
@@ -59,6 +73,7 @@ export default function App() {
             <Route path="/" element={<FocusPage />} />
             <Route path="/tasks" element={<TasksManagerPage />} />
             <Route path="/create-task" element={<TaskCreatorPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
       )}
