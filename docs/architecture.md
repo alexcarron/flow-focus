@@ -1,5 +1,7 @@
 # Architecture & Tech Stack
 
+THE FOLLOWING IS OUTDATED
+
 ## Tech Stack
 
 | Layer | Technology |
