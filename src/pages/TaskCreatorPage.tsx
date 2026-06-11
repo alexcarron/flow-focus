@@ -56,11 +56,7 @@ export default function TaskCreatorPage() {
     const task = await addTask(name.trim(), timing);
     task.editSteps(steps);
 
-    if (timing.repeatInterval !== null) {
-      task.makeRecurring(timing.repeatInterval, timing.startTime ?? new Date());
-    }
-
-    // Persist the task with steps and recurring settings
+    // Persist the task with steps (addTask already handles timing/recurring)
     await useTasksStore.getState().persistChangedTasks([task]);
     useTasksStore.getState().refreshTasks();
 
