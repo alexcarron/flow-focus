@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background: deep indigo rounded square -->
+  <rect width="512" height="512" rx="96" fill="#4338CA"/>
+
+  <!--
+    Lightning bolt polygon (classic ⚡ shape):
+    Upper arm leans down-left from top-right.
+    At the notch, shape steps right to start the lower arm.
+    Lower arm continues down-left to bottom-right.
+
+    Vertices (clockwise):
+      A(345, 35)  upper-right
+      B(175, 35)  upper-left
+      C(115,270)  inner-left of notch  (bottom of upper arm, left edge)
+      D(225,270)  outer-left of notch  (top of lower arm, left edge)
+      E(165,475)  lower-left
+      F(335,475)  lower-right
+      G(395,270)  outer-right of notch (top of lower arm, right edge)
+      H(285,270)  inner-right of notch (bottom of upper arm, right edge)
+  -->
+  <polygon
+    points="345,35 175,35 115,270 225,270 165,475 335,475 395,270 285,270"
+    fill="white"
+  />
+</svg>
