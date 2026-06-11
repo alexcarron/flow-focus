@@ -1,8 +1,5 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# VSCode
-.vscode/
-
 # Compiled output
 /dist
 /.dist
@@ -44,16 +41,8 @@ yarn-error.log
 testem.log
 /typings
 
-# System files
-.DS_Store
-Thumbs.db
-
-# Json Server
-json-server
-*Database.json
-
-# Local Executables
-# *.sh
-
 # Enviorment Variables
 .env
+
+# Local Launcher Files
+*.lnk
