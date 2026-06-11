@@ -22,7 +22,9 @@ npm run build
 npm run deploy
 ```
 
-The app runs on port 4200. No separate backend — tasks are persisted to IndexedDB via Dexie.js.
+The app runs on port 4200 with no separate backend. Tasks are persisted to IndexedDB via Dexie.js.
+
+On Windows, `launchers/launch.bat` (or `launch-hidden.vbs`) starts the dev server if it isn't already running and opens the app in the browser. See `launchers/README.md` for details.
 
 ## Tech Stack
 
@@ -42,13 +44,15 @@ The app runs on port 4200. No separate backend — tasks are persisted to Indexe
 
 ### Data Flow
 
-`useTasksStore` (`src/stores/tasksStore.ts`) is the single source of truth. It holds a `tasks: Task[]` reactive state backed by a module-level `TasksManager` instance. All three routes are simple components that read from and write to the store.
+`useTasksStore` (`src/stores/tasksStore.ts`) is the single source of truth. It holds a `tasks: Task[]` reactive state backed by a module-level `TasksManager` instance. All routes are simple components that read from and write to the store.
 
 ### Core Domain Model (`src/model/`)
 
 - **`Task`** — central entity with description, optional steps (`Map<string, StepStatus>`), timing fields (`startTime`, `endTime`, `deadline`, min/max duration in ms, `repeatInterval`), and `isMandatory` flag. Has a `dbId` property for Dexie row identity. Has `static [immerable] = true` for Immer compatibility.
 - **`TasksManager`** — owns the `Task[]` array, provides `getPriorityTask`, `getTasksInPriorityOrder`, `update`, and `deleteTask`. A single module-level instance is kept in `tasksStore.ts`.
-- **`TaskPrioritizer`** — pure sorting logic. See [`docs/priority-algorithm.md`](docs/priority-algorithm.md) for the full algorithm.
+- **`TaskPrioritizer`** — pure sorting logic. See [`docs/task-priority-algorithm.md`](docs/task-priority-algorithm.md) for the full algorithm.
+- **`task/TaskState.ts`**, **`task/TaskTimingOptions.ts`**, **`task/StepStatus.ts`** — supporting types: `TaskState` is the undo/redo snapshot shape, `TaskTimingOptions` is the timing-only subset used by forms/popups, `StepStatus` is the `Completed | Skipped | Uncomplete` enum for steps.
+- **`TaskRefiner.ts`** — interface for AI-assisted task editing (clarify, split, generate steps). Not implemented; the `@google/generative-ai` dependency is currently unused.
 
 ### State Management (`src/stores/tasksStore.ts`)
 
@@ -61,9 +65,13 @@ The app runs on port 4200. No separate backend — tasks are persisted to Indexe
 
 Important: `setAutoFreeze(false)` is called to allow mutating Task class instances that live in the Zustand state.
 
+### Settings (`src/stores/settingsStore.ts`)
+
+`useSettingsStore` is a separate Zustand store (no Immer) holding `AppSettings` (`src/model/AppSettings.ts`): `morningTime`/`nightTime` (used by quick-set buttons on datetime inputs) and `bedtime`/`wakeTime` (the sleep window). Persisted to the Dexie `settings` table. Changing `bedtime`/`wakeTime` calls `tasksManager.setAsleepTimeWindow()`, which feeds into `Task.getTimeToComplete()`. Loaded once via `loadSettings()` in `App.tsx`.
+
 ### Persistence (`src/db/`)
 
-- **`FlowFocusDB`** (`src/db/flowfocus.db.ts`) — Dexie database with a single `tasks` table.
+- **`FlowFocusDB`** (`src/db/flowfocus.db.ts`) — Dexie database with `tasks` and `settings` tables (v2 schema).
 - **`serializeTask` / `deserializeRow`** (`src/db/task.serializer.ts`) — convert between `Task` instances and plain `PlainTaskRow` objects.
 
 ### Undo/Redo
@@ -79,13 +87,14 @@ Important: `setAutoFreeze(false)` is called to allow mutating Task class instanc
 
 Global keyboard shortcuts: `Ctrl+Z` = undo, `Ctrl+Y` / `Ctrl+Shift+Z` = redo (wired in `main.tsx`).
 
-### Three Pages / Routes
+### Pages / Routes
 
 | Path | Component | Purpose |
 |---|---|---|
 | `/` | `FocusPage` | Shows the single highest-priority task; Enter or double-tap = complete next step |
 | `/tasks` | `TasksManagerPage` | Full task list with filter, sort, inline edit, delete |
 | `/create-task` | `TaskCreatorPage` | Form to create a new task with all timing options |
+| `/settings` | `SettingsPage` | Edit `AppSettings` (time shortcuts, sleep window) via `useSettingsStore` |
 
 ### Components (`src/components/`)
 
@@ -98,6 +107,7 @@ Global keyboard shortcuts: `Ctrl+Z` = undo, `Ctrl+Y` / `Ctrl+Shift+Z` = redo (wi
 
 - `src/hooks/useShrinkToFit.ts` — ResizeObserver-based hook that shrinks an element to fit without wrapping.
 - `src/utils/formatters.ts` — `formatTime(ms)` and `formatDate(date)` pure functions.
+- `src/config/shortcuts.ts` — central keyboard shortcut definitions (`SHORTCUTS`) plus `matchesShortcut`/`formatShortcut` helpers, used by the timing/duration inputs and `TaskCreatorPage`.
 
 ### Time Management (`src/model/time-management/`)
 
