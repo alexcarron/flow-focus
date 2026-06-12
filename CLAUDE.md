@@ -24,7 +24,7 @@ npm run deploy
 
 The app runs on port 4200 with no separate backend. Tasks are persisted to IndexedDB via Dexie.js.
 
-On Windows, `launchers/launch.bat` (or `launch-hidden.vbs`) starts the dev server if it isn't already running and opens the app in the browser. See `launchers/README.md` for details.
+On Windows, `launchers/start-flow-focus.bat` (or `start-flow-focus-hidden.vbs`) starts the dev server if it isn't already running and opens the app in the browser. `launchers/stop-flow-focus.bat` stops it. See `launchers/README.md` for details.
 
 ## Tech Stack
 
