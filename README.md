@@ -1,13 +1,31 @@
 # FlowFocus
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.0.7.
+A task manager that only shows you one task at a time (whatever's' most important right now) so you don't have to decide what to do next.
 
-## To Run Developer Prototype
+## How to Run It Yourself
 
-- Download project as a .zip file
-- Unzip file into folder
-- Run `start-app-dev-mode.sh` with Git Bash
-- If it doesn't open automatically in your browser, go to [http://localhost:4200/flow-focus/](http://localhost:4200/flow-focus/)
+- Make sure you have [Node.js](https://nodejs.org/) installed
+- Clone this repo
+- Open a terminal in the `flow-focus` folder
+- Run `npm install`
+- Run `npm run dev`
+- Open [http://localhost:5174](http://localhost:5174) in your browser
+
+Your tasks are saved in your browser (via IndexedDB). No account or server is needed.
+
+### Running it as part of the Local Web Apps hub
+
+This repo can also live inside a bigger `local-web-apps` folder alongside other apps, which run together from one shared local server (the "hub") at `http://localhost:4200`.
+
+This only works if you have that bigger folder set up, with a `hub` folder next to this `flow-focus` folder. If you only cloned this standalone `flow-focus` repo, you won't have the hub. Just use `npm run dev` above instead.
+
+If you do have the hub set up:
+
+- Run `npm run build`
+- Start the hub (see `../hub/README.md`)
+- Open [http://localhost:4200/flow-focus](http://localhost:4200/flow-focus)
+
+On Windows, `launchers/start-flow-focus.bat` does both of these for you and opens the app in your browser. See `launchers/README.md`.
 
 ## Usage Examples
 
@@ -19,10 +37,6 @@ Here are a few examples of the things you can do in Flow Focus with screenshots.
 
 ![Create Task Filled Out Form](./screenshots/filled-out-create-task-form.png)
 
-### Completing a Task
-
-![Completing  a Task](./screenshots/complete-task.png)
-
 ### Putting off a Task Until Later
 
 ![Skipping a Task](./screenshots/skip-task.png)
@@ -33,15 +47,9 @@ Here are a few examples of the things you can do in Flow Focus with screenshots.
 
 ![Completing a Step of a Task](./screenshots/complete-step.png)
 
-### Skipping a Step of a Task
-
-![Skipping a Step of a Task](./screenshots/skip-step.png)
-
 ### Editing a Step of a Task
 
-![Editing the Curent Step of a Task](./screenshots/edit-current-step.png)
-
-![Editing another Step of a Task](./screenshots/edit-other-step.png)
+![Editing the Current Step of a Task](./screenshots/edit-current-step.png)
 
 ### Editing the Time of a Task
 
@@ -49,9 +57,9 @@ Here are a few examples of the things you can do in Flow Focus with screenshots.
 
 ![Editing the Time of a Task](./screenshots/edit-task-time.png)
 
-### Manging Your Tasks
+### Managing Your Tasks
 
-![Manging Your Tasks](./screenshots/manage-tasks.png)
+![Managing Your Tasks](./screenshots/manage-tasks.png)
 
 ### Editing a Task in the Task Manager
 
@@ -65,8 +73,16 @@ Here are a few examples of the things you can do in Flow Focus with screenshots.
 
 ![Sorting Tasks By Name](./screenshots/sort-tasks.png)
 
-### Undoing and Redoing Actions
+### Changing Time Shortcuts and Sleep Schedule Settings
 
-![Undoing Actoins](./screenshots/undo.png)
+![All Settings](./screenshots/all-settings.png)
 
-![Redoing Actoins](./screenshots/redo.png)
+![Editing Settings](./screenshots/editing-settings.png)
+
+### Backing Up Your Data
+
+![Backup and Restore](./screenshots/backup-and-restore.png)
+
+![Backup Exported](./screenshots/backup-exported.png)
+
+![Imported Backup](./screenshots/imported-backup.png)
