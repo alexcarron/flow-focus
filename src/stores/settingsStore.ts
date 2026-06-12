@@ -16,6 +16,7 @@ interface SettingsActions {
   setNightTime: (value: string) => Promise<void>;
   setBedtime: (value: string) => Promise<void>;
   setWakeTime: (value: string) => Promise<void>;
+  importSettings: (settings: AppSettings) => Promise<void>;
 }
 
 function pickSettings(state: SettingsState): AppSettings {
@@ -67,6 +68,12 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
   async setWakeTime(value: string) {
     set({ wakeTime: value });
     const settings = { ...pickSettings(get()), wakeTime: value };
+    await persistSettings(settings);
+    applySleepWindow(settings);
+  },
+
+  async importSettings(settings: AppSettings) {
+    set({ ...settings });
     await persistSettings(settings);
     applySleepWindow(settings);
   },

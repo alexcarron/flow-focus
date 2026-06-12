@@ -9,8 +9,8 @@ FlowFocus is a React 18 + Vite task management app that surfaces one task at a t
 ## Commands
 
 ```bash
-# Start dev server (port 4200)
-npm start
+# Start dev server (port 5174, hot reload)
+npm run dev
 
 # Run tests (Vitest)
 npm test
@@ -22,9 +22,22 @@ npm run build
 npm run deploy
 ```
 
-The app runs on port 4200 with no separate backend. Tasks are persisted to IndexedDB via Dexie.js.
+The app has no separate backend. Tasks are persisted to IndexedDB via Dexie.js.
 
-On Windows, `launchers/start-flow-focus.bat` (or `start-flow-focus-hidden.vbs`) starts the dev server if it isn't already running and opens the app in the browser. `launchers/stop-flow-focus.bat` stops it. See `launchers/README.md` for details.
+### Local hub
+
+In production-style local use, FlowFocus is built as a static site (`npm run build`)
+and served by the shared hub at `../hub` alongside other local web apps, at
+`http://localhost:4200/flow-focus`. This requires `base: '/flow-focus/'` in
+`vite.config.ts` and `<BrowserRouter basename="/flow-focus">` in `src/main.tsx` —
+both already set. After changing source code, re-run `npm run build` for the hub
+to pick up the change (no hub restart needed). During active development, use
+`npm run dev` (port 5174) for hot reload instead.
+
+On Windows, `launchers/start-flow-focus.bat` (or `start-flow-focus-hidden.vbs`) starts
+the hub if it isn't already running and opens `/flow-focus` in the browser.
+`launchers/stop-flow-focus.bat` stops the shared hub. See `launchers/README.md` and
+`../hub/README.md` for details.
 
 ## Tech Stack
 
@@ -73,6 +86,16 @@ Important: `setAutoFreeze(false)` is called to allow mutating Task class instanc
 
 - **`FlowFocusDB`** (`src/db/flowfocus.db.ts`) — Dexie database with `tasks` and `settings` tables (v2 schema).
 - **`serializeTask` / `deserializeRow`** (`src/db/task.serializer.ts`) — convert between `Task` instances and plain `PlainTaskRow` objects.
+
+### Backup & Restore (`src/utils/backup.ts`)
+
+A JSON export/import system, exposed via buttons on `/settings`:
+- `createBackup()` builds a `BackupData` object (`{ format: 'flow-focus-backup-v1', exportedAt, settings, tasks }`) from the current `useTasksStore`/`useSettingsStore` state. Each task's `stepsToStatusMap` is written as a plain `{ [step]: StepStatus }` object and dates as ISO strings for readability.
+- `downloadBackup(data, filenamePrefix)` downloads a pretty-printed JSON file (`<prefix>-<timestamp>.json`) via a `Blob` + anchor tag.
+- `readBackupFile(file)` / `isBackupData(value)` parse and validate an imported file.
+- `applyBackup(data)` calls `importSettings()` (settingsStore) and `importTasks()` (tasksStore), which fully replace current settings/tasks (clearing Dexie tables and the undo/redo stacks) and reconstruct `Task` instances the same way `loadTasks()` does.
+- Importing is destructive and requires user confirmation; if tasks exist beforehand, the current state is silently auto-exported first (`flow-focus-pre-import-backup-*.json`) as a safety net.
+- Exported files download via the browser; `backups/` is the intended local folder for keeping them (gitignored, except `.gitkeep`).
 
 ### Undo/Redo
 

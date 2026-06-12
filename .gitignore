@@ -46,3 +46,6 @@ testem.log
 
 # Local Launcher Files
 *.lnk
+
+# Backup exports
+/backups/*.json

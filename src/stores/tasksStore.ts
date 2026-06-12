@@ -8,6 +8,7 @@ import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
 import { db } from '../db/flowfocus.db';
 import { serializeTask, deserializeRow } from '../db/task.serializer';
+import type { BackupTask } from '../utils/backup';
 
 enablePatches();
 setAutoFreeze(false);
@@ -46,6 +47,7 @@ interface TasksActions {
 
   addTask: (description: string, timingOptions?: Partial<TaskTimingOptions>) => Promise<Task>;
   deleteTask: (task: Task) => Promise<void>;
+  importTasks: (backupTasks: BackupTask[]) => Promise<void>;
 
   undo: () => void;
   redo: () => void;
@@ -252,6 +254,36 @@ export const useTasksStore = create<TasksState & TasksActions>()(
       }
       tasksManager.deleteTask(task);
       set(state => { state.tasks = [...tasksManager.getTasks()]; });
+    },
+
+    async importTasks(backupTasks: BackupTask[]) {
+      tasksManager.clearTasks();
+      await db.tasks.clear();
+      for (const bt of backupTasks) {
+        const task = tasksManager.addCreatedTask(bt.description);
+        task.setStepsToStatusMap(new Map(Object.entries(bt.steps)));
+        task.setStartTime(bt.startTime ? new Date(bt.startTime) : null);
+        task.setEndTime(bt.endTime ? new Date(bt.endTime) : null);
+        task.setDeadline(bt.deadline ? new Date(bt.deadline) : null);
+        task.setMinRequiredTime(bt.minRequiredTime);
+        task.setMaxRequiredTime(bt.maxRequiredTime);
+        task.setRepeatInterval(bt.repeatInterval);
+        task.setMandatory(bt.isMandatory);
+        task.setComplete(bt.isComplete);
+        task.setSkipped(bt.isSkipped);
+        task.setLastActionedStep(bt.lastActionedStep);
+
+        if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {
+          task.onPastIntervalEndTime(new Date());
+        }
+
+        await persistTask(task);
+      }
+      set(state => {
+        state.tasks = [...tasksManager.getTasks()];
+        state.undoStack = [];
+        state.redoStack = [];
+      });
     },
 
     undo() {

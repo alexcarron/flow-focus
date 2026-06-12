@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "vite --port 4200",
+    "dev": "vite --port 5174",
     "build": "tsc && vite build",
     "test": "vitest",
     "deploy": "npm run build && gh-pages -d dist"
