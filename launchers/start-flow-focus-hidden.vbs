@@ -1,14 +1,13 @@
 Option Explicit
 
-Dim objShell, objFSO, objExec, strPath, strHubPath, strPort, strUrl, strOutput, q
+Dim objShell, objFSO, objExec, strPath, strPort, strUrl, strOutput, q
 
 Set objShell = CreateObject("WScript.Shell")
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 
-strPath = objFSO.GetParentFolderName(WScript.ScriptFullName)
-strHubPath = objFSO.GetParentFolderName(objFSO.GetParentFolderName(strPath)) & "\hub"
-strPort = "4200"
-strUrl = "http://localhost:" & strPort & "/flow-focus"
+strPath = objFSO.GetParentFolderName(objFSO.GetParentFolderName(WScript.ScriptFullName))
+strPort = "5174"
+strUrl = "http://localhost:" & strPort & "/flow-focus/"
 q = Chr(34)
 
 Set objExec = objShell.Exec("cmd /c netstat -ano | findstr " & q & ":" & strPort & " " & q & " | findstr LISTENING")
@@ -18,9 +17,12 @@ Loop
 strOutput = objExec.StdOut.ReadAll()
 
 If Trim(strOutput) = "" Then
-    objShell.CurrentDirectory = strHubPath
-    objShell.Run "cmd /c npm start", 0, False
-    WScript.Sleep 3000
+    objShell.CurrentDirectory = strPath
+    If Not objFSO.FolderExists(strPath & "\node_modules") Then
+        objShell.Run "cmd /c npm install", 1, True
+    End If
+    objShell.Run "cmd /c npm run dev", 0, False
+    WScript.Sleep 5000
 End If
 
 objShell.Run strUrl

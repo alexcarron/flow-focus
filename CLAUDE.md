@@ -34,10 +34,10 @@ both already set. After changing source code, re-run `npm run build` for the hub
 to pick up the change (no hub restart needed). During active development, use
 `npm run dev` (port 5174) for hot reload instead.
 
-On Windows, `launchers/start-flow-focus.bat` (or `start-flow-focus-hidden.vbs`) starts
-the hub if it isn't already running and opens `/flow-focus` in the browser.
-`launchers/stop-flow-focus.bat` stops the shared hub. See `launchers/README.md` and
-`../hub/README.md` for details.
+On Windows, `launchers/start-flow-focus.bat` (or `launchers/start-flow-focus-hidden.vbs`)
+starts FlowFocus's own dev server if it isn't already running and opens `/flow-focus/`
+in the browser. `launchers/stop-flow-focus.bat` stops that dev server. See
+`launchers/README.md` for details, including how to use the shared hub instead.
 
 ## Tech Stack
 

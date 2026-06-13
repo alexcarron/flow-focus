@@ -11,6 +11,8 @@ A task manager that only shows you one task at a time (whatever's' most importan
 - Run `npm run dev`
 - Open [http://localhost:5174](http://localhost:5174) in your browser
 
+On Windows, `launchers/start-flow-focus.bat` (or `start-flow-focus-hidden.vbs`) does this for you and opens the app in your browser. See `launchers/README.md`.
+
 Your tasks are saved in your browser (via IndexedDB). No account or server is needed.
 
 ### Running it as part of the Local Web Apps hub
@@ -25,7 +27,7 @@ If you do have the hub set up:
 - Start the hub (see `../hub/README.md`)
 - Open [http://localhost:4200/flow-focus](http://localhost:4200/flow-focus)
 
-On Windows, `launchers/start-flow-focus.bat` does both of these for you and opens the app in your browser. See `launchers/README.md`.
+On Windows, see [`../hub/launchers/README.md`](../hub/launchers/README.md) for one-click scripts to start/stop the hub.
 
 ## Usage Examples
 

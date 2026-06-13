@@ -1,10 +1,18 @@
 @echo off
 setlocal
 
-cd /d "%~dp0"
+set PORT=5174
+set FOUND=0
 
-echo FlowFocus is served by the shared Local Web Apps hub on port 4200.
-echo Stopping it will also stop every other app served from the hub.
-echo.
+for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":%PORT% " ^| findstr "LISTENING"') do (
+    taskkill /F /PID %%P >nul 2>&1
+    set FOUND=1
+)
 
-call "..\..\hub\stop-hub.bat"
+if "%FOUND%"=="1" (
+    echo FlowFocus dev server stopped.
+) else (
+    echo FlowFocus dev server is not running.
+)
+
+pause
