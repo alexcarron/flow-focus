@@ -9,21 +9,21 @@ import { enableMapSet } from 'immer';
 enableMapSet();
 startRecurringTaskTick();
 
-window.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.repeat) return;
-  if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
-    e.preventDefault();
-    useTasksStore.getState().undo();
-  } else if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-    e.preventDefault();
-    useTasksStore.getState().redo();
-  }
+window.addEventListener('keydown', (event: KeyboardEvent) => {
+	if (event.repeat) return;
+	if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+		event.preventDefault();
+		useTasksStore.getState().undo();
+	} else if (event.ctrlKey && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+		event.preventDefault();
+		useTasksStore.getState().redo();
+	}
 });
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter basename="/flow-focus">
-      <App />
-    </BrowserRouter>
-  </StrictMode>
+	<StrictMode>
+		<BrowserRouter basename="/flow-focus">
+			<App />
+		</BrowserRouter>
+	</StrictMode>
 );

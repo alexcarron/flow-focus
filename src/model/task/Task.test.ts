@@ -19,7 +19,7 @@ describe('Task', () => {
 			expect(task.getDescription()).toEqual('New Description');
 	});
 
-	describe('isRecurring', () =>  {
+	describe('isRecurring', () => {
 		it('should return true if task is recurring', () => {
 			task.makeRecurring(1000, new Date());
 			expect(task.isRecurring()).toBe(true);

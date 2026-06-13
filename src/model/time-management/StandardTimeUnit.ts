@@ -1,4 +1,4 @@
-export enum TimeUnitName  {
+export enum TimeUnitName {
 	Milliseconds = 'milliseconds',
 	Seconds = 'seconds',
 	Minutes = 'minutes',

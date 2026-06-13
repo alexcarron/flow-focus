@@ -15,33 +15,33 @@
 	/* Em Padding */
 	--text-padding: 0.5em;
 
-  /* Colors */
-  --primary-color: #2a7ccd;
-  --accent-color: #2ecc71;
-  --warning-color: #e4c129;
-  --light-background-color: #f9fbfb;
+	/* Colors */
+	--primary-color: #2a7ccd;
+	--accent-color: #2ecc71;
+	--warning-color: #e4c129;
+	--light-background-color: #f9fbfb;
 
-  --background-color: #f3f7f8;
-  --faint-background-color: #ebf1f2;
-  --inactive-background-color: #e3e6e6;
-  --warning-background-color: #f3e8b9;
-  --faint-warning-background-color: #e1d6a6;
+	--background-color: #f3f7f8;
+	--faint-background-color: #ebf1f2;
+	--inactive-background-color: #e3e6e6;
+	--warning-background-color: #f3e8b9;
+	--faint-warning-background-color: #e1d6a6;
 
-  --text-color: #2c3e50;
+	--text-color: #2c3e50;
 	--inactive-text-color: #2c3e50a0;
 	--faint-text-color: #2c3e5060;
 	--slight-text-color: #2c3e5020;
-  --red-text-color: #383a4b;
+	--red-text-color: #383a4b;
 
 	--icon-color: #000000;
 
-  /* Font sizes */
-  --font-size-xsmall: 0.8rem;
-  --font-size-small: 1rem;
-  --font-size-medium: 1.3rem;
-  --font-size-xmedium: 1.3rem;
-  --font-size-large: 1.5rem;
-  --font-size-xlarge: 3.2rem;
+	/* Font sizes */
+	--font-size-xsmall: 0.8rem;
+	--font-size-small: 1rem;
+	--font-size-medium: 1.3rem;
+	--font-size-xmedium: 1.3rem;
+	--font-size-large: 1.5rem;
+	--font-size-xlarge: 3.2rem;
 
 	/* Line height */
 	--line-height-xsmall: 1rem;
@@ -231,11 +231,11 @@ button:active, .icon-button:active {
 *>.tooltip {
 	visibility: hidden;
 	opacity: 0;
-  text-align: center;
+	text-align: center;
 
 	/* Position the tooltip around parent */
 	position: absolute;
-  z-index: -1;
+	z-index: -1;
 
 	transition: opacity 0.3s ease-in-out;
 
@@ -255,7 +255,7 @@ button:active, .icon-button:active {
 /* Show the tooltip text when you mouse over the tooltip container */
 *:hover>.tooltip {
 	opacity: 1;
-  visibility: visible;
+	visibility: visible;
 }
 
 
@@ -335,7 +335,7 @@ button:active, .icon-button:active {
 /* Input Controls Styling */
 [contenteditable], select, input {
 	display: inline-block;
-  white-space: normal;
+	white-space: normal;
 
 	border: 1px solid var(--faint-text-color);
 	border-radius: var(--border-radius-small);
@@ -347,13 +347,13 @@ button:active, .icon-button:active {
 
 .placeholder-text,
 [contenteditable]:empty:not(:focus):before {
-  color: var(--faint-text-color);
-  font-style: italic;
+	color: var(--faint-text-color);
+	font-style: italic;
 }
 
 [contenteditable]:empty:not(:focus):before {
 	cursor: text;
-  content: attr(placeholder);
+	content: attr(placeholder);
 }
 
 [contenteditable]:focus {
@@ -440,14 +440,14 @@ input[type="checkbox"]:checked {
 
 /* Table Styles */
 table {
-  border-collapse: collapse;
+	border-collapse: collapse;
 	width: 100%;
 
-  background: var(--primary-color);
-  background: -webkit-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
-  background: -o-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
-  background: -moz-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
-  background: linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+	background: var(--primary-color);
+	background: -webkit-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+	background: -o-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+	background: -moz-linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
+	background: linear-gradient(-68deg, var(--primary-color) , var(--accent-color));
 
 	border-radius: var(--border-radius-large);
 
@@ -462,7 +462,7 @@ table td:not(:first-child) {
 }
 
 table thead {
-  background-color: rgba(0,0,0, 0.1);
+	background-color: rgba(0,0,0, 0.1);
 }
 
 table td, table th {
@@ -473,15 +473,15 @@ table td, table th {
 }
 
 table tbody tr:hover {
-  background-color: rgba(255,255,255,0.1);
+	background-color: rgba(255,255,255,0.1);
 }
 
 table tbody td:hover {
-  background-color: rgba(255,255,255,0.2);
+	background-color: rgba(255,255,255,0.2);
 }
 
 table thead th:hover {
-  background-color: rgba(0,0,0,0.1);
+	background-color: rgba(0,0,0,0.1);
 }
 
 .hidden {

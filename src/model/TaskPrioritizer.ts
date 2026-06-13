@@ -100,12 +100,12 @@ export default class TaskPrioritizer {
 	}
 
 	private compareByActiveStatus(task1: Task, task2: Task, currentTime: Date): SortOrder {
-    if (task1.isActive(currentTime) && !task2.isActive(currentTime)) {
-        return SortOrder.FIRST_BEFORE_SECOND;  // task1 is active, task2 is not, so task1 comes first
-    } else if (!task1.isActive(currentTime) && task2.isActive(currentTime)) {
-        return SortOrder.SECOND_BEFORE_FIRST;   // task2 is active, task1 is not, so task2 comes first
-    }
-    return SortOrder.UNDETERMINED; // both tasks are either active or inactive
+		if (task1.isActive(currentTime) && !task2.isActive(currentTime)) {
+				return SortOrder.FIRST_BEFORE_SECOND;  // task1 is active, task2 is not, so task1 comes first
+		} else if (!task1.isActive(currentTime) && task2.isActive(currentTime)) {
+				return SortOrder.SECOND_BEFORE_FIRST;   // task2 is active, task1 is not, so task2 comes first
+		}
+		return SortOrder.UNDETERMINED; // both tasks are either active or inactive
 	}
 
 	private compareDuringDowntime(task1: Task, task2: Task, currentTime: Date): SortOrder {
@@ -151,9 +151,9 @@ export default class TaskPrioritizer {
 	 * @return - Whether the mandatory task should be priortized over the optional task.
 	 */
 	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, currentTime: Date): boolean {
-    let totalOptionalTasksDuration = 0;
+		let totalOptionalTasksDuration = 0;
 
-    for (const optionalTask of this.tasksManager.getTasks()) {
+		for (const optionalTask of this.tasksManager.getTasks()) {
 			if (
 				!optionalTask.getIsMandatory() &&
 				optionalTask.isActive(currentTime) &&
@@ -163,7 +163,7 @@ export default class TaskPrioritizer {
 			) {
 					totalOptionalTasksDuration += optionalTask.getMaxRequiredTime(currentTime);
 			}
-    }
+		}
 
 		return (
 			mandatoryTask.getMinSlackTime(currentTime) <

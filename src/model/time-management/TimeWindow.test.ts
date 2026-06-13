@@ -24,7 +24,7 @@ describe('TimeWindow', () => {
 		})
 
 		it('should throw error if hour is over 12 when string includes AM/PM', () => {
-			const time =  '13:00 PM';
+			const time = '13:00 PM';
 			expect(() => new TimeWindow(time, time)).toThrow();
 		})
 

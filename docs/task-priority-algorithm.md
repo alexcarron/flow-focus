@@ -6,7 +6,6 @@ The algorithm decides which single task to surface on the Focus Page, and also d
 
 First, it sorts all tasks, then is filters only the active, non-skipped tasks.
 
-
 ## Metric Definitions
 
 ### Active Task

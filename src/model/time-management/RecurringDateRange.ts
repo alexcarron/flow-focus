@@ -22,14 +22,14 @@ export default class RecurringDateRange {
 		const rangeStartTime = this.dateRange.getStartDate().getTime();
 		const rangeEndTime = this.dateRange.getEndDate().getTime();
 
-    let intervalIndex = Math.floor(
+		let intervalIndex = Math.floor(
 			(date.getTime() - rangeStartTime) /
 			this.repeatInterval
 		);
 
-    let intervalStart = rangeStartTime + intervalIndex * this.repeatInterval;
-    let intervalEnd = intervalStart + (rangeEndTime - rangeStartTime);
+		let intervalStart = rangeStartTime + intervalIndex * this.repeatInterval;
+		let intervalEnd = intervalStart + (rangeEndTime - rangeStartTime);
 
-    return date.getTime() >= intervalStart && date.getTime() <= intervalEnd;
+		return date.getTime() >= intervalStart && date.getTime() <= intervalEnd;
 	}
 }

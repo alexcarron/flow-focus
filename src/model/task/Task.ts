@@ -263,7 +263,7 @@ export default class Task {
 				return firstUncompletedStep;
 			}
 			else {
-				return  this.getFirstNotCompletedStep();
+				return this.getFirstNotCompletedStep();
 			}
 		}
 		else {
