@@ -91,7 +91,6 @@ export default function TaskCard({ task }: Props) {
 
 	return (
 		<div className="flex flex-col gap-4 p-6 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl max-w-xl w-full mx-auto">
-			{/* Progress bar */}
 			<div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
 				<div
 					className="h-full bg-indigo-500 rounded-full transition-all duration-300"
@@ -99,7 +98,6 @@ export default function TaskCard({ task }: Props) {
 				/>
 			</div>
 
-			{/* Description */}
 			<h2
 				ref={descRef}
 				contentEditable
@@ -108,7 +106,6 @@ export default function TaskCard({ task }: Props) {
 				className="text-2xl font-bold text-white outline-none cursor-text"
 			/>
 
-			{/* Steps */}
 			{task.hasNextStep() && (
 				<div className="flex flex-col gap-1">
 					{previousSteps.map(step => (
@@ -131,7 +128,6 @@ export default function TaskCard({ task }: Props) {
 				</div>
 			)}
 
-			{/* Time info */}
 			<div className="flex items-center gap-3 text-xs text-gray-400">
 				{startTime && startTime > currentTime && (
 					<span>Starts {formatDate(startTime)}</span>
@@ -150,7 +146,6 @@ export default function TaskCard({ task }: Props) {
 				)}
 			</div>
 
-			{/* Actions */}
 			<div className="flex gap-2 mt-2">
 				{isSkippable && (
 					<button

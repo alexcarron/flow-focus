@@ -47,7 +47,6 @@ export default class Duration {
 		const endAmount = endDuration.getAmountOfUnits();
 		const endUnit = endDuration.getTimeUnit().name;
 
-		// Handle cases where start and end are the same
 		if (
 			startDuration.getAmountOfUnits() === endDuration.getAmountOfUnits() &&
 			startDuration.getTimeUnit().name === endDuration.getTimeUnit().name
@@ -55,15 +54,12 @@ export default class Duration {
 			return [`${startAmount} ${startUnit}`, undefined];
 		}
 
-		// Handle cases where both are the same unit
 		if (
 			startDuration.getTimeUnit().name === endDuration.getTimeUnit().name
 		) {
-
 			return [`${startAmount}`, `${endAmount} ${startUnit}`];
 		}
 
-		// Handle cases where units are different
 		return [`${startAmount} ${startUnit}`, `${endAmount} ${endUnit}`];
 	}
 }

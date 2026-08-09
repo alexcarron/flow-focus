@@ -332,7 +332,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 export const selectPriorityTask = (state: TasksState): Task | null => {
 	const prioritizer = new TaskPrioritizer(tasksManager);
-	return prioritizer.getMostImportantTask(new Date());
+	return prioritizer.getPriorityTask(new Date());
 };
 
 export const selectTasksInPriorityOrder = (state: TasksState): Task[] => {

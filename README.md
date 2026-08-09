@@ -1,6 +1,6 @@
 # FlowFocus
 
-A task manager that only shows you one task at a time (whatever's' most important right now) so you don't have to decide what to do next.
+A task manager that only shows you one task at a time (whatever's most important right now) so you don't have to decide what to do next.
 
 ## How to Run It Yourself
 
@@ -88,3 +88,7 @@ Here are a few examples of the things you can do in Flow Focus with screenshots.
 ![Backup Exported](./screenshots/backup-exported.png)
 
 ![Imported Backup](./screenshots/imported-backup.png)
+
+## AI Disclosure
+
+This project was developed with the help of Claude Code via the CLI tool.

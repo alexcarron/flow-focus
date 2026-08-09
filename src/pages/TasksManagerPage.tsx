@@ -112,7 +112,6 @@ export default function TasksManagerPage() {
 
 	return (
 		<div className="p-4 overflow-x-auto">
-			{/* Controls */}
 			<div className="flex gap-2 mb-4 flex-wrap">
 				<button
 					onClick={toggleFilter}
@@ -212,12 +211,10 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 
 	return (
 		<tr className="border-b border-gray-800 align-top hover:bg-gray-900/50">
-			{/* Priority (implicit – no content, just ordering) */}
 			<td className="py-2 pr-3 text-gray-500 text-xs">
 				—
 			</td>
 
-			{/* Name */}
 			<td className="py-2 pr-3 min-w-[10rem] max-w-xs">
 				<TextInput
 					value={task.getDescription()}
@@ -226,7 +223,6 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 				/>
 			</td>
 
-			{/* Steps */}
 			<td className="py-2 pr-3 min-w-[8rem]">
 				<div className="flex flex-col gap-0.5">
 					{steps.map(step => (
@@ -246,28 +242,24 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 				</div>
 			</td>
 
-			{/* Time Available */}
 			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
 				{task.getDeadline()
 					? formatTime(task.getTimeToComplete(now))
 					: '∞'}
 			</td>
 
-			{/* Duration */}
 			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
 				{minMs !== null || maxMs !== null
 					? getDurationRange(minMs, maxMs, now)
 					: '—'}
 			</td>
 
-			{/* Repeat */}
 			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
 				{task.getRepeatInterval() !== null
 					? toDurationString(task.getRepeatInterval()!)
 					: '—'}
 			</td>
 
-			{/* Done */}
 			<td className="py-2 pr-3">
 				<CheckboxInput
 					value={task.getIsComplete()}
@@ -275,7 +267,6 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 				/>
 			</td>
 
-			{/* Mandatory */}
 			<td className="py-2 pr-3">
 				<CheckboxInput
 					value={task.getIsMandatory()}
@@ -283,17 +274,14 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 				/>
 			</td>
 
-			{/* Deadline */}
 			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
 				{formatDate(task.getDeadline(), '—')}
 			</td>
 
-			{/* Start */}
 			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
 				{displayStartTime ? formatDate(displayStartTime) : '—'}
 			</td>
 
-			{/* Actions */}
 			<td className="py-2">
 				<div className="flex gap-1">
 					<button

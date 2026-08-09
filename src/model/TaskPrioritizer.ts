@@ -1,5 +1,5 @@
 import SortOrder from './SortOrder';
-import Task from './task/Task'; // Assume this is your task model
+import Task from './task/Task';
 import TasksManager from './TasksManager';
 
 export default class TaskPrioritizer {
@@ -13,7 +13,7 @@ export default class TaskPrioritizer {
 		return this.tasksManager.getTasks();
 	}
 
-	public getMostImportantTask(currentTime: Date): Task | null {
+	public getPriorityTask(currentTime: Date): Task | null {
 		let prioritizedTasks = this.getTasksInPriorityOrder(this.getTasks(), currentTime);
 
 		prioritizedTasks = prioritizedTasks.filter(task => task.isActive(currentTime));
@@ -23,11 +23,10 @@ export default class TaskPrioritizer {
 				return null;
 		}
 
-		// Return the first task from the sorted prioritized tasks list
 		return prioritizedTasks[0];
 	}
 
-	private logPriotizedTask(task1: Task, task2: Task, priorityNumber: number, reason: string) {
+	private logPrioritizedTask(task1: Task, task2: Task, priorityNumber: number, reason: string) {
 		if (TaskPrioritizer.DO_LOG_PRIORITIES) {
 			let prioritizedTask, unprioritizedTask;
 
@@ -48,9 +47,6 @@ export default class TaskPrioritizer {
 		}
 	}
 
-	/**
-	 *
-	 */
 	public getTasksInPriorityOrder(tasksToPrioritize: Task[], currentTime: Date): Task[] {
 		let priorityTasks: Task[] = tasksToPrioritize;
 
@@ -60,10 +56,6 @@ export default class TaskPrioritizer {
 					this.compareByActiveStatus.bind(this), task1, task2, currentTime,
 					"Is active while other is completed, skipped, or in the future"
 				) ||
-				/* this.compareBy(
-					this.compareDuringDowntime, task1, task2, currentTime,
-					"Is mandatory with not downtime to skip it"
-				) || */
 				this.compareBy(
 					this.compareByMandatoryStatus.bind(this), task1, task2, currentTime,
 					"Is mandatory with not enough slack time to complete optional tasks first"
@@ -95,17 +87,17 @@ export default class TaskPrioritizer {
 		task1: Task, task2: Task, currentTime: Date, comparisonReason: string
 	) {
 		const comparison = compareFunction(task1, task2, currentTime);
-		if (comparison != SortOrder.UNDETERMINED) this.logPriotizedTask(task1, task2, comparison, comparisonReason);
+		if (comparison != SortOrder.UNDETERMINED) this.logPrioritizedTask(task1, task2, comparison, comparisonReason);
 		return comparison;
 	}
 
 	private compareByActiveStatus(task1: Task, task2: Task, currentTime: Date): SortOrder {
 		if (task1.isActive(currentTime) && !task2.isActive(currentTime)) {
-				return SortOrder.FIRST_BEFORE_SECOND;  // task1 is active, task2 is not, so task1 comes first
+				return SortOrder.FIRST_BEFORE_SECOND;
 		} else if (!task1.isActive(currentTime) && task2.isActive(currentTime)) {
-				return SortOrder.SECOND_BEFORE_FIRST;   // task2 is active, task1 is not, so task2 comes first
+				return SortOrder.SECOND_BEFORE_FIRST;
 		}
-		return SortOrder.UNDETERMINED; // both tasks are either active or inactive
+		return SortOrder.UNDETERMINED;
 	}
 
 	private compareDuringDowntime(task1: Task, task2: Task, currentTime: Date): SortOrder {
@@ -145,10 +137,10 @@ export default class TaskPrioritizer {
 	}
 
 	/**
-	 * Decides whether a mandatory task should be priortized over an optional one or if we should continue. If the first task is the optional task, you should reverse the return value.
+	 * Decides whether a mandatory task should be prioritized over an optional one or if we should continue. If the first task is the optional task, you should reverse the return value.
 	 *
 	 * @param mandatoryTask - The mandatory task.
-	 * @return - Whether the mandatory task should be priortized over the optional task.
+	 * @return - Whether the mandatory task should be prioritized over the optional task.
 	 */
 	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, currentTime: Date): boolean {
 		let totalOptionalTasksDuration = 0;

@@ -2,14 +2,14 @@ import Task from "./task/Task";
 
 export interface TaskRefiner {
 	/**
-	 * Creates steps for a task to ensure it is managable and actionable if it doesn't have steps
+	 * Creates steps for a task to ensure it is manageable and actionable if it doesn't have steps
 	 * @param task - The task to modify.
 	 * @return The modified task.
 	 */
 	createStepsForTask(task: Task): Task;
-	
+
 	/**
-	 * Modifies a task's description and steps to be more clear, unambigious, and understandable.
+	 * Modifies a task's description and steps to be more clear, unambiguous, and understandable.
 	 * @param task - The task to modify.
 	 * @return The modified task.
 	 */
@@ -23,9 +23,9 @@ export interface TaskRefiner {
 	makeTaskActionable(task: Task): Task;
 
 	/**
-	 * Seperates a task into smaller tasks if the task is not focused on a single action
+	 * Separates a task into smaller tasks if the task is not focused on a single action
 	 * @param task - The task to modify.
-	 * @return The seperated tasks
+	 * @return The separated tasks
 	 */
-	seperateTask(task: Task): Task[];
+	separateTask(task: Task): Task[];
 }

@@ -358,22 +358,17 @@ export default class Task {
 			step,
 			...currentSteps.slice(index)
 		]
-		console.log({currentSteps, newSteps});
 		this.editSteps(newSteps);
 	}
 
 	createStepLeftOfStep(adjacentStep: string) {
-		console.log(this.stepsToStatusMap);
 		const adjacentStepIndex = this.getStepIndex(adjacentStep);
 		this.insertStep("", adjacentStepIndex);
-		console.log(this.stepsToStatusMap);
 	}
 
 	createStepRightOfStep(adjacentStep: string) {
-		console.log(this.stepsToStatusMap);
 		const adjacentStepIndex = this.getStepIndex(adjacentStep);
 		this.insertStep("", adjacentStepIndex + 1);
-		console.log(this.stepsToStatusMap);
 	}
 
 	protected wasLastActionASkip(): boolean {

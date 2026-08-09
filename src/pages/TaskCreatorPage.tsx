@@ -80,7 +80,6 @@ export default function TaskCreatorPage() {
 				<p className="text-red-400 text-sm">{error}</p>
 			)}
 
-			{/* Description */}
 			<div className="flex flex-col gap-1">
 				<label className="text-xs text-gray-400">Task name *</label>
 				<input
@@ -92,7 +91,6 @@ export default function TaskCreatorPage() {
 				/>
 			</div>
 
-			{/* Steps */}
 			<div className="flex flex-col gap-1">
 				<label className="text-xs text-gray-400">Steps</label>
 				<ArrayInput
@@ -102,13 +100,11 @@ export default function TaskCreatorPage() {
 				/>
 			</div>
 
-			{/* Timing */}
 			<div className="flex flex-col gap-1">
 				<label className="text-xs text-gray-400 mb-1">Timing</label>
 				<TimingOptionsInput value={timing} onChange={setTiming} />
 			</div>
 
-			{/* Actions */}
 			<div className="flex gap-2">
 				<button
 					onClick={handleCreate}

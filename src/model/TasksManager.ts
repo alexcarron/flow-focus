@@ -69,7 +69,7 @@ export default class TasksManager {
 
 	public getPriorityTask(currentTime: Date): Task | null {
 		const taskPrioritizer: TaskPrioritizer = new TaskPrioritizer(this);
-		return taskPrioritizer.getMostImportantTask(currentTime);
+		return taskPrioritizer.getPriorityTask(currentTime);
 	}
 
 	getTasksInPriorityOrder(currentTime: Date): Task[] {
@@ -104,12 +104,6 @@ export default class TasksManager {
 			return !task.equals(taskDeleting);
 		});
 		const newNumTasks = this.tasks.length;
-
-		console.log({
-			currentNumTasks,
-			newNumTasks,
-			tasks: this.tasks
-		});
 
 		return newNumTasks < currentNumTasks;
 	}

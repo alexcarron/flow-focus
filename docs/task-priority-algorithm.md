@@ -4,7 +4,7 @@
 
 The algorithm decides which single task to surface on the Focus Page, and also determines the default sort order in the Task Manager.
 
-First, it sorts all tasks, then is filters only the active, non-skipped tasks.
+First, it sorts all tasks, then it filters only the active, non-skipped tasks.
 
 ## Metric Definitions
 
