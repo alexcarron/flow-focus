@@ -1,0 +1,127 @@
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	width: 100%;
+	max-width: 36rem;
+	margin: 0 auto;
+	padding: var(--space-xl);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-card);
+}
+
+.progressTrack {
+	height: 0.375rem;
+	background-color: var(--color-surface-inset);
+	border-radius: var(--radius-full);
+	overflow: hidden;
+}
+
+.progressBar {
+	height: 100%;
+	background-color: var(--color-accent-hover);
+	border-radius: var(--radius-full);
+	transition: width var(--transition-medium);
+}
+
+.description {
+	font-size: var(--font-size-2xl);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+	outline: none;
+	cursor: text;
+}
+
+.steps {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.stepRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.stepRowCurrent {
+	border-left: 2px solid var(--color-accent-border);
+	padding-left: var(--space-sm);
+}
+
+.stepCheckbox {
+	flex-shrink: 0;
+	width: 0.85rem;
+	height: 0.85rem;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--color-border-control);
+	background-color: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.stepRowCurrent .stepCheckbox {
+	width: 1rem;
+	height: 1rem;
+	border-color: var(--color-accent-border);
+}
+
+.stepCheckboxChecked {
+	background-color: var(--color-accent);
+	border-color: var(--color-accent);
+}
+
+.stepCheckmark {
+	width: 0.5rem;
+	height: 0.5rem;
+	color: var(--color-text-primary);
+}
+
+.previousStep {
+	font-size: var(--font-size-sm);
+	color: var(--color-text-faint);
+	text-decoration: line-through;
+}
+
+.currentStep {
+	font-size: var(--font-size-base);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+	outline: none;
+	cursor: text;
+}
+
+.upcomingStep {
+	font-size: var(--font-size-sm);
+	color: var(--color-text-subtle);
+}
+
+.meta {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	font-size: var(--font-size-xs);
+	color: var(--color-text-muted);
+}
+
+.timeLeft {
+	font-weight: var(--font-weight-semibold);
+	max-width: 200px;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.actions {
+	display: flex;
+	gap: var(--space-sm);
+	margin-top: var(--space-sm);
+}
+
+.actionGrows {
+	flex: 1;
+}

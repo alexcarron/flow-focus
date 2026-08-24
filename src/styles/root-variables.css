@@ -1,0 +1,65 @@
+:root {
+	color-scheme: dark;
+
+	--color-background: #030712;
+	--color-surface: #111827;
+	--color-surface-inset: #1f2937;
+	--color-surface-hover: #374151;
+	--color-surface-hover-strong: #4b5563;
+	--color-row-hover: rgba(17, 24, 39, 0.5);
+
+	--color-border: #1f2937;
+	--color-border-strong: #374151;
+	--color-border-control: #6b7280;
+
+	--color-text-primary: #ffffff;
+	--color-text-secondary: #d1d5db;
+	--color-text-muted: #9ca3af;
+	--color-text-subtle: #6b7280;
+	--color-text-faint: #4b5563;
+
+	--color-accent: #4f46e5;
+	--color-accent-hover: #6366f1;
+	--color-accent-border: #6366f1;
+
+	--color-danger: #ef4444;
+	--color-danger-text: #f87171;
+	--color-danger-text-hover: #fca5a5;
+	--color-danger-surface: #7f1d1d;
+	--color-danger-surface-subtle: rgba(239, 68, 68, 0.45);
+
+	--color-backdrop: rgba(0, 0, 0, 0.6);
+
+	--space-2xs: 0.125rem;
+	--space-xs: 0.25rem;
+	--space-sm: 0.5rem;
+	--space-md: 0.75rem;
+	--space-lg: 1rem;
+	--space-xl: 1.5rem;
+	--space-2xl: 2rem;
+
+	--radius-sm: 0.25rem;
+	--radius-md: 0.5rem;
+	--radius-lg: 0.75rem;
+	--radius-xl: 1rem;
+	--radius-full: 9999px;
+
+	--font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.875rem;
+	--font-size-base: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.25rem;
+	--font-size-2xl: 1.5rem;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+
+	--shadow-card: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+	--shadow-dialog: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+
+	--transition-fast: 150ms ease;
+	--transition-medium: 300ms ease;
+
+	--layer-modal: 50;
+}

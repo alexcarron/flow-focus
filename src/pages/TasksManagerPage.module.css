@@ -1,0 +1,110 @@
+.page {
+	padding: var(--space-lg);
+	overflow-x: auto;
+}
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+	margin-bottom: var(--space-lg);
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-size-sm);
+}
+
+.headerRow {
+	text-align: left;
+	color: var(--color-text-muted);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.columnHeader {
+	padding-bottom: var(--space-sm);
+	padding-right: var(--space-md);
+	font-weight: var(--font-weight-medium);
+}
+
+.sortableHeader {
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.sortableHeader:hover {
+	color: var(--color-text-primary);
+}
+
+.sortIndicator {
+	font-size: var(--font-size-xs);
+}
+
+.row {
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: top;
+}
+
+.row:hover {
+	background-color: var(--color-row-hover);
+}
+
+.cell {
+	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-xs);
+	white-space: nowrap;
+}
+
+.descriptionCell {
+	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	min-width: 10rem;
+	max-width: 20rem;
+}
+
+.stepsCell {
+	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	min-width: 8rem;
+}
+
+.checkboxCell {
+	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+}
+
+.actionsCell {
+	padding: var(--space-sm) 0;
+}
+
+.stepList {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.stepRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-xs);
+}
+
+.descriptionInput {
+	color: var(--color-text-primary);
+}
+
+.stepInput {
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+}
+
+.rowActions {
+	display: flex;
+	gap: var(--space-xs);
+}
+
+.emptyMessage {
+	color: var(--color-text-subtle);
+	text-align: center;
+	padding: var(--space-2xl) 0;
+}

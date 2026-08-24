@@ -5,6 +5,7 @@ import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import ArrayInput from '../components/inputs/ArrayInput';
 import TimingOptionsInput, { DEFAULT_DURATION } from '../components/inputs/TimingOptionsInput';
 import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
+import styles from './TaskCreatorPage.module.css';
 
 const DEFAULT_TIMING: TaskTimingOptions = {
 	startTime: null,
@@ -47,20 +48,15 @@ export default function TaskCreatorPage() {
 			setError('Task name is required');
 			return;
 		}
-		const invalidSteps = steps.filter(s => s.trim() === '');
-		if (invalidSteps.length > 0) {
-			setError('All steps must have text');
-			return;
-		}
+
+		const cleanedSteps = steps.map(step => step.trim()).filter(step => step !== '');
 
 		const task = await addTask(name.trim(), timing);
-		task.editSteps(steps);
+		task.editSteps(cleanedSteps);
 
-		// Persist the task with steps (addTask already handles timing/recurring)
 		await useTasksStore.getState().persistChangedTasks([task]);
 		useTasksStore.getState().refreshTasks();
 
-		// Stay on the page; only clear the name so timing/steps can be reused
 		setName('');
 		setError(null);
 	}
@@ -73,50 +69,47 @@ export default function TaskCreatorPage() {
 	}
 
 	return (
-		<div className="max-w-lg mx-auto p-6 flex flex-col gap-5">
-			<h1 className="text-xl font-bold text-white">Create Task</h1>
+		<div className={styles.page}>
+			<h1>Create Task</h1>
 
 			{error && (
-				<p className="text-red-400 text-sm">{error}</p>
+				<p className={styles.errorMessage}>{error}</p>
 			)}
 
-			<div className="flex flex-col gap-1">
-				<label className="text-xs text-gray-400">Task name *</label>
+			<div className="field-group">
+				<label className="field-label">Task name *</label>
 				<input
 					type="text"
 					value={name}
 					onChange={event => { setName(event.target.value); setError(null); }}
 					placeholder="What needs to be done?"
-					className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+					className="field large"
 				/>
 			</div>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-xs text-gray-400">Steps</label>
+			<div className="field-group">
+				<label className="field-label">Steps</label>
 				<ArrayInput
 					value={steps}
 					onChange={setSteps}
-					placeholder="Add a step…"
+					placeholder="Type a step, or paste a checklist…"
 				/>
 			</div>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-xs text-gray-400 mb-1">Timing</label>
+			<div className="field-group">
+				<label className="field-label">Timing</label>
 				<TimingOptionsInput value={timing} onChange={setTiming} />
 			</div>
 
-			<div className="flex gap-2">
+			<div className={styles.actions}>
 				<button
 					onClick={handleCreate}
 					title="Create Task (Ctrl+Enter)"
-					className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+					className={`button primary ${styles.submitButton}`}
 				>
 					Create Task
 				</button>
-				<button
-					onClick={handleReset}
-					className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
-				>
+				<button onClick={handleReset} className="button">
 					Reset
 				</button>
 			</div>

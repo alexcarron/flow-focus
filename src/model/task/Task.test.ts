@@ -476,6 +476,50 @@ describe('Task', () => {
 		});
 	});
 
+	describe('completeStepAndPrecedingSteps', () => {
+		it('should complete the given step and any unfinished steps before it', () => {
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.addStep('Step 3');
+
+			task.completeStepAndPrecedingSteps('Step 2');
+
+			expect(task.isStepComplete('Step 1')).toBe(true);
+			expect(task.isStepComplete('Step 2')).toBe(true);
+			expect(task.isStepComplete('Step 3')).toBe(false);
+			expect(task.getNextStep()).toEqual('Step 3');
+		});
+
+		it('should behave like completing just that step when it is the first uncompleted step', () => {
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+
+			task.completeStepAndPrecedingSteps('Step 1');
+
+			expect(task.isStepComplete('Step 1')).toBe(true);
+			expect(task.isStepComplete('Step 2')).toBe(false);
+			expect(task.getNextStep()).toEqual('Step 2');
+		});
+
+		it('should complete the task when the last step is completed', () => {
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+
+			task.completeStepAndPrecedingSteps('Step 2');
+
+			expect(task.getIsComplete()).toBe(true);
+			expect(task.getNextStep()).toBeNull();
+		});
+
+		it('should not throw or change anything for a step that does not exist', () => {
+			task.addStep('Step 1');
+
+			task.completeStepAndPrecedingSteps('Missing Step');
+
+			expect(task.isStepComplete('Step 1')).toBe(false);
+		});
+	});
+
 	describe('completeAllSteps', () => {
 
 		beforeEach(() => {

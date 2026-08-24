@@ -34,6 +34,7 @@ interface TasksActions {
 
 	completeNextStep: (task: Task) => void;
 	completeAllSteps: (task: Task) => void;
+	completeStepAndPrecedingSteps: (task: Task, step: string) => void;
 	skipNextStep: (task: Task) => void;
 	deferTask: (task: Task, ms: number) => void;
 	setDescription: (task: Task, description: string) => void;
@@ -180,6 +181,10 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		completeAllSteps(task: Task) {
 			get().executeWithPatches(() => task.completeAllSteps(), [task]);
+		},
+
+		completeStepAndPrecedingSteps(task: Task, step: string) {
+			get().executeWithPatches(() => task.completeStepAndPrecedingSteps(step), [task]);
 		},
 
 		skipNextStep(task: Task) {

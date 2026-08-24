@@ -6,6 +6,7 @@ import { formatDate, formatTime } from '../utils/formatters';
 import TextInput from '../components/inputs/TextInput';
 import CheckboxInput from '../components/inputs/CheckboxInput';
 import TimingOptionsPopup from '../components/TimingOptionsPopup';
+import styles from './TasksManagerPage.module.css';
 
 enum Filter { None, Active, MustStartToday }
 enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval }
@@ -111,33 +112,30 @@ export default function TasksManagerPage() {
 	}
 
 	return (
-		<div className="p-4 overflow-x-auto">
-			<div className="flex gap-2 mb-4 flex-wrap">
-				<button
-					onClick={toggleFilter}
-					className="px-3 py-1 text-xs rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700"
-				>
+		<div className={styles.page}>
+			<div className={styles.toolbar}>
+				<button onClick={toggleFilter} className="button small outlined">
 					Filter: {FILTER_LABELS[filter]}
 				</button>
 			</div>
 
-			<table className="w-full text-sm border-collapse">
+			<table className={styles.table}>
 				<thead>
-					<tr className="text-left text-gray-400 border-b border-gray-800">
+					<tr className={styles.headerRow}>
 						{(Object.entries(SORT_LABELS) as [string, string][]).map(([key, label]) => (
 							<th
 								key={key}
-								className="pb-2 pr-3 font-medium cursor-pointer hover:text-white select-none whitespace-nowrap"
+								className={`${styles.columnHeader} ${styles.sortableHeader}`}
 								onClick={() => toggleSort(parseInt(key) as SortBy)}
 							>
-								{label} <span className="text-xs">{sortIcon(parseInt(key) as SortBy)}</span>
+								{label} <span className={styles.sortIndicator}>{sortIcon(parseInt(key) as SortBy)}</span>
 							</th>
 						))}
-						<th className="pb-2 font-medium text-gray-400">Done</th>
-						<th className="pb-2 font-medium text-gray-400">Mandatory</th>
-						<th className="pb-2 font-medium text-gray-400">Deadline</th>
-						<th className="pb-2 font-medium text-gray-400">Start</th>
-						<th className="pb-2 font-medium text-gray-400">Actions</th>
+						<th className={styles.columnHeader}>Done</th>
+						<th className={styles.columnHeader}>Mandatory</th>
+						<th className={styles.columnHeader}>Deadline</th>
+						<th className={styles.columnHeader}>Start</th>
+						<th className={styles.columnHeader}>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -154,7 +152,7 @@ export default function TasksManagerPage() {
 			</table>
 
 			{displayed.length === 0 && (
-				<p className="text-gray-500 text-center py-8">No tasks match the current filter</p>
+				<p className={styles.emptyMessage}>No tasks match the current filter</p>
 			)}
 
 			<TimingOptionsPopup
@@ -210,23 +208,23 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 	}
 
 	return (
-		<tr className="border-b border-gray-800 align-top hover:bg-gray-900/50">
-			<td className="py-2 pr-3 text-gray-500 text-xs">
+		<tr className={styles.row}>
+			<td className={styles.cell}>
 				—
 			</td>
 
-			<td className="py-2 pr-3 min-w-[10rem] max-w-xs">
+			<td className={styles.descriptionCell}>
 				<TextInput
 					value={task.getDescription()}
 					onChange={v => store.setDescription(task, v)}
-					className="text-white"
+					className={styles.descriptionInput}
 				/>
 			</td>
 
-			<td className="py-2 pr-3 min-w-[8rem]">
-				<div className="flex flex-col gap-0.5">
+			<td className={styles.stepsCell}>
+				<div className={styles.stepList}>
 					{steps.map(step => (
-						<div key={step} className="flex items-center gap-1">
+						<div key={step} className={styles.stepRow}>
 							<CheckboxInput
 								value={task.isStepComplete(step)}
 								onChange={v => store.setStepComplete(task, step, v)}
@@ -235,65 +233,65 @@ function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
 								value={step}
 								onChange={newVal => onStepChange(step, newVal)}
 								onKeyDown={e => onStepKeyDown(step, e)}
-								className="text-gray-300 text-xs"
+								className={styles.stepInput}
 							/>
 						</div>
 					))}
 				</div>
 			</td>
 
-			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
+			<td className={styles.cell}>
 				{task.getDeadline()
 					? formatTime(task.getTimeToComplete(now))
 					: '∞'}
 			</td>
 
-			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
+			<td className={styles.cell}>
 				{minMs !== null || maxMs !== null
 					? getDurationRange(minMs, maxMs, now)
 					: '—'}
 			</td>
 
-			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
+			<td className={styles.cell}>
 				{task.getRepeatInterval() !== null
 					? toDurationString(task.getRepeatInterval()!)
 					: '—'}
 			</td>
 
-			<td className="py-2 pr-3">
+			<td className={styles.checkboxCell}>
 				<CheckboxInput
 					value={task.getIsComplete()}
 					onChange={v => store.setComplete(task, v)}
 				/>
 			</td>
 
-			<td className="py-2 pr-3">
+			<td className={styles.checkboxCell}>
 				<CheckboxInput
 					value={task.getIsMandatory()}
 					onChange={v => store.setMandatory(task, v)}
 				/>
 			</td>
 
-			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
+			<td className={styles.cell}>
 				{formatDate(task.getDeadline(), '—')}
 			</td>
 
-			<td className="py-2 pr-3 text-gray-400 text-xs whitespace-nowrap">
+			<td className={styles.cell}>
 				{displayStartTime ? formatDate(displayStartTime) : '—'}
 			</td>
 
-			<td className="py-2">
-				<div className="flex gap-1">
+			<td className={styles.actionsCell}>
+				<div className={styles.rowActions}>
 					<button
 						onClick={onOpenTiming}
-						className="px-2 py-0.5 text-xs rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+						className="button tiny"
 						title="Edit timing"
 					>
 						⏱
 					</button>
 					<button
 						onClick={() => store.deleteTask(task)}
-						className="px-2 py-0.5 text-xs rounded bg-gray-800 hover:bg-red-900 text-gray-400 hover:text-red-300"
+						className="button tiny danger"
 						title="Delete task"
 					>
 						✕

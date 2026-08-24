@@ -3,6 +3,7 @@ import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import DatetimeInput from './DatetimeInput';
 import DurationInput from './DurationInput';
 import CheckboxInput from './CheckboxInput';
+import styles from './TimingOptionsInput.module.css';
 
 interface Props {
 	value: TaskTimingOptions;
@@ -29,7 +30,7 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 	}
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className={styles.fields}>
 			<DatetimeInput
 				label="Start time"
 				value={local.startTime}
@@ -55,7 +56,7 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 				value={local.maxDuration}
 				onChange={maxDuration => update({ maxDuration })}
 			/>
-			<div className="flex items-center gap-2">
+			<div className={styles.repeatToggle}>
 				<CheckboxInput
 					value={local.repeatInterval !== null}
 					onChange={checked => update({ repeatInterval: checked ? DEFAULT_DURATION : null })}

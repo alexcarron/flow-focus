@@ -1,0 +1,22 @@
+.page {
+	max-width: 32rem;
+	margin: 0 auto;
+	padding: var(--space-xl);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+}
+
+.errorMessage {
+	color: var(--color-danger-text);
+	font-size: var(--font-size-sm);
+}
+
+.actions {
+	display: flex;
+	gap: var(--space-sm);
+}
+
+.submitButton {
+	flex: 1;
+}

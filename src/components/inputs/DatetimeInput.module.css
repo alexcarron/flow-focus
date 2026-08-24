@@ -1,0 +1,18 @@
+.quickActions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+}
+
+.clearButton {
+	padding: var(--space-2xs) var(--space-sm);
+	border: none;
+	background: transparent;
+	color: var(--color-text-subtle);
+	font-size: var(--font-size-xs);
+	transition: color var(--transition-fast);
+}
+
+.clearButton:hover {
+	color: var(--color-danger-text);
+}

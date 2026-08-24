@@ -1,0 +1,57 @@
+.app {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+.nav {
+	display: flex;
+	gap: var(--space-lg);
+	padding: var(--space-md);
+	background-color: var(--color-surface);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.navLink {
+	padding: var(--space-xs) var(--space-md);
+	border-radius: var(--radius-sm);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-muted);
+	transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.navLink:hover {
+	color: var(--color-text-primary);
+}
+
+.navLinkActive {
+	background-color: var(--color-accent);
+	color: var(--color-text-primary);
+}
+
+.content {
+	flex: 1;
+}
+
+.loading {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.spinner {
+	width: 2rem;
+	height: 2rem;
+	border: 2px solid var(--color-accent-hover);
+	border-top-color: transparent;
+	border-radius: var(--radius-full);
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatTime } from '../../utils/formatters';
 import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../config/shortcuts';
+import styles from './DurationInput.module.css';
 
 interface Props {
 	value: number | null;
@@ -80,15 +81,15 @@ export default function DurationInput({ value, onChange, label, className = '' }
 	}
 
 	return (
-		<div className={`flex flex-col gap-1 ${className}`}>
-			{label && <label className="text-xs text-gray-400">{label}</label>}
-			<div className="flex items-center gap-2">
+		<div className={`field-group ${className}`}>
+			{label && <label className="field-label">{label}</label>}
+			<div className={styles.control}>
 				<button
 					type="button"
 					tabIndex={-1}
 					title={`-10 units (${formatShortcut(shortcuts.decrement10)})`}
 					onClick={() => adjust(-10)}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					-10
 				</button>
@@ -97,7 +98,7 @@ export default function DurationInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`-1 unit (${formatShortcut(shortcuts.decrement1)})`}
 					onClick={() => adjust(-1)}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					-1
 				</button>
@@ -105,7 +106,7 @@ export default function DurationInput({ value, onChange, label, className = '' }
 					type="number"
 					min={0}
 					value={amount}
-					className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500 text-center"
+					className={`field ${styles.amount}`}
 					onChange={event => {
 						const parsedValue = parseFloat(event.target.value);
 						onChange(isNaN(parsedValue) ? null : Math.round(parsedValue * unitMs));
@@ -115,7 +116,7 @@ export default function DurationInput({ value, onChange, label, className = '' }
 				<select
 					value={unitMs}
 					tabIndex={-1}
-					className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500"
+					className="field"
 					onChange={event => {
 						const newUnitMs = parseInt(event.target.value);
 						setUnitMs(newUnitMs);
@@ -131,7 +132,7 @@ export default function DurationInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`+1 unit (${formatShortcut(shortcuts.increment1)})`}
 					onClick={() => adjust(1)}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					+1
 				</button>
@@ -140,13 +141,13 @@ export default function DurationInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`+10 units (${formatShortcut(shortcuts.increment10)})`}
 					onClick={() => adjust(10)}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					+10
 				</button>
 			</div>
 			{value !== null && (
-				<span className="text-xs text-gray-500">
+				<span className={styles.hint}>
 					{formatTime(value)}
 				</span>
 			)}

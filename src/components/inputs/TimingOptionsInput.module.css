@@ -1,0 +1,11 @@
+.fields {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.repeatToggle {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}

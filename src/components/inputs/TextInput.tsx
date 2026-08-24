@@ -26,7 +26,7 @@ export default function TextInput({ value, onChange, placeholder, className = ''
 			contentEditable
 			suppressContentEditableWarning
 			data-placeholder={placeholder}
-			className={`outline-none min-w-[4ch] empty:before:content-[attr(data-placeholder)] empty:before:text-gray-500 ${className}`}
+			className={`editable-text ${className}`}
 			onCompositionStart={() => { isComposing.current = true; }}
 			onCompositionEnd={() => { isComposing.current = false; }}
 			onInput={event => {

@@ -17,7 +17,7 @@ export default function NumberInput({ value, onChange, min, max, step = 1, place
 			max={max}
 			step={step}
 			placeholder={placeholder}
-			className={`bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500 ${className}`}
+			className={`field ${className}`}
 			onChange={e => {
 				const v = e.target.value;
 				onChange(v === '' ? null : parseFloat(v));

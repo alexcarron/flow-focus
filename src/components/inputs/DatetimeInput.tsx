@@ -1,6 +1,7 @@
 import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../config/shortcuts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import Time from '../../model/time-management/Time';
+import styles from './DatetimeInput.module.css';
 
 interface Props {
 	value: Date | null;
@@ -81,24 +82,24 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 	}
 
 	return (
-		<div className={`flex flex-col gap-1 ${className}`}>
-			{label && <label className="text-xs text-gray-400">{label}</label>}
+		<div className={`field-group ${className}`}>
+			{label && <label className="field-label">{label}</label>}
 			<input
 				type="datetime-local"
 				value={value ? toLocalDatetimeString(value) : ''}
-				className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+				className="field"
 				onChange={event => {
 					onChange(event.target.value ? new Date(event.target.value) : null);
 				}}
 				onKeyDown={handleKeyDown}
 			/>
-			<div className="flex gap-1 flex-wrap">
+			<div className={styles.quickActions}>
 				<button
 					type="button"
 					tabIndex={-1}
 					title={`Today (${formatShortcut(shortcuts.today)})`}
 					onClick={() => onChange(toToday(value))}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					Today
 				</button>
@@ -107,7 +108,7 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`−1 day (${formatShortcut(shortcuts.prevDay)})`}
 					onClick={() => onChange(adjustDate(value, -1))}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					−1d
 				</button>
@@ -116,7 +117,7 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`+1 day (${formatShortcut(shortcuts.nextDay)})`}
 					onClick={() => onChange(adjustDate(value, 1))}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					+1d
 				</button>
@@ -125,7 +126,7 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`Morning ${morningTime} (${formatShortcut(shortcuts.morning)})`}
 					onClick={() => onChange(setTimeOfDay(value, morning.getHour(), morning.getMinute()))}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					Morning
 				</button>
@@ -134,7 +135,7 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 					tabIndex={-1}
 					title={`Night ${nightTime} (${formatShortcut(shortcuts.night)})`}
 					onClick={() => onChange(setTimeOfDay(value, night.getHour(), night.getMinute()))}
-					className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+					className="button adjust"
 				>
 					Night
 				</button>
@@ -143,7 +144,7 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 						type="button"
 						tabIndex={-1}
 						onClick={() => onChange(null)}
-						className="px-2 py-0.5 text-xs text-gray-500 hover:text-red-400"
+						className={styles.clearButton}
 					>
 						Clear
 					</button>

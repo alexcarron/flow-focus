@@ -2,12 +2,7 @@ import { useRef, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTasksStore } from '../stores/tasksStore';
 import { applyBackup, createBackup, downloadBackup, readBackupFile } from '../utils/backup';
-
-const TIME_INPUT_CLASSES =
-	'bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]';
-
-const BUTTON_CLASSES =
-	'bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm font-medium text-white hover:border-indigo-500 transition-colors';
+import styles from './SettingsPage.module.css';
 
 export default function SettingsPage() {
 	const morningTime = useSettingsStore(s => s.morningTime);
@@ -55,81 +50,81 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="max-w-lg mx-auto p-6 flex flex-col gap-8">
-			<h1 className="text-xl font-bold text-white">Settings</h1>
+		<div className={styles.page}>
+			<h1>Settings</h1>
 
-			<section className="flex flex-col gap-3">
+			<section className={styles.section}>
 				<div>
-					<h2 className="text-sm font-semibold text-gray-300">Time Shortcuts</h2>
-					<p className="text-xs text-gray-500 mt-1">
+					<h2 className={styles.sectionHeading}>Time Shortcuts</h2>
+					<p className={styles.sectionDescription}>
 						Used by the "Morning" and "Night" quick-set buttons when picking a date and time.
 					</p>
 				</div>
 
-				<div className="flex flex-col gap-1">
-					<label className="text-xs text-gray-400">Morning</label>
+				<div className="field-group">
+					<label className="field-label">Morning</label>
 					<input
 						type="time"
 						value={morningTime}
 						onChange={event => setMorningTime(event.target.value)}
-						className={TIME_INPUT_CLASSES}
+						className="field large"
 					/>
 				</div>
 
-				<div className="flex flex-col gap-1">
-					<label className="text-xs text-gray-400">Night</label>
+				<div className="field-group">
+					<label className="field-label">Night</label>
 					<input
 						type="time"
 						value={nightTime}
 						onChange={event => setNightTime(event.target.value)}
-						className={TIME_INPUT_CLASSES}
+						className="field large"
 					/>
 				</div>
 			</section>
 
-			<section className="flex flex-col gap-3">
+			<section className={styles.section}>
 				<div>
-					<h2 className="text-sm font-semibold text-gray-300">Sleep Schedule</h2>
-					<p className="text-xs text-gray-500 mt-1">
+					<h2 className={styles.sectionHeading}>Sleep Schedule</h2>
+					<p className={styles.sectionDescription}>
 						Time spent asleep is subtracted when calculating how much time you have left to complete a task.
 					</p>
 				</div>
 
-				<div className="flex flex-col gap-1">
-					<label className="text-xs text-gray-400">Bedtime</label>
+				<div className="field-group">
+					<label className="field-label">Bedtime</label>
 					<input
 						type="time"
 						value={bedtime}
 						onChange={event => setBedtime(event.target.value)}
-						className={TIME_INPUT_CLASSES}
+						className="field large"
 					/>
 				</div>
 
-				<div className="flex flex-col gap-1">
-					<label className="text-xs text-gray-400">Wake-up time</label>
+				<div className="field-group">
+					<label className="field-label">Wake-up time</label>
 					<input
 						type="time"
 						value={wakeTime}
 						onChange={event => setWakeTime(event.target.value)}
-						className={TIME_INPUT_CLASSES}
+						className="field large"
 					/>
 				</div>
 			</section>
 
-			<section className="flex flex-col gap-3">
+			<section className={styles.section}>
 				<div>
-					<h2 className="text-sm font-semibold text-gray-300">Backup & Restore</h2>
-					<p className="text-xs text-gray-500 mt-1">
+					<h2 className={styles.sectionHeading}>Backup & Restore</h2>
+					<p className={styles.sectionDescription}>
 						Export all tasks and settings to a JSON file, or import a previously exported file.
 						Importing replaces all current tasks and settings.
 					</p>
 				</div>
 
-				<div className="flex gap-2">
-					<button onClick={handleExport} className={BUTTON_CLASSES}>
+				<div className={styles.buttonRow}>
+					<button onClick={handleExport} className="button outlined">
 						Export Backup
 					</button>
-					<button onClick={() => fileInputRef.current?.click()} className={BUTTON_CLASSES}>
+					<button onClick={() => fileInputRef.current?.click()} className="button outlined">
 						Import Backup
 					</button>
 					<input
@@ -137,11 +132,11 @@ export default function SettingsPage() {
 						type="file"
 						accept="application/json"
 						onChange={handleImportFileChange}
-						className="hidden"
+						className={styles.hiddenFileInput}
 					/>
 				</div>
 
-				{backupStatus && <p className="text-xs text-gray-400">{backupStatus}</p>}
+				{backupStatus && <p className={styles.statusMessage}>{backupStatus}</p>}
 			</section>
 		</div>
 	);

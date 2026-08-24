@@ -1,0 +1,48 @@
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: var(--layer-modal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-lg);
+}
+
+.modal-backdrop {
+	position: absolute;
+	inset: 0;
+	background-color: var(--color-backdrop);
+	pointer-events: none;
+}
+
+.modal {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	width: 100%;
+	max-width: 20rem;
+	padding: var(--space-xl);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-dialog);
+}
+
+.modal.wide {
+	max-width: 24rem;
+	max-height: 90vh;
+	overflow-y: auto;
+}
+
+.modal-title {
+	font-size: var(--font-size-lg);
+	font-weight: var(--font-weight-semibold);
+}
+
+.modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-sm);
+}

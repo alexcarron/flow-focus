@@ -1,0 +1,40 @@
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-xs);
+}
+
+.input {
+	flex: 1;
+	min-width: 0;
+}
+
+.removeButton {
+	width: 1.75rem;
+	height: 1.75rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: var(--color-danger);
+	opacity: 0.7;
+	transition: opacity var(--transition-fast), background-color var(--transition-fast);
+}
+
+.removeButton:hover {
+	opacity: 1;
+	background-color: var(--color-danger-surface-subtle);
+}
+
+.removeIcon {
+	width: 1rem;
+	height: 1rem;
+}

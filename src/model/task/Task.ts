@@ -397,6 +397,17 @@ export default class Task {
 		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
 	}
 
+	completeStepAndPrecedingSteps(step: string) {
+		const stepIndex = this.getStepIndex(step);
+		if (stepIndex === -1) return;
+
+		this.getSteps().slice(0, stepIndex + 1).forEach(stepToComplete => {
+			if (this.stepsToStatusMap.get(stepToComplete) !== StepStatus.COMPLETED) {
+				this.completeStep(stepToComplete);
+			}
+		});
+	}
+
 	completeNextStep() {
 		if (!this.hasSteps()) {
 			this.complete();

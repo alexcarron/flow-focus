@@ -1,1 +1,5 @@
-@import "tailwindcss";
+@import "./styles/root-variables.css";
+@import "./styles/base-styles.css";
+@import "./styles/button-styles.css";
+@import "./styles/field-styles.css";
+@import "./styles/modal-styles.css";

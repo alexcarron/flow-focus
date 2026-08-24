@@ -5,6 +5,7 @@ import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { formatDate } from '../utils/formatters';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
+import styles from './TaskCard.module.css';
 
 interface Props {
 	task: Task;
@@ -71,9 +72,9 @@ export default function TaskCard({ task }: Props) {
 	const progress = task.getProgress();
 	const progressPct = progress * 94 + 3;
 	const isSkippable = !task.isUrgent(currentTime);
-	const previousSteps = task.getPreviousSteps();
 	const nextStep = task.getNextStep();
-	const upcomingSteps = task.getUpcomingSteps();
+	const steps = task.getSteps();
+	const nextStepIndex = nextStep === null ? -1 : task.getStepIndex(nextStep);
 
 	function onDescriptionBlur(event: React.FocusEvent<HTMLHeadingElement>) {
 		const newDesc = event.currentTarget.textContent ?? '';
@@ -89,11 +90,20 @@ export default function TaskCard({ task }: Props) {
 		}
 	}
 
+	function onStepCheckboxChange(step: string, isChecked: boolean) {
+		if (isChecked) {
+			store.completeStepAndPrecedingSteps(task, step);
+		}
+		else {
+			store.setStepComplete(task, step, false);
+		}
+	}
+
 	return (
-		<div className="flex flex-col gap-4 p-6 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl max-w-xl w-full mx-auto">
-			<div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+		<div className={styles.card}>
+			<div className={styles.progressTrack}>
 				<div
-					className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+					className={styles.progressBar}
 					style={{ width: `${progressPct}%` }}
 				/>
 			</div>
@@ -103,32 +113,56 @@ export default function TaskCard({ task }: Props) {
 				contentEditable
 				suppressContentEditableWarning
 				onBlur={onDescriptionBlur}
-				className="text-2xl font-bold text-white outline-none cursor-text"
+				className={styles.description}
 			/>
 
 			{task.hasNextStep() && (
-				<div className="flex flex-col gap-1">
-					{previousSteps.map(step => (
-						<span key={step} className="text-sm text-gray-600 line-through">{step}</span>
-					))}
+				<div className={styles.steps}>
+					{steps.map((step, stepIndex) => {
+						const isCompleted = task.isStepComplete(step);
+						const isCurrentStep = step === nextStep;
+						const isPreviousStep = nextStepIndex !== -1 && stepIndex < nextStepIndex;
 
-					{nextStep && (
-						<span
-							ref={nextStepRef}
-							contentEditable
-							suppressContentEditableWarning
-							onBlur={onNextStepBlur}
-							className="text-base text-white font-medium outline-none cursor-text border-l-2 border-indigo-500 pl-2"
-						/>
-					)}
+						return (
+							<div
+								key={step}
+								className={isCurrentStep ? `${styles.stepRow} ${styles.stepRowCurrent}` : styles.stepRow}
+							>
+								<div
+									role="checkbox"
+									aria-checked={isCompleted}
+									tabIndex={0}
+									onClick={() => onStepCheckboxChange(step, !isCompleted)}
+									onKeyDown={event => {
+										if (event.key === ' ' || event.key === 'Enter') onStepCheckboxChange(step, !isCompleted);
+									}}
+									className={isCompleted ? `${styles.stepCheckbox} ${styles.stepCheckboxChecked}` : styles.stepCheckbox}
+								>
+									{isCompleted && (
+										<svg className={styles.stepCheckmark} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+											<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+										</svg>
+									)}
+								</div>
 
-					{upcomingSteps.map(step => (
-						<span key={step} className="text-sm text-gray-500">{step}</span>
-					))}
+								{isCurrentStep ? (
+									<span
+										ref={nextStepRef}
+										contentEditable
+										suppressContentEditableWarning
+										onBlur={onNextStepBlur}
+										className={styles.currentStep}
+									/>
+								) : (
+									<span className={isPreviousStep ? styles.previousStep : styles.upcomingStep}>{step}</span>
+								)}
+							</div>
+						);
+					})}
 				</div>
 			)}
 
-			<div className="flex items-center gap-3 text-xs text-gray-400">
+			<div className={styles.meta}>
 				{startTime && startTime > currentTime && (
 					<span>Starts {formatDate(startTime)}</span>
 				)}
@@ -136,34 +170,30 @@ export default function TaskCard({ task }: Props) {
 					<span>Due {formatDate(deadline)}</span>
 				)}
 				{timeLeftStr && (
-					<span
-						ref={timeRef}
-						className="font-semibold"
-						style={{ maxWidth: '200px', overflow: 'hidden', whiteSpace: 'nowrap' }}
-					>
+					<span ref={timeRef} className={styles.timeLeft}>
 						{timeLeftStr}
 					</span>
 				)}
 			</div>
 
-			<div className="flex gap-2 mt-2">
+			<div className={styles.actions}>
 				{isSkippable && (
 					<button
 						onClick={() => setIsSkipOpen(true)}
-						className="flex-1 py-2 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+						className={`button ${styles.actionGrows}`}
 					>
 						Skip
 					</button>
 				)}
 				<button
 					onClick={() => store.completeAllSteps(task)}
-					className="flex-1 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+					className={`button button--primary ${styles.actionGrows}`}
 				>
 					Complete Task
 				</button>
 				<button
 					onClick={() => setIsTimingOpen(true)}
-					className="py-2 px-3 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 transition-colors"
+					className="button"
 					aria-label="Timing options"
 					title="Timing options"
 				>

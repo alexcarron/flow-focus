@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useTasksStore, selectPriorityTask } from '../stores/tasksStore';
 import TaskCard from '../components/TaskCard';
+import styles from './FocusPage.module.css';
 
 export default function FocusPage() {
 	const priorityTask = useTasksStore(selectPriorityTask);
@@ -54,14 +55,11 @@ export default function FocusPage() {
 	}
 
 	return (
-		<div
-			className="flex flex-col items-center justify-center min-h-full p-6"
-			onTouchStart={onTouchStart}
-		>
+		<div className={styles.page} onTouchStart={onTouchStart}>
 			{priorityTask ? (
 				<TaskCard task={priorityTask} />
 			) : (
-				<p className="text-gray-500 text-lg">Nothing to do right now</p>
+				<p className={styles.emptyState}>Nothing to do right now</p>
 			)}
 		</div>
 	);

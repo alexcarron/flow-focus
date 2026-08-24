@@ -1,0 +1,40 @@
+.page {
+	max-width: 32rem;
+	margin: 0 auto;
+	padding: var(--space-xl);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xl);
+}
+
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.sectionHeading {
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-secondary);
+}
+
+.sectionDescription {
+	margin-top: var(--space-xs);
+	font-size: var(--font-size-xs);
+	color: var(--color-text-subtle);
+}
+
+.buttonRow {
+	display: flex;
+	gap: var(--space-sm);
+}
+
+.statusMessage {
+	font-size: var(--font-size-xs);
+	color: var(--color-text-muted);
+}
+
+.hiddenFileInput {
+	display: none;
+}
