@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTasksStore } from '../stores/tasksStore';
-import { applyBackup, createBackup, downloadBackup, readBackupFile } from '../utils/backup';
+import { applyBackup, createBackup, downloadBackup, readBackupFile, BackupData } from '../utils/backup';
+import ConfirmModal from '../components/ConfirmModal';
 import styles from './SettingsPage.module.css';
 
 export default function SettingsPage() {
@@ -16,6 +17,7 @@ export default function SettingsPage() {
 
 	const tasks = useTasksStore(s => s.tasks);
 	const [backupStatus, setBackupStatus] = useState<string | null>(null);
+	const [pendingImportData, setPendingImportData] = useState<BackupData | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	function handleExport() {
@@ -36,10 +38,13 @@ export default function SettingsPage() {
 			return;
 		}
 
-		const confirmed = window.confirm(
-			'Importing will replace all current tasks and settings with the contents of this file. This cannot be undone. Continue?'
-		);
-		if (!confirmed) return;
+		setPendingImportData(data);
+	}
+
+	async function confirmImport() {
+		if (pendingImportData === null) return;
+		const data = pendingImportData;
+		setPendingImportData(null);
 
 		if (tasks.length > 0) {
 			downloadBackup(createBackup(), 'flow-focus-pre-import-backup');
@@ -138,6 +143,15 @@ export default function SettingsPage() {
 
 				{backupStatus && <p className={styles.statusMessage}>{backupStatus}</p>}
 			</section>
+
+			<ConfirmModal
+				headingText="Import backup?"
+				descriptionText="Importing will replace all current tasks and settings with the contents of this file. This cannot be undone."
+				confirmButtonLabel="Import"
+				isOpen={pendingImportData !== null}
+				onClose={() => setPendingImportData(null)}
+				onConfirm={confirmImport}
+			/>
 		</div>
 	);
 }

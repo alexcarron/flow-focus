@@ -43,9 +43,10 @@ interface Props {
 	onSelectMouseDown: () => void;
 	onSelectMouseEnter: () => void;
 	onOpenTiming: () => void;
+	onRequestDelete: () => void;
 }
 
-export default function TaskManagerRow({ task, now, store, isSelected, onSelectMouseDown, onSelectMouseEnter, onOpenTiming }: Props) {
+export default function TaskManagerRow({ task, now, store, isSelected, onSelectMouseDown, onSelectMouseEnter, onOpenTiming, onRequestDelete }: Props) {
 	const steps = task.getSteps();
 	const minMs = task.getMinRequiredTime() ?? null;
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
@@ -65,12 +66,6 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 			task.createStepRightOfStep(step);
 			store.refreshTasks();
 			store.persistChangedTasks([task]);
-		}
-	}
-
-	function onDeleteClick() {
-		if (window.confirm(`Delete "${task.getDescription()}"? This cannot be undone.`)) {
-			store.deleteTask(task);
 		}
 	}
 
@@ -163,7 +158,7 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 						<TimingIcon className={styles.rowActionIcon} />
 					</button>
 					<button
-						onClick={onDeleteClick}
+						onClick={onRequestDelete}
 						className={`button icon danger ${styles.rowActionButton}`}
 						aria-label="Delete task"
 						title="Delete task"

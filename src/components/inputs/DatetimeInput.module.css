@@ -1,15 +1,15 @@
 .quickActions {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--space-xs);
+	gap: var(--space-extra-small);
 }
 
 .clearButton {
-	padding: var(--space-2xs) var(--space-sm);
+	padding: var(--space-extra-extra-small) var(--space-small);
 	border: none;
 	background: transparent;
 	color: var(--color-text-subtle);
-	font-size: var(--font-size-xs);
+	font-size: var(--font-size-extra-small);
 	transition: color var(--transition-fast);
 }
 

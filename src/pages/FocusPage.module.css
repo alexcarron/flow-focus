@@ -4,10 +4,10 @@
 	align-items: center;
 	justify-content: center;
 	min-height: 100%;
-	padding: var(--space-xl);
+	padding: var(--space-extra-large);
 }
 
 .emptyState {
 	color: var(--color-text-subtle);
-	font-size: var(--font-size-lg);
+	font-size: var(--font-size-large);
 }

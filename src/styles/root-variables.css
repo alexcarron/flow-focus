@@ -29,27 +29,29 @@
 
 	--color-backdrop: rgba(0, 0, 0, 0.6);
 
-	--space-2xs: 0.125rem;
-	--space-xs: 0.25rem;
-	--space-sm: 0.5rem;
-	--space-md: 0.75rem;
-	--space-lg: 1rem;
-	--space-xl: 1.5rem;
-	--space-2xl: 2rem;
+	--readable-content-width: 40rem;
 
-	--radius-sm: 0.25rem;
-	--radius-md: 0.5rem;
-	--radius-lg: 0.75rem;
-	--radius-xl: 1rem;
+	--space-extra-extra-small: 0.125rem;
+	--space-extra-small: 0.25rem;
+	--space-small: 0.5rem;
+	--space-medium: 0.75rem;
+	--space-large: 1rem;
+	--space-extra-large: 1.5rem;
+	--space-extra-extra-large: 2rem;
+
+	--radius-small: 0.25rem;
+	--radius-medium: 0.5rem;
+	--radius-large: 0.75rem;
+	--radius-extra-large: 1rem;
 	--radius-full: 9999px;
 
 	--font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-	--font-size-xs: 0.75rem;
-	--font-size-sm: 0.875rem;
+	--font-size-extra-small: 0.75rem;
+	--font-size-small: 0.875rem;
 	--font-size-base: 1rem;
-	--font-size-lg: 1.125rem;
-	--font-size-xl: 1.25rem;
-	--font-size-2xl: 1.5rem;
+	--font-size-large: 1.125rem;
+	--font-size-extra-large: 1.25rem;
+	--font-size-extra-extra-large: 1.5rem;
 	--font-weight-medium: 500;
 	--font-weight-semibold: 600;
 	--font-weight-bold: 700;

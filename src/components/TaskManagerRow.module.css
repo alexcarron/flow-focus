@@ -12,42 +12,42 @@
 }
 
 .cell {
-	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 	color: var(--color-text-muted);
-	font-size: var(--font-size-xs);
+	font-size: var(--font-size-extra-small);
 	white-space: nowrap;
 }
 
 .selectionCell {
-	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 }
 
 .descriptionCell {
-	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 	min-width: 10rem;
 	max-width: 20rem;
 	vertical-align: top;
 }
 
 .stepsCell {
-	padding: 0 var(--space-md) var(--space-sm) 0;
+	padding: 0 var(--space-medium) var(--space-small) 0;
 	min-width: 12rem;
 	vertical-align: top;
 }
 
 .stepsArrayInput {
-	gap: var(--space-2xs);
+	gap: var(--space-extra-extra-small);
 }
 
 .stepsArrayInput input {
-	padding: var(--space-2xs) var(--space-xs);
-	font-size: var(--font-size-xs);
+	padding: var(--space-extra-extra-small) var(--space-extra-small);
+	font-size: var(--font-size-extra-small);
 }
 
 .stepsArrayInput :global(.button.icon) {
 	height: 1.25rem;
 	width: 1.25rem;
-	padding: var(--space-2xs);
+	padding: var(--space-extra-extra-small);
 }
 
 .stepsArrayInput svg {
@@ -56,7 +56,7 @@
 }
 
 .checkboxCell {
-	padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 }
 
 .actionsCell {
@@ -69,13 +69,13 @@
 
 .rowActions {
 	display: flex;
-	gap: var(--space-xs);
+	gap: var(--space-extra-small);
 }
 
 .rowActionButton {
 	width: 1.75rem;
 	height: 1.75rem;
-	padding: var(--space-xs);
+	padding: var(--space-extra-small);
 }
 
 .rowActionIcon {

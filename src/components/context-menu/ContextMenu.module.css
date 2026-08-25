@@ -3,23 +3,23 @@
 	z-index: var(--layer-modal);
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-2xs);
+	gap: var(--space-extra-extra-small);
 	min-width: 10rem;
-	padding: var(--space-xs);
+	padding: var(--space-extra-small);
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border-strong);
-	border-radius: var(--radius-md);
+	border-radius: var(--radius-medium);
 	box-shadow: var(--shadow-dialog);
 }
 
 .menuItem {
 	width: 100%;
-	padding: var(--space-sm) var(--space-md);
+	padding: var(--space-small) var(--space-medium);
 	background-color: transparent;
 	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 	text-align: left;
-	border-radius: var(--radius-sm);
+	border-radius: var(--radius-small);
 	transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 

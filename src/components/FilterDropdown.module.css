@@ -4,21 +4,21 @@
 }
 
 .caret {
-	margin-left: var(--space-xs);
-	font-size: var(--font-size-xs);
+	margin-left: var(--space-extra-small);
+	font-size: var(--font-size-extra-small);
 }
 
 .menu {
 	position: absolute;
-	top: calc(100% + var(--space-xs));
+	top: calc(100% + var(--space-extra-small));
 	left: 0;
 	min-width: 14rem;
 	margin: 0;
-	padding: var(--space-xs);
+	padding: var(--space-extra-small);
 	list-style: none;
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border-strong);
-	border-radius: var(--radius-md);
+	border-radius: var(--radius-medium);
 	box-shadow: var(--shadow-card);
 	z-index: var(--layer-modal);
 }
@@ -27,11 +27,11 @@
 	display: block;
 	width: 100%;
 	text-align: left;
-	padding: var(--space-xs) var(--space-sm);
-	border-radius: var(--radius-sm);
+	padding: var(--space-extra-small) var(--space-small);
+	border-radius: var(--radius-small);
 	background: transparent;
 	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 }
 
 .option:hover {

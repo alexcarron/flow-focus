@@ -1,7 +1,7 @@
 .control {
 	display: flex;
 	align-items: center;
-	gap: var(--space-sm);
+	gap: var(--space-small);
 }
 
 .amount {
@@ -10,6 +10,6 @@
 }
 
 .hint {
-	font-size: var(--font-size-xs);
+	font-size: var(--font-size-extra-small);
 	color: var(--color-text-subtle);
 }

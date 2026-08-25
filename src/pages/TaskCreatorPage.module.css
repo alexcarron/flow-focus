@@ -1,20 +1,20 @@
 .page {
 	max-width: 32rem;
 	margin: 0 auto;
-	padding: var(--space-xl);
+	padding: var(--space-extra-large);
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-xl);
+	gap: var(--space-extra-large);
 }
 
 .errorMessage {
 	color: var(--color-danger-text);
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 }
 
 .actions {
 	display: flex;
-	gap: var(--space-sm);
+	gap: var(--space-small);
 }
 
 .submitButton {

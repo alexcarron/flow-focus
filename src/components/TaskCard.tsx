@@ -6,7 +6,7 @@ import { formatDate } from '../utils/formatters';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';
-import DeleteStepConfirmModal from './context-menu/DeleteStepConfirmModal';
+import ConfirmModal from './ConfirmModal';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import styles from './TaskCard.module.css';
@@ -44,6 +44,7 @@ export default function TaskCard({ task }: Props) {
 	const [isTimingOpen, setIsTimingOpen] = useState(false);
 	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
 	const [stepPendingDeletion, setStepPendingDeletion] = useState<string | null>(null);
+	const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
@@ -97,9 +98,7 @@ export default function TaskCard({ task }: Props) {
 	}
 
 	function onDeleteClick() {
-		if (window.confirm(`Delete "${task.getDescription()}"? This cannot be undone.`)) {
-			store.deleteTask(task);
-		}
+		setIsDeleteTaskConfirmOpen(true);
 	}
 
 	function onStepCheckboxChange(step: string, isChecked: boolean) {
@@ -236,8 +235,10 @@ export default function TaskCard({ task }: Props) {
 				] : []}
 			/>
 
-			<DeleteStepConfirmModal
-				stepLabel={stepPendingDeletion ?? ''}
+			<ConfirmModal
+				headingText="Delete step?"
+				descriptionText={`"${stepPendingDeletion}" will be permanently deleted. This cannot be undone.`}
+				confirmButtonLabel="Delete"
 				isOpen={stepPendingDeletion !== null}
 				onClose={() => setStepPendingDeletion(null)}
 				onConfirm={() => {
@@ -245,6 +246,18 @@ export default function TaskCard({ task }: Props) {
 						store.setSteps(task, task.getSteps().filter(step => step !== stepPendingDeletion));
 					}
 					setStepPendingDeletion(null);
+				}}
+			/>
+
+			<ConfirmModal
+				headingText="Delete task?"
+				descriptionText={`"${task.getDescription()}" will be permanently deleted. This cannot be undone.`}
+				confirmButtonLabel="Delete"
+				isOpen={isDeleteTaskConfirmOpen}
+				onClose={() => setIsDeleteTaskConfirmOpen(false)}
+				onConfirm={() => {
+					store.deleteTask(task);
+					setIsDeleteTaskConfirmOpen(false);
 				}}
 			/>
 		</div>

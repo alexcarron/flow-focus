@@ -2,13 +2,13 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: var(--space-sm);
+	gap: var(--space-small);
 	border: none;
-	border-radius: var(--radius-md);
-	padding: var(--space-sm) var(--space-lg);
+	border-radius: var(--radius-medium);
+	padding: var(--space-small) var(--space-large);
 	background-color: var(--color-surface-inset);
 	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 	font-weight: var(--font-weight-medium);
 	transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
@@ -40,15 +40,15 @@
 }
 
 .button.small {
-	padding: var(--space-xs) var(--space-md);
-	border-radius: var(--radius-sm);
-	font-size: var(--font-size-xs);
+	padding: var(--space-extra-small) var(--space-medium);
+	border-radius: var(--radius-small);
+	font-size: var(--font-size-extra-small);
 }
 
 .button.tiny {
-	padding: var(--space-2xs) var(--space-sm);
-	border-radius: var(--radius-sm);
-	font-size: var(--font-size-xs);
+	padding: var(--space-extra-extra-small) var(--space-small);
+	border-radius: var(--radius-small);
+	font-size: var(--font-size-extra-small);
 }
 
 .button.outlined {
@@ -65,9 +65,9 @@
 }
 
 .button.adjust {
-	padding: var(--space-2xs) var(--space-sm);
-	border-radius: var(--radius-sm);
-	font-size: var(--font-size-xs);
+	padding: var(--space-extra-extra-small) var(--space-small);
+	border-radius: var(--radius-small);
+	font-size: var(--font-size-extra-small);
 	background-color: var(--color-surface-hover);
 }
 
@@ -97,7 +97,7 @@
 	aspect-ratio: 1;
 	flex-shrink: 0;
 	line-height: 1;
-	padding: var(--space-sm);
+	padding: var(--space-small);
 }
 
 .button.icon.danger {

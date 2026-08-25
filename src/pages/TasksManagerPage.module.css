@@ -1,5 +1,5 @@
 .page {
-	padding: var(--space-lg);
+	padding: var(--space-large);
 	overflow-x: auto;
 }
 
@@ -8,8 +8,8 @@
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--space-sm);
-	margin-bottom: var(--space-lg);
+	gap: var(--space-small);
+	margin-bottom: var(--space-large);
 }
 
 .deleteSelectedButton {
@@ -19,7 +19,7 @@
 .table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 }
 
 .headerRow {
@@ -31,8 +31,8 @@
 .columnHeader {
 	padding-top: 0;
 	padding-left: 0;
-	padding-bottom: var(--space-sm);
-	padding-right: var(--space-md);
+	padding-bottom: var(--space-small);
+	padding-right: var(--space-medium);
 	font-weight: var(--font-weight-medium);
 }
 
@@ -47,11 +47,11 @@
 }
 
 .sortIndicator {
-	font-size: var(--font-size-xs);
+	font-size: var(--font-size-extra-small);
 }
 
 .emptyMessage {
 	color: var(--color-text-subtle);
 	text-align: center;
-	padding: var(--space-2xl) 0;
+	padding: var(--space-extra-extra-large) 0;
 }

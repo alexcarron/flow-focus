@@ -5,6 +5,7 @@ import FilterDropdown from '../components/FilterDropdown';
 import SelectionCheckbox from '../components/SelectionCheckbox';
 import TaskManagerRow, { TaskManagerRowActions } from '../components/TaskManagerRow';
 import TimingOptionsPopup from '../components/TimingOptionsPopup';
+import ConfirmModal from '../components/ConfirmModal';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All }
@@ -105,6 +106,8 @@ export default function TasksManagerPage() {
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
 	const [timingTask, setTimingTask] = useState<Task | null>(null);
+	const [taskPendingDeletion, setTaskPendingDeletion] = useState<Task | null>(null);
+	const [isDeleteSelectedConfirmOpen, setIsDeleteSelectedConfirmOpen] = useState(false);
 	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
 	const [isDragSelecting, setIsDragSelecting] = useState(false);
 	const [dragSelectValue, setDragSelectValue] = useState(true);
@@ -151,18 +154,23 @@ export default function TasksManagerPage() {
 		setSelectedRowIDs(areAllSelected ? new Set() : new Set(rowIDs));
 	}
 
-	async function deleteSelectedTasks() {
-		const selectedTasks = displayed.filter((task, idx) => selectedRowIDs.has(getRowID(task, idx)));
+	const selectedTasks = displayed.filter((task, idx) => selectedRowIDs.has(getRowID(task, idx)));
+
+	function requestDeleteSelectedTasks() {
 		if (selectedTasks.length === 0) return;
+		setIsDeleteSelectedConfirmOpen(true);
+	}
 
-		const confirmMessage = selectedTasks.length === 1
-			? `Delete "${selectedTasks[0].getDescription()}"? This cannot be undone.`
-			: `Delete ${selectedTasks.length} selected tasks? This cannot be undone.`;
-
-		if (!window.confirm(confirmMessage)) return;
-
+	async function confirmDeleteSelectedTasks() {
 		await Promise.all(selectedTasks.map(task => deleteTask(task)));
 		setSelectedRowIDs(new Set());
+		setIsDeleteSelectedConfirmOpen(false);
+	}
+
+	async function confirmDeletePendingTask() {
+		if (taskPendingDeletion === null) return;
+		await deleteTask(taskPendingDeletion);
+		setTaskPendingDeletion(null);
 	}
 
 	function toggleSort(col: SortBy) {
@@ -189,7 +197,7 @@ export default function TasksManagerPage() {
 
 				{selectedRowIDs.size > 0 && (
 					<button
-						onClick={deleteSelectedTasks}
+						onClick={requestDeleteSelectedTasks}
 						className={`button small danger ${styles.deleteSelectedButton}`}
 					>
 						Delete {selectedRowIDs.size} Selected
@@ -237,6 +245,7 @@ export default function TasksManagerPage() {
 								onSelectMouseDown={() => onRowSelectMouseDown(rowID)}
 								onSelectMouseEnter={() => onRowSelectMouseEnter(rowID)}
 								onOpenTiming={() => setTimingTask(task)}
+								onRequestDelete={() => setTaskPendingDeletion(task)}
 							/>
 						);
 					})}
@@ -251,6 +260,28 @@ export default function TasksManagerPage() {
 				task={timingTask}
 				isOpen={timingTask !== null}
 				onClose={() => setTimingTask(null)}
+			/>
+
+			<ConfirmModal
+				headingText="Delete task?"
+				descriptionText={`"${taskPendingDeletion?.getDescription() ?? ''}" will be permanently deleted. This cannot be undone.`}
+				confirmButtonLabel="Delete"
+				isOpen={taskPendingDeletion !== null}
+				onClose={() => setTaskPendingDeletion(null)}
+				onConfirm={confirmDeletePendingTask}
+			/>
+
+			<ConfirmModal
+				headingText={selectedTasks.length === 1 ? 'Delete task?' : 'Delete tasks?'}
+				descriptionText={
+					selectedTasks.length === 1
+						? `"${selectedTasks[0].getDescription()}" will be permanently deleted. This cannot be undone.`
+						: `${selectedTasks.length} selected tasks will be permanently deleted. This cannot be undone.`
+				}
+				confirmButtonLabel="Delete"
+				isOpen={isDeleteSelectedConfirmOpen}
+				onClose={() => setIsDeleteSelectedConfirmOpen(false)}
+				onConfirm={confirmDeleteSelectedTasks}
 			/>
 		</div>
 	);

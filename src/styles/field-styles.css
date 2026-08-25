@@ -1,10 +1,10 @@
 .field {
 	background-color: var(--color-surface-inset);
 	border: 1px solid var(--color-border-strong);
-	border-radius: var(--radius-sm);
-	padding: var(--space-xs) var(--space-sm);
+	border-radius: var(--radius-small);
+	padding: var(--space-extra-small) var(--space-small);
 	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 	color-scheme: dark;
 }
 
@@ -18,17 +18,17 @@
 }
 
 .field.large {
-	padding: var(--space-sm) var(--space-md);
+	padding: var(--space-small) var(--space-medium);
 }
 
 .field-group {
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-xs);
+	gap: var(--space-extra-small);
 }
 
 .field-label {
-	font-size: var(--font-size-xs);
+	font-size: var(--font-size-extra-small);
 	color: var(--color-text-muted);
 }
 
