@@ -17,6 +17,10 @@
 	background-color: var(--color-surface-hover);
 }
 
+.button:active {
+	background-color: var(--color-surface-hover-strong);
+}
+
 .button:focus-visible {
 	outline: none;
 	border-color: var(--color-accent-border);
@@ -29,6 +33,10 @@
 
 .button.primary:hover {
 	background-color: var(--color-accent-hover);
+}
+
+.button.primary:active {
+	background-color: var(--color-accent-border);
 }
 
 .button.small {
@@ -52,6 +60,10 @@
 	border-color: var(--color-accent-border);
 }
 
+.button.outlined:active {
+	background-color: var(--color-surface-hover);
+}
+
 .button.adjust {
 	padding: var(--space-2xs) var(--space-sm);
 	border-radius: var(--radius-sm);
@@ -63,7 +75,42 @@
 	background-color: var(--color-surface-hover-strong);
 }
 
+.button.adjust:active {
+	background-color: var(--color-surface-hover-strong);
+}
+
+.button.danger {
+	color: var(--color-danger);
+}
+
 .button.danger:hover {
-	background-color: var(--color-danger-surface);
-	color: var(--color-danger-text);
+	background-color: var(--color-danger);
+	color: var(--color-text-primary);
+}
+
+.button.danger:active {
+	background-color: var(--color-danger);
+	color: var(--color-danger);
+}
+
+.button.icon {
+	aspect-ratio: 1;
+	flex-shrink: 0;
+	line-height: 1;
+	padding: var(--space-sm);
+}
+
+.button.icon.danger {
+	background-color: transparent;
+	color: var(--color-danger);
+}
+
+.button.icon.danger:hover {
+	background-color: var(--color-danger);
+	color: var(--color-text-primary);
+}
+
+.button.icon.danger:active {
+	background-color: var(--color-danger);
+	color: var(--color-danger);
 }

@@ -1,24 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTasksStore, selectTasksInPriorityOrder } from '../stores/tasksStore';
 import Task from '../model/task/Task';
-import Duration from '../model/time-management/Duration';
-import { formatDate, formatTime } from '../utils/formatters';
-import TextInput from '../components/inputs/TextInput';
-import CheckboxInput from '../components/inputs/CheckboxInput';
+import FilterDropdown from '../components/FilterDropdown';
+import SelectionCheckbox from '../components/SelectionCheckbox';
+import TaskManagerRow, { TaskManagerRowActions } from '../components/TaskManagerRow';
 import TimingOptionsPopup from '../components/TimingOptionsPopup';
 import styles from './TasksManagerPage.module.css';
 
-enum Filter { None, Active, MustStartToday }
-enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval }
+enum Filter { Active, MustStartToday, Recurring, All }
+enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval, Deadline }
 enum SortDir { Asc, Desc }
 
-const FILTER_LABELS: Record<Filter, string> = {
-	[Filter.None]: 'All',
-	[Filter.Active]: 'Active',
-	[Filter.MustStartToday]: 'Must Start Today',
-};
+const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = [
+	{
+		value: Filter.Active,
+		label: 'Active',
+		description: 'Tasks that are open right now (started, not finished, not completed) and have a deadline',
+	},
+	{
+		value: Filter.MustStartToday,
+		label: 'Must Start Today',
+		description: 'Active tasks that need to be started today to still meet their deadline',
+	},
+	{
+		value: Filter.Recurring,
+		label: 'Recurring',
+		description: 'Tasks that repeat on a schedule',
+	},
+	{
+		value: Filter.All,
+		label: 'All Tasks',
+		description: 'Every task, regardless of status, deadline, or completion',
+	},
+];
 
-const SORT_LABELS: Record<SortBy, string> = {
+const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline>, string> = {
 	[SortBy.Priority]: 'Priority',
 	[SortBy.Name]: 'Name',
 	[SortBy.Steps]: 'Steps',
@@ -33,6 +49,8 @@ function applyFilter(tasks: Task[], filter: Filter): Task[] {
 		return tasks.filter(t => t.isActive(now) && t.getDeadline() !== null);
 	if (filter === Filter.MustStartToday)
 		return tasks.filter(t => t.mustStartToday(now));
+	if (filter === Filter.Recurring)
+		return tasks.filter(t => t.isRecurring());
 	return tasks;
 }
 
@@ -54,29 +72,26 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 			if (b.getRepeatInterval() === null) return 1;
 			return a.getRepeatInterval()! - b.getRepeatInterval()!;
 		});
+	else if (sortBy === SortBy.Deadline)
+		sorted.sort((a, b) => {
+			const deadlineA = a.getDeadline();
+			const deadlineB = b.getDeadline();
+			if (deadlineA === null) return 1;
+			if (deadlineB === null) return -1;
+			return deadlineA.getTime() - deadlineB.getTime();
+		});
 
 	if (dir === SortDir.Desc) sorted.reverse();
 	return sorted;
 }
 
-function toDurationString(ms: number): string {
-	const d = Duration.fromMilliseconds(ms);
-	const amount = d.getAmountOfUnits();
-	const unit = d.getTimeUnit().name;
-	return amount === 1 ? unit.slice(0, -1) : `${amount} ${unit}`;
-}
-
-function getDurationRange(minMs: number | null, maxMs: number | null, now: Date): string {
-	if (minMs === null && maxMs === null) return '—';
-	const start = Duration.fromMilliseconds(minMs ?? 0);
-	const end = Duration.fromMilliseconds(maxMs ?? 0);
-	const [s, e] = Duration.getDurationRangeStrings(start, end);
-	return e ? `${s}–${e}` : s;
+function getRowID(task: Task, index: number): string {
+	return task.dbId !== undefined ? `id-${task.dbId}` : `idx-${index}`;
 }
 
 export default function TasksManagerPage() {
 	const tasks = useTasksStore(selectTasksInPriorityOrder);
-	const setStep = useTasksStore(s => s.setStep);
+	const setSteps = useTasksStore(s => s.setSteps);
 	const setDescription = useTasksStore(s => s.setDescription);
 	const setStepComplete = useTasksStore(s => s.setStepComplete);
 	const setComplete = useTasksStore(s => s.setComplete);
@@ -84,17 +99,70 @@ export default function TasksManagerPage() {
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
-	const store: RowActions = { setStep, setDescription, setStepComplete, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
-	const [filter, setFilter] = useState<Filter>(Filter.None);
+	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
+
+	const [filter, setFilter] = useState<Filter>(Filter.Active);
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
 	const [timingTask, setTimingTask] = useState<Task | null>(null);
+	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
+	const [isDragSelecting, setIsDragSelecting] = useState(false);
+	const [dragSelectValue, setDragSelectValue] = useState(true);
 
 	const now = new Date();
 	const displayed = applyFilter(applySort(tasks, sortBy, sortDir), filter);
 
-	function toggleFilter() {
-		setFilter(f => ((f + 1) % 3) as Filter);
+	useEffect(() => {
+		setSelectedRowIDs(new Set());
+	}, [filter]);
+
+	useEffect(() => {
+		if (!isDragSelecting) return;
+		function stopDragSelecting() {
+			setIsDragSelecting(false);
+		}
+		window.addEventListener('mouseup', stopDragSelecting);
+		return () => window.removeEventListener('mouseup', stopDragSelecting);
+	}, [isDragSelecting]);
+
+	function setRowSelected(rowID: string, isSelected: boolean) {
+		setSelectedRowIDs(current => {
+			const next = new Set(current);
+			if (isSelected) next.add(rowID);
+			else next.delete(rowID);
+			return next;
+		});
+	}
+
+	function onRowSelectMouseDown(rowID: string) {
+		const nextValue = !selectedRowIDs.has(rowID);
+		setIsDragSelecting(true);
+		setDragSelectValue(nextValue);
+		setRowSelected(rowID, nextValue);
+	}
+
+	function onRowSelectMouseEnter(rowID: string) {
+		if (isDragSelecting) setRowSelected(rowID, dragSelectValue);
+	}
+
+	function toggleSelectAll() {
+		const rowIDs = displayed.map((task, idx) => getRowID(task, idx));
+		const areAllSelected = rowIDs.length > 0 && rowIDs.every(id => selectedRowIDs.has(id));
+		setSelectedRowIDs(areAllSelected ? new Set() : new Set(rowIDs));
+	}
+
+	async function deleteSelectedTasks() {
+		const selectedTasks = displayed.filter((task, idx) => selectedRowIDs.has(getRowID(task, idx)));
+		if (selectedTasks.length === 0) return;
+
+		const confirmMessage = selectedTasks.length === 1
+			? `Delete "${selectedTasks[0].getDescription()}"? This cannot be undone.`
+			: `Delete ${selectedTasks.length} selected tasks? This cannot be undone.`;
+
+		if (!window.confirm(confirmMessage)) return;
+
+		await Promise.all(selectedTasks.map(task => deleteTask(task)));
+		setSelectedRowIDs(new Set());
 	}
 
 	function toggleSort(col: SortBy) {
@@ -111,17 +179,30 @@ export default function TasksManagerPage() {
 		return sortDir === SortDir.Asc ? '↑' : '↓';
 	}
 
+	const rowIDs = displayed.map((task, idx) => getRowID(task, idx));
+	const areAllDisplayedSelected = rowIDs.length > 0 && rowIDs.every(id => selectedRowIDs.has(id));
+
 	return (
 		<div className={styles.page}>
 			<div className={styles.toolbar}>
-				<button onClick={toggleFilter} className="button small outlined">
-					Filter: {FILTER_LABELS[filter]}
-				</button>
+				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
+
+				{selectedRowIDs.size > 0 && (
+					<button
+						onClick={deleteSelectedTasks}
+						className={`button small danger ${styles.deleteSelectedButton}`}
+					>
+						Delete {selectedRowIDs.size} Selected
+					</button>
+				)}
 			</div>
 
 			<table className={styles.table}>
 				<thead>
 					<tr className={styles.headerRow}>
+						<th className={styles.columnHeader}>
+							<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} />
+						</th>
 						{(Object.entries(SORT_LABELS) as [string, string][]).map(([key, label]) => (
 							<th
 								key={key}
@@ -133,21 +214,32 @@ export default function TasksManagerPage() {
 						))}
 						<th className={styles.columnHeader}>Done</th>
 						<th className={styles.columnHeader}>Mandatory</th>
-						<th className={styles.columnHeader}>Deadline</th>
+						<th
+							className={`${styles.columnHeader} ${styles.sortableHeader}`}
+							onClick={() => toggleSort(SortBy.Deadline)}
+						>
+							Deadline <span className={styles.sortIndicator}>{sortIcon(SortBy.Deadline)}</span>
+						</th>
 						<th className={styles.columnHeader}>Start</th>
 						<th className={styles.columnHeader}>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
-					{displayed.map((task, idx) => (
-						<TaskRow
-							key={task.dbId ?? idx}
-							task={task}
-							now={now}
-							store={store}
-							onOpenTiming={() => setTimingTask(task)}
-						/>
-					))}
+					{displayed.map((task, idx) => {
+						const rowID = getRowID(task, idx);
+						return (
+							<TaskManagerRow
+								key={rowID}
+								task={task}
+								now={now}
+								store={store}
+								isSelected={selectedRowIDs.has(rowID)}
+								onSelectMouseDown={() => onRowSelectMouseDown(rowID)}
+								onSelectMouseEnter={() => onRowSelectMouseEnter(rowID)}
+								onOpenTiming={() => setTimingTask(task)}
+							/>
+						);
+					})}
 				</tbody>
 			</table>
 
@@ -161,143 +253,5 @@ export default function TasksManagerPage() {
 				onClose={() => setTimingTask(null)}
 			/>
 		</div>
-	);
-}
-
-interface RowActions {
-	setStep: (task: Task, old: string, n: string) => void;
-	setDescription: (task: Task, v: string) => void;
-	setStepComplete: (task: Task, step: string, v: boolean) => void;
-	setComplete: (task: Task, v: boolean) => void;
-	setMandatory: (task: Task, v: boolean) => void;
-	deleteTask: (task: Task) => Promise<void>;
-	refreshTasks: () => void;
-	persistChangedTasks: (tasks: Task[]) => Promise<void>;
-}
-
-interface RowProps {
-	task: Task;
-	now: Date;
-	store: RowActions;
-	onOpenTiming: () => void;
-}
-
-function TaskRow({ task, now, store, onOpenTiming }: RowProps) {
-	const steps = task.getSteps();
-	const minMs = task.getMinRequiredTime() ?? null;
-	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
-	const startTime = task.getStartTime();
-	const displayStartTime = startTime && startTime > now ? startTime : null;
-
-	function onStepChange(oldStep: string, newStep: string) {
-		if (newStep !== oldStep) store.setStep(task, oldStep, newStep);
-	}
-
-	function onStepKeyDown(step: string, e: React.KeyboardEvent) {
-		if (e.altKey && e.key === 'ArrowLeft') {
-			e.preventDefault();
-			task.createStepLeftOfStep(step);
-			store.refreshTasks();
-			store.persistChangedTasks([task]);
-		} else if (e.altKey && e.key === 'ArrowRight') {
-			e.preventDefault();
-			task.createStepRightOfStep(step);
-			store.refreshTasks();
-			store.persistChangedTasks([task]);
-		}
-	}
-
-	return (
-		<tr className={styles.row}>
-			<td className={styles.cell}>
-				—
-			</td>
-
-			<td className={styles.descriptionCell}>
-				<TextInput
-					value={task.getDescription()}
-					onChange={v => store.setDescription(task, v)}
-					className={styles.descriptionInput}
-				/>
-			</td>
-
-			<td className={styles.stepsCell}>
-				<div className={styles.stepList}>
-					{steps.map(step => (
-						<div key={step} className={styles.stepRow}>
-							<CheckboxInput
-								value={task.isStepComplete(step)}
-								onChange={v => store.setStepComplete(task, step, v)}
-							/>
-							<TextInput
-								value={step}
-								onChange={newVal => onStepChange(step, newVal)}
-								onKeyDown={e => onStepKeyDown(step, e)}
-								className={styles.stepInput}
-							/>
-						</div>
-					))}
-				</div>
-			</td>
-
-			<td className={styles.cell}>
-				{task.getDeadline()
-					? formatTime(task.getTimeToComplete(now))
-					: '∞'}
-			</td>
-
-			<td className={styles.cell}>
-				{minMs !== null || maxMs !== null
-					? getDurationRange(minMs, maxMs, now)
-					: '—'}
-			</td>
-
-			<td className={styles.cell}>
-				{task.getRepeatInterval() !== null
-					? toDurationString(task.getRepeatInterval()!)
-					: '—'}
-			</td>
-
-			<td className={styles.checkboxCell}>
-				<CheckboxInput
-					value={task.getIsComplete()}
-					onChange={v => store.setComplete(task, v)}
-				/>
-			</td>
-
-			<td className={styles.checkboxCell}>
-				<CheckboxInput
-					value={task.getIsMandatory()}
-					onChange={v => store.setMandatory(task, v)}
-				/>
-			</td>
-
-			<td className={styles.cell}>
-				{formatDate(task.getDeadline(), '—')}
-			</td>
-
-			<td className={styles.cell}>
-				{displayStartTime ? formatDate(displayStartTime) : '—'}
-			</td>
-
-			<td className={styles.actionsCell}>
-				<div className={styles.rowActions}>
-					<button
-						onClick={onOpenTiming}
-						className="button tiny"
-						title="Edit timing"
-					>
-						⏱
-					</button>
-					<button
-						onClick={() => store.deleteTask(task)}
-						className="button tiny danger"
-						title="Delete task"
-					>
-						✕
-					</button>
-				</div>
-			</td>
-		</tr>
 	);
 }

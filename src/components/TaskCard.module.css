@@ -68,7 +68,6 @@
 .stepRowCurrent .stepCheckbox {
 	width: 1rem;
 	height: 1rem;
-	border-color: var(--color-accent-border);
 }
 
 .stepCheckboxChecked {
@@ -117,11 +116,32 @@
 }
 
 .actions {
+	--action-button-content-height: 1.5rem;
+	--action-button-height: calc(var(--action-button-content-height) + 2 * var(--space-sm));
+
 	display: flex;
+	align-items: stretch;
 	gap: var(--space-sm);
 	margin-top: var(--space-sm);
 }
 
+.actionButton {
+	height: var(--action-button-height);
+	line-height: var(--action-button-content-height);
+}
+
 .actionGrows {
 	flex: 1;
+}
+
+.actionButtonSquare {
+	width: var(--action-button-height);
+	aspect-ratio: unset;
+}
+
+.deleteIcon,
+.timingIcon {
+	width: 1.125rem;
+	height: 1.125rem;
+	flex-shrink: 0;
 }

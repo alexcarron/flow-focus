@@ -5,6 +5,10 @@ import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { formatDate } from '../utils/formatters';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
+import ContextMenu from './context-menu/ContextMenu';
+import DeleteStepConfirmModal from './context-menu/DeleteStepConfirmModal';
+import DeleteIcon from './svg-icons/DeleteIcon';
+import TimingIcon from './svg-icons/TimingIcon';
 import styles from './TaskCard.module.css';
 
 interface Props {
@@ -38,6 +42,8 @@ export default function TaskCard({ task }: Props) {
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [isSkipOpen, setIsSkipOpen] = useState(false);
 	const [isTimingOpen, setIsTimingOpen] = useState(false);
+	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
+	const [stepPendingDeletion, setStepPendingDeletion] = useState<string | null>(null);
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
@@ -90,6 +96,12 @@ export default function TaskCard({ task }: Props) {
 		}
 	}
 
+	function onDeleteClick() {
+		if (window.confirm(`Delete "${task.getDescription()}"? This cannot be undone.`)) {
+			store.deleteTask(task);
+		}
+	}
+
 	function onStepCheckboxChange(step: string, isChecked: boolean) {
 		if (isChecked) {
 			store.completeStepAndPrecedingSteps(task, step);
@@ -127,6 +139,10 @@ export default function TaskCard({ task }: Props) {
 							<div
 								key={step}
 								className={isCurrentStep ? `${styles.stepRow} ${styles.stepRowCurrent}` : styles.stepRow}
+								onContextMenu={event => {
+									event.preventDefault();
+									setStepContextMenu({ step, x: event.clientX, y: event.clientY });
+								}}
 							>
 								<div
 									role="checkbox"
@@ -180,29 +196,57 @@ export default function TaskCard({ task }: Props) {
 				{isSkippable && (
 					<button
 						onClick={() => setIsSkipOpen(true)}
-						className={`button ${styles.actionGrows}`}
+						className={`button ${styles.actionButton} ${styles.actionGrows}`}
 					>
 						Skip
 					</button>
 				)}
 				<button
 					onClick={() => store.completeAllSteps(task)}
-					className={`button button--primary ${styles.actionGrows}`}
+					className={`button button--primary ${styles.actionButton} ${styles.actionGrows}`}
 				>
 					Complete Task
 				</button>
 				<button
 					onClick={() => setIsTimingOpen(true)}
-					className="button"
+					className={`button icon ${styles.actionButton} ${styles.actionButtonSquare}`}
 					aria-label="Timing options"
 					title="Timing options"
 				>
-					⏱
+					<TimingIcon className={styles.timingIcon} />
+				</button>
+				<button
+					onClick={onDeleteClick}
+					className={`button icon danger ${styles.actionButton} ${styles.actionButtonSquare}`}
+					aria-label="Delete task"
+					title="Delete task"
+				>
+					<DeleteIcon className={styles.deleteIcon} />
 				</button>
 			</div>
 
 			<SkipPopup task={task} isOpen={isSkipOpen} onClose={() => setIsSkipOpen(false)} />
 			<TimingOptionsPopup task={task} isOpen={isTimingOpen} onClose={() => setIsTimingOpen(false)} />
+
+			<ContextMenu
+				position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
+				onClose={() => setStepContextMenu(null)}
+				items={stepContextMenu !== null ? [
+					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletion(stepContextMenu.step) },
+				] : []}
+			/>
+
+			<DeleteStepConfirmModal
+				stepLabel={stepPendingDeletion ?? ''}
+				isOpen={stepPendingDeletion !== null}
+				onClose={() => setStepPendingDeletion(null)}
+				onConfirm={() => {
+					if (stepPendingDeletion !== null) {
+						store.setSteps(task, task.getSteps().filter(step => step !== stepPendingDeletion));
+					}
+					setStepPendingDeletion(null);
+				}}
+			/>
 		</div>
 	);
 }

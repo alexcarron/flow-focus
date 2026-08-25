@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTasksStore } from '../stores/tasksStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import ArrayInput from '../components/inputs/ArrayInput';
+import CheckboxInput from '../components/inputs/CheckboxInput';
 import TimingOptionsInput, { DEFAULT_DURATION } from '../components/inputs/TimingOptionsInput';
 import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
 import styles from './TaskCreatorPage.module.css';
@@ -20,6 +22,8 @@ const DEFAULT_TIMING: TaskTimingOptions = {
 export default function TaskCreatorPage() {
 	const navigate = useNavigate();
 	const addTask = useTasksStore(s => s.addTask);
+	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
+	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
 
 	const [name, setName] = useState('');
 	const [steps, setSteps] = useState<string[]>([]);
@@ -57,8 +61,12 @@ export default function TaskCreatorPage() {
 		await useTasksStore.getState().persistChangedTasks([task]);
 		useTasksStore.getState().refreshTasks();
 
-		setName('');
 		setError(null);
+		if (!shouldKeepTaskDetailsAfterCreating) {
+			setName('');
+			setSteps([]);
+			setTiming(DEFAULT_TIMING);
+		}
 	}
 
 	function handleReset() {
@@ -99,6 +107,14 @@ export default function TaskCreatorPage() {
 			<div className="field-group">
 				<label className="field-label">Timing</label>
 				<TimingOptionsInput value={timing} onChange={setTiming} />
+			</div>
+
+			<div className="field-group">
+				<CheckboxInput
+					value={shouldKeepTaskDetailsAfterCreating}
+					onChange={setShouldKeepTaskDetailsAfterCreating}
+					label="Keep task details when creating task"
+				/>
 			</div>
 
 			<div className={styles.actions}>

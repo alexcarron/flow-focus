@@ -47,11 +47,11 @@ function taskToBackupTask(task: Task): BackupTask {
 }
 
 export function createBackup(): BackupData {
-	const { morningTime, nightTime, bedtime, wakeTime } = useSettingsStore.getState();
+	const { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating } = useSettingsStore.getState();
 	return {
 		format: BACKUP_FORMAT,
 		exportedAt: new Date().toISOString(),
-		settings: { morningTime, nightTime, bedtime, wakeTime },
+		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating },
 		tasks: useTasksStore.getState().tasks.map(taskToBackupTask),
 	};
 }

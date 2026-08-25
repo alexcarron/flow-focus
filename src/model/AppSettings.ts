@@ -8,6 +8,8 @@ export interface AppSettings {
 	bedtime: string;
 	// End of the daily sleep window, subtracted from time-to-complete calculations.
 	wakeTime: string;
+	// Whether the Create Task form keeps its field values after creating a task instead of clearing them.
+	shouldKeepTaskDetailsAfterCreating: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -15,4 +17,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	nightTime: '23:00',
 	bedtime: '00:00',
 	wakeTime: '08:00',
+	shouldKeepTaskDetailsAfterCreating: false,
 };

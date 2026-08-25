@@ -32,7 +32,7 @@ export default function App() {
 					All Tasks
 				</NavLink>
 				<NavLink to="/create-task" className={navLinkClass}>
-					+ Create
+					Create Task
 				</NavLink>
 				<NavLink to="/settings" className={navLinkClass}>
 					Settings

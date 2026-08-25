@@ -9,9 +9,10 @@ interface Props {
 	placeholder?: string;
 	className?: string;
 	onItemKeyDown?: (index: number, step: string, e: React.KeyboardEvent) => void;
+	renderRowPrefix?: (index: number, item: string) => React.ReactNode;
 }
 
-export default function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown }: Props) {
+export default function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix }: Props) {
 	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	const displayedRows = [...value, ''];
@@ -90,6 +91,9 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 			} else {
 				insertEmptyRowAfter(index);
 			}
+		} else if (e.key === 'Tab' && !e.shiftKey && !isTrailingRow) {
+			e.preventDefault();
+			focusRowSoon(index + 1);
 		} else if (
 			e.key === 'Backspace' &&
 			e.currentTarget.value === '' &&
@@ -109,6 +113,9 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 				const isTrailingRow = i === trailingRowIndex;
 				return (
 					<div key={i} className={styles.row}>
+						{renderRowPrefix && (isTrailingRow
+							? (value.length > 0 && <div className={styles.rowPrefixSpacer} />)
+							: renderRowPrefix(i, item))}
 						<input
 							ref={el => { inputRefs.current[i] = el; }}
 							type="text"
@@ -123,7 +130,7 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 							<button
 								type="button"
 								onClick={() => removeRow(i)}
-								className={styles.removeButton}
+								className={`button icon danger ${styles.removeButton}`}
 								aria-label="Remove step"
 							>
 								<DeleteIcon className={styles.removeIcon} />

@@ -16,6 +16,7 @@ interface SettingsActions {
 	setNightTime: (value: string) => Promise<void>;
 	setBedtime: (value: string) => Promise<void>;
 	setWakeTime: (value: string) => Promise<void>;
+	setShouldKeepTaskDetailsAfterCreating: (value: boolean) => Promise<void>;
 	importSettings: (settings: AppSettings) => Promise<void>;
 }
 
@@ -25,6 +26,7 @@ function pickSettings(state: SettingsState): AppSettings {
 		nightTime: state.nightTime,
 		bedtime: state.bedtime,
 		wakeTime: state.wakeTime,
+		shouldKeepTaskDetailsAfterCreating: state.shouldKeepTaskDetailsAfterCreating,
 	};
 }
 
@@ -42,7 +44,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 
 	async loadSettings() {
 		const row = await db.settings.get(SETTINGS_ID);
-		const settings = row ?? DEFAULT_SETTINGS;
+		const settings = { ...DEFAULT_SETTINGS, ...row };
 		set({ ...settings, isLoaded: true });
 		applySleepWindow(settings);
 		if (!row) await persistSettings(DEFAULT_SETTINGS);
@@ -70,6 +72,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 		const settings = { ...pickSettings(get()), wakeTime: value };
 		await persistSettings(settings);
 		applySleepWindow(settings);
+	},
+
+	async setShouldKeepTaskDetailsAfterCreating(value: boolean) {
+		set({ shouldKeepTaskDetailsAfterCreating: value });
+		await persistSettings({ ...pickSettings(get()), shouldKeepTaskDetailsAfterCreating: value });
 	},
 
 	async importSettings(settings: AppSettings) {
