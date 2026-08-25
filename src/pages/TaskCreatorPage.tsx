@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
+import parseTypedQuickInput, { escapeTokenInText } from '../model/typed-quick-input/parseTypedQuickInput';
+import { TypedQuickInputToken } from '../model/typed-quick-input/TypedQuickInputToken';
 import ArrayInput from '../components/inputs/ArrayInput';
 import CheckboxInput from '../components/inputs/CheckboxInput';
+import DatetimeInput from '../components/inputs/DatetimeInput';
+import TypedQuickInput from '../components/inputs/TypedQuickInput';
 import TimingOptionsInput, { DEFAULT_DURATION } from '../components/inputs/TimingOptionsInput';
 import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
 import styles from './TaskCreatorPage.module.css';
@@ -19,16 +22,36 @@ const DEFAULT_TIMING: TaskTimingOptions = {
 	isMandatory: false,
 };
 
+const timingKeyToTokenField: Partial<Record<keyof TaskTimingOptions, TypedQuickInputToken['field']>> = {
+	deadline: 'deadline',
+	startTime: 'startTime',
+	endTime: 'endTime',
+	repeatInterval: 'repeatInterval',
+	minDuration: 'duration',
+	maxDuration: 'duration',
+	isMandatory: 'isMandatory',
+};
+
+function findTokenForTimingKey(tokens: TypedQuickInputToken[], key: keyof TaskTimingOptions): TypedQuickInputToken | undefined {
+	const tokenField = timingKeyToTokenField[key];
+	if (!tokenField) return undefined;
+	return tokens.find(token => token.field === tokenField);
+}
+
 export default function TaskCreatorPage() {
-	const navigate = useNavigate();
 	const addTask = useTasksStore(s => s.addTask);
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
 
 	const [name, setName] = useState('');
 	const [steps, setSteps] = useState<string[]>([]);
-	const [timing, setTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
+	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
+	const [showMoreOptions, setShowMoreOptions] = useState(false);
+	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
+
+	const parseResult = useMemo(() => parseTypedQuickInput(name), [name]);
+	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
 
 	const handleCreateRef = useRef(handleCreate);
 	useEffect(() => { handleCreateRef.current = handleCreate; });
@@ -47,15 +70,50 @@ export default function TaskCreatorPage() {
 		return () => document.removeEventListener('keydown', onKeyDown);
 	}, []);
 
+	function handleNameChange(nextName: string) {
+		setName(nextName);
+		setError(null);
+	}
+
+	function handleUnlinkToken(token: TypedQuickInputToken) {
+		setName(escapeTokenInText(name, token));
+		setDemotedRange({ start: token.startIndex, end: token.endIndex + 1 });
+	}
+
+	function handleTimingChange(nextTiming: TaskTimingOptions) {
+		const changedKeys = (Object.keys(nextTiming) as Array<keyof TaskTimingOptions>)
+			.filter(key => nextTiming[key] !== effectiveTiming[key]);
+
+		for (const key of changedKeys) {
+			const token = findTokenForTimingKey(parseResult.tokens, key);
+			if (token) {
+				setName(escapeTokenInText(name, token));
+				setDemotedRange({ start: token.startIndex, end: token.endIndex + 1 });
+				break;
+			}
+		}
+
+		const changedTiming: Partial<TaskTimingOptions> = {};
+		for (const key of changedKeys) {
+			(changedTiming as Record<string, unknown>)[key] = nextTiming[key];
+		}
+		setManualTiming(previous => ({ ...previous, ...changedTiming }));
+	}
+
+	function handleDeadlineChange(deadline: Date | null) {
+		handleTimingChange({ ...effectiveTiming, deadline });
+	}
+
 	async function handleCreate() {
-		if (!name.trim()) {
+		const description = parseResult.cleanedName.trim();
+		if (!description) {
 			setError('Task name is required');
 			return;
 		}
 
 		const cleanedSteps = steps.map(step => step.trim()).filter(step => step !== '');
 
-		const task = await addTask(name.trim(), timing);
+		const task = await addTask(description, effectiveTiming);
 		task.editSteps(cleanedSteps);
 
 		await useTasksStore.getState().persistChangedTasks([task]);
@@ -63,16 +121,15 @@ export default function TaskCreatorPage() {
 
 		setError(null);
 		if (!shouldKeepTaskDetailsAfterCreating) {
-			setName('');
-			setSteps([]);
-			setTiming(DEFAULT_TIMING);
+			handleReset();
 		}
 	}
 
 	function handleReset() {
 		setName('');
 		setSteps([]);
-		setTiming(DEFAULT_TIMING);
+		setManualTiming(DEFAULT_TIMING);
+		setDemotedRange(null);
 		setError(null);
 	}
 
@@ -86,28 +143,50 @@ export default function TaskCreatorPage() {
 
 			<div className="field-group">
 				<label className="field-label">Task name *</label>
-				<input
-					type="text"
+				<TypedQuickInput
 					value={name}
-					onChange={event => { setName(event.target.value); setError(null); }}
-					placeholder="What needs to be done?"
-					className="field large"
+					onChange={handleNameChange}
+					tokens={parseResult.tokens}
+					onUnlinkToken={handleUnlinkToken}
+					demotedRange={demotedRange}
+					placeholder="e.g. finish essay due friday takes 2 to 4 hours"
+					onSubmit={() => handleCreateRef.current()}
 				/>
 			</div>
 
-			<div className="field-group">
-				<label className="field-label">Steps</label>
-				<ArrayInput
-					value={steps}
-					onChange={setSteps}
-					placeholder="Type a step, or paste a checklist…"
+			{!showMoreOptions && (
+				<DatetimeInput
+					label="Deadline"
+					value={effectiveTiming.deadline}
+					onChange={handleDeadlineChange}
 				/>
-			</div>
+			)}
 
-			<div className="field-group">
-				<label className="field-label">Timing</label>
-				<TimingOptionsInput value={timing} onChange={setTiming} />
-			</div>
+			<button
+				type="button"
+				onClick={() => setShowMoreOptions(previous => !previous)}
+				className={`button ${styles.moreOptionsToggle}`}
+			>
+				{showMoreOptions ? 'Fewer options' : 'More options'}
+			</button>
+
+			{showMoreOptions && (
+				<>
+					<div className="field-group">
+						<label className="field-label">Steps</label>
+						<ArrayInput
+							value={steps}
+							onChange={setSteps}
+							placeholder="Type a step, or paste a checklist…"
+						/>
+					</div>
+
+					<div className="field-group">
+						<label className="field-label">Timing</label>
+						<TimingOptionsInput value={effectiveTiming} onChange={handleTimingChange} />
+					</div>
+				</>
+			)}
 
 			<div className="field-group">
 				<CheckboxInput

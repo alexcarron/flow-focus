@@ -29,6 +29,13 @@
 
 	--color-backdrop: rgba(0, 0, 0, 0.6);
 
+	--color-typed-quick-input-deadline: #f87171;
+	--color-typed-quick-input-start: #34d399;
+	--color-typed-quick-input-end: #fbbf24;
+	--color-typed-quick-input-repeat: #a78bfa;
+	--color-typed-quick-input-duration: #38bdf8;
+	--color-typed-quick-input-mandatory: #f472b6;
+
 	--readable-content-width: 40rem;
 
 	--space-extra-extra-small: 0.125rem;

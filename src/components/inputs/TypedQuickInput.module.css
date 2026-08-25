@@ -1,0 +1,110 @@
+.wrapper {
+	position: relative;
+}
+
+.editor {
+	min-height: 2.5rem;
+	white-space: pre-wrap;
+	word-break: break-word;
+	cursor: text;
+}
+
+.editor:empty::before {
+	content: attr(data-placeholder);
+	color: var(--color-text-subtle);
+}
+
+.editor:focus {
+	outline: none;
+	border-color: var(--color-accent-border);
+}
+
+.token {
+	font-weight: var(--font-weight-bold);
+	border-radius: var(--radius-small);
+	padding: 0 var(--space-extra-extra-small);
+	cursor: help;
+}
+
+.tokenDeadline {
+	color: var(--color-typed-quick-input-deadline);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-deadline) 15%, transparent);
+}
+
+.tokenStart {
+	color: var(--color-typed-quick-input-start);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-start) 15%, transparent);
+}
+
+.tokenEnd {
+	color: var(--color-typed-quick-input-end);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-end) 15%, transparent);
+}
+
+.tokenRepeat {
+	color: var(--color-typed-quick-input-repeat);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-repeat) 15%, transparent);
+}
+
+.tokenDuration {
+	color: var(--color-typed-quick-input-duration);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-duration) 15%, transparent);
+}
+
+.tokenMandatory {
+	color: var(--color-typed-quick-input-mandatory);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-mandatory) 15%, transparent);
+}
+
+.demoting {
+	border-radius: var(--radius-small);
+	animation: demote var(--demote-duration, 900ms) ease;
+}
+
+@keyframes demote {
+	0% {
+		background-color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+		color: var(--color-text-primary);
+	}
+	100% {
+		background-color: transparent;
+		color: inherit;
+	}
+}
+
+.tooltip {
+	position: fixed;
+	transform: translateY(calc(-100% - var(--space-small)));
+	z-index: var(--layer-modal);
+	display: flex;
+	align-items: center;
+	gap: var(--space-small);
+	max-width: 20rem;
+	padding: var(--space-extra-small) var(--space-small);
+	background-color: var(--color-surface-inset);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-medium);
+	box-shadow: var(--shadow-dialog);
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-secondary);
+}
+
+.tooltipExplanation {
+	white-space: nowrap;
+}
+
+.keepAsTextButton {
+	flex-shrink: 0;
+	background: none;
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-small);
+	padding: 0 var(--space-extra-small);
+	color: var(--color-text-muted);
+	font-size: var(--font-size-extra-small);
+	cursor: pointer;
+}
+
+.keepAsTextButton:hover {
+	color: var(--color-text-primary);
+	border-color: var(--color-border-control);
+}
