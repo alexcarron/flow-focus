@@ -50,7 +50,7 @@ export default function TaskCard({ task }: Props) {
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
-	const nextStepRef = useRef<HTMLSpanElement>(null);
+	const stepRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
 	const { stepsContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
 		isStepChecked: step => task.isStepComplete(step),
@@ -70,15 +70,6 @@ export default function TaskCard({ task }: Props) {
 		}
 	}, [task.getDescription()]);
 
-	// Sync next step contenteditable with task
-	useEffect(() => {
-		const el = nextStepRef.current;
-		const step = task.getNextStep() ?? '';
-		if (el && el.textContent !== step) {
-			el.textContent = step;
-		}
-	}, [task.getNextStep()]);
-
 	const deadline = task.getDeadline();
 	const startTime = task.getStartTime();
 	const timeUntilDeadline = task.getTimeUntilDeadline(currentTime);
@@ -90,6 +81,16 @@ export default function TaskCard({ task }: Props) {
 	const steps = task.getSteps();
 	const nextStepIndex = nextStep === null ? -1 : task.getStepIndex(nextStep);
 
+	const allStepsJoined = steps.join(' ');
+	useEffect(() => {
+		steps.forEach((step, stepIndex) => {
+			const stepSpanElement = stepRefs.current[stepIndex];
+			if (stepSpanElement && stepSpanElement.textContent !== step) {
+				stepSpanElement.textContent = step;
+			}
+		});
+	}, [allStepsJoined]);
+
 	function onDescriptionBlur(event: React.FocusEvent<HTMLHeadingElement>) {
 		const newDesc = event.currentTarget.textContent ?? '';
 		if (newDesc !== task.getDescription()) {
@@ -97,10 +98,10 @@ export default function TaskCard({ task }: Props) {
 		}
 	}
 
-	function onNextStepBlur(event: React.FocusEvent<HTMLSpanElement>) {
+	function onStepBlur(event: React.FocusEvent<HTMLSpanElement>, step: string) {
 		const newStep = event.currentTarget.textContent ?? '';
-		if (nextStep !== null && newStep !== nextStep) {
-			store.setStep(task, nextStep, newStep);
+		if (newStep !== step) {
+			store.setStep(task, step, newStep);
 		}
 	}
 
@@ -164,17 +165,19 @@ export default function TaskCard({ task }: Props) {
 									checkmarkClassName={styles.stepCheckmark}
 								/>
 
-								{isCurrentStep ? (
-									<span
-										ref={nextStepRef}
-										contentEditable
-										suppressContentEditableWarning
-										onBlur={onNextStepBlur}
-										className={styles.currentStep}
-									/>
-								) : (
-									<span className={isPreviousStep ? styles.previousStep : styles.upcomingStep}>{step}</span>
-								)}
+								<span
+									ref={stepSpanElement => { stepRefs.current[stepIndex] = stepSpanElement; }}
+									contentEditable
+									suppressContentEditableWarning
+									onBlur={event => onStepBlur(event, step)}
+									className={
+										isCurrentStep
+											? styles.currentStep
+											: isPreviousStep
+												? styles.previousStep
+												: styles.upcomingStep
+									}
+								/>
 							</div>
 						);
 					})}

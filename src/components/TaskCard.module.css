@@ -85,6 +85,8 @@
 	font-size: var(--font-size-small);
 	color: var(--color-text-faint);
 	text-decoration: line-through;
+	outline: none;
+	cursor: text;
 }
 
 .currentStep {
@@ -98,6 +100,8 @@
 .upcomingStep {
 	font-size: var(--font-size-small);
 	color: var(--color-text-subtle);
+	outline: none;
+	cursor: text;
 }
 
 .meta {
