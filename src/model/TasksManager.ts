@@ -101,7 +101,7 @@ export default class TasksManager {
 	public deleteTask(taskDeleting: Task): boolean {
 		const currentNumTasks = this.tasks.length;
 		this.tasks = this.tasks.filter((task) => {
-			return !task.equals(taskDeleting);
+			return task.id !== taskDeleting.id;
 		});
 		const newNumTasks = this.tasks.length;
 

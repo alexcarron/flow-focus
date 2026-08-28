@@ -13,6 +13,10 @@
 }
 
 .menuItem {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-large);
 	width: 100%;
 	padding: var(--space-small) var(--space-medium);
 	background-color: transparent;

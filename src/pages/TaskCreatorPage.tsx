@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import parseTypedQuickInput, { escapeTokenInText } from '../model/typed-quick-input/parseTypedQuickInput';
 import { TypedQuickInputToken } from '../model/typed-quick-input/TypedQuickInputToken';
+import Time from '../model/time-management/Time';
 import ArrayInput from '../components/inputs/ArrayInput';
 import CheckboxInput from '../components/inputs/CheckboxInput';
 import DatetimeInput from '../components/inputs/DatetimeInput';
@@ -19,7 +20,7 @@ const DEFAULT_TIMING: TaskTimingOptions = {
 	minDuration: DEFAULT_DURATION,
 	maxDuration: DEFAULT_DURATION,
 	repeatInterval: null,
-	isMandatory: false,
+	isMandatory: true,
 };
 
 const timingKeyToTokenField: Partial<Record<keyof TaskTimingOptions, TypedQuickInputToken['field']>> = {
@@ -42,6 +43,7 @@ export default function TaskCreatorPage() {
 	const addTask = useTasksStore(s => s.addTask);
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
+	const nightTime = useSettingsStore(s => s.nightTime);
 
 	const [name, setName] = useState('');
 	const [steps, setSteps] = useState<string[]>([]);
@@ -50,7 +52,7 @@ export default function TaskCreatorPage() {
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
-	const parseResult = useMemo(() => parseTypedQuickInput(name), [name]);
+	const parseResult = useMemo(() => parseTypedQuickInput(name, new Date(), Time.fromString(nightTime)), [name, nightTime]);
 	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
 
 	const handleCreateRef = useRef(handleCreate);
@@ -149,7 +151,7 @@ export default function TaskCreatorPage() {
 					tokens={parseResult.tokens}
 					onUnlinkToken={handleUnlinkToken}
 					demotedRange={demotedRange}
-					placeholder="e.g. finish essay due friday takes 2 to 4 hours"
+					placeholder="Calculus Homework 3.2 due thursday takes 1-2 hours"
 					onSubmit={() => handleCreateRef.current()}
 				/>
 			</div>

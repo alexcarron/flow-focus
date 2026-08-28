@@ -8,6 +8,8 @@ import TaskState from "./TaskState";
 export default class Task {
 	static [immerable] = true;
 
+	readonly id: string = crypto.randomUUID();
+
 	dbId: number | undefined = undefined;
 
 	protected description: string;
@@ -395,6 +397,10 @@ export default class Task {
 
 	uncompleteStep(step: string) {
 		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
+
+		if (this.isComplete) {
+			this.setComplete(false);
+		}
 	}
 
 	completeStepAndPrecedingSteps(step: string) {
@@ -404,6 +410,17 @@ export default class Task {
 		this.getSteps().slice(0, stepIndex + 1).forEach(stepToComplete => {
 			if (this.stepsToStatusMap.get(stepToComplete) !== StepStatus.COMPLETED) {
 				this.completeStep(stepToComplete);
+			}
+		});
+	}
+
+	uncompleteStepAndFollowingSteps(step: string) {
+		const stepIndex = this.getStepIndex(step);
+		if (stepIndex === -1) return;
+
+		this.getSteps().slice(stepIndex).forEach(stepToUncomplete => {
+			if (this.stepsToStatusMap.get(stepToUncomplete) !== StepStatus.UNCOMPLETE) {
+				this.uncompleteStep(stepToUncomplete);
 			}
 		});
 	}
@@ -670,17 +687,6 @@ export default class Task {
 
 		return (
 			isTaskActive && mustStartTaskToday
-		)
-	}
-
-	equals(otherTask: Task) {
-		return (
-			this.getDescription() == otherTask.getDescription() &&
-			this.getSteps().join(",") == otherTask.getSteps().join(",") &&
-			this.getStartTime() == otherTask.getStartTime() &&
-			this.getEndTime() == otherTask.getEndTime() &&
-			this.getDeadline() == otherTask.getDeadline() &&
-			this.getRepeatInterval() == otherTask.getRepeatInterval()
 		)
 	}
 }

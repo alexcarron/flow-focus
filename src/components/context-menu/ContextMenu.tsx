@@ -1,11 +1,13 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useOutsideClickAndEscape } from '../../hooks/useOutsideClickAndEscape';
+import KeyboardHint from '../KeyboardHint';
 import styles from './ContextMenu.module.css';
 
 export interface ContextMenuItem {
 	label: string;
 	onClick: () => void;
 	isDanger?: boolean;
+	hintKeys?: string[];
 }
 
 interface Props {
@@ -55,7 +57,8 @@ export default function ContextMenu({ items, position, onClose }: Props) {
 					}}
 					className={item.isDanger ? `${styles.menuItem} ${styles.menuItemDanger}` : styles.menuItem}
 				>
-					{item.label}
+					<span>{item.label}</span>
+					{item.hintKeys && <KeyboardHint keys={item.hintKeys} />}
 				</button>
 			))}
 		</div>

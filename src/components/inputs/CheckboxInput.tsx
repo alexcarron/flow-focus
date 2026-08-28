@@ -2,7 +2,7 @@ import styles from './CheckboxInput.module.css';
 
 interface Props {
 	value: boolean;
-	onChange: (value: boolean) => void;
+	onChange: (value: boolean, event: React.MouseEvent | React.KeyboardEvent) => void;
 	label?: string;
 	className?: string;
 }
@@ -14,8 +14,8 @@ export default function CheckboxInput({ value, onChange, label, className = '' }
 				role="checkbox"
 				aria-checked={value}
 				tabIndex={0}
-				onClick={() => onChange(!value)}
-				onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') onChange(!value); }}
+				onClick={event => onChange(!value, event)}
+				onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') onChange(!value, event); }}
 				className={value ? `${styles.box} ${styles.boxChecked}` : styles.box}
 			>
 				{value && (

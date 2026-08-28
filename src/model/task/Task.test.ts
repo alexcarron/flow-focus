@@ -476,6 +476,18 @@ describe('Task', () => {
 		});
 	});
 
+	describe('uncompleteStep', () => {
+		it('should clear the task completion state when it was already complete', () => {
+			task.addStep('Step 1');
+			task.completeAllSteps();
+
+			task.uncompleteStep('Step 1');
+
+			expect(task.getIsComplete()).toBe(false);
+			expect(task.isStepComplete('Step 1')).toBe(false);
+		});
+	});
+
 	describe('completeStepAndPrecedingSteps', () => {
 		it('should complete the given step and any unfinished steps before it', () => {
 			task.addStep('Step 1');
@@ -517,6 +529,40 @@ describe('Task', () => {
 			task.completeStepAndPrecedingSteps('Missing Step');
 
 			expect(task.isStepComplete('Step 1')).toBe(false);
+		});
+	});
+
+	describe('uncompleteStepAndFollowingSteps', () => {
+		it('should uncomplete the given step and any completed steps after it', () => {
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.addStep('Step 3');
+			task.completeAllSteps();
+
+			task.uncompleteStepAndFollowingSteps('Step 2');
+
+			expect(task.isStepComplete('Step 1')).toBe(true);
+			expect(task.isStepComplete('Step 2')).toBe(false);
+			expect(task.isStepComplete('Step 3')).toBe(false);
+		});
+
+		it('should clear the task completion state when it was already complete', () => {
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.completeAllSteps();
+
+			task.uncompleteStepAndFollowingSteps('Step 2');
+
+			expect(task.getIsComplete()).toBe(false);
+		});
+
+		it('should not throw or change anything for a step that does not exist', () => {
+			task.addStep('Step 1');
+			task.completeAllSteps();
+
+			task.uncompleteStepAndFollowingSteps('Missing Step');
+
+			expect(task.isStepComplete('Step 1')).toBe(true);
 		});
 	});
 

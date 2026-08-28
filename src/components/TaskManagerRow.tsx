@@ -28,6 +28,8 @@ export interface TaskManagerRowActions {
 	setDescription: (task: Task, description: string) => void;
 	setSteps: (task: Task, steps: string[]) => void;
 	setStepComplete: (task: Task, step: string, isComplete: boolean) => void;
+	completeStepAndPrecedingSteps: (task: Task, step: string) => void;
+	uncompleteStepAndFollowingSteps: (task: Task, step: string) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setMandatory: (task: Task, isMandatory: boolean) => void;
 	deleteTask: (task: Task) => Promise<void>;
@@ -99,7 +101,15 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 					renderRowPrefix={(_, step) => (
 						<CheckboxInput
 							value={task.isStepComplete(step)}
-							onChange={v => store.setStepComplete(task, step, v)}
+							onChange={(v, event) => {
+								if (event.shiftKey) {
+									if (v) store.completeStepAndPrecedingSteps(task, step);
+									else store.uncompleteStepAndFollowingSteps(task, step);
+								}
+								else {
+									store.setStepComplete(task, step, v);
+								}
+							}}
 						/>
 					)}
 					placeholder="Add a step…"

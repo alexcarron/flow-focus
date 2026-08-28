@@ -1,6 +1,8 @@
 import parseDatePhrase from './parseDatePhrase';
+import Time from '../time-management/Time';
 
 const testNow = new Date(2026, 0, 5, 9, 0, 0);
+const testNightTime = Time.fromString('22:30');
 
 function nextDateWithJavascriptDay(javascriptDay: number, includeToday: boolean): Date {
 	const result = new Date(testNow);
@@ -47,5 +49,30 @@ describe('parseDatePhrase', () => {
 
 	it('returns null for non-date text', () => {
 		expect(parseDatePhrase('essay', testNow)).toBeNull();
+	});
+
+	it('parses "midnight" as today at exactly 00:00', () => {
+		const parsed = parseDatePhrase('midnight', testNow, testNightTime);
+		expect(parsed?.date.getDate()).toBe(5);
+		expect(parsed?.timeOfDay).toEqual({ hour: 0, minute: 0 });
+	});
+
+	it('parses "tonight" as today at exactly night time', () => {
+		const parsed = parseDatePhrase('tonight', testNow, testNightTime);
+		expect(parsed?.date.getDate()).toBe(5);
+		expect(parsed?.timeOfDay).toEqual({ hour: 22, minute: 30 });
+	});
+
+	it('parses bare "night" as today at exactly night time', () => {
+		const parsed = parseDatePhrase('night', testNow, testNightTime);
+		expect(parsed?.date.getDate()).toBe(5);
+		expect(parsed?.timeOfDay).toEqual({ hour: 22, minute: 30 });
+	});
+
+	it('parses "<weekday> night" as the next occurrence of that weekday at night time', () => {
+		const friday = parseDatePhrase('friday', testNow);
+		const parsed = parseDatePhrase('friday night', testNow, testNightTime);
+		expect(parsed?.date.getTime()).toBe(friday?.date.getTime());
+		expect(parsed?.timeOfDay).toEqual({ hour: 22, minute: 30 });
 	});
 });

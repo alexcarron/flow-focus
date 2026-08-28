@@ -86,8 +86,8 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 	return sorted;
 }
 
-function getRowID(task: Task, index: number): string {
-	return task.dbId !== undefined ? `id-${task.dbId}` : `idx-${index}`;
+function getRowID(task: Task): string {
+	return task.id;
 }
 
 export default function TasksManagerPage() {
@@ -95,12 +95,14 @@ export default function TasksManagerPage() {
 	const setSteps = useTasksStore(s => s.setSteps);
 	const setDescription = useTasksStore(s => s.setDescription);
 	const setStepComplete = useTasksStore(s => s.setStepComplete);
+	const completeStepAndPrecedingSteps = useTasksStore(s => s.completeStepAndPrecedingSteps);
+	const uncompleteStepAndFollowingSteps = useTasksStore(s => s.uncompleteStepAndFollowingSteps);
 	const setComplete = useTasksStore(s => s.setComplete);
 	const setMandatory = useTasksStore(s => s.setMandatory);
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
-	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
+	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
 
 	const [filter, setFilter] = useState<Filter>(Filter.Active);
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
@@ -149,12 +151,12 @@ export default function TasksManagerPage() {
 	}
 
 	function toggleSelectAll() {
-		const rowIDs = displayed.map((task, idx) => getRowID(task, idx));
+		const rowIDs = displayed.map((task) => getRowID(task));
 		const areAllSelected = rowIDs.length > 0 && rowIDs.every(id => selectedRowIDs.has(id));
 		setSelectedRowIDs(areAllSelected ? new Set() : new Set(rowIDs));
 	}
 
-	const selectedTasks = displayed.filter((task, idx) => selectedRowIDs.has(getRowID(task, idx)));
+	const selectedTasks = displayed.filter((task) => selectedRowIDs.has(getRowID(task)));
 
 	function requestDeleteSelectedTasks() {
 		if (selectedTasks.length === 0) return;
@@ -187,7 +189,7 @@ export default function TasksManagerPage() {
 		return sortDir === SortDir.Asc ? '↑' : '↓';
 	}
 
-	const rowIDs = displayed.map((task, idx) => getRowID(task, idx));
+	const rowIDs = displayed.map((task) => getRowID(task));
 	const areAllDisplayedSelected = rowIDs.length > 0 && rowIDs.every(id => selectedRowIDs.has(id));
 
 	return (
@@ -233,8 +235,8 @@ export default function TasksManagerPage() {
 					</tr>
 				</thead>
 				<tbody>
-					{displayed.map((task, idx) => {
-						const rowID = getRowID(task, idx);
+					{displayed.map((task) => {
+						const rowID = getRowID(task);
 						return (
 							<TaskManagerRow
 								key={rowID}

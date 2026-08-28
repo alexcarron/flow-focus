@@ -35,6 +35,7 @@ interface TasksActions {
 	completeNextStep: (task: Task) => void;
 	completeAllSteps: (task: Task) => void;
 	completeStepAndPrecedingSteps: (task: Task, step: string) => void;
+	uncompleteStepAndFollowingSteps: (task: Task, step: string) => void;
 	skipNextStep: (task: Task) => void;
 	deferTask: (task: Task, ms: number) => void;
 	setDescription: (task: Task, description: string) => void;
@@ -140,27 +141,18 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		executeWithPatches(action: () => void, affectedTasks?: Task[]) {
 			const currentTasks = get().tasks;
-			const statesBefore: TaskState[] = currentTasks.map(t => t.getState());
+			const taskIDToStateBefore: Record<string, TaskState> = {};
+			currentTasks.forEach(t => { taskIDToStateBefore[t.id] = t.getState(); });
 
 			action();
 
-			const statesAfter: TaskState[] = currentTasks.map(t => t.getState());
+			const taskIDToStateAfter: Record<string, TaskState> = {};
+			currentTasks.forEach(t => { taskIDToStateAfter[t.id] = t.getState(); });
 
-			const [, forwardPatches, inversePatches] = produceWithPatches(statesBefore, (draft: TaskState[]) => {
-				statesAfter.forEach((afterState, i) => {
-					if (draft[i]) {
-						draft[i].description = afterState.description;
-						draft[i].isComplete = afterState.isComplete;
-						draft[i].isMandatory = afterState.isMandatory;
-						draft[i].isSkipped = afterState.isSkipped;
-						draft[i].startTime = afterState.startTime;
-						draft[i].endTime = afterState.endTime;
-						draft[i].deadline = afterState.deadline;
-						draft[i].minDuration = afterState.minDuration;
-						draft[i].maxDuration = afterState.maxDuration;
-						draft[i].repeatInterval = afterState.repeatInterval;
-						draft[i].lastActionedStep = afterState.lastActionedStep;
-						draft[i].stepsToStatusMap = afterState.stepsToStatusMap;
+			const [, forwardPatches, inversePatches] = produceWithPatches(taskIDToStateBefore, (draft: Record<string, TaskState>) => {
+				Object.entries(taskIDToStateAfter).forEach(([taskID, afterState]) => {
+					if (draft[taskID]) {
+						draft[taskID] = afterState;
 					}
 				});
 			});
@@ -185,6 +177,10 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		completeStepAndPrecedingSteps(task: Task, step: string) {
 			get().executeWithPatches(() => task.completeStepAndPrecedingSteps(step), [task]);
+		},
+
+		uncompleteStepAndFollowingSteps(task: Task, step: string) {
+			get().executeWithPatches(() => task.uncompleteStepAndFollowingSteps(step), [task]);
 		},
 
 		skipNextStep(task: Task) {
@@ -229,10 +225,10 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		setStepComplete(task: Task, step: string, isComplete: boolean) {
-			if (isComplete) task.completeStep(step);
-			else task.uncompleteStep(step);
-			set(state => { state.tasks = [...tasksManager.getTasks()]; });
-			get().persistChangedTasks([task]);
+			get().executeWithPatches(() => {
+				if (isComplete) task.completeStep(step);
+				else task.uncompleteStep(step);
+			}, [task]);
 		},
 
 		async addTask(description: string, timingOptions?: Partial<TaskTimingOptions>) {
@@ -296,11 +292,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			if (undoStack.length === 0) return;
 
 			const entry = undoStack[undoStack.length - 1];
-			const currentStates: TaskState[] = tasks.map(t => t.getState());
-			const previousStates = applyPatches(currentStates, entry.inversePatches) as TaskState[];
+			const taskIDToTask = new Map(tasks.map(t => [t.id, t]));
+			const taskIDToCurrentState: Record<string, TaskState> = {};
+			tasks.forEach(t => { taskIDToCurrentState[t.id] = t.getState(); });
+			const taskIDToPreviousState = applyPatches(taskIDToCurrentState, entry.inversePatches) as Record<string, TaskState>;
 
-			previousStates.forEach((state, i) => {
-				if (tasks[i]) tasks[i].restoreState(state);
+			Object.entries(taskIDToPreviousState).forEach(([taskID, state]) => {
+				const task = taskIDToTask.get(taskID);
+				if (task) task.restoreState(state);
 			});
 
 			set(state => {
@@ -317,11 +316,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			if (redoStack.length === 0) return;
 
 			const entry = redoStack[redoStack.length - 1];
-			const currentStates: TaskState[] = tasks.map(t => t.getState());
-			const nextStates = applyPatches(currentStates, entry.forwardPatches) as TaskState[];
+			const taskIDToTask = new Map(tasks.map(t => [t.id, t]));
+			const taskIDToCurrentState: Record<string, TaskState> = {};
+			tasks.forEach(t => { taskIDToCurrentState[t.id] = t.getState(); });
+			const taskIDToNextState = applyPatches(taskIDToCurrentState, entry.forwardPatches) as Record<string, TaskState>;
 
-			nextStates.forEach((state, i) => {
-				if (tasks[i]) tasks[i].restoreState(state);
+			Object.entries(taskIDToNextState).forEach(([taskID, state]) => {
+				const task = taskIDToTask.get(taskID);
+				if (task) task.restoreState(state);
 			});
 
 			set(state => {

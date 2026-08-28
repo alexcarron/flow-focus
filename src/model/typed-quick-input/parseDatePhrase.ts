@@ -1,9 +1,14 @@
+import Time from '../time-management/Time';
+import { DEFAULT_SETTINGS } from '../AppSettings';
 import Weekday from '../time-management/Weekday';
 
 export type ParsedDatePhrase = {
 	date: Date;
 	matchedLength: number;
+	timeOfDay?: { hour: number; minute: number };
 };
+
+const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 
 const weekdayNameToWeekday: Record<string, Weekday> = {
 	monday: Weekday.MONDAY, mon: Weekday.MONDAY,
@@ -49,7 +54,7 @@ function atStartOfDay(date: Date): Date {
 	return result;
 }
 
-function nextDateForWeekday(weekday: Weekday, includeToday: boolean, now: Date): Date {
+export function nextDateForWeekday(weekday: Weekday, includeToday: boolean, now: Date): Date {
 	const targetJavascriptDay = weekdayToJavascriptDay(weekday);
 	const today = atStartOfDay(now);
 	let daysUntilTarget = (targetJavascriptDay - today.getDay() + 7) % 7;
@@ -60,7 +65,21 @@ function nextDateForWeekday(weekday: Weekday, includeToday: boolean, now: Date):
 	return today;
 }
 
-function parseRelativeDay(text: string, now: Date): ParsedDatePhrase | null {
+function parseMidnightKeyword(text: string, now: Date): ParsedDatePhrase | null {
+	const match = /^midnight\b/i.exec(text);
+	if (!match) return null;
+
+	return { date: atStartOfDay(now), matchedLength: match[0].length, timeOfDay: { hour: 0, minute: 0 } };
+}
+
+function parseNightSuffix(text: string, nightTime: Time): { matchedLength: number; timeOfDay: { hour: number; minute: number } } | null {
+	const match = /^\s*night\b/i.exec(text);
+	if (!match) return null;
+
+	return { matchedLength: match[0].length, timeOfDay: { hour: nightTime.getHour(), minute: nightTime.getMinute() } };
+}
+
+function parseRelativeDay(text: string, now: Date, nightTime: Time): ParsedDatePhrase | null {
 	const match = /^(today|tomorrow|tonight)/i.exec(text);
 	if (!match) return null;
 
@@ -69,10 +88,13 @@ function parseRelativeDay(text: string, now: Date): ParsedDatePhrase | null {
 	if (keyword === 'tomorrow') {
 		date.setDate(date.getDate() + 1);
 	}
+	if (keyword === 'tonight') {
+		return { date, matchedLength: match[0].length, timeOfDay: { hour: nightTime.getHour(), minute: nightTime.getMinute() } };
+	}
 	return { date, matchedLength: match[0].length };
 }
 
-function parseNextWeekday(text: string, now: Date): ParsedDatePhrase | null {
+function parseNextWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
 	const match = new RegExp(`^next\\s+(${weekdayAlternation})`, 'i').exec(text);
 	if (!match) return null;
 
@@ -82,7 +104,7 @@ function parseNextWeekday(text: string, now: Date): ParsedDatePhrase | null {
 	return { date: upcoming, matchedLength: match[0].length };
 }
 
-function parseWeekday(text: string, now: Date): ParsedDatePhrase | null {
+function parseWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
 	const match = new RegExp(`^(${weekdayAlternation})`, 'i').exec(text);
 	if (!match) return null;
 
@@ -90,7 +112,7 @@ function parseWeekday(text: string, now: Date): ParsedDatePhrase | null {
 	return { date: nextDateForWeekday(weekday, true, now), matchedLength: match[0].length };
 }
 
-function parseMonthAndDay(text: string, now: Date): ParsedDatePhrase | null {
+function parseMonthAndDay(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
 	const match = new RegExp(
 		`^(${monthAlternation})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?`,
 		'i'
@@ -115,15 +137,36 @@ function parseMonthAndDay(text: string, now: Date): ParsedDatePhrase | null {
 
 const dateParsers = [parseRelativeDay, parseNextWeekday, parseWeekday, parseMonthAndDay];
 
-export default function parseDatePhrase(text: string, now: Date = new Date()): ParsedDatePhrase | null {
+export default function parseDatePhrase(text: string, now: Date = new Date(), nightTime: Time = defaultNightTime): ParsedDatePhrase | null {
 	const leadingWhitespace = /^\s*/.exec(text)?.[0].length ?? 0;
 	const trimmed = text.slice(leadingWhitespace);
 
+	const midnight = parseMidnightKeyword(trimmed, now);
+	if (midnight) {
+		return { ...midnight, matchedLength: leadingWhitespace + midnight.matchedLength };
+	}
+
 	for (const parse of dateParsers) {
-		const parsed = parse(trimmed, now);
+		const parsed = parse(trimmed, now, nightTime);
 		if (parsed) {
+			if (parsed.timeOfDay) {
+				return { date: parsed.date, matchedLength: leadingWhitespace + parsed.matchedLength, timeOfDay: parsed.timeOfDay };
+			}
+			const nightSuffix = parseNightSuffix(trimmed.slice(parsed.matchedLength), nightTime);
+			if (nightSuffix) {
+				return {
+					date: parsed.date,
+					matchedLength: leadingWhitespace + parsed.matchedLength + nightSuffix.matchedLength,
+					timeOfDay: nightSuffix.timeOfDay,
+				};
+			}
 			return { date: parsed.date, matchedLength: leadingWhitespace + parsed.matchedLength };
 		}
+	}
+
+	const bareNightSuffix = parseNightSuffix(trimmed, nightTime);
+	if (bareNightSuffix) {
+		return { date: atStartOfDay(now), matchedLength: leadingWhitespace + bareNightSuffix.matchedLength, timeOfDay: bareNightSuffix.timeOfDay };
 	}
 
 	return null;

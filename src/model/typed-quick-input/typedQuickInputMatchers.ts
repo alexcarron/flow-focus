@@ -1,7 +1,8 @@
 import TaskTimingOptions from '../task/TaskTimingOptions';
+import Time from '../time-management/Time';
 import { timeUnits, TimeUnitName } from '../time-management/StandardTimeUnit';
 import Weekday from '../time-management/Weekday';
-import parseDatePhrase from './parseDatePhrase';
+import parseDatePhrase, { nextDateForWeekday } from './parseDatePhrase';
 import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
 import { TypedQuickInputField } from './TypedQuickInputToken';
 
@@ -18,11 +19,18 @@ export type RawMatch = {
 export type Matcher = {
 	field: TypedQuickInputField;
 	colorClass: string;
-	findMatches: (input: string, now: Date) => RawMatch[];
+	findMatches: (input: string, now: Date, nightTime: Time) => RawMatch[];
 };
 
-const endOfDayHour = 23;
-const endOfDayMinute = 59;
+function getEndOfDayTimeOfDay(nightTime: Time): { hour: number; minute: number } {
+	const isNightTimeBeforeEndOfDay = nightTime.getTotalMinutes() < 23 * 60 + 59;
+	if (isNightTimeBeforeEndOfDay) return { hour: nightTime.getHour(), minute: nightTime.getMinute() };
+	return { hour: 23, minute: 59 };
+}
+
+function getStartOfDayTimeOfDay(): { hour: number; minute: number } {
+	return { hour: 0, minute: 0 };
+}
 
 function withTimeOfDay(date: Date, hour: number, minute: number): Date {
 	const result = new Date(date);
@@ -66,23 +74,23 @@ function makeDateMatcher(config: {
 	field: TypedQuickInputField;
 	colorClass: string;
 	triggerAlternation: string;
-	timeOfDayHour: number;
-	timeOfDayMinute: number;
+	getDefaultTimeOfDay: (nightTime: Time) => { hour: number; minute: number };
 	explanationLabel: string;
 }): Matcher {
 	return {
 		field: config.field,
 		colorClass: config.colorClass,
-		findMatches(input, now) {
+		findMatches(input, now, nightTime) {
 			const matches: RawMatch[] = [];
 			const triggerRegex = new RegExp(`\\b(${config.triggerAlternation})\\s+`, 'gi');
 			let triggerMatch: RegExpExecArray | null;
 			while ((triggerMatch = triggerRegex.exec(input)) !== null) {
 				const argumentStart = triggerMatch.index + triggerMatch[0].length;
-				const parsed = parseDatePhrase(input.slice(argumentStart), now);
+				const parsed = parseDatePhrase(input.slice(argumentStart), now, nightTime);
 				if (!parsed) continue;
 
-				const date = withTimeOfDay(parsed.date, config.timeOfDayHour, config.timeOfDayMinute);
+				const timeOfDay = parsed.timeOfDay ?? config.getDefaultTimeOfDay(nightTime);
+				const date = withTimeOfDay(parsed.date, timeOfDay.hour, timeOfDay.minute);
 				const endIndex = argumentStart + parsed.matchedLength;
 				matches.push({
 					field: config.field,
@@ -104,8 +112,7 @@ const deadlineMatcher = makeDateMatcher({
 	field: 'deadline',
 	colorClass: 'deadline',
 	triggerAlternation: 'due|deadline',
-	timeOfDayHour: endOfDayHour,
-	timeOfDayMinute: endOfDayMinute,
+	getDefaultTimeOfDay: getEndOfDayTimeOfDay,
 	explanationLabel: 'Due',
 });
 
@@ -113,8 +120,7 @@ const startTimeMatcher = makeDateMatcher({
 	field: 'startTime',
 	colorClass: 'start',
 	triggerAlternation: 'starts|start|starting',
-	timeOfDayHour: 0,
-	timeOfDayMinute: 0,
+	getDefaultTimeOfDay: getStartOfDayTimeOfDay,
 	explanationLabel: 'Starts',
 });
 
@@ -122,8 +128,7 @@ const endTimeMatcher = makeDateMatcher({
 	field: 'endTime',
 	colorClass: 'end',
 	triggerAlternation: 'ends|end|ending|until',
-	timeOfDayHour: endOfDayHour,
-	timeOfDayMinute: endOfDayMinute,
+	getDefaultTimeOfDay: getEndOfDayTimeOfDay,
 	explanationLabel: 'Ends',
 });
 
@@ -161,15 +166,6 @@ const namedRepeatWordToMilliseconds: Record<string, number> = {
 	annually: timeUnits[TimeUnitName.Years].milliseconds,
 };
 
-function nextDateForWeekday(weekday: Weekday, now: Date): Date {
-	const result = new Date(now);
-	result.setHours(0, 0, 0, 0);
-	const targetJavascriptDay = weekday % 7;
-	const daysUntilTarget = (targetJavascriptDay - result.getDay() + 7) % 7;
-	result.setDate(result.getDate() + daysUntilTarget);
-	return result;
-}
-
 function buildRepeatMatch(config: {
 	startIndex: number;
 	endIndex: number;
@@ -194,7 +190,7 @@ function buildRepeatMatch(config: {
 const repeatMatcher: Matcher = {
 	field: 'repeatInterval',
 	colorClass: 'repeat',
-	findMatches(input, now) {
+	findMatches(input, now, _nightTime) {
 		const matches: RawMatch[] = [];
 
 		const namedRegex = new RegExp(`\\b(${Object.keys(namedRepeatWordToMilliseconds).join('|')}|every\\s+day)\\b`, 'gi');
@@ -230,7 +226,7 @@ const repeatMatcher: Matcher = {
 					input,
 					intervalMilliseconds: timeUnits[TimeUnitName.Weeks].milliseconds,
 					explanation: `Repeats every week on ${weekdayMatch[1]}`,
-					startTime: nextDateForWeekday(weekday, now),
+					startTime: nextDateForWeekday(weekday, true, now),
 				}));
 				everyRegex.lastIndex = endIndex;
 				continue;
@@ -284,7 +280,7 @@ function buildDurationMatch(config: {
 const durationMatcher: Matcher = {
 	field: 'duration',
 	colorClass: 'duration',
-	findMatches(input, _now) {
+	findMatches(input, _now, _nightTime) {
 		const matches: RawMatch[] = [];
 
 		const parentheticalRegex = /\(([^()]+)\)/g;
@@ -352,24 +348,55 @@ const durationMatcher: Matcher = {
 	},
 };
 
+function toWordAlternation(phrases: string[]): string {
+	return phrases.sort((left, right) => right.length - left.length).join('|');
+}
+
+const mandatoryCoreWords = ['mandatory', 'required', 'obligatory', 'obligated', 'compulsory'];
+const mandatoryPhrases = [...mandatoryCoreWords, 'must do', 'must be completed', 'needs to be completed'];
+const optionalCoreWords = ['optional', 'voluntary', 'discretionary'];
+const optionalPhrases = [
+	...optionalCoreWords, 'may complete',
+	'do not have to complete', 'does not need to be completed',
+];
+
+type MandatoryRule = { regex: RegExp; isMandatory: boolean };
+
+const mandatoryRules: MandatoryRule[] = [
+	{ regex: new RegExp(`\\bnot\\s+(?:${toWordAlternation(mandatoryCoreWords)})\\b`, 'gi'), isMandatory: false },
+	{ regex: new RegExp(`\\bnot\\s+(?:${toWordAlternation(optionalCoreWords)})\\b`, 'gi'), isMandatory: true },
+	{ regex: new RegExp(`\\b(?:${toWordAlternation(mandatoryPhrases)})\\b`, 'gi'), isMandatory: true },
+	{ regex: new RegExp(`\\b(?:${toWordAlternation(optionalPhrases)})\\b`, 'gi'), isMandatory: false },
+];
+
 const mandatoryMatcher: Matcher = {
 	field: 'isMandatory',
 	colorClass: 'mandatory',
-	findMatches(input, _now) {
+	findMatches(input, _now, _nightTime) {
 		const matches: RawMatch[] = [];
-		const regex = /\b(mandatory|required)\b/gi;
-		let match: RegExpExecArray | null;
-		while ((match = regex.exec(input)) !== null) {
-			matches.push({
-				field: 'isMandatory',
-				colorClass: 'mandatory',
-				startIndex: match.index,
-				endIndex: match.index + match[0].length,
-				matchedText: match[0],
-				explanation: 'Marked as mandatory',
-				timing: { isMandatory: true },
-			});
+		const claimedRanges: Array<{ start: number; end: number }> = [];
+
+		for (const rule of mandatoryRules) {
+			let match: RegExpExecArray | null;
+			while ((match = rule.regex.exec(input)) !== null) {
+				const startIndex = match.index;
+				const endIndex = match.index + match[0].length;
+				const overlapsClaimedRange = claimedRanges.some(range => startIndex < range.end && range.start < endIndex);
+				if (overlapsClaimedRange) continue;
+
+				claimedRanges.push({ start: startIndex, end: endIndex });
+				matches.push({
+					field: 'isMandatory',
+					colorClass: 'mandatory',
+					startIndex,
+					endIndex,
+					matchedText: match[0],
+					explanation: rule.isMandatory ? 'Marked as mandatory' : 'Marked as optional',
+					timing: { isMandatory: rule.isMandatory },
+				});
+			}
 		}
+
 		return matches;
 	},
 };

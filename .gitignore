@@ -29,3 +29,7 @@ CLAUDE.md
 
 # Backup exports
 /backups/*.json
+
+# Planning
+TODO.md
+docs/planning/

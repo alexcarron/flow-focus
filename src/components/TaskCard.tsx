@@ -101,12 +101,17 @@ export default function TaskCard({ task }: Props) {
 		setIsDeleteTaskConfirmOpen(true);
 	}
 
-	function onStepCheckboxChange(step: string, isChecked: boolean) {
-		if (isChecked) {
-			store.completeStepAndPrecedingSteps(task, step);
+	function onStepCheckboxChange(step: string, isChecked: boolean, isShiftClick: boolean) {
+		if (isShiftClick) {
+			if (isChecked) {
+				store.completeStepAndPrecedingSteps(task, step);
+			}
+			else {
+				store.uncompleteStepAndFollowingSteps(task, step);
+			}
 		}
 		else {
-			store.setStepComplete(task, step, false);
+			store.setStepComplete(task, step, isChecked);
 		}
 	}
 
@@ -147,9 +152,9 @@ export default function TaskCard({ task }: Props) {
 									role="checkbox"
 									aria-checked={isCompleted}
 									tabIndex={0}
-									onClick={() => onStepCheckboxChange(step, !isCompleted)}
+									onClick={event => onStepCheckboxChange(step, !isCompleted, event.shiftKey)}
 									onKeyDown={event => {
-										if (event.key === ' ' || event.key === 'Enter') onStepCheckboxChange(step, !isCompleted);
+										if (event.key === ' ' || event.key === 'Enter') onStepCheckboxChange(step, !isCompleted, event.shiftKey);
 									}}
 									className={isCompleted ? `${styles.stepCheckbox} ${styles.stepCheckboxChecked}` : styles.stepCheckbox}
 								>
@@ -231,6 +236,8 @@ export default function TaskCard({ task }: Props) {
 				position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 				onClose={() => setStepContextMenu(null)}
 				items={stepContextMenu !== null ? [
+					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.step) },
+					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.step) },
 					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletion(stepContextMenu.step) },
 				] : []}
 			/>

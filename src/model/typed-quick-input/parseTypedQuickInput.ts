@@ -1,6 +1,10 @@
+import { DEFAULT_SETTINGS } from '../AppSettings';
 import TaskTimingOptions from '../task/TaskTimingOptions';
+import Time from '../time-management/Time';
 import { RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
 import { TypedQuickInputParseResult, TypedQuickInputToken } from './TypedQuickInputToken';
+
+const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 
 type Range = { start: number; end: number };
 
@@ -52,8 +56,8 @@ function buildCleanedName(input: string, removedIndices: Set<number>): string {
 	return result.replace(/\s+/g, ' ').trim();
 }
 
-export default function parseTypedQuickInput(input: string, now: Date = new Date()): TypedQuickInputParseResult {
-	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches(input, now));
+export default function parseTypedQuickInput(input: string, now: Date = new Date(), nightTime: Time = defaultNightTime): TypedQuickInputParseResult {
+	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches(input, now, nightTime));
 
 	const quoteSpans = findQuoteSpans(input);
 	const backslashSpans = findBackslashSpans(input);
