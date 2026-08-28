@@ -116,7 +116,7 @@ export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTML
 	function getCheckboxDragHandlers(step: string): StepCheckboxDragHandlers {
 		return {
 			onMouseDown: event => {
-				if (event.shiftKey) return;
+				if (event.shiftKey || event.button !== 0) return;
 				beginCheckboxDrag(step, !isStepCheckedRef.current(step));
 			},
 			onMouseEnter: () => applyCheckboxDragToStep(step),
