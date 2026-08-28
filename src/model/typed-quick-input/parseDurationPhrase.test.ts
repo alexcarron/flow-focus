@@ -18,6 +18,26 @@ describe('parseSingleDuration', () => {
 	it('returns null when there is no duration', () => {
 		expect(parseSingleDuration('friday')).toBeNull();
 	});
+
+	it('accepts "a"/"an" as an amount of one', () => {
+		expect(parseSingleDuration('an hour')?.milliseconds).toBe(1 * oneHour);
+		expect(parseSingleDuration('a minute')?.milliseconds).toBe(1 * oneMinute);
+	});
+
+	it('accepts "half" phrases as half the unit', () => {
+		expect(parseSingleDuration('half an hour')?.milliseconds).toBe(0.5 * oneHour);
+		expect(parseSingleDuration('half a day')?.milliseconds).toBe(0.5 * oneDay);
+		expect(parseSingleDuration('half hour')?.milliseconds).toBe(0.5 * oneHour);
+	});
+
+	it('accepts vague quantity phrases', () => {
+		expect(parseSingleDuration('a couple hours')?.milliseconds).toBe(2 * oneHour);
+		expect(parseSingleDuration('a couple of hours')?.milliseconds).toBe(2 * oneHour);
+		expect(parseSingleDuration('couple minutes')?.milliseconds).toBe(2 * oneMinute);
+		expect(parseSingleDuration('a few minutes')?.milliseconds).toBe(3 * oneMinute);
+		expect(parseSingleDuration('few days')?.milliseconds).toBe(3 * oneDay);
+		expect(parseSingleDuration('several days')?.milliseconds).toBe(4 * oneDay);
+	});
 });
 
 describe('parseDurationRange', () => {
@@ -37,5 +57,11 @@ describe('parseDurationRange', () => {
 		const range = parseDurationRange('3 hours to 5 days');
 		expect(range?.minimumMilliseconds).toBe(3 * oneHour);
 		expect(range?.maximumMilliseconds).toBe(5 * oneDay);
+	});
+
+	it('parses a "to" range where one side is a word amount', () => {
+		const range = parseDurationRange('30 min to an hour');
+		expect(range?.minimumMilliseconds).toBe(30 * oneMinute);
+		expect(range?.maximumMilliseconds).toBe(1 * oneHour);
 	});
 });

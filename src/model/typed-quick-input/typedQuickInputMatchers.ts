@@ -353,11 +353,10 @@ function toWordAlternation(phrases: string[]): string {
 }
 
 const mandatoryCoreWords = ['mandatory', 'required', 'obligatory', 'obligated', 'compulsory'];
-const mandatoryPhrases = [...mandatoryCoreWords, 'must do', 'must be completed', 'needs to be completed'];
+const mandatoryPhrases = [...mandatoryCoreWords, 'must do', 'must be completed', 'needs to be completed', 'must be done'];
 const optionalCoreWords = ['optional', 'voluntary', 'discretionary'];
 const optionalPhrases = [
-	...optionalCoreWords, 'may complete',
-	'do not have to complete', 'does not need to be completed',
+	...optionalCoreWords, 'may complete', 'do not have to complete', 'do not need to complete', 'does not need to be completed', 'does not have to completed',
 ];
 
 type MandatoryRule = { regex: RegExp; isMandatory: boolean };

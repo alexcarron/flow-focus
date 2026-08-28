@@ -28,6 +28,19 @@ const unitAlternation = Object.keys(durationUnitWordToMilliseconds)
 	.sort((left, right) => right.length - left.length)
 	.join('|');
 
+const wordAmountPhraseToMultiplier: Record<string, number> = {
+	'half an': 0.5, 'half a': 0.5, half: 0.5,
+	'a couple of': 2, 'a couple': 2, 'couple of': 2, couple: 2,
+	'a few': 3, few: 3,
+	several: 4,
+	an: 1, a: 1,
+};
+
+const wordAmountAlternation = Object.keys(wordAmountPhraseToMultiplier)
+	.sort((left, right) => right.length - left.length)
+	.map(phrase => phrase.split(' ').join('\\s+'))
+	.join('|');
+
 export type ParsedDuration = {
 	milliseconds: number;
 	matchedLength: number;
@@ -40,12 +53,22 @@ export type ParsedDurationRange = {
 };
 
 export function parseSingleDuration(text: string): ParsedDuration | null {
-	const match = new RegExp(`^\\s*(\\d+(?:\\.\\d+)?)\\s*(${unitAlternation})\\b`, 'i').exec(text);
-	if (!match) return null;
+	const numericMatch = new RegExp(`^\\s*(\\d+(?:\\.\\d+)?)\\s*(${unitAlternation})\\b`, 'i').exec(text);
+	if (numericMatch) {
+		const amount = parseFloat(numericMatch[1]);
+		const unitMilliseconds = durationUnitWordToMilliseconds[numericMatch[2].toLowerCase()];
+		return { milliseconds: Math.round(amount * unitMilliseconds), matchedLength: numericMatch[0].length };
+	}
 
-	const amount = parseFloat(match[1]);
-	const unitMilliseconds = durationUnitWordToMilliseconds[match[2].toLowerCase()];
-	return { milliseconds: Math.round(amount * unitMilliseconds), matchedLength: match[0].length };
+	const wordAmountMatch = new RegExp(`^\\s*(${wordAmountAlternation})\\s+(${unitAlternation})\\b`, 'i').exec(text);
+	if (wordAmountMatch) {
+		const normalizedPhrase = wordAmountMatch[1].toLowerCase().replace(/\s+/g, ' ');
+		const multiplier = wordAmountPhraseToMultiplier[normalizedPhrase];
+		const unitMilliseconds = durationUnitWordToMilliseconds[wordAmountMatch[2].toLowerCase()];
+		return { milliseconds: Math.round(multiplier * unitMilliseconds), matchedLength: wordAmountMatch[0].length };
+	}
+
+	return null;
 }
 
 function parseNumericRangeWithSharedUnit(text: string): ParsedDurationRange | null {
