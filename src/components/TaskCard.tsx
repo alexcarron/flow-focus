@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import Task from '../model/task/Task';
 import { useTasksStore } from '../stores/tasksStore';
 import { useShrinkToFit } from '../hooks/useShrinkToFit';
+import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
+import StepCheckbox from './StepCheckbox';
 import { formatDate } from '../utils/formatters';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
@@ -49,6 +51,11 @@ export default function TaskCard({ task }: Props) {
 
 	const descRef = useRef<HTMLHeadingElement>(null);
 	const nextStepRef = useRef<HTMLSpanElement>(null);
+
+	const { stepsContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
+		isStepChecked: step => task.isStepComplete(step),
+		setStepChecked: (step, isChecked) => store.setStepComplete(task, step, isChecked),
+	});
 
 	useEffect(() => {
 		const id = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -133,7 +140,7 @@ export default function TaskCard({ task }: Props) {
 			/>
 
 			{task.hasNextStep() && (
-				<div className={styles.steps}>
+				<div ref={stepsContainerRef} className={styles.steps}>
 					{steps.map((step, stepIndex) => {
 						const isCompleted = task.isStepComplete(step);
 						const isCurrentStep = step === nextStep;
@@ -148,22 +155,14 @@ export default function TaskCard({ task }: Props) {
 									setStepContextMenu({ step, x: event.clientX, y: event.clientY });
 								}}
 							>
-								<div
-									role="checkbox"
-									aria-checked={isCompleted}
-									tabIndex={0}
-									onClick={event => onStepCheckboxChange(step, !isCompleted, event.shiftKey)}
-									onKeyDown={event => {
-										if (event.key === ' ' || event.key === 'Enter') onStepCheckboxChange(step, !isCompleted, event.shiftKey);
-									}}
+								<StepCheckbox
+									step={step}
+									isChecked={isCompleted}
+									onToggle={onStepCheckboxChange}
+									dragHandlers={getCheckboxDragHandlers(step)}
 									className={isCompleted ? `${styles.stepCheckbox} ${styles.stepCheckboxChecked}` : styles.stepCheckbox}
-								>
-									{isCompleted && (
-										<svg className={styles.stepCheckmark} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-											<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-										</svg>
-									)}
-								</div>
+									checkmarkClassName={styles.stepCheckmark}
+								/>
 
 								{isCurrentStep ? (
 									<span

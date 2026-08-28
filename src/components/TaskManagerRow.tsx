@@ -1,12 +1,15 @@
 import Task from '../model/task/Task';
 import Duration from '../model/time-management/Duration';
 import { formatDate, formatTime } from '../utils/formatters';
+import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
 import ArrayInput from './inputs/ArrayInput';
 import SelectionCheckbox from './SelectionCheckbox';
+import StepCheckbox from './StepCheckbox';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
+import checkboxInputStyles from './inputs/CheckboxInput.module.css';
 import styles from './TaskManagerRow.module.css';
 
 function toDurationString(ms: number): string {
@@ -55,6 +58,21 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 	const startTime = task.getStartTime();
 	const displayStartTime = startTime && startTime > now ? startTime : null;
 
+	const { stepsContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
+		isStepChecked: step => task.isStepComplete(step),
+		setStepChecked: (step, isChecked) => store.setStepComplete(task, step, isChecked),
+	});
+
+	function onStepToggle(step: string, isChecked: boolean, isShiftClick: boolean) {
+		if (isShiftClick) {
+			if (isChecked) store.completeStepAndPrecedingSteps(task, step);
+			else store.uncompleteStepAndFollowingSteps(task, step);
+		}
+		else {
+			store.setStepComplete(task, step, isChecked);
+		}
+	}
+
 	function onStepReorderKeyDown(step: string, e: React.KeyboardEvent) {
 		if (!step) return;
 
@@ -93,25 +111,24 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 				/>
 			</td>
 
-			<td className={styles.stepsCell}>
+			<td ref={stepsContainerRef} className={styles.stepsCell}>
 				<ArrayInput
 					value={steps}
 					onChange={newSteps => store.setSteps(task, newSteps)}
 					onItemKeyDown={(_, step, e) => onStepReorderKeyDown(step, e)}
-					renderRowPrefix={(_, step) => (
-						<CheckboxInput
-							value={task.isStepComplete(step)}
-							onChange={(v, event) => {
-								if (event.shiftKey) {
-									if (v) store.completeStepAndPrecedingSteps(task, step);
-									else store.uncompleteStepAndFollowingSteps(task, step);
-								}
-								else {
-									store.setStepComplete(task, step, v);
-								}
-							}}
-						/>
-					)}
+					renderRowPrefix={(_, step) => {
+						const isCompleted = task.isStepComplete(step);
+						return (
+							<StepCheckbox
+								step={step}
+								isChecked={isCompleted}
+								onToggle={onStepToggle}
+								dragHandlers={getCheckboxDragHandlers(step)}
+								className={isCompleted ? `${checkboxInputStyles.box} ${checkboxInputStyles.boxChecked}` : checkboxInputStyles.box}
+								checkmarkClassName={checkboxInputStyles.checkmark}
+							/>
+						);
+					}}
 					placeholder="Add a step…"
 					className={styles.stepsArrayInput}
 				/>
