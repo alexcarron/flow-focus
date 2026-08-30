@@ -82,8 +82,8 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 	}
 
 	return (
-		<div className={`field-group ${className}`}>
-			{label && <label className="field-label">{label}</label>}
+		<div className={`${styles.container} ${className}`}>
+			{label && <label className={styles.heading}>{label}</label>}
 			<input
 				type="datetime-local"
 				value={value ? toLocalDatetimeString(value) : ''}

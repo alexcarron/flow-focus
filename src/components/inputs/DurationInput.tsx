@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { formatTime } from '../../utils/formatters';
-import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../config/shortcuts';
+import { SHORTCUTS, matchesShortcut } from '../../config/shortcuts';
 import styles from './DurationInput.module.css';
 
 interface Props {
@@ -84,28 +83,11 @@ export default function DurationInput({ value, onChange, label, className = '' }
 		<div className={`field-group ${className}`}>
 			{label && <label className="field-label">{label}</label>}
 			<div className={styles.control}>
-				<button
-					type="button"
-					tabIndex={-1}
-					title={`-10 units (${formatShortcut(shortcuts.decrement10)})`}
-					onClick={() => adjust(-10)}
-					className="button adjust"
-				>
-					-10
-				</button>
-				<button
-					type="button"
-					tabIndex={-1}
-					title={`-1 unit (${formatShortcut(shortcuts.decrement1)})`}
-					onClick={() => adjust(-1)}
-					className="button adjust"
-				>
-					-1
-				</button>
 				<input
 					type="number"
 					min={0}
-					value={amount}
+					value={value !== null ? amount : ''}
+					placeholder="—"
 					className={`field ${styles.amount}`}
 					onChange={event => {
 						const parsedValue = parseFloat(event.target.value);
@@ -120,37 +102,14 @@ export default function DurationInput({ value, onChange, label, className = '' }
 					onChange={event => {
 						const newUnitMs = parseInt(event.target.value);
 						setUnitMs(newUnitMs);
-						onChange(Math.round(amount) * newUnitMs);
+						if (value !== null) onChange(Math.round(amount) * newUnitMs);
 					}}
 				>
 					{UNIT_OPTIONS.map(opt => (
 						<option key={opt.ms} value={opt.ms}>{opt.label}</option>
 					))}
 				</select>
-				<button
-					type="button"
-					tabIndex={-1}
-					title={`+1 unit (${formatShortcut(shortcuts.increment1)})`}
-					onClick={() => adjust(1)}
-					className="button adjust"
-				>
-					+1
-				</button>
-				<button
-					type="button"
-					tabIndex={-1}
-					title={`+10 units (${formatShortcut(shortcuts.increment10)})`}
-					onClick={() => adjust(10)}
-					className="button adjust"
-				>
-					+10
-				</button>
 			</div>
-			{value !== null && (
-				<span className={styles.hint}>
-					{formatTime(value)}
-				</span>
-			)}
 		</div>
 	);
 }

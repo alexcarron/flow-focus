@@ -255,6 +255,12 @@ export default function TaskCard({ task }: Props) {
 										else if (event.key === 'Enter') {
 											event.preventDefault();
 										}
+										else if (event.key === 'Delete') {
+											event.preventDefault();
+											event.stopPropagation();
+											event.currentTarget.blur();
+											setStepPendingDeletionID(step.id);
+										}
 									}}
 									className={
 										isCurrentStep
@@ -365,7 +371,7 @@ export default function TaskCard({ task }: Props) {
 					{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => setStepPendingFocusID(store.insertStepAfterStep(task, stepContextMenu.stepID)) },
 					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.stepID) },
 					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.stepID) },
-					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletionID(stepContextMenu.stepID) },
+					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => setStepPendingDeletionID(stepContextMenu.stepID) },
 				] : []}
 			/>
 

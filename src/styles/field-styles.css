@@ -21,6 +21,15 @@
 	padding: var(--space-small) var(--space-medium);
 }
 
+.input-panel {
+	display: flex;
+	flex-direction: column;
+	padding: var(--space-large);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-medium);
+}
+
 .field-group {
 	display: flex;
 	flex-direction: column;
@@ -30,6 +39,12 @@
 .field-label {
 	font-size: var(--font-size-extra-small);
 	color: var(--color-text-muted);
+}
+
+.section-label {
+	font-size: var(--font-size-large);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
 }
 
 .editable-text {

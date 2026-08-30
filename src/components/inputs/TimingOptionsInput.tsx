@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import DatetimeInput from './DatetimeInput';
 import DurationInput from './DurationInput';
+import DurationRangeInput from './DurationRangeInput';
 import CheckboxInput from './CheckboxInput';
 import styles from './TimingOptionsInput.module.css';
 
@@ -19,12 +20,6 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 
 	function update(patch: Partial<TaskTimingOptions>) {
 		const next = { ...local, ...patch };
-
-		// Auto-sync maxDuration when minDuration changes
-		if ('minDuration' in patch && patch.minDuration !== undefined) {
-			next.maxDuration = patch.minDuration;
-		}
-
 		setLocal(next);
 		onChange(next);
 	}
@@ -46,15 +41,10 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 				value={local.deadline}
 				onChange={deadline => update({ deadline })}
 			/>
-			<DurationInput
-				label="Min duration"
-				value={local.minDuration}
-				onChange={minDuration => update({ minDuration })}
-			/>
-			<DurationInput
-				label="Max duration"
-				value={local.maxDuration}
-				onChange={maxDuration => update({ maxDuration })}
+			<DurationRangeInput
+				minDuration={local.minDuration}
+				maxDuration={local.maxDuration}
+				onChange={({ minDuration, maxDuration }) => update({ minDuration, maxDuration })}
 			/>
 			<div className={styles.repeatToggle}>
 				<CheckboxInput

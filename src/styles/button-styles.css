@@ -68,11 +68,11 @@
 	padding: var(--space-extra-extra-small) var(--space-small);
 	border-radius: var(--radius-small);
 	font-size: var(--font-size-extra-small);
-	background-color: var(--color-surface-hover);
+	background-color: var(--color-surface-inset);
 }
 
 .button.adjust:hover {
-	background-color: var(--color-surface-hover-strong);
+	background-color: var(--color-surface-hover);
 }
 
 .button.adjust:active {

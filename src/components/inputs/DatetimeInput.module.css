@@ -1,3 +1,14 @@
+.container {
+	composes: input-panel from global;
+	gap: var(--space-small);
+}
+
+.heading {
+	font-size: var(--font-size-small);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-secondary);
+}
+
 .quickActions {
 	display: flex;
 	flex-wrap: wrap;

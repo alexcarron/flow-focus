@@ -9,7 +9,7 @@ import ArrayInput from '../components/inputs/ArrayInput';
 import CheckboxInput from '../components/inputs/CheckboxInput';
 import DatetimeInput from '../components/inputs/DatetimeInput';
 import TypedQuickInput from '../components/inputs/TypedQuickInput';
-import TimingOptionsInput, { DEFAULT_DURATION } from '../components/inputs/TimingOptionsInput';
+import TimingOptionsInput from '../components/inputs/TimingOptionsInput';
 import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
 import styles from './TaskCreatorPage.module.css';
 
@@ -17,8 +17,8 @@ const DEFAULT_TIMING: TaskTimingOptions = {
 	startTime: null,
 	endTime: null,
 	deadline: null,
-	minDuration: DEFAULT_DURATION,
-	maxDuration: DEFAULT_DURATION,
+	minDuration: null,
+	maxDuration: null,
 	repeatInterval: null,
 	isMandatory: true,
 };
@@ -52,6 +52,7 @@ export default function TaskCreatorPage() {
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [confirmationKey, setConfirmationKey] = useState(0);
 
 	const parseResult = useMemo(
 		() => parseTypedQuickInput({
@@ -131,6 +132,7 @@ export default function TaskCreatorPage() {
 		useTasksStore.getState().refreshTasks();
 
 		setError(null);
+		setConfirmationKey(previous => previous + 1);
 		if (!shouldKeepTaskDetailsAfterCreating) {
 			handleReset();
 		}
@@ -193,7 +195,7 @@ export default function TaskCreatorPage() {
 					</div>
 
 					<div className="field-group">
-						<label className="field-label">Timing</label>
+						<label className="section-label">Timing</label>
 						<TimingOptionsInput value={effectiveTiming} onChange={handleTimingChange} />
 					</div>
 				</>
@@ -219,6 +221,10 @@ export default function TaskCreatorPage() {
 					Reset
 				</button>
 			</div>
+
+			{confirmationKey > 0 && (
+				<p key={confirmationKey} className={styles.confirmationMessage}>Task created</p>
+			)}
 		</div>
 	);
 }

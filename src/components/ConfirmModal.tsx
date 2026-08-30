@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 interface Props {
 	headingText: string;
 	descriptionText: string;
@@ -19,6 +21,20 @@ export default function ConfirmModal({
 	onConfirm,
 	onClose,
 }: Props) {
+	useEffect(() => {
+		if (!isOpen) return;
+
+		function onKeyDown(event: KeyboardEvent) {
+			if (event.key === 'Delete') {
+				event.preventDefault();
+				onConfirm();
+			}
+		}
+
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [isOpen, onConfirm]);
+
 	if (!isOpen) return null;
 
 	return (

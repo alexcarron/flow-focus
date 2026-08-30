@@ -1,0 +1,63 @@
+.container {
+	composes: input-panel from global;
+	gap: var(--space-medium);
+}
+
+.heading {
+	font-size: var(--font-size-small);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-secondary);
+}
+
+.description {
+	margin-top: calc(-1 * var(--space-small));
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-subtle);
+}
+
+.presets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-small);
+}
+
+.presetButton {
+	white-space: nowrap;
+}
+
+.singleSection,
+.rangeSection {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-small);
+}
+
+.rangeFields {
+	display: flex;
+	align-items: center;
+	gap: var(--space-medium);
+}
+
+.rangeSeparator {
+	align-self: flex-end;
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-subtle);
+	margin-top: var(--space-small);
+	margin-bottom: var(--space-small);
+}
+
+.linkButton {
+	align-self: flex-start;
+	border: none;
+	background: none;
+	padding: 0;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-extra-small);
+	text-decoration: underline;
+	text-underline-offset: 0.15rem;
+}
+
+.linkButton:hover {
+	color: var(--color-text-secondary);
+}
