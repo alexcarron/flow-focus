@@ -5,6 +5,7 @@ import { RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
 import { TypedQuickInputParseResult, TypedQuickInputToken } from './TypedQuickInputToken';
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
+const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
 
 type Range = { start: number; end: number };
 
@@ -56,8 +57,18 @@ function buildCleanedName(input: string, removedIndices: Set<number>): string {
 	return result.replace(/\s+/g, ' ').trim();
 }
 
-export default function parseTypedQuickInput(input: string, now: Date = new Date(), nightTime: Time = defaultNightTime): TypedQuickInputParseResult {
-	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches(input, now, nightTime));
+export default function parseTypedQuickInput(config: {
+	input: string;
+	now?: Date;
+	nightTime?: Time;
+	morningTime?: Time;
+}): TypedQuickInputParseResult {
+	const input = config.input;
+	const now = config.now ?? new Date();
+	const nightTime = config.nightTime ?? defaultNightTime;
+	const morningTime = config.morningTime ?? defaultMorningTime;
+
+	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({ input, now, nightTime, morningTime }));
 
 	const quoteSpans = findQuoteSpans(input);
 	const backslashSpans = findBackslashSpans(input);

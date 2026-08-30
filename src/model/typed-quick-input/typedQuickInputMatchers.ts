@@ -16,10 +16,17 @@ export type RawMatch = {
 	timing: Partial<TaskTimingOptions>;
 };
 
+export type FindMatchesConfig = {
+	input: string;
+	now: Date;
+	nightTime: Time;
+	morningTime: Time;
+};
+
 export type Matcher = {
 	field: TypedQuickInputField;
 	colorClass: string;
-	findMatches: (input: string, now: Date, nightTime: Time) => RawMatch[];
+	findMatches: (config: FindMatchesConfig) => RawMatch[];
 };
 
 function getEndOfDayTimeOfDay(nightTime: Time): { hour: number; minute: number } {
@@ -80,13 +87,13 @@ function makeDateMatcher(config: {
 	return {
 		field: config.field,
 		colorClass: config.colorClass,
-		findMatches(input, now, nightTime) {
+		findMatches({ input, now, nightTime, morningTime }) {
 			const matches: RawMatch[] = [];
 			const triggerRegex = new RegExp(`\\b(${config.triggerAlternation})\\s+`, 'gi');
 			let triggerMatch: RegExpExecArray | null;
 			while ((triggerMatch = triggerRegex.exec(input)) !== null) {
 				const argumentStart = triggerMatch.index + triggerMatch[0].length;
-				const parsed = parseDatePhrase(input.slice(argumentStart), now, nightTime);
+				const parsed = parseDatePhrase({ text: input.slice(argumentStart), now, nightTime, morningTime });
 				if (!parsed) continue;
 
 				const timeOfDay = parsed.timeOfDay ?? config.getDefaultTimeOfDay(nightTime);
@@ -190,7 +197,7 @@ function buildRepeatMatch(config: {
 const repeatMatcher: Matcher = {
 	field: 'repeatInterval',
 	colorClass: 'repeat',
-	findMatches(input, now, _nightTime) {
+	findMatches({ input, now }) {
 		const matches: RawMatch[] = [];
 
 		const namedRegex = new RegExp(`\\b(${Object.keys(namedRepeatWordToMilliseconds).join('|')}|every\\s+day)\\b`, 'gi');
@@ -280,7 +287,7 @@ function buildDurationMatch(config: {
 const durationMatcher: Matcher = {
 	field: 'duration',
 	colorClass: 'duration',
-	findMatches(input, _now, _nightTime) {
+	findMatches({ input }) {
 		const matches: RawMatch[] = [];
 
 		const parentheticalRegex = /\(([^()]+)\)/g;
@@ -371,7 +378,7 @@ const mandatoryRules: MandatoryRule[] = [
 const mandatoryMatcher: Matcher = {
 	field: 'isMandatory',
 	colorClass: 'mandatory',
-	findMatches(input, _now, _nightTime) {
+	findMatches({ input }) {
 		const matches: RawMatch[] = [];
 		const claimedRanges: Array<{ start: number; end: number }> = [];
 

@@ -44,6 +44,7 @@ export default function TaskCreatorPage() {
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
 	const nightTime = useSettingsStore(s => s.nightTime);
+	const morningTime = useSettingsStore(s => s.morningTime);
 
 	const [name, setName] = useState('');
 	const [steps, setSteps] = useState<string[]>([]);
@@ -52,7 +53,15 @@ export default function TaskCreatorPage() {
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
-	const parseResult = useMemo(() => parseTypedQuickInput(name, new Date(), Time.fromString(nightTime)), [name, nightTime]);
+	const parseResult = useMemo(
+		() => parseTypedQuickInput({
+			input: name,
+			now: new Date(),
+			nightTime: Time.fromString(nightTime),
+			morningTime: Time.fromString(morningTime),
+		}),
+		[name, nightTime, morningTime]
+	);
 	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
 
 	const handleCreateRef = useRef(handleCreate);

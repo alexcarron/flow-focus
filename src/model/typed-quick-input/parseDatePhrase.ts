@@ -9,6 +9,7 @@ export type ParsedDatePhrase = {
 };
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
+const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
 
 const weekdayNameToWeekday: Record<string, Weekday> = {
 	monday: Weekday.MONDAY, mon: Weekday.MONDAY,
@@ -44,6 +45,9 @@ function toAlternation(words: string[]): string {
 const weekdayAlternation = toAlternation(Object.keys(weekdayNameToWeekday));
 const monthAlternation = toAlternation(Object.keys(monthNameToIndex));
 
+const CLOCK_TIME_REGEX = /^(?:at\s+)?((?:[01]?\d|2[0-3]):[0-5]\d(?:\s?[ap]m)?|(?:0?[1-9]|1[0-2])\s?[ap]m)\b/i;
+const NAMED_TIME_OF_DAY_REGEX = /^(?:at\s+)?(noon|afternoon|evening|morning|night|midnight)\b/i;
+
 function weekdayToJavascriptDay(weekday: Weekday): number {
 	return weekday % 7;
 }
@@ -65,18 +69,52 @@ export function nextDateForWeekday(weekday: Weekday, includeToday: boolean, now:
 	return today;
 }
 
-function parseMidnightKeyword(text: string, now: Date): ParsedDatePhrase | null {
-	const match = /^midnight\b/i.exec(text);
+function parseClockTime(text: string): { matchedLength: number; timeOfDay: { hour: number; minute: number } } | null {
+	const match = CLOCK_TIME_REGEX.exec(text);
 	if (!match) return null;
 
-	return { date: atStartOfDay(now), matchedLength: match[0].length, timeOfDay: { hour: 0, minute: 0 } };
+	const time = Time.fromString(match[1].replace(/\s+/g, ''));
+	return { matchedLength: match[0].length, timeOfDay: { hour: time.getHour(), minute: time.getMinute() } };
 }
 
-function parseNightSuffix(text: string, nightTime: Time): { matchedLength: number; timeOfDay: { hour: number; minute: number } } | null {
-	const match = /^\s*night\b/i.exec(text);
+function namedTimeOfDayWordToTimeOfDay(config: { word: string; morningTime: Time; nightTime: Time }): { hour: number; minute: number } {
+	switch (config.word) {
+		case 'midnight': return { hour: 0, minute: 0 };
+		case 'morning': return { hour: config.morningTime.getHour(), minute: config.morningTime.getMinute() };
+		case 'noon': return { hour: 12, minute: 0 };
+		case 'afternoon': return { hour: 15, minute: 0 };
+		case 'evening': return { hour: 18, minute: 0 };
+		default: return { hour: config.nightTime.getHour(), minute: config.nightTime.getMinute() };
+	}
+}
+
+function parseNamedTimeOfDayWord(config: { text: string; morningTime: Time; nightTime: Time }): { matchedLength: number; timeOfDay: { hour: number; minute: number }; dayOffset: number } | null {
+	const match = NAMED_TIME_OF_DAY_REGEX.exec(config.text);
 	if (!match) return null;
 
-	return { matchedLength: match[0].length, timeOfDay: { hour: nightTime.getHour(), minute: nightTime.getMinute() } };
+	const word = match[1].toLowerCase();
+	return {
+		matchedLength: match[0].length,
+		timeOfDay: namedTimeOfDayWordToTimeOfDay({ word, morningTime: config.morningTime, nightTime: config.nightTime }),
+		dayOffset: word === 'midnight' ? 1 : 0,
+	};
+}
+
+function parseTimeOfDayPhrase(config: { text: string; morningTime: Time; nightTime: Time }): { matchedLength: number; timeOfDay: { hour: number; minute: number }; dayOffset: number } | null {
+	const leadingWhitespace = /^\s*/.exec(config.text)?.[0].length ?? 0;
+	const rest = config.text.slice(leadingWhitespace);
+
+	const clockTime = parseClockTime(rest);
+	if (clockTime) {
+		return { matchedLength: leadingWhitespace + clockTime.matchedLength, timeOfDay: clockTime.timeOfDay, dayOffset: 0 };
+	}
+
+	const namedWord = parseNamedTimeOfDayWord({ text: rest, morningTime: config.morningTime, nightTime: config.nightTime });
+	if (namedWord) {
+		return { matchedLength: leadingWhitespace + namedWord.matchedLength, timeOfDay: namedWord.timeOfDay, dayOffset: namedWord.dayOffset };
+	}
+
+	return null;
 }
 
 function parseRelativeDay(text: string, now: Date, nightTime: Time): ParsedDatePhrase | null {
@@ -137,14 +175,18 @@ function parseMonthAndDay(text: string, now: Date, _nightTime: Time): ParsedDate
 
 const dateParsers = [parseRelativeDay, parseNextWeekday, parseWeekday, parseMonthAndDay];
 
-export default function parseDatePhrase(text: string, now: Date = new Date(), nightTime: Time = defaultNightTime): ParsedDatePhrase | null {
-	const leadingWhitespace = /^\s*/.exec(text)?.[0].length ?? 0;
-	const trimmed = text.slice(leadingWhitespace);
+export default function parseDatePhrase(config: {
+	text: string;
+	now?: Date;
+	nightTime?: Time;
+	morningTime?: Time;
+}): ParsedDatePhrase | null {
+	const now = config.now ?? new Date();
+	const nightTime = config.nightTime ?? defaultNightTime;
+	const morningTime = config.morningTime ?? defaultMorningTime;
 
-	const midnight = parseMidnightKeyword(trimmed, now);
-	if (midnight) {
-		return { ...midnight, matchedLength: leadingWhitespace + midnight.matchedLength };
-	}
+	const leadingWhitespace = /^\s*/.exec(config.text)?.[0].length ?? 0;
+	const trimmed = config.text.slice(leadingWhitespace);
 
 	for (const parse of dateParsers) {
 		const parsed = parse(trimmed, now, nightTime);
@@ -152,21 +194,25 @@ export default function parseDatePhrase(text: string, now: Date = new Date(), ni
 			if (parsed.timeOfDay) {
 				return { date: parsed.date, matchedLength: leadingWhitespace + parsed.matchedLength, timeOfDay: parsed.timeOfDay };
 			}
-			const nightSuffix = parseNightSuffix(trimmed.slice(parsed.matchedLength), nightTime);
-			if (nightSuffix) {
+			const timeOfDaySuffix = parseTimeOfDayPhrase({ text: trimmed.slice(parsed.matchedLength), morningTime, nightTime });
+			if (timeOfDaySuffix) {
+				const date = new Date(parsed.date);
+				date.setDate(date.getDate() + timeOfDaySuffix.dayOffset);
 				return {
-					date: parsed.date,
-					matchedLength: leadingWhitespace + parsed.matchedLength + nightSuffix.matchedLength,
-					timeOfDay: nightSuffix.timeOfDay,
+					date,
+					matchedLength: leadingWhitespace + parsed.matchedLength + timeOfDaySuffix.matchedLength,
+					timeOfDay: timeOfDaySuffix.timeOfDay,
 				};
 			}
 			return { date: parsed.date, matchedLength: leadingWhitespace + parsed.matchedLength };
 		}
 	}
 
-	const bareNightSuffix = parseNightSuffix(trimmed, nightTime);
-	if (bareNightSuffix) {
-		return { date: atStartOfDay(now), matchedLength: leadingWhitespace + bareNightSuffix.matchedLength, timeOfDay: bareNightSuffix.timeOfDay };
+	const bareTimeOfDay = parseTimeOfDayPhrase({ text: trimmed, morningTime, nightTime });
+	if (bareTimeOfDay) {
+		const date = atStartOfDay(now);
+		date.setDate(date.getDate() + bareTimeOfDay.dayOffset);
+		return { date, matchedLength: leadingWhitespace + bareTimeOfDay.matchedLength, timeOfDay: bareTimeOfDay.timeOfDay };
 	}
 
 	return null;
