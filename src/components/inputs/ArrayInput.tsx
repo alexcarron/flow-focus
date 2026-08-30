@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import parsePastedTextIntoSteps from '../../utils/parsePastedTextIntoSteps';
 import DeleteIcon from '../svg-icons/DeleteIcon';
 import styles from './ArrayInput.module.css';
@@ -14,7 +14,11 @@ interface Props {
 	onRowContextMenu?: (index: number, item: string, event: React.MouseEvent) => void;
 }
 
-export default function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix, getRowProps, onRowContextMenu }: Props) {
+export interface ArrayInputHandle {
+	focusRow: (index: number) => void;
+}
+
+export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix, getRowProps, onRowContextMenu }: Props, ref) {
 	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	const displayedRows = [...value, ''];
@@ -31,6 +35,8 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 	function focusRowSoon(index: number) {
 		setTimeout(() => inputRefs.current[index]?.focus(), 0);
 	}
+
+	useImperativeHandle(ref, () => ({ focusRow: focusRowSoon }));
 
 	function changeRow(index: number, text: string) {
 		const next = [...value];
@@ -84,7 +90,7 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 	function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
 		const isTrailingRow = index === trailingRowIndex;
 
-		if (e.key === 'Enter') {
+		if (e.key === 'Enter' && !e.ctrlKey) {
 			e.preventDefault();
 			if (isTrailingRow) {
 				// The trailing row is already the place to start the next step
@@ -151,4 +157,4 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 			})}
 		</div>
 	);
-}
+});

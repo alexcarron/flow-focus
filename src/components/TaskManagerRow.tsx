@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Task from '../model/task/Task';
 import Duration from '../model/time-management/Duration';
 import { formatDate, formatTime } from '../utils/formatters';
@@ -8,7 +8,7 @@ import { mergeRefs } from '../utils/mergeRefs';
 import { SHORTCUTS, matchesShortcut, getShortcutKeyParts } from '../config/shortcuts';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
-import ArrayInput from './inputs/ArrayInput';
+import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';
 import SelectionCheckbox from './SelectionCheckbox';
 import StepCheckbox from './StepCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
@@ -69,6 +69,7 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 	const displayStartTime = startTime && startTime > now ? startTime : null;
 
 	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
+	const arrayInputRef = useRef<ArrayInputHandle>(null);
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
 		isStepChecked: step => task.isStepComplete(step),
@@ -93,12 +94,10 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 	function onStepInsertKeyDown(step: string, e: React.KeyboardEvent) {
 		if (!step) return;
 
-		if (e.altKey && e.key === 'ArrowLeft') {
+		if (matchesShortcut(e, SHORTCUTS.stepInsert.insertBefore)) {
 			e.preventDefault();
 			store.insertStepBeforeStep(task, step);
-		} else if (e.altKey && e.key === 'ArrowRight') {
-			e.preventDefault();
-			store.insertStepAfterStep(task, step);
+			arrayInputRef.current?.focusRow(steps.indexOf(step));
 		}
 	}
 
@@ -136,6 +135,7 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 
 			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={styles.stepsCell}>
 				<ArrayInput
+					ref={arrayInputRef}
 					value={displaySteps}
 					onChange={newSteps => store.setSteps(task, newSteps)}
 					onItemKeyDown={(_, step, e) => {
@@ -199,6 +199,8 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 					items={stepContextMenu !== null ? [
 						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.step) },
 						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.step) },
+						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.step); arrayInputRef.current?.focusRow(steps.indexOf(stepContextMenu.step)); } },
+						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.step); arrayInputRef.current?.focusRow(steps.indexOf(stepContextMenu.step) + 1); } },
 					] : []}
 				/>
 			</td>

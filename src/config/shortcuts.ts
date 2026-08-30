@@ -35,6 +35,10 @@ export const SHORTCUTS = {
 		moveUp: { key: 'arrowup', alt: true },
 		moveDown: { key: 'arrowdown', alt: true },
 	},
+	stepInsert: {
+		insertAfter: { key: 'enter' },
+		insertBefore: { key: 'enter', ctrl: true },
+	},
 } as const satisfies Record<string, Record<string, ShortcutDef>>;
 
 type KeyboardLike = {

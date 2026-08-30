@@ -42,12 +42,23 @@ function getTimeString(ms: number): string {
 	return '';
 }
 
+function focusStepTextAtEnd(element: HTMLElement) {
+	element.focus();
+	const range = document.createRange();
+	range.selectNodeContents(element);
+	range.collapse(false);
+	const selection = window.getSelection();
+	selection?.removeAllRanges();
+	selection?.addRange(range);
+}
+
 export default function TaskCard({ task }: Props) {
 	const store = useTasksStore();
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [isSkipOpen, setIsSkipOpen] = useState(false);
 	const [isTimingOpen, setIsTimingOpen] = useState(false);
 	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
+	const [stepPendingFocus, setStepPendingFocus] = useState<string | null>(null);
 	const [stepPendingDeletion, setStepPendingDeletion] = useState<string | null>(null);
 	const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
@@ -99,6 +110,15 @@ export default function TaskCard({ task }: Props) {
 		});
 	}, [allStepsJoined]);
 
+	useEffect(() => {
+		if (stepPendingFocus === null) return;
+		const stepSpanElement = stepSpanElementsByStepRef.current.get(stepPendingFocus);
+		if (stepSpanElement) {
+			focusStepTextAtEnd(stepSpanElement);
+			setStepPendingFocus(null);
+		}
+	}, [stepPendingFocus, allStepsJoined]);
+
 	function onDescriptionBlur(event: React.FocusEvent<HTMLHeadingElement>) {
 		const newDesc = event.currentTarget.textContent ?? '';
 		if (newDesc !== task.getDescription()) {
@@ -149,7 +169,7 @@ export default function TaskCard({ task }: Props) {
 			/>
 
 			{task.hasNextStep() && (
-				<div ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={styles.steps}>
+				<div ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={draggingStep !== null ? `${styles.steps} ${styles.stepsDragging}` : styles.steps}>
 					{displaySteps.map(step => {
 						const isCompleted = task.isStepComplete(step);
 						const isCurrentStep = step === nextStep;
@@ -167,6 +187,11 @@ export default function TaskCard({ task }: Props) {
 									isPlaceholder ? styles.stepRowPlaceholder : '',
 								].filter(Boolean).join(' ')}
 								onMouseDown={getRowDragHandlers(step).onMouseDown}
+								onClick={event => {
+									if ((event.target as HTMLElement).closest('[data-step]')) return;
+									const stepSpanElement = stepSpanElementsByStepRef.current.get(step);
+									if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
+								}}
 								onContextMenu={event => {
 									event.preventDefault();
 									setStepContextMenu({ step, x: event.clientX, y: event.clientY });
@@ -197,6 +222,19 @@ export default function TaskCard({ task }: Props) {
 										else if (matchesShortcut(event, SHORTCUTS.stepReorder.moveDown)) {
 											event.preventDefault();
 											store.moveStepDown(task, step);
+										}
+										else if (matchesShortcut(event, SHORTCUTS.stepInsert.insertBefore)) {
+											event.preventDefault();
+											store.insertStepBeforeStep(task, step);
+											setStepPendingFocus('');
+										}
+										else if (matchesShortcut(event, SHORTCUTS.stepInsert.insertAfter)) {
+											event.preventDefault();
+											store.insertStepAfterStep(task, step);
+											setStepPendingFocus('');
+										}
+										else if (event.key === 'Enter') {
+											event.preventDefault();
 										}
 									}}
 									className={
@@ -302,6 +340,8 @@ export default function TaskCard({ task }: Props) {
 				items={stepContextMenu !== null ? [
 					{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.step) },
 					{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.step) },
+					{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.step); setStepPendingFocus(''); } },
+					{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.step); setStepPendingFocus(''); } },
 					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.step) },
 					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.step) },
 					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletion(stepContextMenu.step) },
