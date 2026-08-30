@@ -34,22 +34,24 @@ interface TasksActions {
 
 	completeNextStep: (task: Task) => void;
 	completeAllSteps: (task: Task) => void;
-	completeStepAndPrecedingSteps: (task: Task, step: string) => void;
-	uncompleteStepAndFollowingSteps: (task: Task, step: string) => void;
+	completeStepAndPrecedingSteps: (task: Task, stepID: string) => void;
+	uncompleteStepAndFollowingSteps: (task: Task, stepID: string) => void;
 	skipNextStep: (task: Task) => void;
 	deferTask: (task: Task, ms: number) => void;
 	setDescription: (task: Task, description: string) => void;
-	setSteps: (task: Task, steps: string[]) => void;
-	setStep: (task: Task, oldStep: string, newStep: string) => void;
+	setSteps: (task: Task, stepTexts: string[]) => void;
+	setStepText: (task: Task, stepID: string, newText: string) => void;
 	setDeadline: (task: Task, deadline: Date | null) => void;
 	setMandatory: (task: Task, value: boolean) => void;
 	setTimingOptions: (task: Task, options: TaskTimingOptions) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
-	setStepComplete: (task: Task, step: string, isComplete: boolean) => void;
-	moveStepUp: (task: Task, step: string) => void;
-	moveStepDown: (task: Task, step: string) => void;
-	insertStepBeforeStep: (task: Task, step: string) => void;
-	insertStepAfterStep: (task: Task, step: string) => void;
+	setStepComplete: (task: Task, stepID: string, isComplete: boolean) => void;
+	moveStepUp: (task: Task, stepID: string) => void;
+	moveStepDown: (task: Task, stepID: string) => void;
+	reorderSteps: (task: Task, newStepIDOrder: string[]) => void;
+	insertStepBeforeStep: (task: Task, stepID: string) => string;
+	insertStepAfterStep: (task: Task, stepID: string) => string;
+	deleteStep: (task: Task, stepID: string) => void;
 
 	addTask: (description: string, timingOptions?: Partial<TaskTimingOptions>) => Promise<Task>;
 	deleteTask: (task: Task) => Promise<void>;
@@ -103,7 +105,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 					const data = deserializeRow(row);
 					const task = tasksManager.addCreatedTask(data.description);
 					task.dbId = row.id;
-					task.setStepsToStatusMap(data.stepsToStatusMap);
+					task.replaceAllSteps(data.steps);
 					task.setStartTime(data.startTime);
 					task.setEndTime(data.endTime);
 					task.setDeadline(data.deadline);
@@ -179,12 +181,12 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().executeWithPatches(() => task.completeAllSteps(), [task]);
 		},
 
-		completeStepAndPrecedingSteps(task: Task, step: string) {
-			get().executeWithPatches(() => task.completeStepAndPrecedingSteps(step), [task]);
+		completeStepAndPrecedingSteps(task: Task, stepID: string) {
+			get().executeWithPatches(() => task.completeStepAndPrecedingSteps(stepID), [task]);
 		},
 
-		uncompleteStepAndFollowingSteps(task: Task, step: string) {
-			get().executeWithPatches(() => task.uncompleteStepAndFollowingSteps(step), [task]);
+		uncompleteStepAndFollowingSteps(task: Task, stepID: string) {
+			get().executeWithPatches(() => task.uncompleteStepAndFollowingSteps(stepID), [task]);
 		},
 
 		skipNextStep(task: Task) {
@@ -202,12 +204,12 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().executeWithPatches(() => task.setDescription(description), [task]);
 		},
 
-		setSteps(task: Task, steps: string[]) {
-			get().executeWithPatches(() => task.editSteps(steps), [task]);
+		setSteps(task: Task, stepTexts: string[]) {
+			get().executeWithPatches(() => task.editStepsText(stepTexts), [task]);
 		},
 
-		setStep(task: Task, oldStep: string, newStep: string) {
-			get().executeWithPatches(() => task.editStep(oldStep, newStep), [task]);
+		setStepText(task: Task, stepID: string, newText: string) {
+			get().executeWithPatches(() => task.editStepText(stepID, newText), [task]);
 		},
 
 		setDeadline(task: Task, deadline: Date | null) {
@@ -228,37 +230,51 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().persistChangedTasks([task]);
 		},
 
-		setStepComplete(task: Task, step: string, isComplete: boolean) {
+		setStepComplete(task: Task, stepID: string, isComplete: boolean) {
 			get().executeWithPatches(() => {
-				if (isComplete) task.completeStep(step);
-				else task.uncompleteStep(step);
+				if (isComplete) task.completeStep(stepID);
+				else task.uncompleteStep(stepID);
 			}, [task]);
 		},
 
-		moveStepUp(task: Task, step: string) {
-			const steps = task.getSteps();
-			const index = steps.indexOf(step);
+		moveStepUp(task: Task, stepID: string) {
+			const stepIDOrder = task.getSteps().map(step => step.id);
+			const index = stepIDOrder.indexOf(stepID);
 			if (index <= 0) return;
-			const newOrder = [...steps];
-			[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-			get().executeWithPatches(() => task.editSteps(newOrder), [task]);
+			[stepIDOrder[index - 1], stepIDOrder[index]] = [stepIDOrder[index], stepIDOrder[index - 1]];
+			get().executeWithPatches(() => task.reorderSteps(stepIDOrder), [task]);
 		},
 
-		moveStepDown(task: Task, step: string) {
-			const steps = task.getSteps();
-			const index = steps.indexOf(step);
-			if (index === -1 || index >= steps.length - 1) return;
-			const newOrder = [...steps];
-			[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-			get().executeWithPatches(() => task.editSteps(newOrder), [task]);
+		moveStepDown(task: Task, stepID: string) {
+			const stepIDOrder = task.getSteps().map(step => step.id);
+			const index = stepIDOrder.indexOf(stepID);
+			if (index === -1 || index >= stepIDOrder.length - 1) return;
+			[stepIDOrder[index], stepIDOrder[index + 1]] = [stepIDOrder[index + 1], stepIDOrder[index]];
+			get().executeWithPatches(() => task.reorderSteps(stepIDOrder), [task]);
 		},
 
-		insertStepBeforeStep(task: Task, step: string) {
-			get().executeWithPatches(() => task.createStepLeftOfStep(step), [task]);
+		reorderSteps(task: Task, newStepIDOrder: string[]) {
+			get().executeWithPatches(() => task.reorderSteps(newStepIDOrder), [task]);
 		},
 
-		insertStepAfterStep(task: Task, step: string) {
-			get().executeWithPatches(() => task.createStepRightOfStep(step), [task]);
+		insertStepBeforeStep(task: Task, stepID: string) {
+			let newStepID = '';
+			get().executeWithPatches(() => {
+				newStepID = task.createStepLeftOfStep(stepID).id;
+			}, [task]);
+			return newStepID;
+		},
+
+		insertStepAfterStep(task: Task, stepID: string) {
+			let newStepID = '';
+			get().executeWithPatches(() => {
+				newStepID = task.createStepRightOfStep(stepID).id;
+			}, [task]);
+			return newStepID;
+		},
+
+		deleteStep(task: Task, stepID: string) {
+			get().executeWithPatches(() => task.deleteStep(stepID), [task]);
 		},
 
 		async addTask(description: string, timingOptions?: Partial<TaskTimingOptions>) {
@@ -292,7 +308,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			await db.tasks.clear();
 			for (const bt of backupTasks) {
 				const task = tasksManager.addCreatedTask(bt.description);
-				task.setStepsToStatusMap(new Map(Object.entries(bt.steps)));
+				task.replaceAllSteps(bt.steps.map(step => ({ ...step })));
 				task.setStartTime(bt.startTime ? new Date(bt.startTime) : null);
 				task.setEndTime(bt.endTime ? new Date(bt.endTime) : null);
 				task.setDeadline(bt.deadline ? new Date(bt.deadline) : null);

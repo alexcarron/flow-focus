@@ -125,7 +125,7 @@ export default function TaskCreatorPage() {
 		const cleanedSteps = steps.map(step => step.trim()).filter(step => step !== '');
 
 		const task = await addTask(description, effectiveTiming);
-		task.editSteps(cleanedSteps);
+		task.editStepsText(cleanedSteps);
 
 		await useTasksStore.getState().persistChangedTasks([task]);
 		useTasksStore.getState().refreshTasks();

@@ -3,6 +3,7 @@ import TaskTimingOptions from "./TaskTimingOptions";
 import TasksManager from "../TasksManager";
 import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
+import Step from "./Step";
 import TaskState from "./TaskState";
 
 export default class Task {
@@ -13,7 +14,7 @@ export default class Task {
 	dbId: number | undefined = undefined;
 
 	protected description: string;
-	protected stepsToStatusMap: Map<string, StepStatus> = new Map();
+	protected steps: Step[] = [];
 	protected startTime: Date | null = null;
 	protected endTime: Date | null = null;
 	protected deadline: Date | null = null;
@@ -23,7 +24,7 @@ export default class Task {
 	protected isMandatory: boolean = false;
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
-	protected lastActionedStep: {step: string, status: StepStatus} | null = null;
+	protected lastActionedStep: {stepID: string, status: StepStatus} | null = null;
 
 	constructor(
 		protected tasksManager: TasksManager,
@@ -36,16 +37,8 @@ export default class Task {
 
 	setDescription(description: string): void {this.description = description};
 
-	setStepsToStatusMap(stepsToStatusObject: Array<[string, StepStatus | string]> | Map<string, StepStatus>) {
-		if (stepsToStatusObject instanceof Map) {
-			this.stepsToStatusMap = stepsToStatusObject;
-		}
-		else {
-			this.stepsToStatusMap = new Map();
-			stepsToStatusObject.forEach(([step, status]) => {
-				this.stepsToStatusMap.set(step, status as StepStatus);
-			});
-		}
+	replaceAllSteps(steps: Step[]): void {
+		this.steps = steps;
 	};
 
 	hasSingletonDuration(): boolean {
@@ -107,7 +100,7 @@ export default class Task {
 
 	setSkipped(isSkipped: boolean): void {this.isSkipped = isSkipped}
 
-	setLastActionedStep(lastActionedStep: {step: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
+	setLastActionedStep(lastActionedStep: {stepID: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
 
 	isRecurring(): boolean {return this.repeatInterval !== null};
 
@@ -172,21 +165,20 @@ export default class Task {
 	};
 
 	protected resetProgress() {
-		this.getSteps().forEach((step) => {
-			this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
+		this.steps.forEach((step) => {
+			step.status = StepStatus.UNCOMPLETE;
 		});
 		this.setComplete(false);
 		this.setSkipped(false);
 		this.setLastActionedStep(null);
 	}
 
-	getSteps(): string[] {
-		const steps = this.stepsToStatusMap.keys();
-		return Array.from(steps);
+	getSteps(): Step[] {
+		return [...this.steps];
 	};
 
 	protected hasSteps(): boolean {
-		return this.stepsToStatusMap.size > 0;
+		return this.steps.length > 0;
 	};
 
 	hasNextStep(): boolean {
@@ -194,66 +186,42 @@ export default class Task {
 	};
 
 	protected getNumSteps(): number {
-		return this.stepsToStatusMap.size;
+		return this.steps.length;
 	}
 
-	getFirstNotCompletedStep(): string | null {
-		const firstNonCompletedStepEntry =
-			Array.from(this.stepsToStatusMap.entries())
-				.find(([step, status]) => status !== StepStatus.COMPLETED);
-
-		if (firstNonCompletedStepEntry === undefined) {
-			return null;
-		}
-		else {
-			return firstNonCompletedStepEntry ? firstNonCompletedStepEntry[0] : null;
-		}
+	getFirstNotCompletedStep(): Step | null {
+		return this.steps.find(step => step.status !== StepStatus.COMPLETED) ?? null;
 	}
 
-	getFirstUncompleteStep(): string | null {
-		const firstUncompletedStepEntry =
-		Array.from(this.stepsToStatusMap.entries())
-			.find(([step, status]) => status === StepStatus.UNCOMPLETE);
-
-		if (firstUncompletedStepEntry === undefined) {
-			return null;
-		}
-		else {
-			return firstUncompletedStepEntry ? firstUncompletedStepEntry[0] : null;
-		}
+	getFirstUncompleteStep(): Step | null {
+		return this.steps.find(step => step.status === StepStatus.UNCOMPLETE) ?? null;
 	}
 
-	getNextSkippedStep(): string | null {
+	getNextSkippedStep(): Step | null {
 		if (this.lastActionedStep === null) {
 			return null;
 		}
 
-		const lastStepActioned = this.lastActionedStep.step;
+		const lastActionedStepID = this.lastActionedStep.stepID;
 
-		let foundLastStepActioned = false;
+		let foundLastActionedStep = false;
 
-		const nextSkippedStep = Array.from(this.stepsToStatusMap.entries())
-			.find(([step, status]) => {
-				if (foundLastStepActioned) {
-					return status === StepStatus.SKIPPED && step !== lastStepActioned
-				}
+		const nextSkippedStep = this.steps.find((step) => {
+			if (foundLastActionedStep) {
+				return step.status === StepStatus.SKIPPED && step.id !== lastActionedStepID;
+			}
 
-				if (lastStepActioned === step) {
-					foundLastStepActioned = true;
-				}
+			if (step.id === lastActionedStepID) {
+				foundLastActionedStep = true;
+			}
 
-				return false;
-			});
+			return false;
+		});
 
-		if (nextSkippedStep !== undefined) {
-			return nextSkippedStep[0];
-		}
-		else {
-			return null;
-		}
+		return nextSkippedStep ?? null;
 	}
 
-	getNextStep(): string | null {
+	getNextStep(): Step | null {
 		if (this.wasLastActionASkip()) {
 			const nextSkippedStep = this.getNextSkippedStep();
 			const firstUncompletedStep = this.getFirstUncompleteStep();
@@ -273,35 +241,28 @@ export default class Task {
 		}
 	};
 
-	public getStepIndex(stepLookingFor: string): number {
-		const steps = this.getSteps();
-		return steps.findIndex(step => step === stepLookingFor);
+	public getStepIndex(stepIDLookingFor: string): number {
+		return this.steps.findIndex(step => step.id === stepIDLookingFor);
 	}
 
-	getPreviousSteps(): string[] {
+	getPreviousSteps(): Step[] {
 		const nextStep = this.getNextStep();
 		if (nextStep === null) return [];
 
-		const nextStepIndex = this.getStepIndex(nextStep);
+		const nextStepIndex = this.getStepIndex(nextStep.id);
 		if (nextStepIndex === -1) return []
 
-		const stepsBeforeNextStep = Array.from(this.getSteps())
-			.slice(0, nextStepIndex);
-
-		return stepsBeforeNextStep;
+		return this.steps.slice(0, nextStepIndex);
 	}
 
-	getUpcomingSteps(): string[] {
+	getUpcomingSteps(): Step[] {
 		const nextStep = this.getNextStep();
 		if (nextStep === null) return [];
 
-		const nextStepIndex = this.getStepIndex(nextStep);
+		const nextStepIndex = this.getStepIndex(nextStep.id);
 		if (nextStepIndex === -1) return []
 
-		const stepsAfterNextStep = Array.from(this.getSteps())
-			.slice(nextStepIndex + 1);
-
-		return stepsAfterNextStep;
+		return this.steps.slice(nextStepIndex + 1);
 	}
 
 	removeDeadline(): void {
@@ -312,8 +273,8 @@ export default class Task {
 		this.setStartTime(null);
 	}
 
-	isStepComplete(step: string) {
-		return this.stepsToStatusMap.get(step) === StepStatus.COMPLETED
+	isStepComplete(stepID: string) {
+		return this.steps.find(step => step.id === stepID)?.status === StepStatus.COMPLETED
 	}
 
 	hasTaskStarted(currentTime: Date): boolean {
@@ -327,50 +288,34 @@ export default class Task {
 		return this.hasTaskStarted(currentTime) && this.getEndTime() === null;
 	}
 
-	replaceNextStep(newNextStep: string) {
+	replaceNextStep(newStepText: string) {
 		const nextStep = this.getNextStep();
+		if (nextStep === null) return;
 
-		if (nextStep) {
-			const nextStepIndex = this.getStepIndex(nextStep);
-
-			if (nextStepIndex !== -1) {
-				const entriesAfterNextUncompletedStep = Array.from(this.stepsToStatusMap.entries()).slice(nextStepIndex + 1);
-
-				entriesAfterNextUncompletedStep.forEach(
-					([step, status]) => this.stepsToStatusMap.delete(step)
-				);
-
-				this.stepsToStatusMap.delete(nextStep);
-
-				this.stepsToStatusMap.set(newNextStep, StepStatus.UNCOMPLETE);
-
-				entriesAfterNextUncompletedStep.forEach(([step, status]) => this.stepsToStatusMap.set(step, status));
-			}
-		}
+		nextStep.text = newStepText;
+		nextStep.status = StepStatus.UNCOMPLETE;
 	};
 
-	addStep(step: string): void {
-		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
+	addStep(text: string): Step {
+		const newStep: Step = { id: crypto.randomUUID(), text, status: StepStatus.UNCOMPLETE };
+		this.steps.push(newStep);
+		return newStep;
 	};
 
-	insertStep(step: string, index: number) {
-		const currentSteps = this.getSteps();
-		const newSteps = [
-			...currentSteps.slice(0, index),
-			step,
-			...currentSteps.slice(index)
-		]
-		this.editSteps(newSteps);
+	insertStep(text: string, index: number): Step {
+		const newStep: Step = { id: crypto.randomUUID(), text, status: StepStatus.UNCOMPLETE };
+		this.steps.splice(index, 0, newStep);
+		return newStep;
 	}
 
-	createStepLeftOfStep(adjacentStep: string) {
-		const adjacentStepIndex = this.getStepIndex(adjacentStep);
-		this.insertStep("", adjacentStepIndex);
+	createStepLeftOfStep(adjacentStepID: string): Step {
+		const adjacentStepIndex = this.getStepIndex(adjacentStepID);
+		return this.insertStep("", adjacentStepIndex === -1 ? this.steps.length : adjacentStepIndex);
 	}
 
-	createStepRightOfStep(adjacentStep: string) {
-		const adjacentStepIndex = this.getStepIndex(adjacentStep);
-		this.insertStep("", adjacentStepIndex + 1);
+	createStepRightOfStep(adjacentStepID: string): Step {
+		const adjacentStepIndex = this.getStepIndex(adjacentStepID);
+		return this.insertStep("", adjacentStepIndex === -1 ? this.steps.length : adjacentStepIndex + 1);
 	}
 
 	protected wasLastActionASkip(): boolean {
@@ -378,49 +323,54 @@ export default class Task {
 	}
 
 	protected areAllStepsCompleted(): boolean {
-		return Array.from(this.stepsToStatusMap.values())
-			.every((status) => status === StepStatus.COMPLETED);
+		return this.steps.every((step) => step.status === StepStatus.COMPLETED);
 	}
 
-	completeStep(step: string) {
-		this.stepsToStatusMap.set(step, StepStatus.COMPLETED);
+	completeStep(stepID: string) {
+		const step = this.steps.find(step => step.id === stepID);
+		if (!step) return;
+
+		step.status = StepStatus.COMPLETED;
 
 		if (this.areAllStepsCompleted()) {
 			this.complete();
 		}
 
 		this.setLastActionedStep({
-			step: step,
+			stepID: stepID,
 			status: StepStatus.COMPLETED
 		});
 	}
 
-	uncompleteStep(step: string) {
-		this.stepsToStatusMap.set(step, StepStatus.UNCOMPLETE);
+	uncompleteStep(stepID: string) {
+		const step = this.steps.find(step => step.id === stepID);
+		if (!step) return;
+
+		step.status = StepStatus.UNCOMPLETE;
 
 		if (this.isComplete) {
 			this.setComplete(false);
 		}
 	}
 
-	completeStepAndPrecedingSteps(step: string) {
-		const stepIndex = this.getStepIndex(step);
+	completeStepAndPrecedingSteps(stepID: string) {
+		const stepIndex = this.getStepIndex(stepID);
 		if (stepIndex === -1) return;
 
-		this.getSteps().slice(0, stepIndex + 1).forEach(stepToComplete => {
-			if (this.stepsToStatusMap.get(stepToComplete) !== StepStatus.COMPLETED) {
-				this.completeStep(stepToComplete);
+		this.steps.slice(0, stepIndex + 1).forEach(stepToComplete => {
+			if (stepToComplete.status !== StepStatus.COMPLETED) {
+				this.completeStep(stepToComplete.id);
 			}
 		});
 	}
 
-	uncompleteStepAndFollowingSteps(step: string) {
-		const stepIndex = this.getStepIndex(step);
+	uncompleteStepAndFollowingSteps(stepID: string) {
+		const stepIndex = this.getStepIndex(stepID);
 		if (stepIndex === -1) return;
 
-		this.getSteps().slice(stepIndex).forEach(stepToUncomplete => {
-			if (this.stepsToStatusMap.get(stepToUncomplete) !== StepStatus.UNCOMPLETE) {
-				this.uncompleteStep(stepToUncomplete);
+		this.steps.slice(stepIndex).forEach(stepToUncomplete => {
+			if (stepToUncomplete.status !== StepStatus.UNCOMPLETE) {
+				this.uncompleteStep(stepToUncomplete.id);
 			}
 		});
 	}
@@ -433,43 +383,41 @@ export default class Task {
 
 		const nextStep = this.getNextStep();
 		if (nextStep) {
-			this.completeStep(nextStep);
+			this.completeStep(nextStep.id);
 		}
 	}
 
 	completeAllSteps() {
-		this.stepsToStatusMap.forEach((status, step) => {
-			this.completeStep(step);
+		this.steps.forEach((step) => {
+			this.completeStep(step.id);
 		});
 
 		this.complete();
 	}
 
 	protected areAllStepsActioned(): boolean {
-		return Array.from(this.stepsToStatusMap.values())
-			.every((status) => status !== StepStatus.UNCOMPLETE);
+		return this.steps.every((step) => step.status !== StepStatus.UNCOMPLETE);
 	}
 
-	getLastSkippedStep(): string | null {
-		const lastSkippedStep = Array.from(this.stepsToStatusMap.entries())
-			.reverse()
-			.find(([step, status]) => status === StepStatus.SKIPPED);
-
-		return lastSkippedStep?.[0] ?? null;
+	getLastSkippedStep(): Step | null {
+		return [...this.steps].reverse().find(step => step.status === StepStatus.SKIPPED) ?? null;
 	}
 
-	skipStep(step: string) {
-		this.stepsToStatusMap.set(step, StepStatus.SKIPPED);
+	skipStep(stepID: string) {
+		const step = this.steps.find(step => step.id === stepID);
+		if (!step) return;
+
+		step.status = StepStatus.SKIPPED;
 
 		if (
 			this.areAllStepsActioned() &&
-			this.getLastSkippedStep() === step
+			this.getLastSkippedStep()?.id === stepID
 		) {
 			this.skip();
 		}
 
 		this.setLastActionedStep({
-			step: step,
+			stepID: stepID,
 			status: StepStatus.SKIPPED
 		})
 	}
@@ -482,42 +430,42 @@ export default class Task {
 
 		const nextStep = this.getNextStep();
 		if (nextStep) {
-			this.skipStep(nextStep);
+			this.skipStep(nextStep.id);
 		}
 	}
 
-	editSteps(newSteps: string[]): void {
-		let stepStatuses = Array.from(this.stepsToStatusMap.values());
+	editStepsText(newStepTexts: string[]): void {
+		const remainingExistingSteps = [...this.steps];
+		const originalStatusesByPosition = this.steps.map(step => step.status);
 
-		const stepsToStatusMapCopy = new Map<string, StepStatus>(this.stepsToStatusMap);
+		this.steps = newStepTexts.map((text, position) => {
+			const matchingExistingStepIndex = remainingExistingSteps.findIndex(step => step.text === text);
 
-		this.stepsToStatusMap.clear();
-
-		newSteps.forEach((step) => {
-			let status = stepStatuses.shift() ?? StepStatus.UNCOMPLETE;
-
-			if (stepsToStatusMapCopy.has(step)) {
-				status = stepsToStatusMapCopy.get(step) ?? StepStatus.UNCOMPLETE;
-
-				this.stepsToStatusMap.set(step, status);
+			if (matchingExistingStepIndex !== -1) {
+				return remainingExistingSteps.splice(matchingExistingStepIndex, 1)[0];
 			}
-			else {
-				this.stepsToStatusMap.set(step, status);
-			}
+
+			const positionalStatus = originalStatusesByPosition[position] ?? StepStatus.UNCOMPLETE;
+			return { id: crypto.randomUUID(), text, status: positionalStatus };
 		});
 	}
 
-	editStep(oldStep: string, newStep: string) {
-		const currentSteps = this.getSteps();
+	editStepText(stepID: string, newText: string) {
+		const step = this.steps.find(step => step.id === stepID);
+		if (!step) return;
 
-		const newSteps = currentSteps.map(step => {
-			if (step === oldStep)
-				return newStep
+		step.text = newText;
+	}
 
-			return step
-		});
+	reorderSteps(newStepIDOrder: string[]): void {
+		const stepIDToStep = new Map(this.steps.map(step => [step.id, step]));
+		this.steps = newStepIDOrder
+			.map(stepID => stepIDToStep.get(stepID))
+			.filter((step): step is Step => step !== undefined);
+	}
 
-		this.editSteps(newSteps);
+	deleteStep(stepID: string): void {
+		this.steps = this.steps.filter(step => step.id !== stepID);
 	}
 
 	getTimeUntilDeadline(currentTime: Date): number {
@@ -613,9 +561,7 @@ export default class Task {
 			return 0;
 		}
 
-		const completedSteps = Array.from(this.stepsToStatusMap.values())
-			.filter((status) => status === StepStatus.COMPLETED)
-			.length;
+		const completedSteps = this.steps.filter((step) => step.status === StepStatus.COMPLETED).length;
 
 		return completedSteps / this.getNumSteps();
 	}
@@ -632,7 +578,7 @@ export default class Task {
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
-			stepsToStatusMap: new Map(this.stepsToStatusMap),
+			steps: this.steps.map(step => ({ ...step })),
 			lastActionedStep: this.lastActionedStep
 		};
 	}
@@ -648,7 +594,7 @@ export default class Task {
 		this.setMinRequiredTime(taskState.minDuration);
 		this.setMaxRequiredTime(taskState.maxDuration);
 		this.setRepeatInterval(taskState.repeatInterval);
-		this.setStepsToStatusMap(new Map(taskState.stepsToStatusMap));
+		this.replaceAllSteps(taskState.steps.map(step => ({ ...step })));
 		this.setLastActionedStep(taskState.lastActionedStep);
 	}
 

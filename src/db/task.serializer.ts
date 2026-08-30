@@ -1,4 +1,5 @@
 import Task from '../model/task/Task';
+import Step from '../model/task/Step';
 import StepStatus from '../model/task/StepStatus';
 import { PlainTaskRow } from './flowfocus.db';
 
@@ -7,7 +8,7 @@ export function serializeTask(task: Task, existingId?: number): PlainTaskRow {
 	return {
 		...(existingId !== undefined ? { id: existingId } : {}),
 		description: state.description,
-		stepsToStatusMap: Array.from(state.stepsToStatusMap.entries()) as Array<[string, string]>,
+		steps: state.steps.map(step => ({ id: step.id, text: step.text, status: step.status })),
 		startTime: state.startTime ? state.startTime.toISOString() : null,
 		endTime: state.endTime ? state.endTime.toISOString() : null,
 		deadline: state.deadline ? state.deadline.toISOString() : null,
@@ -23,7 +24,7 @@ export function serializeTask(task: Task, existingId?: number): PlainTaskRow {
 
 export function deserializeRow(row: PlainTaskRow): {
 	description: string;
-	stepsToStatusMap: Map<string, StepStatus>;
+	steps: Step[];
 	startTime: Date | null;
 	endTime: Date | null;
 	deadline: Date | null;
@@ -33,13 +34,11 @@ export function deserializeRow(row: PlainTaskRow): {
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
-	lastActionedStep: { step: string; status: StepStatus } | null;
+	lastActionedStep: { stepID: string; status: StepStatus } | null;
 } {
 	return {
 		description: row.description,
-		stepsToStatusMap: new Map(
-			row.stepsToStatusMap.map(([k, v]) => [k, v as StepStatus])
-		),
+		steps: row.steps.map(step => ({ id: step.id, text: step.text, status: step.status as StepStatus })),
 		startTime: row.startTime ? new Date(row.startTime) : null,
 		endTime: row.endTime ? new Date(row.endTime) : null,
 		deadline: row.deadline ? new Date(row.deadline) : null,
@@ -50,7 +49,7 @@ export function deserializeRow(row: PlainTaskRow): {
 		isComplete: row.isComplete,
 		isSkipped: row.isSkipped,
 		lastActionedStep: row.lastActionedStep
-			? { step: row.lastActionedStep.step, status: row.lastActionedStep.status as StepStatus }
+			? { stepID: row.lastActionedStep.stepID, status: row.lastActionedStep.status as StepStatus }
 			: null,
 	};
 }

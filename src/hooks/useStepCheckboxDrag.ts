@@ -2,8 +2,8 @@ import { useRef } from 'react';
 import { usePressAndHold } from './usePressAndHold';
 
 interface UseStepCheckboxDragOptions {
-	isStepChecked: (step: string) => boolean;
-	setStepChecked: (step: string, isChecked: boolean) => void;
+	isStepChecked: (stepID: string) => boolean;
+	setStepChecked: (stepID: string, isChecked: boolean) => void;
 }
 
 interface StepCheckboxDragHandlers {
@@ -13,39 +13,39 @@ interface StepCheckboxDragHandlers {
 
 export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ isStepChecked, setStepChecked }: UseStepCheckboxDragOptions) {
 	const checkboxDragTargetStateRef = useRef<boolean | null>(null);
-	const stepsAlreadyToggledInDragRef = useRef<Set<string>>(new Set());
+	const stepIDsAlreadyToggledInDragRef = useRef<Set<string>>(new Set());
 
 	const isStepCheckedRef = useRef(isStepChecked);
 	isStepCheckedRef.current = isStepChecked;
 	const setStepCheckedRef = useRef(setStepChecked);
 	setStepCheckedRef.current = setStepChecked;
 
-	function applyCheckboxDragToStep(step: string) {
+	function applyCheckboxDragToStep(stepID: string) {
 		const dragTargetState = checkboxDragTargetStateRef.current;
 		if (dragTargetState === null) return;
-		if (stepsAlreadyToggledInDragRef.current.has(step)) return;
-		stepsAlreadyToggledInDragRef.current.add(step);
-		setStepCheckedRef.current(step, dragTargetState);
+		if (stepIDsAlreadyToggledInDragRef.current.has(stepID)) return;
+		stepIDsAlreadyToggledInDragRef.current.add(stepID);
+		setStepCheckedRef.current(stepID, dragTargetState);
 	}
 
 	const { containerRef: stepsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
 		itemAttribute: 'data-step',
 		mouseHoldDelayMs: 0,
-		onHoldStart: step => {
-			const nextIsChecked = !isStepCheckedRef.current(step);
+		onHoldStart: stepID => {
+			const nextIsChecked = !isStepCheckedRef.current(stepID);
 			checkboxDragTargetStateRef.current = nextIsChecked;
-			stepsAlreadyToggledInDragRef.current = new Set([step]);
-			setStepCheckedRef.current(step, nextIsChecked);
+			stepIDsAlreadyToggledInDragRef.current = new Set([stepID]);
+			setStepCheckedRef.current(stepID, nextIsChecked);
 		},
-		onPointerOverItem: step => applyCheckboxDragToStep(step),
+		onPointerOverItem: stepID => applyCheckboxDragToStep(stepID),
 		onHoldEnd: () => {
 			checkboxDragTargetStateRef.current = null;
-			stepsAlreadyToggledInDragRef.current = new Set();
+			stepIDsAlreadyToggledInDragRef.current = new Set();
 		},
 	});
 
-	function getCheckboxDragHandlers(step: string): StepCheckboxDragHandlers {
-		const pressHandlers = getPressHandlers(step);
+	function getCheckboxDragHandlers(stepID: string): StepCheckboxDragHandlers {
+		const pressHandlers = getPressHandlers(stepID);
 		return {
 			onMouseDown: event => {
 				if (event.shiftKey) return;

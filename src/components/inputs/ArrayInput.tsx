@@ -16,6 +16,7 @@ interface Props {
 
 export interface ArrayInputHandle {
 	focusRow: (index: number) => void;
+	focusRowAtPosition: (index: number, cursorPosition?: number) => void;
 }
 
 export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix, getRowProps, onRowContextMenu }: Props, ref) {
@@ -36,7 +37,17 @@ export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, 
 		setTimeout(() => inputRefs.current[index]?.focus(), 0);
 	}
 
-	useImperativeHandle(ref, () => ({ focusRow: focusRowSoon }));
+	function focusRowAtPositionSoon(index: number, cursorPosition?: number) {
+		setTimeout(() => {
+			const inputElement = inputRefs.current[index];
+			if (!inputElement) return;
+			inputElement.focus();
+			const position = cursorPosition ?? inputElement.value.length;
+			inputElement.setSelectionRange(position, position);
+		}, 0);
+	}
+
+	useImperativeHandle(ref, () => ({ focusRow: focusRowSoon, focusRowAtPosition: focusRowAtPositionSoon }));
 
 	function changeRow(index: number, text: string) {
 		const next = [...value];
@@ -102,6 +113,16 @@ export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, 
 		} else if (e.key === 'Tab' && !e.shiftKey && !isTrailingRow) {
 			e.preventDefault();
 			focusRowSoon(index + 1);
+		} else if (e.key === 'ArrowUp' && !e.altKey && !e.ctrlKey && !e.shiftKey && !isTrailingRow) {
+			if (index > 0) {
+				e.preventDefault();
+				focusRowAtPositionSoon(index - 1);
+			}
+		} else if (e.key === 'ArrowDown' && !e.altKey && !e.ctrlKey && !e.shiftKey && !isTrailingRow) {
+			if (index < value.length - 1) {
+				e.preventDefault();
+				focusRowAtPositionSoon(index + 1);
+			}
 		} else if (
 			e.key === 'Backspace' &&
 			e.currentTarget.value === '' &&

@@ -57,23 +57,23 @@ export default function TaskCard({ task }: Props) {
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [isSkipOpen, setIsSkipOpen] = useState(false);
 	const [isTimingOpen, setIsTimingOpen] = useState(false);
-	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
-	const [stepPendingFocus, setStepPendingFocus] = useState<string | null>(null);
-	const [stepPendingDeletion, setStepPendingDeletion] = useState<string | null>(null);
+	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; x: number; y: number } | null>(null);
+	const [stepPendingFocusID, setStepPendingFocusID] = useState<string | null>(null);
+	const [stepPendingDeletionID, setStepPendingDeletionID] = useState<string | null>(null);
 	const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
-	const stepSpanElementsByStepRef = useRef<Map<string, HTMLSpanElement>>(new Map());
+	const stepSpanElementsByStepIDRef = useRef<Map<string, HTMLSpanElement>>(new Map());
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
-		isStepChecked: step => task.isStepComplete(step),
-		setStepChecked: (step, isChecked) => store.setStepComplete(task, step, isChecked),
+		isStepChecked: stepID => task.isStepComplete(stepID),
+		setStepChecked: (stepID, isChecked) => store.setStepComplete(task, stepID, isChecked),
 	});
 
-	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStep, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag({
+	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStepID, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag({
 		steps: task.getSteps(),
-		onReorder: newSteps => store.setSteps(task, newSteps),
+		onReorder: newStepIDOrder => store.reorderSteps(task, newStepIDOrder),
 	});
 
 	useEffect(() => {
@@ -81,7 +81,6 @@ export default function TaskCard({ task }: Props) {
 		return () => clearInterval(id);
 	}, []);
 
-	// Sync description contenteditable with task
 	useEffect(() => {
 		const el = descRef.current;
 		if (el && el.textContent !== task.getDescription()) {
@@ -98,26 +97,26 @@ export default function TaskCard({ task }: Props) {
 	const isSkippable = !task.isUrgent(currentTime);
 	const nextStep = task.getNextStep();
 	const steps = task.getSteps();
-	const nextStepIndex = nextStep === null ? -1 : task.getStepIndex(nextStep);
+	const nextStepIndex = nextStep === null ? -1 : task.getStepIndex(nextStep.id);
 
-	const allStepsJoined = steps.join(' ');
+	const allStepsKey = steps.map(step => `${step.id}:${step.text}`).join(' ');
 	useEffect(() => {
 		steps.forEach(step => {
-			const stepSpanElement = stepSpanElementsByStepRef.current.get(step);
-			if (stepSpanElement && stepSpanElement.textContent !== step) {
-				stepSpanElement.textContent = step;
+			const stepSpanElement = stepSpanElementsByStepIDRef.current.get(step.id);
+			if (stepSpanElement && stepSpanElement.textContent !== step.text) {
+				stepSpanElement.textContent = step.text;
 			}
 		});
-	}, [allStepsJoined]);
+	}, [allStepsKey]);
 
 	useEffect(() => {
-		if (stepPendingFocus === null) return;
-		const stepSpanElement = stepSpanElementsByStepRef.current.get(stepPendingFocus);
+		if (stepPendingFocusID === null) return;
+		const stepSpanElement = stepSpanElementsByStepIDRef.current.get(stepPendingFocusID);
 		if (stepSpanElement) {
 			focusStepTextAtEnd(stepSpanElement);
-			setStepPendingFocus(null);
+			setStepPendingFocusID(null);
 		}
-	}, [stepPendingFocus, allStepsJoined]);
+	}, [stepPendingFocusID, allStepsKey]);
 
 	function onDescriptionBlur(event: React.FocusEvent<HTMLHeadingElement>) {
 		const newDesc = event.currentTarget.textContent ?? '';
@@ -126,10 +125,10 @@ export default function TaskCard({ task }: Props) {
 		}
 	}
 
-	function onStepBlur(event: React.FocusEvent<HTMLSpanElement>, step: string) {
-		const newStep = event.currentTarget.textContent ?? '';
-		if (newStep !== step) {
-			store.setStep(task, step, newStep);
+	function onStepBlur(event: React.FocusEvent<HTMLSpanElement>, stepID: string, currentText: string) {
+		const newText = event.currentTarget.textContent ?? '';
+		if (newText !== currentText) {
+			store.setStepText(task, stepID, newText);
 		}
 	}
 
@@ -137,19 +136,21 @@ export default function TaskCard({ task }: Props) {
 		setIsDeleteTaskConfirmOpen(true);
 	}
 
-	function onStepCheckboxChange(step: string, isChecked: boolean, isShiftClick: boolean) {
+	function onStepCheckboxChange(stepID: string, isChecked: boolean, isShiftClick: boolean) {
 		if (isShiftClick) {
 			if (isChecked) {
-				store.completeStepAndPrecedingSteps(task, step);
+				store.completeStepAndPrecedingSteps(task, stepID);
 			}
 			else {
-				store.uncompleteStepAndFollowingSteps(task, step);
+				store.uncompleteStepAndFollowingSteps(task, stepID);
 			}
 		}
 		else {
-			store.setStepComplete(task, step, isChecked);
+			store.setStepComplete(task, stepID, isChecked);
 		}
 	}
+
+	const stepPendingDeletion = stepPendingDeletionID === null ? null : displaySteps.find(step => step.id === stepPendingDeletionID) ?? null;
 
 	return (
 		<div className={styles.card}>
@@ -169,69 +170,87 @@ export default function TaskCard({ task }: Props) {
 			/>
 
 			{task.hasNextStep() && (
-				<div ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={draggingStep !== null ? `${styles.steps} ${styles.stepsDragging}` : styles.steps}>
+				<div ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={draggingStepID !== null ? `${styles.steps} ${styles.stepsDragging}` : styles.steps}>
 					{displaySteps.map(step => {
-						const isCompleted = task.isStepComplete(step);
-						const isCurrentStep = step === nextStep;
-						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(step) < nextStepIndex;
-						const isPlaceholder = step === draggingStep;
+						const isCompleted = task.isStepComplete(step.id);
+						const isCurrentStep = step.id === nextStep?.id;
+						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(step.id) < nextStepIndex;
+						const isPlaceholder = step.id === draggingStepID;
 
 						return (
 							<div
-								key={step}
-								ref={rowElement => registerRowElement(step, rowElement)}
-								data-step-row={step}
+								key={step.id}
+								ref={rowElement => registerRowElement(step.id, rowElement)}
+								data-step-row={step.id}
 								className={[
 									styles.stepRow,
 									isCurrentStep ? styles.stepRowCurrent : '',
 									isPlaceholder ? styles.stepRowPlaceholder : '',
 								].filter(Boolean).join(' ')}
-								onMouseDown={getRowDragHandlers(step).onMouseDown}
+								onMouseDown={getRowDragHandlers(step.id).onMouseDown}
 								onClick={event => {
 									if ((event.target as HTMLElement).closest('[data-step]')) return;
-									const stepSpanElement = stepSpanElementsByStepRef.current.get(step);
+									const stepSpanElement = stepSpanElementsByStepIDRef.current.get(step.id);
 									if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
 								}}
 								onContextMenu={event => {
 									event.preventDefault();
-									setStepContextMenu({ step, x: event.clientX, y: event.clientY });
+									setStepContextMenu({ stepID: step.id, x: event.clientX, y: event.clientY });
 								}}
 							>
 								<StepCheckbox
-									step={step}
+									stepID={step.id}
 									isChecked={isCompleted}
 									onToggle={onStepCheckboxChange}
-									dragHandlers={getCheckboxDragHandlers(step)}
+									dragHandlers={getCheckboxDragHandlers(step.id)}
 									className={isCompleted ? `${styles.stepCheckbox} ${styles.stepCheckboxChecked}` : styles.stepCheckbox}
 									checkmarkClassName={styles.stepCheckmark}
 								/>
 
 								<span
 									ref={stepSpanElement => {
-										if (stepSpanElement) stepSpanElementsByStepRef.current.set(step, stepSpanElement);
-										else stepSpanElementsByStepRef.current.delete(step);
+										if (stepSpanElement) stepSpanElementsByStepIDRef.current.set(step.id, stepSpanElement);
+										else stepSpanElementsByStepIDRef.current.delete(step.id);
 									}}
 									contentEditable
 									suppressContentEditableWarning
-									onBlur={event => onStepBlur(event, step)}
+									onBlur={event => onStepBlur(event, step.id, step.text)}
 									onKeyDown={event => {
 										if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {
 											event.preventDefault();
-											store.moveStepUp(task, step);
+											store.moveStepUp(task, step.id);
 										}
 										else if (matchesShortcut(event, SHORTCUTS.stepReorder.moveDown)) {
 											event.preventDefault();
-											store.moveStepDown(task, step);
+											store.moveStepDown(task, step.id);
+										}
+										else if (matchesShortcut(event, SHORTCUTS.stepNavigate.toPreviousStep)) {
+											const previousStep = displaySteps[displaySteps.findIndex(s => s.id === step.id) - 1];
+											if (previousStep) {
+												event.preventDefault();
+												const stepSpanElement = stepSpanElementsByStepIDRef.current.get(previousStep.id);
+												if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
+											}
+										}
+										else if (matchesShortcut(event, SHORTCUTS.stepNavigate.toNextStep)) {
+											const followingStep = displaySteps[displaySteps.findIndex(s => s.id === step.id) + 1];
+											if (followingStep) {
+												event.preventDefault();
+												const stepSpanElement = stepSpanElementsByStepIDRef.current.get(followingStep.id);
+												if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
+											}
 										}
 										else if (matchesShortcut(event, SHORTCUTS.stepInsert.insertBefore)) {
 											event.preventDefault();
-											store.insertStepBeforeStep(task, step);
-											setStepPendingFocus('');
+											const typedText = event.currentTarget.textContent ?? '';
+											if (typedText !== step.text) store.setStepText(task, step.id, typedText);
+											setStepPendingFocusID(store.insertStepBeforeStep(task, step.id));
 										}
 										else if (matchesShortcut(event, SHORTCUTS.stepInsert.insertAfter)) {
 											event.preventDefault();
-											store.insertStepAfterStep(task, step);
-											setStepPendingFocus('');
+											const typedText = event.currentTarget.textContent ?? '';
+											if (typedText !== step.text) store.setStepText(task, step.id, typedText);
+											setStepPendingFocusID(store.insertStepAfterStep(task, step.id));
 										}
 										else if (event.key === 'Enter') {
 											event.preventDefault();
@@ -249,10 +268,12 @@ export default function TaskCard({ task }: Props) {
 						);
 					})}
 
-					{draggingStep !== null && draggingRowRect !== null && (() => {
-						const isCompleted = task.isStepComplete(draggingStep);
-						const isCurrentStep = draggingStep === nextStep;
-						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(draggingStep) < nextStepIndex;
+					{draggingStepID !== null && draggingRowRect !== null && (() => {
+						const draggingStep = displaySteps.find(step => step.id === draggingStepID);
+						if (!draggingStep) return null;
+						const isCompleted = task.isStepComplete(draggingStep.id);
+						const isCurrentStep = draggingStep.id === nextStep?.id;
+						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(draggingStep.id) < nextStepIndex;
 
 						return (
 							<div
@@ -260,7 +281,7 @@ export default function TaskCard({ task }: Props) {
 								style={getDraggingRowOverlayStyle(draggingRowRect, dragOffsetY)}
 							>
 								<StepCheckbox
-									step={draggingStep}
+									stepID={draggingStep.id}
 									isChecked={isCompleted}
 									onToggle={() => {}}
 									dragHandlers={{ onMouseDown: () => {}, onMouseEnter: () => {} }}
@@ -276,7 +297,7 @@ export default function TaskCard({ task }: Props) {
 												: styles.upcomingStep
 									}
 								>
-									{draggingStep}
+									{draggingStep.text}
 								</span>
 							</div>
 						);
@@ -338,27 +359,27 @@ export default function TaskCard({ task }: Props) {
 				position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 				onClose={() => setStepContextMenu(null)}
 				items={stepContextMenu !== null ? [
-					{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.step) },
-					{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.step) },
-					{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.step); setStepPendingFocus(''); } },
-					{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.step); setStepPendingFocus(''); } },
-					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.step) },
-					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.step) },
-					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletion(stepContextMenu.step) },
+					{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
+					{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
+					{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => setStepPendingFocusID(store.insertStepBeforeStep(task, stepContextMenu.stepID)) },
+					{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => setStepPendingFocusID(store.insertStepAfterStep(task, stepContextMenu.stepID)) },
+					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.stepID) },
+					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.stepID) },
+					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletionID(stepContextMenu.stepID) },
 				] : []}
 			/>
 
 			<ConfirmModal
 				headingText="Delete step?"
-				descriptionText={`"${stepPendingDeletion}" will be permanently deleted. This cannot be undone.`}
+				descriptionText={`"${stepPendingDeletion?.text ?? ''}" will be permanently deleted. This cannot be undone.`}
 				confirmButtonLabel="Delete"
-				isOpen={stepPendingDeletion !== null}
-				onClose={() => setStepPendingDeletion(null)}
+				isOpen={stepPendingDeletionID !== null}
+				onClose={() => setStepPendingDeletionID(null)}
 				onConfirm={() => {
-					if (stepPendingDeletion !== null) {
-						store.setSteps(task, task.getSteps().filter(step => step !== stepPendingDeletion));
+					if (stepPendingDeletionID !== null) {
+						store.deleteStep(task, stepPendingDeletionID);
 					}
-					setStepPendingDeletion(null);
+					setStepPendingDeletionID(null);
 				}}
 			/>
 

@@ -35,14 +35,15 @@ function getDurationRange(minMs: number | null, maxMs: number | null): string {
 
 export interface TaskManagerRowActions {
 	setDescription: (task: Task, description: string) => void;
-	setSteps: (task: Task, steps: string[]) => void;
-	setStepComplete: (task: Task, step: string, isComplete: boolean) => void;
-	completeStepAndPrecedingSteps: (task: Task, step: string) => void;
-	uncompleteStepAndFollowingSteps: (task: Task, step: string) => void;
-	moveStepUp: (task: Task, step: string) => void;
-	moveStepDown: (task: Task, step: string) => void;
-	insertStepBeforeStep: (task: Task, step: string) => void;
-	insertStepAfterStep: (task: Task, step: string) => void;
+	setSteps: (task: Task, stepTexts: string[]) => void;
+	setStepComplete: (task: Task, stepID: string, isComplete: boolean) => void;
+	completeStepAndPrecedingSteps: (task: Task, stepID: string) => void;
+	uncompleteStepAndFollowingSteps: (task: Task, stepID: string) => void;
+	moveStepUp: (task: Task, stepID: string) => void;
+	moveStepDown: (task: Task, stepID: string) => void;
+	reorderSteps: (task: Task, newStepIDOrder: string[]) => void;
+	insertStepBeforeStep: (task: Task, stepID: string) => string;
+	insertStepAfterStep: (task: Task, stepID: string) => string;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setMandatory: (task: Task, isMandatory: boolean) => void;
 	deleteTask: (task: Task) => Promise<void>;
@@ -68,46 +69,56 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 	const startTime = task.getStartTime();
 	const displayStartTime = startTime && startTime > now ? startTime : null;
 
-	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
+	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; index: number; x: number; y: number } | null>(null);
 	const arrayInputRef = useRef<ArrayInputHandle>(null);
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
-		isStepChecked: step => task.isStepComplete(step),
-		setStepChecked: (step, isChecked) => store.setStepComplete(task, step, isChecked),
+		isStepChecked: stepID => task.isStepComplete(stepID),
+		setStepChecked: (stepID, isChecked) => store.setStepComplete(task, stepID, isChecked),
 	});
 
-	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStep, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag<HTMLTableCellElement>({
+	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStepID, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag<HTMLTableCellElement>({
 		steps,
-		onReorder: newSteps => store.setSteps(task, newSteps),
+		onReorder: newStepIDOrder => store.reorderSteps(task, newStepIDOrder),
 	});
 
-	function onStepToggle(step: string, isChecked: boolean, isShiftClick: boolean) {
+	function onStepToggle(stepID: string, isChecked: boolean, isShiftClick: boolean) {
 		if (isShiftClick) {
-			if (isChecked) store.completeStepAndPrecedingSteps(task, step);
-			else store.uncompleteStepAndFollowingSteps(task, step);
+			if (isChecked) store.completeStepAndPrecedingSteps(task, stepID);
+			else store.uncompleteStepAndFollowingSteps(task, stepID);
 		}
 		else {
-			store.setStepComplete(task, step, isChecked);
+			store.setStepComplete(task, stepID, isChecked);
 		}
 	}
 
-	function onStepInsertKeyDown(step: string, e: React.KeyboardEvent) {
+	function onStepInsertKeyDown(index: number, e: React.KeyboardEvent) {
+		const step = displaySteps[index];
 		if (!step) return;
 
 		if (matchesShortcut(e, SHORTCUTS.stepInsert.insertBefore)) {
 			e.preventDefault();
-			store.insertStepBeforeStep(task, step);
-			arrayInputRef.current?.focusRow(steps.indexOf(step));
+			store.insertStepBeforeStep(task, step.id);
+			arrayInputRef.current?.focusRow(index);
 		}
 	}
 
-	function onStepReorderKeyDown(step: string, e: React.KeyboardEvent) {
+	function onStepReorderKeyDown(index: number, e: React.KeyboardEvent) {
+		const step = displaySteps[index];
+		if (!step) return;
+
 		if (matchesShortcut(e, SHORTCUTS.stepReorder.moveUp)) {
+			if (index === 0) return;
 			e.preventDefault();
-			store.moveStepUp(task, step);
+			const cursorPosition = (e.target as HTMLInputElement).selectionStart ?? undefined;
+			store.moveStepUp(task, step.id);
+			arrayInputRef.current?.focusRowAtPosition(index - 1, cursorPosition);
 		} else if (matchesShortcut(e, SHORTCUTS.stepReorder.moveDown)) {
+			if (index === displaySteps.length - 1) return;
 			e.preventDefault();
-			store.moveStepDown(task, step);
+			const cursorPosition = (e.target as HTMLInputElement).selectionStart ?? undefined;
+			store.moveStepDown(task, step.id);
+			arrayInputRef.current?.focusRowAtPosition(index + 1, cursorPosition);
 		}
 	}
 
@@ -136,30 +147,35 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={styles.stepsCell}>
 				<ArrayInput
 					ref={arrayInputRef}
-					value={displaySteps}
-					onChange={newSteps => store.setSteps(task, newSteps)}
-					onItemKeyDown={(_, step, e) => {
-						onStepInsertKeyDown(step, e);
-						onStepReorderKeyDown(step, e);
+					value={displaySteps.map(step => step.text)}
+					onChange={newStepTexts => store.setSteps(task, newStepTexts)}
+					onItemKeyDown={(index, _, e) => {
+						onStepInsertKeyDown(index, e);
+						onStepReorderKeyDown(index, e);
 					}}
-					getRowProps={(_, step) => ({
-						'data-step-row': step,
-						ref: rowElement => registerRowElement(step, rowElement),
-						className: step === draggingStep ? styles.stepRowPlaceholder : undefined,
-						onMouseDown: getRowDragHandlers(step).onMouseDown,
-					})}
-					onRowContextMenu={(_, step, event) => {
+					getRowProps={index => {
+						const step = displaySteps[index];
+						return {
+							'data-step-row': step.id,
+							ref: rowElement => registerRowElement(step.id, rowElement),
+							className: step.id === draggingStepID ? styles.stepRowPlaceholder : undefined,
+							onMouseDown: getRowDragHandlers(step.id).onMouseDown,
+						};
+					}}
+					onRowContextMenu={(index, _, event) => {
+						const step = displaySteps[index];
 						event.preventDefault();
-						setStepContextMenu({ step, x: event.clientX, y: event.clientY });
+						setStepContextMenu({ stepID: step.id, index, x: event.clientX, y: event.clientY });
 					}}
-					renderRowPrefix={(_, step) => {
-						const isCompleted = task.isStepComplete(step);
+					renderRowPrefix={index => {
+						const step = displaySteps[index];
+						const isCompleted = task.isStepComplete(step.id);
 						return (
 							<StepCheckbox
-								step={step}
+								stepID={step.id}
 								isChecked={isCompleted}
 								onToggle={onStepToggle}
-								dragHandlers={getCheckboxDragHandlers(step)}
+								dragHandlers={getCheckboxDragHandlers(step.id)}
 								className={isCompleted ? `${checkboxInputStyles.box} ${checkboxInputStyles.boxChecked}` : checkboxInputStyles.box}
 								checkmarkClassName={checkboxInputStyles.checkmark}
 							/>
@@ -168,15 +184,17 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 					placeholder="Add a step…"
 					className={styles.stepsArrayInput}
 				/>
-				{draggingStep !== null && draggingRowRect !== null && (() => {
-					const isCompleted = task.isStepComplete(draggingStep);
+				{draggingStepID !== null && draggingRowRect !== null && (() => {
+					const draggingStep = displaySteps.find(step => step.id === draggingStepID);
+					if (!draggingStep) return null;
+					const isCompleted = task.isStepComplete(draggingStep.id);
 					return (
 						<div
 							className={`${arrayInputStyles.row} ${styles.stepRowElevated}`}
 							style={getDraggingRowOverlayStyle(draggingRowRect, dragOffsetY)}
 						>
 							<StepCheckbox
-								step={draggingStep}
+								stepID={draggingStep.id}
 								isChecked={isCompleted}
 								onToggle={() => {}}
 								dragHandlers={{ onMouseDown: () => {}, onMouseEnter: () => {} }}
@@ -187,7 +205,7 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 								type="text"
 								readOnly
 								tabIndex={-1}
-								value={draggingStep}
+								value={draggingStep.text}
 								className={`field ${arrayInputStyles.input}`}
 							/>
 						</div>
@@ -197,10 +215,10 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 					position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 					onClose={() => setStepContextMenu(null)}
 					items={stepContextMenu !== null ? [
-						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.step) },
-						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.step) },
-						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.step); arrayInputRef.current?.focusRow(steps.indexOf(stepContextMenu.step)); } },
-						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.step); arrayInputRef.current?.focusRow(steps.indexOf(stepContextMenu.step) + 1); } },
+						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
+						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
+						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.stepID); arrayInputRef.current?.focusRow(stepContextMenu.index); } },
+						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.stepID); arrayInputRef.current?.focusRow(stepContextMenu.index + 1); } },
 					] : []}
 				/>
 			</td>

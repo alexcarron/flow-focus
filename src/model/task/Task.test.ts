@@ -1,6 +1,17 @@
 import TasksManager from "../TasksManager";
 import StepStatus from "./StepStatus";
+import Step from "./Step";
 import Task from "./Task";
+
+function getStepTexts(task: Task): string[] {
+	return task.getSteps().map(step => step.text);
+}
+
+function findStepByText(task: Task, text: string): Step {
+	const step = task.getSteps().find(step => step.text === text);
+	if (!step) throw new Error(`No step with text "${text}" found`);
+	return step;
+}
 
 describe('Task', () => {
 	let tasksManager: TasksManager = new TasksManager();
@@ -131,9 +142,9 @@ describe('Task', () => {
 
 			task.onPastIntervalEndTime(currentTime);
 
-			expect(task.getSteps()).toEqual(['Step 1', 'Step 2']);
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2']);
 			expect(task.getIsComplete()).toBe(false);
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 			expect(task.getDeadline()).toEqual(deadline);
 			expect(task.getStartTime()).toEqual(startTime);
 		});
@@ -150,10 +161,10 @@ describe('Task', () => {
 
 			task.onPastIntervalEndTime(currentTime);
 
-			expect(task.getSteps()).toEqual(['Step 1', 'Step 2']);
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2']);
 			expect(task.getProgress()).toBe(0);
 			expect(task.getIsComplete()).toBe(false);
-			expect(task.getNextStep()).toEqual('Step 1');
+			expect(task.getNextStep()?.text).toEqual('Step 1');
 		});
 
 		it('should update start time and deadline when past interval end time', () => {
@@ -174,7 +185,8 @@ describe('Task', () => {
 
 			// Task repeats every day at 8 AM
 			task.makeRecurring(repeatInterval, intervalStartTime);
-			task.setStepsToStatusMap([['Step 1', StepStatus.COMPLETED]]);
+			const step1 = task.addStep('Step 1');
+			task.completeStep(step1.id);
 			task.setComplete(true);
 
 			task.onPastIntervalEndTime(currentTime);
@@ -221,16 +233,16 @@ describe('Task', () => {
 		});
 	})
 
-	it('setStepsToStatusMap should set the steps to status map from an array of tuples of steps and statuses', () => {
-		task.setStepsToStatusMap([
-			['Step 1', 'Completed'],
-			['Step 2', 'Skipped'],
-			['Step 3', 'Uncomplete'],
+	it('replaceAllSteps should set the steps from an array of step objects', () => {
+		task.replaceAllSteps([
+			{ id: crypto.randomUUID(), text: 'Step 1', status: StepStatus.COMPLETED },
+			{ id: crypto.randomUUID(), text: 'Step 2', status: StepStatus.SKIPPED },
+			{ id: crypto.randomUUID(), text: 'Step 3', status: StepStatus.UNCOMPLETE },
 		]);
 
-		expect(task.getSteps()).toEqual(['Step 1', 'Step 2', 'Step 3']);
+		expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2', 'Step 3']);
 		expect(task.getIsComplete()).toBe(false);
-		expect(task.getNextStep()).toEqual('Step 2');
+		expect(task.getNextStep()?.text).toEqual('Step 2');
 	});
 
 	describe('getSteps', () => {
@@ -243,7 +255,7 @@ describe('Task', () => {
 			task.addStep('Step 2');
 			task.addStep('Step 3');
 
-			expect(task.getSteps()).toEqual(['Step 1', 'Step 2', 'Step 3']);
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2', 'Step 3']);
 		})
 	});
 
@@ -294,7 +306,7 @@ describe('Task', () => {
 			task.addStep('Step 2');
 			task.addStep('Step 3');
 
-			expect(task.getNextStep()).toEqual('Step 1');
+			expect(task.getNextStep()?.text).toEqual('Step 1');
 		});
 
 		it('getNextStep should return null if there are no non-completed steps', () => {
@@ -315,7 +327,7 @@ describe('Task', () => {
 			task.addStep('Step 4');
 			task.completeNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 		});
 
 		it('getNextStep should return the next uncomplete step if they just skipped a task', () => {
@@ -326,7 +338,7 @@ describe('Task', () => {
 			task.completeNextStep();
 			task.skipNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 3');
+			expect(task.getNextStep()?.text).toEqual('Step 3');
 		});
 
 		it('getNextStep should return the next uncomplete step even if they just skipped twice in a row', () => {
@@ -338,7 +350,7 @@ describe('Task', () => {
 			task.skipNextStep();
 			task.skipNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 4');
+			expect(task.getNextStep()?.text).toEqual('Step 4');
 		});
 
 		it('getNextStep should return first skipped step if they just skipped a task but there are no uncomplete tasks', () => {
@@ -354,7 +366,7 @@ describe('Task', () => {
 			task.completeNextStep();
 			task.skipNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 1');
+			expect(task.getNextStep()?.text).toEqual('Step 1');
 		});
 
 		it('getNextStep should return the next skipped step after the last if they just skipped a task that was skipped before', () => {
@@ -367,7 +379,7 @@ describe('Task', () => {
 			task.completeNextStep();
 			task.skipNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 		});
 
 		it('getNextStep should return the first skipped step if they didn\'t skip the last step', () => {
@@ -380,7 +392,7 @@ describe('Task', () => {
 			task.skipNextStep();
 			task.completeNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 			expect(task.getIsComplete()).toBe(false);
 			expect(task.getIsSkipped()).toBe(false);
 		});
@@ -395,7 +407,7 @@ describe('Task', () => {
 			task.skipNextStep();
 			task.completeNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 3');
+			expect(task.getNextStep()?.text).toEqual('Step 3');
 			expect(task.getIsComplete()).toBe(false);
 			expect(task.getIsSkipped()).toBe(false);
 		});
@@ -410,8 +422,8 @@ describe('Task', () => {
 
 			task.replaceNextStep('Step 4');
 
-			expect(task.getSteps()).toEqual(['Step 1', 'Step 4', 'Step 3']);
-			expect(task.getNextStep()).toEqual('Step 4');
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 4', 'Step 3']);
+			expect(task.getNextStep()?.text).toEqual('Step 4');
 		});
 
 		it('replaceNextStep should do nothing if there are no uncompleted steps', () => {
@@ -423,7 +435,7 @@ describe('Task', () => {
 			task.completeNextStep();
 
 			task.replaceNextStep('Step 4');
-			expect(task.getSteps()).toEqual(['Step 1', 'Step 2', 'Step 3']);
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2', 'Step 3']);
 			expect(task.getNextStep()).toEqual(null);
 		});
 
@@ -439,7 +451,7 @@ describe('Task', () => {
 				task.addStep('Step 1');
 				task.completeNextStep();
 
-				expect(task.getSteps()).toEqual(['Step 1']);
+				expect(getStepTexts(task)).toEqual(['Step 1']);
 				expect(task.getNextStep()).toBeNull();
 				expect(task.getIsComplete()).toBe(true);
 		});
@@ -472,97 +484,96 @@ describe('Task', () => {
 
 			expect(task.getIsComplete()).toBe(false);
 			expect(task.getIsSkipped()).toBe(false);
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 		});
 	});
 
 	describe('uncompleteStep', () => {
 		it('should clear the task completion state when it was already complete', () => {
-			task.addStep('Step 1');
+			const step1 = task.addStep('Step 1');
 			task.completeAllSteps();
 
-			task.uncompleteStep('Step 1');
+			task.uncompleteStep(step1.id);
 
 			expect(task.getIsComplete()).toBe(false);
-			expect(task.isStepComplete('Step 1')).toBe(false);
+			expect(task.isStepComplete(step1.id)).toBe(false);
 		});
 	});
 
 	describe('completeStepAndPrecedingSteps', () => {
 		it('should complete the given step and any unfinished steps before it', () => {
-			task.addStep('Step 1');
-			task.addStep('Step 2');
-			task.addStep('Step 3');
+			const step1 = task.addStep('Step 1');
+			const step2 = task.addStep('Step 2');
+			const step3 = task.addStep('Step 3');
 
-			task.completeStepAndPrecedingSteps('Step 2');
+			task.completeStepAndPrecedingSteps(step2.id);
 
-			expect(task.isStepComplete('Step 1')).toBe(true);
-			expect(task.isStepComplete('Step 2')).toBe(true);
-			expect(task.isStepComplete('Step 3')).toBe(false);
-			expect(task.getNextStep()).toEqual('Step 3');
+			expect(task.isStepComplete(step1.id)).toBe(true);
+			expect(task.isStepComplete(step2.id)).toBe(true);
+			expect(task.isStepComplete(step3.id)).toBe(false);
+			expect(task.getNextStep()?.text).toEqual('Step 3');
 		});
 
 		it('should behave like completing just that step when it is the first uncompleted step', () => {
-			task.addStep('Step 1');
+			const step1 = task.addStep('Step 1');
 			task.addStep('Step 2');
 
-			task.completeStepAndPrecedingSteps('Step 1');
+			task.completeStepAndPrecedingSteps(step1.id);
 
-			expect(task.isStepComplete('Step 1')).toBe(true);
-			expect(task.isStepComplete('Step 2')).toBe(false);
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.isStepComplete(step1.id)).toBe(true);
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 		});
 
 		it('should complete the task when the last step is completed', () => {
 			task.addStep('Step 1');
-			task.addStep('Step 2');
+			const step2 = task.addStep('Step 2');
 
-			task.completeStepAndPrecedingSteps('Step 2');
+			task.completeStepAndPrecedingSteps(step2.id);
 
 			expect(task.getIsComplete()).toBe(true);
 			expect(task.getNextStep()).toBeNull();
 		});
 
 		it('should not throw or change anything for a step that does not exist', () => {
-			task.addStep('Step 1');
+			const step1 = task.addStep('Step 1');
 
-			task.completeStepAndPrecedingSteps('Missing Step');
+			task.completeStepAndPrecedingSteps('missing-step-id');
 
-			expect(task.isStepComplete('Step 1')).toBe(false);
+			expect(task.isStepComplete(step1.id)).toBe(false);
 		});
 	});
 
 	describe('uncompleteStepAndFollowingSteps', () => {
 		it('should uncomplete the given step and any completed steps after it', () => {
-			task.addStep('Step 1');
-			task.addStep('Step 2');
-			task.addStep('Step 3');
+			const step1 = task.addStep('Step 1');
+			const step2 = task.addStep('Step 2');
+			const step3 = task.addStep('Step 3');
 			task.completeAllSteps();
 
-			task.uncompleteStepAndFollowingSteps('Step 2');
+			task.uncompleteStepAndFollowingSteps(step2.id);
 
-			expect(task.isStepComplete('Step 1')).toBe(true);
-			expect(task.isStepComplete('Step 2')).toBe(false);
-			expect(task.isStepComplete('Step 3')).toBe(false);
+			expect(task.isStepComplete(step1.id)).toBe(true);
+			expect(task.isStepComplete(step2.id)).toBe(false);
+			expect(task.isStepComplete(step3.id)).toBe(false);
 		});
 
 		it('should clear the task completion state when it was already complete', () => {
 			task.addStep('Step 1');
-			task.addStep('Step 2');
+			const step2 = task.addStep('Step 2');
 			task.completeAllSteps();
 
-			task.uncompleteStepAndFollowingSteps('Step 2');
+			task.uncompleteStepAndFollowingSteps(step2.id);
 
 			expect(task.getIsComplete()).toBe(false);
 		});
 
 		it('should not throw or change anything for a step that does not exist', () => {
-			task.addStep('Step 1');
+			const step1 = task.addStep('Step 1');
 			task.completeAllSteps();
 
-			task.uncompleteStepAndFollowingSteps('Missing Step');
+			task.uncompleteStepAndFollowingSteps('missing-step-id');
 
-			expect(task.isStepComplete('Step 1')).toBe(true);
+			expect(task.isStepComplete(step1.id)).toBe(true);
 		});
 	});
 
@@ -600,7 +611,7 @@ describe('Task', () => {
 			task.addStep('Step 2');
 			task.skipNextStep();
 
-			expect(task.getNextStep()).toEqual('Step 2');
+			expect(task.getNextStep()?.text).toEqual('Step 2');
 			expect(task.getIsComplete()).toBe(false);
 			expect(task.getIsSkipped()).toBe(false);
 		});
@@ -635,34 +646,109 @@ describe('Task', () => {
 		});
 	});
 
-	describe('editSteps', () => {
-		it('editSteps should edit the steps with the given steps', () => {
+	describe('editStepsText', () => {
+		it('editStepsText should edit the steps with the given step texts', () => {
 			task.addStep('Step 1');
 			task.addStep('Step 2');
-			task.editSteps(['Step 3', 'Step 4']);
-			expect(task.getSteps()).toEqual(['Step 3', 'Step 4']);
+			task.editStepsText(['Step 3', 'Step 4']);
+			expect(getStepTexts(task)).toEqual(['Step 3', 'Step 4']);
 		});
 
-		it('editSteps should keep the step status when editing the steps', () => {
+		it('editStepsText should keep the step status when editing the steps', () => {
 			task.addStep('Step 1');
 			task.addStep('Step 2');
 			task.completeNextStep();
 
-			task.editSteps(['Step 3', 'Step 4']);
-			expect(task.getSteps()).toEqual(['Step 3', 'Step 4']);
-			expect(task.getNextStep()).toEqual('Step 4');
+			task.editStepsText(['Step 3', 'Step 4']);
+			expect(getStepTexts(task)).toEqual(['Step 3', 'Step 4']);
+			expect(task.getNextStep()?.text).toEqual('Step 4');
 		});
 
-		it('editSteps should handle an empty array', () => {
+		it('editStepsText should handle an empty array', () => {
 			task.addStep('Step 1');
 			task.addStep('Step 2');
-			task.editSteps([]);
+			task.editStepsText([]);
 			expect(task.getSteps()).toEqual([]);
 		});
 
-		it('editSteps should handle no steps', () => {
-			task.editSteps(['Step 1', 'Step 2']);
-			expect(task.getSteps()).toEqual(['Step 1', 'Step 2']);
+		it('editStepsText should handle no steps', () => {
+			task.editStepsText(['Step 1', 'Step 2']);
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2']);
+		});
+
+		it('editStepsText should preserve identity and status of duplicate-text steps by position', () => {
+			task.addStep('');
+			task.addStep('');
+			const [firstBlankStep, secondBlankStep] = task.getSteps();
+			task.completeStep(firstBlankStep.id);
+
+			task.editStepsText(['', '']);
+
+			const [firstStepAfterEdit, secondStepAfterEdit] = task.getSteps();
+			expect(firstStepAfterEdit.id).toEqual(firstBlankStep.id);
+			expect(secondStepAfterEdit.id).toEqual(secondBlankStep.id);
+			expect(task.isStepComplete(firstStepAfterEdit.id)).toBe(true);
+			expect(task.isStepComplete(secondStepAfterEdit.id)).toBe(false);
+		});
+	});
+
+	describe('editStepText', () => {
+		it('should rename a step in place, preserving its id and status', () => {
+			const step1 = task.addStep('Step 1');
+			task.completeStep(step1.id);
+
+			task.editStepText(step1.id, 'Renamed Step');
+
+			expect(getStepTexts(task)).toEqual(['Renamed Step']);
+			expect(task.isStepComplete(step1.id)).toBe(true);
+		});
+	});
+
+	describe('createStepLeftOfStep and createStepRightOfStep', () => {
+		it('should insert a new blank step before the given step without colliding with another blank step', () => {
+			task.addStep('');
+			const secondBlankStep = task.addStep('');
+
+			const insertedStep = task.createStepLeftOfStep(secondBlankStep.id);
+
+			expect(task.getSteps().map(step => step.id)).toEqual([
+				task.getSteps()[0].id,
+				insertedStep.id,
+				secondBlankStep.id,
+			]);
+		});
+
+		it('should insert a new blank step after the given step without colliding with another blank step', () => {
+			const firstBlankStep = task.addStep('');
+			task.addStep('');
+
+			const insertedStep = task.createStepRightOfStep(firstBlankStep.id);
+
+			expect(task.getSteps().map(step => step.id)[1]).toEqual(insertedStep.id);
+		});
+	});
+
+	describe('reorderSteps', () => {
+		it('should reorder steps by id while preserving their status', () => {
+			const step1 = task.addStep('Step 1');
+			const step2 = task.addStep('Step 2');
+			task.completeStep(step1.id);
+
+			task.reorderSteps([step2.id, step1.id]);
+
+			expect(getStepTexts(task)).toEqual(['Step 2', 'Step 1']);
+			expect(task.isStepComplete(step1.id)).toBe(true);
+		});
+	});
+
+	describe('deleteStep', () => {
+		it('should remove the given step', () => {
+			const step1 = task.addStep('Step 1');
+			task.addStep('Step 2');
+
+			task.deleteStep(step1.id);
+
+			expect(getStepTexts(task)).toEqual(['Step 2']);
 		});
 	});
 
@@ -756,8 +842,10 @@ describe('Task', () => {
 		task.addStep('Step 1');
 		task.addStep('Step 2');
 		task.addStep('Step 3');
-		task.completeStep('Step 1');
-		task.skipStep('Step 2');
+		const step1 = findStepByText(task, 'Step 1');
+		task.completeStep(step1.id);
+		const step2 = findStepByText(task, 'Step 2');
+		task.skipStep(step2.id);
 		task.setDeadline(currentTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
@@ -775,17 +863,13 @@ describe('Task', () => {
 		expect(state.minDuration).toEqual(task.getMinRequiredTime());
 		expect(state.maxDuration).toEqual(task.getMaxRequiredTime(currentTime));
 		expect(state.repeatInterval).toEqual(1000);
-		expect(state.stepsToStatusMap).toEqual(
-			new Map(
-				[
-					['Step 1', 'Completed'],
-					['Step 2', 'Skipped'],
-					['Step 3', 'Uncomplete'],
-				]
-			)
-		);
+		expect(state.steps).toEqual([
+			{ id: step1.id, text: 'Step 1', status: StepStatus.COMPLETED },
+			{ id: step2.id, text: 'Step 2', status: StepStatus.SKIPPED },
+			{ id: findStepByText(task, 'Step 3').id, text: 'Step 3', status: StepStatus.UNCOMPLETE },
+		]);
 		expect(state.lastActionedStep).toEqual({
-			step: 'Step 2',
+			stepID: step2.id,
 			status: 'Skipped' as StepStatus,
 		});
 	});
@@ -795,8 +879,8 @@ describe('Task', () => {
 		task.addStep('Step 1');
 		task.addStep('Step 2');
 		task.addStep('Step 3');
-		task.completeStep('Step 1');
-		task.skipStep('Step 2');
+		task.completeStep(findStepByText(task, 'Step 1').id);
+		task.skipStep(findStepByText(task, 'Step 2').id);
 		task.setDeadline(currentTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
@@ -804,7 +888,7 @@ describe('Task', () => {
 
 		const state = task.getState();
 
-		task.editSteps(['Step 4', 'Step 5', 'Step 6']);
+		task.editStepsText(['Step 4', 'Step 5', 'Step 6']);
 		task.setDescription('New Description');
 		task.completeNextStep();
 		task.setMaxRequiredTime(3000);
@@ -824,7 +908,7 @@ describe('Task', () => {
 		expect(task.getMinRequiredTime()).toEqual(1000);
 		expect(task.getMaxRequiredTime(currentTime)).toEqual(2000);
 		expect(task.getRepeatInterval()).toEqual(1000);
-		expect(task.getSteps()).toEqual(['Step 1', 'Step 2', 'Step 3']);
+		expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2', 'Step 3']);
 	});
 
 	describe('isActive', () => {
