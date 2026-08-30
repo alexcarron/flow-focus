@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import DurationInput from './DurationInput';
+import FieldDescription from './FieldDescription';
 import styles from './DurationRangeInput.module.css';
 
 interface Props {
@@ -31,8 +32,11 @@ export default function DurationRangeInput({ minDuration, maxDuration, onChange 
 
 	return (
 		<div className={styles.container}>
+			<FieldDescription
+				text="How long you estimate this task will take. Leave blank if unsure."
+				className={styles.description}
+			/>
 			<label className={styles.heading}>Duration</label>
-			<p className={styles.description}>How long will this task take? Leave blank if unsure</p>
 
 			{isRangeExpanded ? (
 				<div className={styles.rangeSection}>

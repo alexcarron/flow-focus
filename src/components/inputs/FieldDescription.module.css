@@ -1,0 +1,56 @@
+.container {
+	position: relative;
+	display: inline-flex;
+}
+
+.trigger {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.125rem;
+	height: 1.125rem;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--color-text-subtle);
+	cursor: help;
+	transition: color var(--transition-fast);
+}
+
+.trigger:hover,
+.trigger:focus-visible {
+	color: var(--color-text-secondary);
+}
+
+.icon {
+	width: 100%;
+	height: 100%;
+}
+
+.tooltip {
+	position: absolute;
+	top: calc(100% + var(--space-extra-small));
+	right: 0;
+	width: max-content;
+	max-width: 16rem;
+	padding: var(--space-extra-small) var(--space-small);
+	background-color: var(--color-surface-hover-strong);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-small);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-extra-small);
+	font-weight: var(--font-weight-medium);
+	line-height: 1.4;
+	box-shadow: var(--shadow-card);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity var(--transition-fast);
+	z-index: var(--layer-modal);
+	pointer-events: none;
+}
+
+.container:hover .tooltip,
+.tooltip.tooltipVisible {
+	opacity: 1;
+	visibility: visible;
+}

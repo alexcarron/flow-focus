@@ -1,12 +1,14 @@
 import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../config/shortcuts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import Time from '../../model/time-management/Time';
+import FieldDescription from './FieldDescription';
 import styles from './DatetimeInput.module.css';
 
 interface Props {
 	value: Date | null;
 	onChange: (value: Date | null) => void;
 	label?: string;
+	description?: string;
 	className?: string;
 }
 
@@ -39,7 +41,7 @@ function toToday(base: Date | null): Date {
 
 const shortcuts = SHORTCUTS.datetime;
 
-export default function DatetimeInput({ value, onChange, label, className = '' }: Props) {
+export default function DatetimeInput({ value, onChange, label, description, className = '' }: Props) {
 	const morningTime = useSettingsStore(s => s.morningTime);
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morning = Time.fromString(morningTime);
@@ -83,6 +85,7 @@ export default function DatetimeInput({ value, onChange, label, className = '' }
 
 	return (
 		<div className={`${styles.container} ${className}`}>
+			{description && <FieldDescription text={description} className={styles.description} />}
 			{label && <label className={styles.heading}>{label}</label>}
 			<input
 				type="datetime-local"

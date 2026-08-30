@@ -1,6 +1,7 @@
 .container {
 	composes: input-panel from global;
 	gap: var(--space-medium);
+	position: relative;
 }
 
 .heading {
@@ -10,9 +11,9 @@
 }
 
 .description {
-	margin-top: calc(-1 * var(--space-small));
-	font-size: var(--font-size-extra-small);
-	color: var(--color-text-subtle);
+	position: absolute;
+	top: var(--space-large);
+	right: var(--space-large);
 }
 
 .presets {

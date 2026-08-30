@@ -1,13 +1,15 @@
+import FieldDescription from './FieldDescription';
 import styles from './CheckboxInput.module.css';
 
 interface Props {
 	value: boolean;
 	onChange: (value: boolean, event: React.MouseEvent | React.KeyboardEvent) => void;
 	label?: string;
+	description?: string;
 	className?: string;
 }
 
-export default function CheckboxInput({ value, onChange, label, className = '' }: Props) {
+export default function CheckboxInput({ value, onChange, label, description, className = '' }: Props) {
 	return (
 		<label className={`${styles.checkbox} ${className}`}>
 			<div
@@ -25,6 +27,7 @@ export default function CheckboxInput({ value, onChange, label, className = '' }
 				)}
 			</div>
 			{label && <span className={styles.label}>{label}</span>}
+			{description && <FieldDescription text={description} />}
 		</label>
 	);
 }

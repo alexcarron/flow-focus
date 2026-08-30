@@ -1,12 +1,19 @@
 .container {
 	composes: input-panel from global;
 	gap: var(--space-small);
+	position: relative;
 }
 
 .heading {
 	font-size: var(--font-size-small);
 	font-weight: var(--font-weight-semibold);
 	color: var(--color-text-secondary);
+}
+
+.description {
+	position: absolute;
+	top: var(--space-large);
+	right: var(--space-large);
 }
 
 .quickActions {
