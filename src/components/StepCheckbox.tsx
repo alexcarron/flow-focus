@@ -4,7 +4,7 @@ interface Props {
 	onToggle: (step: string, isChecked: boolean, isShiftClick: boolean) => void;
 	dragHandlers: {
 		onMouseDown: (event: React.MouseEvent) => void;
-		onMouseEnter: () => void;
+		onMouseEnter: (event: React.MouseEvent) => void;
 	};
 	className: string;
 	checkmarkClassName?: string;
@@ -17,7 +17,10 @@ export default function StepCheckbox({ step, isChecked, onToggle, dragHandlers, 
 			aria-checked={isChecked}
 			tabIndex={0}
 			data-step={step}
-			onMouseDown={dragHandlers.onMouseDown}
+			onMouseDown={event => {
+				event.stopPropagation();
+				dragHandlers.onMouseDown(event);
+			}}
 			onMouseEnter={dragHandlers.onMouseEnter}
 			onClick={event => {
 				if (event.shiftKey) onToggle(step, !isChecked, true);

@@ -7,7 +7,7 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 
 strPath = objFSO.GetParentFolderName(objFSO.GetParentFolderName(WScript.ScriptFullName))
 strPort = "5174"
-strUrl = "http://localhost:" & strPort & "/flow-focus/"
+strUrl = "http://localhost:" & strPort & "/"
 q = Chr(34)
 
 Set objExec = objShell.Exec("cmd /c netstat -ano | findstr " & q & ":" & strPort & " " & q & " | findstr LISTENING")

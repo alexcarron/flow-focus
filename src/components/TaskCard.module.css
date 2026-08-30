@@ -51,6 +51,25 @@
 	padding-left: var(--space-small);
 }
 
+.stepRowPlaceholder {
+	position: relative;
+	border-radius: var(--radius-medium);
+	background-color: var(--color-surface-inset);
+	border: 1px dashed var(--color-border-strong);
+}
+
+.stepRowPlaceholder > * {
+	visibility: hidden;
+}
+
+.stepRowElevated {
+	background-color: var(--color-surface-inset);
+	border-radius: var(--radius-medium);
+	box-shadow: var(--shadow-card);
+	transform: scale(1.02);
+	cursor: grabbing;
+}
+
 .stepCheckbox {
 	flex-shrink: 0;
 	width: 0.85rem;

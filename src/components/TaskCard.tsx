@@ -3,8 +3,11 @@ import Task from '../model/task/Task';
 import { useTasksStore } from '../stores/tasksStore';
 import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
+import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
 import StepCheckbox from './StepCheckbox';
 import { formatDate } from '../utils/formatters';
+import { mergeRefs } from '../utils/mergeRefs';
+import { SHORTCUTS, matchesShortcut, getShortcutKeyParts } from '../config/shortcuts';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';
@@ -50,11 +53,16 @@ export default function TaskCard({ task }: Props) {
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
-	const stepRefs = useRef<(HTMLSpanElement | null)[]>([]);
+	const stepSpanElementsByStepRef = useRef<Map<string, HTMLSpanElement>>(new Map());
 
-	const { stepsContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
+	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
 		isStepChecked: step => task.isStepComplete(step),
 		setStepChecked: (step, isChecked) => store.setStepComplete(task, step, isChecked),
+	});
+
+	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStep, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag({
+		steps: task.getSteps(),
+		onReorder: newSteps => store.setSteps(task, newSteps),
 	});
 
 	useEffect(() => {
@@ -83,8 +91,8 @@ export default function TaskCard({ task }: Props) {
 
 	const allStepsJoined = steps.join(' ');
 	useEffect(() => {
-		steps.forEach((step, stepIndex) => {
-			const stepSpanElement = stepRefs.current[stepIndex];
+		steps.forEach(step => {
+			const stepSpanElement = stepSpanElementsByStepRef.current.get(step);
 			if (stepSpanElement && stepSpanElement.textContent !== step) {
 				stepSpanElement.textContent = step;
 			}
@@ -141,16 +149,24 @@ export default function TaskCard({ task }: Props) {
 			/>
 
 			{task.hasNextStep() && (
-				<div ref={stepsContainerRef} className={styles.steps}>
-					{steps.map((step, stepIndex) => {
+				<div ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={styles.steps}>
+					{displaySteps.map(step => {
 						const isCompleted = task.isStepComplete(step);
 						const isCurrentStep = step === nextStep;
-						const isPreviousStep = nextStepIndex !== -1 && stepIndex < nextStepIndex;
+						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(step) < nextStepIndex;
+						const isPlaceholder = step === draggingStep;
 
 						return (
 							<div
 								key={step}
-								className={isCurrentStep ? `${styles.stepRow} ${styles.stepRowCurrent}` : styles.stepRow}
+								ref={rowElement => registerRowElement(step, rowElement)}
+								data-step-row={step}
+								className={[
+									styles.stepRow,
+									isCurrentStep ? styles.stepRowCurrent : '',
+									isPlaceholder ? styles.stepRowPlaceholder : '',
+								].filter(Boolean).join(' ')}
+								onMouseDown={getRowDragHandlers(step).onMouseDown}
 								onContextMenu={event => {
 									event.preventDefault();
 									setStepContextMenu({ step, x: event.clientX, y: event.clientY });
@@ -166,10 +182,23 @@ export default function TaskCard({ task }: Props) {
 								/>
 
 								<span
-									ref={stepSpanElement => { stepRefs.current[stepIndex] = stepSpanElement; }}
+									ref={stepSpanElement => {
+										if (stepSpanElement) stepSpanElementsByStepRef.current.set(step, stepSpanElement);
+										else stepSpanElementsByStepRef.current.delete(step);
+									}}
 									contentEditable
 									suppressContentEditableWarning
 									onBlur={event => onStepBlur(event, step)}
+									onKeyDown={event => {
+										if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {
+											event.preventDefault();
+											store.moveStepUp(task, step);
+										}
+										else if (matchesShortcut(event, SHORTCUTS.stepReorder.moveDown)) {
+											event.preventDefault();
+											store.moveStepDown(task, step);
+										}
+									}}
 									className={
 										isCurrentStep
 											? styles.currentStep
@@ -181,6 +210,39 @@ export default function TaskCard({ task }: Props) {
 							</div>
 						);
 					})}
+
+					{draggingStep !== null && draggingRowRect !== null && (() => {
+						const isCompleted = task.isStepComplete(draggingStep);
+						const isCurrentStep = draggingStep === nextStep;
+						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(draggingStep) < nextStepIndex;
+
+						return (
+							<div
+								className={`${styles.stepRow} ${styles.stepRowElevated}`}
+								style={getDraggingRowOverlayStyle(draggingRowRect, dragOffsetY)}
+							>
+								<StepCheckbox
+									step={draggingStep}
+									isChecked={isCompleted}
+									onToggle={() => {}}
+									dragHandlers={{ onMouseDown: () => {}, onMouseEnter: () => {} }}
+									className={isCompleted ? `${styles.stepCheckbox} ${styles.stepCheckboxChecked}` : styles.stepCheckbox}
+									checkmarkClassName={styles.stepCheckmark}
+								/>
+								<span
+									className={
+										isCurrentStep
+											? styles.currentStep
+											: isPreviousStep
+												? styles.previousStep
+												: styles.upcomingStep
+									}
+								>
+									{draggingStep}
+								</span>
+							</div>
+						);
+					})()}
 				</div>
 			)}
 
@@ -238,6 +300,8 @@ export default function TaskCard({ task }: Props) {
 				position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 				onClose={() => setStepContextMenu(null)}
 				items={stepContextMenu !== null ? [
+					{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.step) },
+					{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.step) },
 					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.step) },
 					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.step) },
 					{ label: 'Delete', isDanger: true, onClick: () => setStepPendingDeletion(stepContextMenu.step) },

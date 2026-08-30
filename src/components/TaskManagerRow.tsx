@@ -1,15 +1,21 @@
+import { useState } from 'react';
 import Task from '../model/task/Task';
 import Duration from '../model/time-management/Duration';
 import { formatDate, formatTime } from '../utils/formatters';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
+import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
+import { mergeRefs } from '../utils/mergeRefs';
+import { SHORTCUTS, matchesShortcut, getShortcutKeyParts } from '../config/shortcuts';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
 import ArrayInput from './inputs/ArrayInput';
 import SelectionCheckbox from './SelectionCheckbox';
 import StepCheckbox from './StepCheckbox';
+import ContextMenu from './context-menu/ContextMenu';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import checkboxInputStyles from './inputs/CheckboxInput.module.css';
+import arrayInputStyles from './inputs/ArrayInput.module.css';
 import styles from './TaskManagerRow.module.css';
 
 function toDurationString(ms: number): string {
@@ -33,6 +39,10 @@ export interface TaskManagerRowActions {
 	setStepComplete: (task: Task, step: string, isComplete: boolean) => void;
 	completeStepAndPrecedingSteps: (task: Task, step: string) => void;
 	uncompleteStepAndFollowingSteps: (task: Task, step: string) => void;
+	moveStepUp: (task: Task, step: string) => void;
+	moveStepDown: (task: Task, step: string) => void;
+	insertStepBeforeStep: (task: Task, step: string) => void;
+	insertStepAfterStep: (task: Task, step: string) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setMandatory: (task: Task, isMandatory: boolean) => void;
 	deleteTask: (task: Task) => Promise<void>;
@@ -58,9 +68,16 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 	const startTime = task.getStartTime();
 	const displayStartTime = startTime && startTime > now ? startTime : null;
 
-	const { stepsContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
+	const [stepContextMenu, setStepContextMenu] = useState<{ step: string; x: number; y: number } | null>(null);
+
+	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
 		isStepChecked: step => task.isStepComplete(step),
 		setStepChecked: (step, isChecked) => store.setStepComplete(task, step, isChecked),
+	});
+
+	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStep, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag<HTMLTableCellElement>({
+		steps,
+		onReorder: newSteps => store.setSteps(task, newSteps),
 	});
 
 	function onStepToggle(step: string, isChecked: boolean, isShiftClick: boolean) {
@@ -73,19 +90,25 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 		}
 	}
 
-	function onStepReorderKeyDown(step: string, e: React.KeyboardEvent) {
+	function onStepInsertKeyDown(step: string, e: React.KeyboardEvent) {
 		if (!step) return;
 
 		if (e.altKey && e.key === 'ArrowLeft') {
 			e.preventDefault();
-			task.createStepLeftOfStep(step);
-			store.refreshTasks();
-			store.persistChangedTasks([task]);
+			store.insertStepBeforeStep(task, step);
 		} else if (e.altKey && e.key === 'ArrowRight') {
 			e.preventDefault();
-			task.createStepRightOfStep(step);
-			store.refreshTasks();
-			store.persistChangedTasks([task]);
+			store.insertStepAfterStep(task, step);
+		}
+	}
+
+	function onStepReorderKeyDown(step: string, e: React.KeyboardEvent) {
+		if (matchesShortcut(e, SHORTCUTS.stepReorder.moveUp)) {
+			e.preventDefault();
+			store.moveStepUp(task, step);
+		} else if (matchesShortcut(e, SHORTCUTS.stepReorder.moveDown)) {
+			e.preventDefault();
+			store.moveStepDown(task, step);
 		}
 	}
 
@@ -111,11 +134,24 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 				/>
 			</td>
 
-			<td ref={stepsContainerRef} className={styles.stepsCell}>
+			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={styles.stepsCell}>
 				<ArrayInput
-					value={steps}
+					value={displaySteps}
 					onChange={newSteps => store.setSteps(task, newSteps)}
-					onItemKeyDown={(_, step, e) => onStepReorderKeyDown(step, e)}
+					onItemKeyDown={(_, step, e) => {
+						onStepInsertKeyDown(step, e);
+						onStepReorderKeyDown(step, e);
+					}}
+					getRowProps={(_, step) => ({
+						'data-step-row': step,
+						ref: rowElement => registerRowElement(step, rowElement),
+						className: step === draggingStep ? styles.stepRowPlaceholder : undefined,
+						onMouseDown: getRowDragHandlers(step).onMouseDown,
+					})}
+					onRowContextMenu={(_, step, event) => {
+						event.preventDefault();
+						setStepContextMenu({ step, x: event.clientX, y: event.clientY });
+					}}
 					renderRowPrefix={(_, step) => {
 						const isCompleted = task.isStepComplete(step);
 						return (
@@ -131,6 +167,39 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 					}}
 					placeholder="Add a step…"
 					className={styles.stepsArrayInput}
+				/>
+				{draggingStep !== null && draggingRowRect !== null && (() => {
+					const isCompleted = task.isStepComplete(draggingStep);
+					return (
+						<div
+							className={`${arrayInputStyles.row} ${styles.stepRowElevated}`}
+							style={getDraggingRowOverlayStyle(draggingRowRect, dragOffsetY)}
+						>
+							<StepCheckbox
+								step={draggingStep}
+								isChecked={isCompleted}
+								onToggle={() => {}}
+								dragHandlers={{ onMouseDown: () => {}, onMouseEnter: () => {} }}
+								className={isCompleted ? `${checkboxInputStyles.box} ${checkboxInputStyles.boxChecked}` : checkboxInputStyles.box}
+								checkmarkClassName={checkboxInputStyles.checkmark}
+							/>
+							<input
+								type="text"
+								readOnly
+								tabIndex={-1}
+								value={draggingStep}
+								className={`field ${arrayInputStyles.input}`}
+							/>
+						</div>
+					);
+				})()}
+				<ContextMenu
+					position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
+					onClose={() => setStepContextMenu(null)}
+					items={stepContextMenu !== null ? [
+						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.step) },
+						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.step) },
+					] : []}
 				/>
 			</td>
 

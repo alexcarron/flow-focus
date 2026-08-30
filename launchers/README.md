@@ -2,7 +2,7 @@
 
 This guide lets you open FlowFocus with a single click.
 
-These scripts start FlowFocus's own dev server (`npm run dev`, port 5174) if it isn't already running, then open your browser to `http://localhost:5174/flow-focus/`.
+These scripts start FlowFocus's own dev server (`npm run dev`, port 5174) if it isn't already running, then open your browser to `http://localhost:5174/`.
 
 | Script | What it does |
 |--------|-------------|

@@ -31,6 +31,10 @@ export const SHORTCUTS = {
 		blur: { key: 'escape' },
 		clear: { key: 'backspace', alt: true },
 	},
+	stepReorder: {
+		moveUp: { key: 'arrowup', alt: true },
+		moveDown: { key: 'arrowdown', alt: true },
+	},
 } as const satisfies Record<string, Record<string, ShortcutDef>>;
 
 type KeyboardLike = {
@@ -58,12 +62,16 @@ const KEY_DISPLAY: Record<string, string> = {
 	escape: 'Esc',
 };
 
-export function formatShortcut(def: ShortcutDef): string {
+export function getShortcutKeyParts(def: ShortcutDef): string[] {
 	const parts: string[] = [];
 	if (def.ctrl) parts.push('Ctrl');
 	if (def.alt) parts.push('Alt');
 	if (def.shift) parts.push('Shift');
 	const keyLabel = KEY_DISPLAY[def.key.toLowerCase()] ?? def.key.toUpperCase();
 	parts.push(keyLabel);
-	return parts.join('+');
+	return parts;
+}
+
+export function formatShortcut(def: ShortcutDef): string {
+	return getShortcutKeyParts(def).join('+');
 }

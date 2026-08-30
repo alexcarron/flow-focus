@@ -97,12 +97,16 @@ export default function TasksManagerPage() {
 	const setStepComplete = useTasksStore(s => s.setStepComplete);
 	const completeStepAndPrecedingSteps = useTasksStore(s => s.completeStepAndPrecedingSteps);
 	const uncompleteStepAndFollowingSteps = useTasksStore(s => s.uncompleteStepAndFollowingSteps);
+	const moveStepUp = useTasksStore(s => s.moveStepUp);
+	const moveStepDown = useTasksStore(s => s.moveStepDown);
+	const insertStepBeforeStep = useTasksStore(s => s.insertStepBeforeStep);
+	const insertStepAfterStep = useTasksStore(s => s.insertStepAfterStep);
 	const setComplete = useTasksStore(s => s.setComplete);
 	const setMandatory = useTasksStore(s => s.setMandatory);
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
-	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
+	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, insertStepBeforeStep, insertStepAfterStep, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
 
 	const [filter, setFilter] = useState<Filter>(Filter.Active);
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);

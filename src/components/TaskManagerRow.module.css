@@ -55,6 +55,25 @@
 	height: 0.75rem;
 }
 
+.stepRowPlaceholder {
+	position: relative;
+	border-radius: var(--radius-medium);
+	background-color: var(--color-surface-inset);
+	border: 1px dashed var(--color-border-strong);
+}
+
+.stepRowPlaceholder > * {
+	visibility: hidden;
+}
+
+.stepRowElevated {
+	background-color: var(--color-surface-inset);
+	border-radius: var(--radius-medium);
+	box-shadow: var(--shadow-card);
+	transform: scale(1.02);
+	cursor: grabbing;
+}
+
 .checkboxCell {
 	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 }

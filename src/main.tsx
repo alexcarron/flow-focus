@@ -22,7 +22,7 @@ window.addEventListener('keydown', (event: KeyboardEvent) => {
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
-		<BrowserRouter basename="/flow-focus">
+		<BrowserRouter basename={import.meta.env.DEV ? '/' : '/flow-focus'}>
 			<App />
 		</BrowserRouter>
 	</StrictMode>

@@ -2,7 +2,7 @@
 setlocal
 
 set PORT=5174
-set URL=http://localhost:%PORT%/flow-focus/
+set URL=http://localhost:%PORT%/
 
 cd /d "%~dp0\.."
 

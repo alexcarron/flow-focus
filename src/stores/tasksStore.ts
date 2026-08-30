@@ -46,6 +46,10 @@ interface TasksActions {
 	setTimingOptions: (task: Task, options: TaskTimingOptions) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setStepComplete: (task: Task, step: string, isComplete: boolean) => void;
+	moveStepUp: (task: Task, step: string) => void;
+	moveStepDown: (task: Task, step: string) => void;
+	insertStepBeforeStep: (task: Task, step: string) => void;
+	insertStepAfterStep: (task: Task, step: string) => void;
 
 	addTask: (description: string, timingOptions?: Partial<TaskTimingOptions>) => Promise<Task>;
 	deleteTask: (task: Task) => Promise<void>;
@@ -229,6 +233,32 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				if (isComplete) task.completeStep(step);
 				else task.uncompleteStep(step);
 			}, [task]);
+		},
+
+		moveStepUp(task: Task, step: string) {
+			const steps = task.getSteps();
+			const index = steps.indexOf(step);
+			if (index <= 0) return;
+			const newOrder = [...steps];
+			[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+			get().executeWithPatches(() => task.editSteps(newOrder), [task]);
+		},
+
+		moveStepDown(task: Task, step: string) {
+			const steps = task.getSteps();
+			const index = steps.indexOf(step);
+			if (index === -1 || index >= steps.length - 1) return;
+			const newOrder = [...steps];
+			[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+			get().executeWithPatches(() => task.editSteps(newOrder), [task]);
+		},
+
+		insertStepBeforeStep(task: Task, step: string) {
+			get().executeWithPatches(() => task.createStepLeftOfStep(step), [task]);
+		},
+
+		insertStepAfterStep(task: Task, step: string) {
+			get().executeWithPatches(() => task.createStepRightOfStep(step), [task]);
 		},
 
 		async addTask(description: string, timingOptions?: Partial<TaskTimingOptions>) {

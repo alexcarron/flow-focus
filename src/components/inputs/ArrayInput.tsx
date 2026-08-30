@@ -10,9 +10,11 @@ interface Props {
 	className?: string;
 	onItemKeyDown?: (index: number, step: string, e: React.KeyboardEvent) => void;
 	renderRowPrefix?: (index: number, item: string) => React.ReactNode;
+	getRowProps?: (index: number, item: string) => { 'data-step-row'?: string; className?: string; style?: React.CSSProperties; ref?: (element: HTMLDivElement | null) => void; onMouseDown?: (event: React.MouseEvent) => void };
+	onRowContextMenu?: (index: number, item: string, event: React.MouseEvent) => void;
 }
 
-export default function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix }: Props) {
+export default function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix, getRowProps, onRowContextMenu }: Props) {
 	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	const displayedRows = [...value, ''];
@@ -111,8 +113,16 @@ export default function ArrayInput({ value, onChange, placeholder, className = '
 		<div className={`${styles.list} ${className}`}>
 			{displayedRows.map((item, i) => {
 				const isTrailingRow = i === trailingRowIndex;
+				const { className: rowPropsClassName, ...rowProps } = (!isTrailingRow ? getRowProps?.(i, item) : undefined) ?? {};
 				return (
-					<div key={i} className={styles.row}>
+					<div
+						key={i}
+						className={rowPropsClassName ? `${styles.row} ${rowPropsClassName}` : styles.row}
+						onContextMenu={event => {
+							if (!isTrailingRow) onRowContextMenu?.(i, item, event);
+						}}
+						{...rowProps}
+					>
 						{renderRowPrefix && (isTrailingRow
 							? (value.length > 0 && <div className={styles.rowPrefixSpacer} />)
 							: renderRowPrefix(i, item))}
