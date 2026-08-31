@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { usePressAndHold } from './usePressAndHold';
 
 interface UseStepCheckboxDragOptions {
+	itemAttribute?: string;
 	isStepChecked: (stepID: string) => boolean;
 	setStepChecked: (stepID: string, isChecked: boolean) => void;
 }
@@ -11,7 +12,7 @@ interface StepCheckboxDragHandlers {
 	onMouseEnter: (event: React.MouseEvent) => void;
 }
 
-export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ isStepChecked, setStepChecked }: UseStepCheckboxDragOptions) {
+export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ itemAttribute = 'data-step', isStepChecked, setStepChecked }: UseStepCheckboxDragOptions) {
 	const checkboxDragTargetStateRef = useRef<boolean | null>(null);
 	const stepIDsAlreadyToggledInDragRef = useRef<Set<string>>(new Set());
 
@@ -29,7 +30,7 @@ export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTML
 	}
 
 	const { containerRef: stepsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
-		itemAttribute: 'data-step',
+		itemAttribute,
 		mouseHoldDelayMs: 0,
 		onHoldStart: stepID => {
 			const nextIsChecked = !isStepCheckedRef.current(stepID);

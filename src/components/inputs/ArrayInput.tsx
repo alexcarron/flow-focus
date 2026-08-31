@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import parsePastedTextIntoSteps from '../../utils/parsePastedTextIntoSteps';
+import parsePastedTextIntoListItems from '../../utils/parsePastedTextIntoListItems';
 import DeleteIcon from '../svg-icons/DeleteIcon';
 import styles from './ArrayInput.module.css';
 
@@ -78,7 +78,7 @@ export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, 
 			return;
 		}
 
-		const pastedSteps = parsePastedTextIntoSteps(pastedText);
+		const pastedSteps = parsePastedTextIntoListItems(pastedText);
 		if (pastedSteps.length === 0) {
 			return;
 		}

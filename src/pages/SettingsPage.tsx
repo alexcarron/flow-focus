@@ -3,6 +3,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useTasksStore } from '../stores/tasksStore';
 import { applyBackup, createBackup, downloadBackup, readBackupFile, BackupData } from '../utils/backup';
 import ConfirmModal from '../components/ConfirmModal';
+import CheckboxInput from '../components/inputs/CheckboxInput';
 import styles from './SettingsPage.module.css';
 
 export default function SettingsPage() {
@@ -10,10 +11,12 @@ export default function SettingsPage() {
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const bedtime = useSettingsStore(s => s.bedtime);
 	const wakeTime = useSettingsStore(s => s.wakeTime);
+	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
 	const setMorningTime = useSettingsStore(s => s.setMorningTime);
 	const setNightTime = useSettingsStore(s => s.setNightTime);
 	const setBedtime = useSettingsStore(s => s.setBedtime);
 	const setWakeTime = useSettingsStore(s => s.setWakeTime);
+	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
 
 	const tasks = useTasksStore(s => s.tasks);
 	const [backupStatus, setBackupStatus] = useState<string | null>(null);
@@ -114,6 +117,18 @@ export default function SettingsPage() {
 						className="field large"
 					/>
 				</div>
+			</section>
+
+			<section className={styles.section}>
+				<div>
+					<h2 className={styles.sectionHeading}>Task Creation</h2>
+				</div>
+
+				<CheckboxInput
+					value={shouldKeepTaskDetailsAfterCreating}
+					onChange={setShouldKeepTaskDetailsAfterCreating}
+					label="Keep task details when creating task"
+				/>
 			</section>
 
 			<section className={styles.section}>

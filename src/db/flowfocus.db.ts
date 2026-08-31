@@ -1,5 +1,6 @@
 import Dexie, { Table } from 'dexie';
 import { AppSettings } from '../model/AppSettings';
+import ChecklistItem from '../model/checklist/ChecklistItem';
 
 export interface PlainStepRow {
 	id: string;
@@ -27,9 +28,15 @@ export interface SettingsRow extends AppSettings {
 	id: number;
 }
 
+export interface ChecklistRow {
+	id: number;
+	items: ChecklistItem[];
+}
+
 export class FlowFocusDB extends Dexie {
 	tasks!: Table<PlainTaskRow, number>;
 	settings!: Table<SettingsRow, number>;
+	checklist!: Table<ChecklistRow, number>;
 
 	constructor() {
 		super('FlowFocusDB');
@@ -61,6 +68,11 @@ export class FlowFocusDB extends Dexie {
 					row.lastActionedStep = stepID ? { stepID, status: legacyLastActionedStep.status } : null;
 				}
 			});
+		});
+		this.version(4).stores({
+			tasks: '++id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime',
+			settings: 'id',
+			checklist: 'id',
 		});
 	}
 }

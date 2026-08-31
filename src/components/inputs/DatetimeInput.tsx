@@ -172,7 +172,7 @@ export default function DatetimeInput({ value, onChange, label, description, cla
 						ref={typedInputRef}
 						type="text"
 						value={typedText}
-						placeholder="Type a date and time (e.g. 'tomorrow' or 'sep 3 11pm')"
+						placeholder="Type a date and time like 'tomorrow' or 'sep 3 11pm'"
 						className="field"
 						onChange={event => setTypedText(event.target.value)}
 						onKeyDown={event => {
@@ -215,7 +215,7 @@ export default function DatetimeInput({ value, onChange, label, description, cla
 						onKeyDown={handleKeyDown}
 					/>
 					{showEmptyPlaceholder && (
-						<div className={styles.emptyPlaceholder}>Pick or type a date and time (e.g. 'tomorrow' or 'sep 3 11pm')</div>
+						<div className={styles.emptyPlaceholder}>Pick or type a date and time</div>
 					)}
 				</div>
 			)}

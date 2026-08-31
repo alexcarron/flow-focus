@@ -202,14 +202,6 @@ export default function TaskCreatorPage() {
 				</>
 			)}
 
-			<div className="field-group">
-				<CheckboxInput
-					value={shouldKeepTaskDetailsAfterCreating}
-					onChange={setShouldKeepTaskDetailsAfterCreating}
-					label="Keep task details when creating task"
-				/>
-			</div>
-
 			<div className={styles.actions}>
 				<button
 					onClick={handleCreate}
@@ -226,6 +218,13 @@ export default function TaskCreatorPage() {
 			{confirmationKey > 0 && (
 				<p key={confirmationKey} className={styles.confirmationMessage}>Task created</p>
 			)}
+
+			<CheckboxInput
+				value={shouldKeepTaskDetailsAfterCreating}
+				onChange={setShouldKeepTaskDetailsAfterCreating}
+				label="Keep task details when creating task"
+				className={styles.keepDetailsToggle}
+			/>
 		</div>
 	);
 }

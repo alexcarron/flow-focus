@@ -8,6 +8,14 @@
 }
 
 .emptyState {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-large);
+	width: 100%;
+}
+
+.emptyStateText {
 	color: var(--color-text-subtle);
 	font-size: var(--font-size-large);
 }

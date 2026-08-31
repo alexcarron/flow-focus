@@ -1,9 +1,9 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Step from '../model/task/Step';
 import { usePressAndHold } from './usePressAndHold';
+import { useFlipListAnimation } from './useFlipListAnimation';
 
 const STEP_REORDER_HOLD_DELAY_MS = 200;
-const ROW_REORDER_TRANSITION_MS = 150;
 
 interface UseStepReorderDragOptions {
 	steps: Step[];
@@ -45,8 +45,17 @@ export function useStepReorderDrag<TContainerElement extends HTMLElement = HTMLD
 	const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
 	const [draggingRowRect, setDraggingRowRect] = useState<DOMRect | null>(null);
 	const dragStartClientYRef = useRef(0);
-	const rowElementsByStepIDRef = useRef(new Map<string, HTMLElement>());
-	const previousRowTopByStepIDRef = useRef(new Map<string, number>());
+
+	const draggingStep = draggingStepID !== null ? steps.find(step => step.id === draggingStepID) ?? null : null;
+
+	const displaySteps = draggingStep !== null && insertionIndex !== null
+		? spliceStepIntoOrder(steps, draggingStep, insertionIndex)
+		: steps;
+
+	const { registerRowElement, getRowElement } = useFlipListAnimation({
+		displayItemIDs: displaySteps.map(step => step.id),
+		excludeItemID: draggingStepID,
+	});
 
 	const { containerRef: stepsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
 		itemAttribute: 'data-step-row',
@@ -54,7 +63,7 @@ export function useStepReorderDrag<TContainerElement extends HTMLElement = HTMLD
 		mouseHoldDelayMs: STEP_REORDER_HOLD_DELAY_MS,
 		touchHoldDelayMs: STEP_REORDER_HOLD_DELAY_MS,
 		onHoldStart: (stepID, _startClientX, startClientY) => {
-			const rowElement = rowElementsByStepIDRef.current.get(stepID);
+			const rowElement = getRowElement(stepID);
 			setDraggingStepID(stepID);
 			setInsertionIndex(steps.findIndex(step => step.id === stepID));
 			setDraggingRowRect(rowElement?.getBoundingClientRect() ?? null);
@@ -85,54 +94,6 @@ export function useStepReorderDrag<TContainerElement extends HTMLElement = HTMLD
 			setDragOffsetY(0);
 		},
 	});
-
-	const draggingStep = draggingStepID !== null ? steps.find(step => step.id === draggingStepID) ?? null : null;
-
-	const displaySteps = draggingStep !== null && insertionIndex !== null
-		? spliceStepIntoOrder(steps, draggingStep, insertionIndex)
-		: steps;
-	const displayStepsKey = displaySteps.map(step => step.id).join(' ');
-
-	useLayoutEffect(() => {
-		const previousRowTopByStepID = previousRowTopByStepIDRef.current;
-		const nextRowTopByStepID = new Map<string, number>();
-		const rowElementsToAnimate: { rowElement: HTMLElement; deltaY: number }[] = [];
-
-		for (const step of displaySteps) {
-			const rowElement = rowElementsByStepIDRef.current.get(step.id);
-			if (!rowElement) continue;
-			rowElement.style.transition = 'none';
-			rowElement.style.transform = '';
-		}
-
-		for (const step of displaySteps) {
-			const rowElement = rowElementsByStepIDRef.current.get(step.id);
-			if (!rowElement) continue;
-			const currentTop = rowElement.getBoundingClientRect().top;
-			nextRowTopByStepID.set(step.id, currentTop);
-
-			if (step.id === draggingStepID) continue;
-			const previousTop = previousRowTopByStepID.get(step.id);
-			if (previousTop === undefined || previousTop === currentTop) continue;
-
-			rowElementsToAnimate.push({ rowElement, deltaY: previousTop - currentTop });
-		}
-
-		for (const { rowElement, deltaY } of rowElementsToAnimate) {
-			rowElement.style.transform = `translateY(${deltaY}px)`;
-			rowElement.getBoundingClientRect();
-			rowElement.style.transition = `transform ${ROW_REORDER_TRANSITION_MS}ms ease`;
-			rowElement.style.transform = '';
-		}
-
-		previousRowTopByStepIDRef.current = nextRowTopByStepID;
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayStepsKey, draggingStepID]);
-
-	function registerRowElement(stepID: string, element: HTMLElement | null) {
-		if (element) rowElementsByStepIDRef.current.set(stepID, element);
-		else rowElementsByStepIDRef.current.delete(stepID);
-	}
 
 	function getRowDragHandlers(stepID: string): StepRowDragHandlers {
 		return { onMouseDown: getPressHandlers(stepID).onMouseDown };

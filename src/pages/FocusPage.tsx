@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useTasksStore, selectPriorityTask } from '../stores/tasksStore';
 import TaskCard from '../components/TaskCard';
+import QuickToDoChecklistSection from '../components/QuickToDoChecklistSection';
 import styles from './FocusPage.module.css';
 
 export default function FocusPage() {
@@ -59,7 +60,10 @@ export default function FocusPage() {
 			{priorityTask ? (
 				<TaskCard task={priorityTask} />
 			) : (
-				<p className={styles.emptyState}>Nothing to do right now</p>
+				<div className={styles.emptyState}>
+					<p className={styles.emptyStateText}>Nothing to do right now</p>
+					<QuickToDoChecklistSection />
+				</div>
 			)}
 		</div>
 	);

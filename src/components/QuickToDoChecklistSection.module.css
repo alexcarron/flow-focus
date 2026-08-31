@@ -1,0 +1,112 @@
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-medium);
+	width: 100%;
+	max-width: var(--readable-content-width);
+	margin: 0 auto;
+	padding: var(--space-extra-large);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-extra-large);
+	box-shadow: var(--shadow-card);
+}
+
+.heading {
+	font-size: var(--font-size-large);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
+.emptyHint {
+	color: var(--color-text-subtle);
+	font-size: var(--font-size-small);
+}
+
+.list {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-extra-small);
+}
+
+.listDragging .row {
+	cursor: grabbing;
+}
+
+.row {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-small);
+	cursor: default;
+}
+
+.rowElevated {
+	background-color: var(--color-surface-inset);
+	border-radius: var(--radius-medium);
+	box-shadow: var(--shadow-card);
+	transform: scale(1.02);
+	cursor: grabbing;
+}
+
+.rowPlaceholder {
+	position: relative;
+	box-sizing: border-box;
+	border-radius: var(--radius-medium);
+	background-color: var(--color-surface-inset);
+	border: 1px dashed var(--color-border-strong);
+}
+
+.checkbox {
+	flex-shrink: 0;
+	width: 0.85rem;
+	height: 0.85rem;
+	margin-top: 0.25rem;
+	border-radius: var(--radius-small);
+	border: 1px solid var(--color-border-control);
+	background-color: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.checkboxChecked {
+	background-color: var(--color-accent);
+	border-color: var(--color-accent);
+}
+
+.checkmark {
+	width: 0.5rem;
+	height: 0.5rem;
+	color: var(--color-text-primary);
+}
+
+.itemText {
+	flex: 1;
+	font-size: var(--font-size-small);
+	line-height: 1.4;
+	color: var(--color-text-primary);
+	outline: none;
+	cursor: text;
+}
+
+.itemTextChecked {
+	color: var(--color-text-faint);
+	text-decoration: line-through;
+}
+
+.itemText:empty::before {
+	content: attr(data-placeholder);
+	color: var(--color-text-subtle);
+}
+
+.addItemForm {
+	display: flex;
+	gap: var(--space-small);
+}
+
+.addItemInput {
+	flex: 1;
+}

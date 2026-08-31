@@ -1,11 +1,14 @@
 import Task from '../model/task/Task';
 import StepStatus from '../model/task/StepStatus';
 import { AppSettings } from '../model/AppSettings';
+import ChecklistItem from '../model/checklist/ChecklistItem';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useChecklistStore } from '../stores/checklistStore';
 
-export const BACKUP_FORMAT = 'flow-focus-backup-v2';
+export const BACKUP_FORMAT = 'flow-focus-backup-v3';
 const LEGACY_BACKUP_FORMAT_V1 = 'flow-focus-backup-v1';
+const LEGACY_BACKUP_FORMAT_V2 = 'flow-focus-backup-v2';
 
 export interface BackupStep {
 	id: string;
@@ -33,6 +36,7 @@ export interface BackupData {
 	exportedAt: string;
 	settings: AppSettings;
 	tasks: BackupTask[];
+	checklist: ChecklistItem[];
 }
 
 interface LegacyBackupTaskV1 {
@@ -82,6 +86,7 @@ export function createBackup(): BackupData {
 		exportedAt: new Date().toISOString(),
 		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating },
 		tasks: useTasksStore.getState().tasks.map(taskToBackupTask),
+		checklist: useChecklistStore.getState().items,
 	};
 }
 
@@ -107,6 +112,17 @@ function isBackupTask(value: unknown): value is BackupTask {
 	);
 }
 
+function isBackupChecklistItem(value: unknown): value is ChecklistItem {
+	if (typeof value !== 'object' || value === null) return false;
+	const item = value as Record<string, unknown>;
+	return (
+		typeof item.id === 'string' &&
+		typeof item.text === 'string' &&
+		typeof item.isChecked === 'boolean' &&
+		Array.isArray(item.children) && item.children.every(isBackupChecklistItem)
+	);
+}
+
 export function isBackupData(value: unknown): value is BackupData {
 	if (typeof value !== 'object' || value === null) return false;
 	const v = value as Record<string, unknown>;
@@ -115,7 +131,9 @@ export function isBackupData(value: unknown): value is BackupData {
 		typeof v.exportedAt === 'string' &&
 		typeof v.settings === 'object' && v.settings !== null &&
 		Array.isArray(v.tasks) &&
-		v.tasks.every(isBackupTask)
+		v.tasks.every(isBackupTask) &&
+		Array.isArray(v.checklist) &&
+		v.checklist.every(isBackupChecklistItem)
 	);
 }
 
@@ -179,6 +197,36 @@ function migrateLegacyBackupDataV1(legacyData: LegacyBackupDataV1): BackupData {
 		exportedAt: legacyData.exportedAt,
 		settings: legacyData.settings,
 		tasks: legacyData.tasks.map(migrateLegacyBackupTaskV1),
+		checklist: [],
+	};
+}
+
+interface LegacyBackupDataV2 {
+	format: typeof LEGACY_BACKUP_FORMAT_V2;
+	exportedAt: string;
+	settings: AppSettings;
+	tasks: BackupTask[];
+}
+
+function isLegacyBackupDataV2(value: unknown): value is LegacyBackupDataV2 {
+	if (typeof value !== 'object' || value === null) return false;
+	const v = value as Record<string, unknown>;
+	return (
+		v.format === LEGACY_BACKUP_FORMAT_V2 &&
+		typeof v.exportedAt === 'string' &&
+		typeof v.settings === 'object' && v.settings !== null &&
+		Array.isArray(v.tasks) &&
+		v.tasks.every(isBackupTask)
+	);
+}
+
+function migrateLegacyBackupDataV2(legacyData: LegacyBackupDataV2): BackupData {
+	return {
+		format: BACKUP_FORMAT,
+		exportedAt: legacyData.exportedAt,
+		settings: legacyData.settings,
+		tasks: legacyData.tasks,
+		checklist: [],
 	};
 }
 
@@ -208,6 +256,9 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 	if (isBackupData(parsed)) {
 		return parsed;
 	}
+	if (isLegacyBackupDataV2(parsed)) {
+		return migrateLegacyBackupDataV2(parsed);
+	}
 	if (isLegacyBackupDataV1(parsed)) {
 		return migrateLegacyBackupDataV1(parsed);
 	}
@@ -217,4 +268,5 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 export async function applyBackup(data: BackupData): Promise<void> {
 	await useSettingsStore.getState().importSettings(data.settings);
 	await useTasksStore.getState().importTasks(data.tasks);
+	await useChecklistStore.getState().importChecklist(data.checklist);
 }

@@ -43,6 +43,18 @@ export const SHORTCUTS = {
 		insertAfter: { key: 'enter' },
 		insertBefore: { key: 'enter', ctrl: true },
 	},
+	checklistInsert: {
+		insertAfter: { key: 'enter' },
+		insertBefore: { key: 'enter', ctrl: true },
+	},
+	checklistIndent: {
+		indent: { key: 'tab' },
+		unindent: { key: 'tab', shift: true },
+	},
+	checklistReorder: {
+		moveUp: { key: 'arrowup', alt: true },
+		moveDown: { key: 'arrowdown', alt: true },
+	},
 } as const satisfies Record<string, Record<string, ShortcutDef>>;
 
 type KeyboardLike = {

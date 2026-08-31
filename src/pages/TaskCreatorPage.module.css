@@ -32,3 +32,8 @@
 .submitButton {
 	flex: 1;
 }
+
+.keepDetailsToggle {
+	margin-top: var(--space-small);
+	opacity: 0.7;
+}
