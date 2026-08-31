@@ -7,9 +7,9 @@ export type ShortcutDef = {
 
 export const SHORTCUTS = {
 	datetime: {
-		today: { key: 't' },
-		morning: { key: 'm' },
-		night: { key: 'n' },
+		today: { key: 't', alt: true },
+		morning: { key: 'm', alt: true },
+		night: { key: 'n', alt: true },
 		nextDay: { key: 'arrowup', shift: true },
 		prevDay: { key: 'arrowdown', shift: true },
 		clear: { key: 'backspace', alt: true },

@@ -12,6 +12,12 @@
 	box-shadow: var(--shadow-card);
 }
 
+.headingRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-small);
+}
+
 .heading {
 	font-size: var(--font-size-large);
 	font-weight: var(--font-weight-bold);

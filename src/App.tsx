@@ -5,6 +5,7 @@ import { useSettingsStore } from './stores/settingsStore';
 import FocusPage from './pages/FocusPage';
 import TasksManagerPage from './pages/TasksManagerPage';
 import TaskCreatorPage from './pages/TaskCreatorPage';
+import QuickToDoPage from './pages/QuickToDoPage';
 import SettingsPage from './pages/SettingsPage';
 import styles from './App.module.css';
 
@@ -34,6 +35,9 @@ export default function App() {
 				<NavLink to="/create-task" className={navLinkClass}>
 					Create Task
 				</NavLink>
+				<NavLink to="/quick-to-do" className={navLinkClass}>
+					Quick To Do
+				</NavLink>
 				<NavLink to="/settings" className={navLinkClass}>
 					Settings
 				</NavLink>
@@ -49,6 +53,7 @@ export default function App() {
 						<Route path="/" element={<FocusPage />} />
 						<Route path="/tasks" element={<TasksManagerPage />} />
 						<Route path="/create-task" element={<TaskCreatorPage />} />
+						<Route path="/quick-to-do" element={<QuickToDoPage />} />
 						<Route path="/settings" element={<SettingsPage />} />
 					</Routes>
 				</main>

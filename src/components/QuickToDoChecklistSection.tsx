@@ -9,6 +9,7 @@ import { SHORTCUTS, getShortcutKeyParts } from '../config/shortcuts';
 import ChecklistItemRow from './ChecklistItemRow';
 import ContextMenu from './context-menu/ContextMenu';
 import ConfirmModal from './ConfirmModal';
+import FieldDescription from './inputs/FieldDescription';
 import styles from './QuickToDoChecklistSection.module.css';
 
 function focusElementAtEnd(element: HTMLElement) {
@@ -143,7 +144,12 @@ export default function QuickToDoChecklistSection() {
 
 	return (
 		<div className={styles.section}>
-			<h2 className={styles.heading}>Quick To Do Checklist</h2>
+			<div className={styles.headingRow}>
+				<h2 className={styles.heading}>Quick To Do Checklist</h2>
+				{items.length === 0 && (
+					<FieldDescription text="A simple to-do list, separate from your FlowFocus tasks. Use it to jot down things you want to remember or get to without interrupting the task you're focused on." />
+				)}
+			</div>
 
 			{isLoaded && items.length === 0 && (
 				<p className={styles.emptyHint}>No to-do items here yet.</p>
