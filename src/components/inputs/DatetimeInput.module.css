@@ -16,6 +16,49 @@
 	right: var(--space-large);
 }
 
+.dateFieldWrapper {
+	position: relative;
+}
+
+.dateFieldWrapper input {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.dateInputTextHidden::-webkit-datetime-edit-fields-wrapper {
+	color: transparent;
+}
+
+.emptyPlaceholder {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	padding: var(--space-extra-small) 1.75rem var(--space-extra-small) var(--space-small);
+	color: var(--color-text-subtle);
+	font-size: var(--font-size-small);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+}
+
+.typedEntry {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-extra-small);
+}
+
+.previewMatched {
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-secondary);
+}
+
+.previewUnmatched {
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-subtle);
+}
+
 .quickActions {
 	display: flex;
 	flex-wrap: wrap;

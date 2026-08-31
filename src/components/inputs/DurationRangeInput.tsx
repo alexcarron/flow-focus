@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DurationInput from './DurationInput';
 import FieldDescription from './FieldDescription';
+import { TimeUnitName, timeUnits } from '../../model/time-management/StandardTimeUnit';
 import styles from './DurationRangeInput.module.css';
 
 interface Props {
@@ -9,26 +10,41 @@ interface Props {
 	onChange: (patch: { minDuration: number | null; maxDuration: number | null }) => void;
 }
 
-const DURATION_PRESETS = [
-	{ label: 'A few minutes', minDuration: 0, maxDuration: 15 * 60_000 },
-	{ label: 'Less than an hour', minDuration: 15 * 60_000, maxDuration: 50 * 60_000 },
-	{ label: 'About an hour', minDuration: 30 * 60_000, maxDuration: 90 * 60_000 },
-	{ label: 'A few hours', minDuration: 3_600_000, maxDuration: 4 * 3_600_000 },
-	{ label: 'All day', minDuration: 4 * 3_600_000, maxDuration: 16 * 3_600_000 },
+type DurationPresetBound = { amount: number; unit: TimeUnitName };
+type DurationPreset = { label: string; min: DurationPresetBound; max: DurationPresetBound };
+
+const DURATION_PRESETS: DurationPreset[] = [
+	{ label: 'A few minutes', min: { amount: 0, unit: TimeUnitName.Minutes }, max: { amount: 15, unit: TimeUnitName.Minutes } },
+	{ label: 'Less than an hour', min: { amount: 15, unit: TimeUnitName.Minutes }, max: { amount: 50, unit: TimeUnitName.Minutes } },
+	{ label: 'About an hour', min: { amount: 30, unit: TimeUnitName.Minutes }, max: { amount: 90, unit: TimeUnitName.Minutes } },
+	{ label: 'A few hours', min: { amount: 1, unit: TimeUnitName.Hours }, max: { amount: 4, unit: TimeUnitName.Hours } },
+	{ label: 'All day', min: { amount: 4, unit: TimeUnitName.Hours }, max: { amount: 16, unit: TimeUnitName.Hours } },
 ];
+
+function durationPresetBoundToMilliseconds(bound: DurationPresetBound): number {
+	return bound.amount * timeUnits[bound.unit].milliseconds;
+}
 
 export default function DurationRangeInput({ minDuration, maxDuration, onChange }: Props) {
 	const [isRangeExpanded, setIsRangeExpanded] = useState(minDuration !== maxDuration);
+	const [appliedPreset, setAppliedPreset] = useState<DurationPreset | null>(null);
 
-	function applyPreset(preset: typeof DURATION_PRESETS[number]) {
+	function applyPreset(preset: DurationPreset) {
 		setIsRangeExpanded(true);
-		onChange({ minDuration: preset.minDuration, maxDuration: preset.maxDuration });
+		setAppliedPreset(preset);
+		onChange({
+			minDuration: durationPresetBoundToMilliseconds(preset.min),
+			maxDuration: durationPresetBoundToMilliseconds(preset.max),
+		});
 	}
 
 	function collapseToSingleDuration() {
 		setIsRangeExpanded(false);
 		onChange({ minDuration, maxDuration: minDuration });
 	}
+
+	const minForcedUnitMs = appliedPreset ? timeUnits[appliedPreset.min.unit].milliseconds : undefined;
+	const maxForcedUnitMs = appliedPreset ? timeUnits[appliedPreset.max.unit].milliseconds : undefined;
 
 	return (
 		<div className={styles.container}>
@@ -45,12 +61,14 @@ export default function DurationRangeInput({ minDuration, maxDuration, onChange 
 							label="Min duration"
 							value={minDuration}
 							onChange={newMinDuration => onChange({ minDuration: newMinDuration, maxDuration })}
+							forcedUnitMs={minForcedUnitMs}
 						/>
 						<span className={styles.rangeSeparator}>to</span>
 						<DurationInput
 							label="Max duration"
 							value={maxDuration}
 							onChange={newMaxDuration => onChange({ minDuration, maxDuration: newMaxDuration })}
+							forcedUnitMs={maxForcedUnitMs}
 						/>
 					</div>
 				</div>
@@ -59,6 +77,7 @@ export default function DurationRangeInput({ minDuration, maxDuration, onChange 
 					<DurationInput
 						value={minDuration}
 						onChange={duration => onChange({ minDuration: duration, maxDuration: duration })}
+						forcedUnitMs={minForcedUnitMs}
 					/>
 				</div>
 			)}
@@ -76,7 +95,7 @@ export default function DurationRangeInput({ minDuration, maxDuration, onChange 
 				))}
 			</div>
 
-			{isRangeExpanded 
+			{isRangeExpanded
 			? (
 				<button
 					type="button"

@@ -31,18 +31,21 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 				description="When this task will begin to appear. It will stay hidden until then. Leave blank if you can start this task right now."
 				value={local.startTime}
 				onChange={startTime => update({ startTime })}
+				defaultTimeOfDay="morning"
 			/>
 			<DatetimeInput
 				label="End time"
 				description="When this task will no longer be shown, even if you haven't completed it yet. Leave blank if this task can always be attempted."
 				value={local.endTime}
 				onChange={endTime => update({ endTime })}
+				defaultTimeOfDay="night"
 			/>
 			<DatetimeInput
 				label="Deadline"
-				description="When you want this task to be completed. Leave blank if it does not matter when you complete this task."
+				description="When you want to complete this task. Leave blank if it does not matter when this task is done."
 				value={local.deadline}
 				onChange={deadline => update({ deadline })}
+				defaultTimeOfDay="night"
 			/>
 			<DurationRangeInput
 				minDuration={local.minDuration}

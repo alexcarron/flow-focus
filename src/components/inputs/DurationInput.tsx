@@ -7,6 +7,7 @@ interface Props {
 	onChange: (value: number | null) => void;
 	label?: string;
 	className?: string;
+	forcedUnitMs?: number;
 }
 
 const UNIT_OPTIONS = [
@@ -36,11 +37,17 @@ function detectUnit(ms: number | null): number {
 
 const shortcuts = SHORTCUTS.duration;
 
-export default function DurationInput({ value, onChange, label, className = '' }: Props) {
-	const [unitMs, setUnitMs] = useState<number>(() => detectUnit(value));
+export default function DurationInput({ value, onChange, label, className = '', forcedUnitMs }: Props) {
+	const [unitMs, setUnitMs] = useState<number>(() => forcedUnitMs ?? detectUnit(value));
 
 	useEffect(() => {
-		if (value !== null && value !== 0 && value % unitMs !== 0) {
+		if (forcedUnitMs !== undefined) {
+			setUnitMs(forcedUnitMs);
+		}
+	}, [forcedUnitMs]);
+
+	useEffect(() => {
+		if (forcedUnitMs === undefined && value !== null && value !== 0 && value % unitMs !== 0) {
 			setUnitMs(detectUnit(value));
 		}
 	}, [value]);

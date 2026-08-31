@@ -172,6 +172,7 @@ export default function TaskCreatorPage() {
 					label="Deadline"
 					value={effectiveTiming.deadline}
 					onChange={handleDeadlineChange}
+					defaultTimeOfDay="night"
 				/>
 			)}
 
