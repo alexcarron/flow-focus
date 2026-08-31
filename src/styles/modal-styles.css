@@ -31,12 +31,6 @@
 	box-shadow: var(--shadow-dialog);
 }
 
-.modal.wide {
-	max-width: 24rem;
-	max-height: 90vh;
-	overflow-y: auto;
-}
-
 .modal-title {
 	font-size: var(--font-size-large);
 	font-weight: var(--font-weight-semibold);

@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useChecklistStore } from '../stores/checklistStore';
 import { useChecklistReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useChecklistReorderDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
-import { findItemWithParent } from '../model/checklist/checklistTree';
+import { findItemWithParent, hasAnyCheckedItem } from '../model/checklist/checklistTree';
 import parsePastedTextIntoListItems from '../utils/parsePastedTextIntoListItems';
 import { mergeRefs } from '../utils/mergeRefs';
 import { SHORTCUTS, getShortcutKeyParts } from '../config/shortcuts';
 import ChecklistItemRow from './ChecklistItemRow';
 import ContextMenu from './context-menu/ContextMenu';
+import ConfirmModal from './ConfirmModal';
 import styles from './QuickToDoChecklistSection.module.css';
 
 function focusElementAtEnd(element: HTMLElement) {
@@ -32,6 +33,7 @@ export default function QuickToDoChecklistSection() {
 	const uncheckItemAndFollowingItems = useChecklistStore(s => s.uncheckItemAndFollowingItems);
 	const insertItemsFromPastedLines = useChecklistStore(s => s.insertItemsFromPastedLines);
 	const deleteItem = useChecklistStore(s => s.deleteItem);
+	const deleteCheckedItems = useChecklistStore(s => s.deleteCheckedItems);
 	const indentItem = useChecklistStore(s => s.indentItem);
 	const unindentItem = useChecklistStore(s => s.unindentItem);
 	const moveItemUp = useChecklistStore(s => s.moveItemUp);
@@ -41,6 +43,7 @@ export default function QuickToDoChecklistSection() {
 	const [newItemText, setNewItemText] = useState('');
 	const [itemPendingFocusID, setItemPendingFocusID] = useState<string | null>(null);
 	const [itemContextMenu, setItemContextMenu] = useState<{ itemID: string; x: number; y: number } | null>(null);
+	const [isDeleteCheckedConfirmOpen, setIsDeleteCheckedConfirmOpen] = useState(false);
 	const textElementsByItemIDRef = useRef(new Map<string, HTMLSpanElement>());
 
 	const {
@@ -221,7 +224,28 @@ export default function QuickToDoChecklistSection() {
 					className={`field ${styles.addItemInput}`}
 				/>
 				<button type="submit" className="button primary">Add</button>
+				{hasAnyCheckedItem(items) && (
+					<button
+						type="button"
+						className="button danger"
+						onClick={() => setIsDeleteCheckedConfirmOpen(true)}
+					>
+						Delete Checked
+					</button>
+				)}
 			</form>
+
+			<ConfirmModal
+				headingText="Delete checked items?"
+				descriptionText="All checked to-do items will be permanently deleted. This cannot be undone."
+				confirmButtonLabel="Delete"
+				isOpen={isDeleteCheckedConfirmOpen}
+				onClose={() => setIsDeleteCheckedConfirmOpen(false)}
+				onConfirm={() => {
+					deleteCheckedItems();
+					setIsDeleteCheckedConfirmOpen(false);
+				}}
+			/>
 
 			<ContextMenu
 				position={itemContextMenu !== null ? { x: itemContextMenu.x, y: itemContextMenu.y } : null}

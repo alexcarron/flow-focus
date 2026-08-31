@@ -106,6 +106,23 @@ export function deleteItem(tree: ChecklistItem[], itemID: string): ChecklistItem
 	return removeItemWithSubtree(tree, itemID).tree;
 }
 
+export function hasAnyCheckedItem(tree: ChecklistItem[]): boolean {
+	return tree.some(item => item.isChecked || hasAnyCheckedItem(item.children));
+}
+
+export function deleteCheckedItems(tree: ChecklistItem[]): ChecklistItem[] {
+	function recurse(items: ChecklistItem[]): ChecklistItem[] {
+		const result: ChecklistItem[] = [];
+		for (const item of items) {
+			const newChildren = recurse(item.children);
+			if (item.isChecked) result.push(...newChildren);
+			else result.push({ ...item, children: newChildren });
+		}
+		return result;
+	}
+	return recurse(tree);
+}
+
 export function appendTopLevelItem(tree: ChecklistItem[], text: string): { tree: ChecklistItem[]; newItem: ChecklistItem } {
 	const newItem = createChecklistItem(text);
 	return { tree: [...tree, newItem], newItem };

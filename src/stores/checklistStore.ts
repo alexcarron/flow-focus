@@ -21,6 +21,7 @@ interface ChecklistActions {
 	uncheckItemAndFollowingItems: (itemID: string) => void;
 	insertItemsFromPastedLines: (itemID: string, lines: string[]) => string[];
 	deleteItem: (itemID: string) => void;
+	deleteCheckedItems: () => void;
 	indentItem: (itemID: string) => void;
 	unindentItem: (itemID: string) => void;
 	moveItemUp: (itemID: string) => void;
@@ -131,6 +132,12 @@ export const useChecklistStore = create<ChecklistState & ChecklistActions>()((se
 
 	deleteItem(itemID) {
 		const tree = checklistTree.deleteItem(get().items, itemID);
+		set({ items: tree });
+		persistChecklist(tree);
+	},
+
+	deleteCheckedItems() {
+		const tree = checklistTree.deleteCheckedItems(get().items);
 		set({ items: tree });
 		persistChecklist(tree);
 	},

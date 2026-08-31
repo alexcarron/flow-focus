@@ -35,7 +35,7 @@ export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
 			onClick={e => { if (e.target === e.currentTarget) onClose(); }}
 		>
 			<div className="modal-backdrop" />
-			<div className="modal wide">
+			<div className="modal">
 				<h2 className="modal-title">Timing Options</h2>
 				<TimingOptionsInput value={options} onChange={setOptions} />
 				<div className="modal-actions">
