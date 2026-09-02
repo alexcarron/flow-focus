@@ -3,7 +3,7 @@ import { useTasksStore, selectTasksInPriorityOrder } from '../stores/tasksStore'
 import Task from '../model/task/Task';
 import FilterDropdown from '../components/FilterDropdown';
 import SelectionCheckbox from '../components/SelectionCheckbox';
-import TaskManagerRow, { TaskManagerRowActions } from '../components/TaskManagerRow';
+import TaskManagerRow, { TaskManagerRowActions, HidableColumnKey } from '../components/TaskManagerRow';
 import TimingOptionsPopup from '../components/TimingOptionsPopup';
 import ConfirmModal from '../components/ConfirmModal';
 import CheckIcon from '../components/svg-icons/CheckIcon';
@@ -12,11 +12,15 @@ import SortAscIcon from '../components/svg-icons/SortAscIcon';
 import SortDescIcon from '../components/svg-icons/SortDescIcon';
 import SortUnsortedIcon from '../components/svg-icons/SortUnsortedIcon';
 import { useRowSelectionDrag } from '../hooks/useRowSelectionDrag';
+import { useOverflowAwareTableColumns } from '../hooks/useOverflowAwareTableColumns';
+import { mergeRefs } from '../utils/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All }
 enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval, Deadline }
 enum SortDir { Asc, Desc }
+
+const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'deadline', 'duration'];
 
 const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = [
 	{
@@ -114,7 +118,7 @@ export default function TasksManagerPage() {
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
 	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reorderSteps, insertStepBeforeStep, insertStepAfterStep, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
 
-	const [filter, setFilter] = useState<Filter>(Filter.Active);
+	const [filter, setFilter] = useState<Filter>(Filter.All);
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
 	const [timingTask, setTimingTask] = useState<Task | null>(null);
@@ -142,6 +146,8 @@ export default function TasksManagerPage() {
 		isRowSelected: rowID => selectedRowIDs.has(rowID),
 		setRowSelected,
 	});
+
+	const { scrollContainerRef, tableRef, hiddenColumnKeys } = useOverflowAwareTableColumns(HIDE_COLUMN_PRIORITY_ORDER);
 
 	function toggleRowSelected(rowID: string) {
 		setRowSelected(rowID, !selectedRowIDs.has(rowID));
@@ -207,80 +213,83 @@ export default function TasksManagerPage() {
 				)}
 			</div>
 
-			<table ref={rowsContainerRef} className={styles.table}>
-				<thead>
-					<tr className={styles.headerRow}>
-						<th className={`${styles.columnHeader} ${styles.iconColumn} ${styles.selectionColumnHeader}`}>
-							<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} onToggle={toggleSelectAll} />
-						</th>
-						<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Done">
-							<CheckIcon className={styles.columnHeaderIcon} />
-							<span className={styles.srOnly}>Done</span>
-						</th>
-						<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Mandatory">
-							<MandatoryIcon className={styles.columnHeaderIcon} />
-							<span className={styles.srOnly}>Mandatory</span>
-						</th>
-						<th
-							className={`${styles.columnHeader} ${styles.sortableHeader}`}
-							onClick={() => toggleSort(SortBy.Name)}
-						>
-							{SORT_LABELS[SortBy.Name]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Name)}</span>
-						</th>
-						<th
-							className={`${styles.columnHeader} ${styles.sortableHeader}`}
-							onClick={() => toggleSort(SortBy.Steps)}
-						>
-							{SORT_LABELS[SortBy.Steps]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Steps)}</span>
-						</th>
-						<th
-							className={`${styles.columnHeader} ${styles.sortableHeader}`}
-							onClick={() => toggleSort(SortBy.TimeAvailable)}
-						>
-							{SORT_LABELS[SortBy.TimeAvailable]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.TimeAvailable)}</span>
-						</th>
-						<th
-							className={`${styles.columnHeader} ${styles.sortableHeader} ${styles.durationColumn}`}
-							onClick={() => toggleSort(SortBy.Duration)}
-						>
-							{SORT_LABELS[SortBy.Duration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Duration)}</span>
-						</th>
-						<th className={`${styles.columnHeader} ${styles.startColumn}`}>Start</th>
-						<th
-							className={`${styles.columnHeader} ${styles.sortableHeader} ${styles.repeatColumn}`}
-							onClick={() => toggleSort(SortBy.RepeatInterval)}
-						>
-							{SORT_LABELS[SortBy.RepeatInterval]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.RepeatInterval)}</span>
-						</th>
-						<th
-							className={`${styles.columnHeader} ${styles.sortableHeader} ${styles.deadlineColumn}`}
-							onClick={() => toggleSort(SortBy.Deadline)}
-						>
-							Deadline <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Deadline)}</span>
-						</th>
-						<th className={styles.columnHeader}>Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{displayed.map((task) => {
-						const rowID = getRowID(task);
-						return (
-							<TaskManagerRow
-								key={rowID}
-								rowID={rowID}
-								task={task}
-								now={now}
-								store={store}
-								isSelected={selectedRowIDs.has(rowID)}
-								selectionDragHandlers={getRowSelectionDragHandlers(rowID)}
-								onToggleSelected={() => toggleRowSelected(rowID)}
-								onOpenTiming={() => setTimingTask(task)}
-								onRequestDelete={() => setTaskPendingDeletion(task)}
-							/>
-						);
-					})}
-				</tbody>
-			</table>
+			<div ref={scrollContainerRef} className={styles.tableScrollContainer}>
+				<table ref={mergeRefs(rowsContainerRef, tableRef)} className={styles.table}>
+					<thead>
+						<tr className={styles.headerRow}>
+							<th className={`${styles.columnHeader} ${styles.iconColumn} ${styles.selectionColumnHeader}`}>
+								<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} onToggle={toggleSelectAll} />
+							</th>
+							<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Done">
+								<CheckIcon className={styles.columnHeaderIcon} />
+								<span className={styles.srOnly}>Done</span>
+							</th>
+							<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Mandatory">
+								<MandatoryIcon className={styles.columnHeaderIcon} />
+								<span className={styles.srOnly}>Mandatory</span>
+							</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}`}
+								onClick={() => toggleSort(SortBy.Name)}
+							>
+								{SORT_LABELS[SortBy.Name]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Name)}</span>
+							</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}`}
+								onClick={() => toggleSort(SortBy.Steps)}
+							>
+								{SORT_LABELS[SortBy.Steps]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Steps)}</span>
+							</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}`}
+								onClick={() => toggleSort(SortBy.TimeAvailable)}
+							>
+								{SORT_LABELS[SortBy.TimeAvailable]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.TimeAvailable)}</span>
+							</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('duration') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.Duration)}
+							>
+								{SORT_LABELS[SortBy.Duration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Duration)}</span>
+							</th>
+							<th className={`${styles.columnHeader}${hiddenColumnKeys.has('start') ? ` ${styles.hiddenColumn}` : ''}`}>Start</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('repeat') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.RepeatInterval)}
+							>
+								{SORT_LABELS[SortBy.RepeatInterval]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.RepeatInterval)}</span>
+							</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('deadline') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.Deadline)}
+							>
+								Deadline <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Deadline)}</span>
+							</th>
+							<th className={styles.columnHeader}>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{displayed.map((task) => {
+							const rowID = getRowID(task);
+							return (
+								<TaskManagerRow
+									key={rowID}
+									rowID={rowID}
+									task={task}
+									now={now}
+									store={store}
+									isSelected={selectedRowIDs.has(rowID)}
+									selectionDragHandlers={getRowSelectionDragHandlers(rowID)}
+									hiddenColumnKeys={hiddenColumnKeys}
+									onToggleSelected={() => toggleRowSelected(rowID)}
+									onOpenTiming={() => setTimingTask(task)}
+									onRequestDelete={() => setTaskPendingDeletion(task)}
+								/>
+							);
+						})}
+					</tbody>
+				</table>
+			</div>
 
 			{displayed.length === 0 && (
 				<p className={styles.emptyMessage}>No tasks match the current filter</p>

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import Task from '../model/task/Task';
 import Duration from '../model/time-management/Duration';
-import { formatDate, formatTime } from '../utils/formatters';
+import { formatDate, formatTime, formatAbbreviatedDurationRange } from '../utils/formatters';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
 import { mergeRefs } from '../utils/mergeRefs';
@@ -17,6 +17,8 @@ import TimingIcon from './svg-icons/TimingIcon';
 import checkboxInputStyles from './inputs/CheckboxInput.module.css';
 import arrayInputStyles from './inputs/ArrayInput.module.css';
 import styles from './TaskManagerRow.module.css';
+
+export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'deadline';
 
 function toDurationString(ms: number): string {
 	const duration = Duration.fromMilliseconds(ms);
@@ -63,12 +65,13 @@ interface Props {
 	store: TaskManagerRowActions;
 	isSelected: boolean;
 	selectionDragHandlers: RowSelectionDragHandlers;
+	hiddenColumnKeys: Set<HidableColumnKey>;
 	onToggleSelected: () => void;
 	onOpenTiming: () => void;
 	onRequestDelete: () => void;
 }
 
-export default function TaskManagerRow({ rowID, task, now, store, isSelected, selectionDragHandlers, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
+export default function TaskManagerRow({ rowID, task, now, store, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
 	const steps = task.getSteps();
 	const isCompactRow = steps.length === 0;
 	const minMs = task.getMinRequiredTime() ?? null;
@@ -248,23 +251,25 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 					: '∞'}
 			</td>
 
-			<td className={`${styles.cell} ${styles.durationColumn}`}>
+			<td className={hiddenColumnKeys.has('duration') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{minMs !== null || maxMs !== null
-					? getDurationRange(minMs, maxMs)
+					? (hiddenColumnKeys.size > 0
+						? formatAbbreviatedDurationRange(minMs, maxMs)
+						: getDurationRange(minMs, maxMs))
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={`${styles.cell} ${styles.startColumn}`}>
+			<td className={hiddenColumnKeys.has('start') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{displayStartTime ? formatDate(displayStartTime) : <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={`${styles.cell} ${styles.repeatColumn}`}>
+			<td className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getRepeatInterval() !== null
 					? toDurationString(task.getRepeatInterval()!)
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={`${styles.cell} ${styles.deadlineColumn}`}>
+			<td className={hiddenColumnKeys.has('deadline') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getDeadline() ? formatDate(task.getDeadline(), '—') : <span className={styles.emptyValue}>—</span>}
 			</td>
 

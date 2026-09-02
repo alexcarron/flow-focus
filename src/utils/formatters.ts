@@ -23,8 +23,54 @@ export function formatTime(ms: number): string {
 }
 
 import DateUtils from '../model/time-management/DateUtils';
+import Duration from '../model/time-management/Duration';
+import { TimeUnitName } from '../model/time-management/StandardTimeUnit';
 
 export function formatDate(date: Date | null, fallback = ''): string {
 	if (date === null) return fallback;
 	return DateUtils.formatDate(date);
+}
+
+const TIME_UNIT_NAME_TO_ABBREVIATIONS: Record<TimeUnitName, { singular: string; plural: string }> = {
+	[TimeUnitName.Milliseconds]: { singular: 'ms', plural: 'ms' },
+	[TimeUnitName.Seconds]: { singular: 'sec', plural: 'sec' },
+	[TimeUnitName.Minutes]: { singular: 'min', plural: 'min' },
+	[TimeUnitName.Hours]: { singular: 'hr', plural: 'hrs' },
+	[TimeUnitName.Days]: { singular: 'day', plural: 'days' },
+	[TimeUnitName.Weeks]: { singular: 'week', plural: 'wks' },
+	[TimeUnitName.Months]: { singular: 'mo', plural: 'mos' },
+	[TimeUnitName.Years]: { singular: 'year', plural: 'yrs' },
+};
+
+function getAbbreviatedUnitLabel(amountOfUnits: number, unitName: TimeUnitName): string {
+	const abbreviations = TIME_UNIT_NAME_TO_ABBREVIATIONS[unitName];
+	return amountOfUnits === 1 ? abbreviations.singular : abbreviations.plural;
+}
+
+export function formatAbbreviatedDuration(ms: number): string {
+	const duration = Duration.fromMilliseconds(ms);
+	const amountOfUnits = duration.getAmountOfUnits();
+	const unitName = duration.getTimeUnit().name;
+	return `${amountOfUnits} ${getAbbreviatedUnitLabel(amountOfUnits, unitName)}`;
+}
+
+export function formatAbbreviatedDurationRange(minMs: number | null, maxMs: number | null): string {
+	if (minMs === null && maxMs === null) return '—';
+
+	const startDuration = Duration.fromMilliseconds(minMs ?? 0);
+	const endDuration = Duration.fromMilliseconds(maxMs ?? 0);
+	const startAmount = startDuration.getAmountOfUnits();
+	const startUnitName = startDuration.getTimeUnit().name;
+	const endAmount = endDuration.getAmountOfUnits();
+	const endUnitName = endDuration.getTimeUnit().name;
+
+	if (startAmount === endAmount && startUnitName === endUnitName) {
+		return formatAbbreviatedDuration(minMs ?? maxMs ?? 0);
+	}
+
+	if (startUnitName === endUnitName) {
+		return `${startAmount}-${endAmount} ${getAbbreviatedUnitLabel(endAmount, endUnitName)}`;
+	}
+
+	return `${formatAbbreviatedDuration(minMs ?? 0)}-${formatAbbreviatedDuration(maxMs ?? 0)}`;
 }

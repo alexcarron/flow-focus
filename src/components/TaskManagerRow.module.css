@@ -163,26 +163,6 @@
 	color: var(--color-text-faint);
 }
 
-@media (max-width: 1024px) {
-	.repeatColumn {
-		display: none;
-	}
-}
-
-@media (max-width: 840px) {
-	.startColumn {
-		display: none;
-	}
-}
-
-@media (max-width: 700px) {
-	.durationColumn {
-		display: none;
-	}
-}
-
-@media (max-width: 560px) {
-	.deadlineColumn {
-		display: none;
-	}
+.hiddenColumn {
+	display: none;
 }
