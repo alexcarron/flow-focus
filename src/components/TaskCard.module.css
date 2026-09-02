@@ -53,7 +53,7 @@
 }
 
 .stepRowCurrent {
-	border-left: 2px solid var(--color-accent-border);
+	border-left: var(--border-width-primary-accent-emphasis) solid var(--color-accent-border);
 	padding-left: var(--space-small);
 }
 

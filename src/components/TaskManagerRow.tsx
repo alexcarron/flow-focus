@@ -5,7 +5,7 @@ import { formatDate, formatTime } from '../utils/formatters';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
 import { mergeRefs } from '../utils/mergeRefs';
-import { SHORTCUTS, matchesShortcut, getShortcutKeyParts } from '../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../config/shortcuts';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
 import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';
@@ -51,19 +51,26 @@ export interface TaskManagerRowActions {
 	persistChangedTasks: (tasks: Task[]) => Promise<void>;
 }
 
+interface RowSelectionDragHandlers {
+	onMouseDown: (event: React.MouseEvent) => void;
+	onMouseEnter: (event: React.MouseEvent) => void;
+}
+
 interface Props {
+	rowID: string;
 	task: Task;
 	now: Date;
 	store: TaskManagerRowActions;
 	isSelected: boolean;
-	onSelectMouseDown: () => void;
-	onSelectMouseEnter: () => void;
+	selectionDragHandlers: RowSelectionDragHandlers;
+	onToggleSelected: () => void;
 	onOpenTiming: () => void;
 	onRequestDelete: () => void;
 }
 
-export default function TaskManagerRow({ task, now, store, isSelected, onSelectMouseDown, onSelectMouseEnter, onOpenTiming, onRequestDelete }: Props) {
+export default function TaskManagerRow({ rowID, task, now, store, isSelected, selectionDragHandlers, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
 	const steps = task.getSteps();
+	const isCompactRow = steps.length === 0;
 	const minMs = task.getMinRequiredTime() ?? null;
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
 	const startTime = task.getStartTime();
@@ -96,7 +103,7 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 		const step = displaySteps[index];
 		if (!step) return;
 
-		if (matchesShortcut(e, SHORTCUTS.stepInsert.insertBefore)) {
+		if (matchesShortcutIgnoringShift(e, SHORTCUTS.stepInsert.insertBefore)) {
 			e.preventDefault();
 			store.insertStepBeforeStep(task, step.id);
 			arrayInputRef.current?.focusRow(index);
@@ -124,16 +131,28 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 
 	return (
 		<tr className={isSelected ? `${styles.row} ${styles.rowSelected}` : styles.row}>
-			<td className={styles.selectionCell}>
+			<td className={`${styles.selectionCell} ${styles.iconColumn}`}>
 				<SelectionCheckbox
 					isSelected={isSelected}
-					onMouseDown={onSelectMouseDown}
-					onMouseEnter={onSelectMouseEnter}
+					rowID={rowID}
+					onMouseDown={selectionDragHandlers.onMouseDown}
+					onMouseEnter={selectionDragHandlers.onMouseEnter}
+					onToggle={onToggleSelected}
 				/>
 			</td>
 
-			<td className={styles.cell}>
-				—
+			<td className={`${styles.checkboxCell} ${styles.iconColumn}`}>
+				<CheckboxInput
+					value={task.getIsComplete()}
+					onChange={v => store.setComplete(task, v)}
+				/>
+			</td>
+
+			<td className={`${styles.checkboxCell} ${styles.iconColumn}`}>
+				<CheckboxInput
+					value={task.getIsMandatory()}
+					onChange={v => store.setMandatory(task, v)}
+				/>
 			</td>
 
 			<td className={styles.descriptionCell}>
@@ -144,7 +163,7 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 				/>
 			</td>
 
-			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={styles.stepsCell}>
+			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={isCompactRow ? `${styles.stepsCell} ${styles.stepsCellCompact}` : styles.stepsCell}>
 				<ArrayInput
 					ref={arrayInputRef}
 					value={displaySteps.map(step => step.text)}
@@ -229,41 +248,27 @@ export default function TaskManagerRow({ task, now, store, isSelected, onSelectM
 					: '∞'}
 			</td>
 
-			<td className={styles.cell}>
+			<td className={`${styles.cell} ${styles.durationColumn}`}>
 				{minMs !== null || maxMs !== null
 					? getDurationRange(minMs, maxMs)
-					: '—'}
+					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={styles.cell}>
+			<td className={`${styles.cell} ${styles.startColumn}`}>
+				{displayStartTime ? formatDate(displayStartTime) : <span className={styles.emptyValue}>—</span>}
+			</td>
+
+			<td className={`${styles.cell} ${styles.repeatColumn}`}>
 				{task.getRepeatInterval() !== null
 					? toDurationString(task.getRepeatInterval()!)
-					: '—'}
+					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={styles.checkboxCell}>
-				<CheckboxInput
-					value={task.getIsComplete()}
-					onChange={v => store.setComplete(task, v)}
-				/>
+			<td className={`${styles.cell} ${styles.deadlineColumn}`}>
+				{task.getDeadline() ? formatDate(task.getDeadline(), '—') : <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={styles.checkboxCell}>
-				<CheckboxInput
-					value={task.getIsMandatory()}
-					onChange={v => store.setMandatory(task, v)}
-				/>
-			</td>
-
-			<td className={styles.cell}>
-				{formatDate(task.getDeadline(), '—')}
-			</td>
-
-			<td className={styles.cell}>
-				{displayStartTime ? formatDate(displayStartTime) : '—'}
-			</td>
-
-			<td className={styles.actionsCell}>
+			<td className={isCompactRow ? `${styles.actionsCell} ${styles.actionsCellCompact}` : styles.actionsCell}>
 				<div className={styles.rowActions}>
 					<button
 						onClick={onOpenTiming}

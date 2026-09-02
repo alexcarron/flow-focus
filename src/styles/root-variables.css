@@ -21,6 +21,10 @@
 	--color-accent: #4f46e5;
 	--color-accent-hover: #6366f1;
 	--color-accent-border: #6366f1;
+	--color-accent-selected-background: color-mix(in srgb, var(--color-accent-border) 16%, transparent);
+	--color-accent-selected-background-hover: color-mix(in srgb, var(--color-accent-border) 28%, transparent);
+
+	--border-width-primary-accent-emphasis: 3px;
 
 	--color-danger: #ef4444;
 	--color-danger-text: #f87171;

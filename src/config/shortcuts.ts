@@ -73,6 +73,14 @@ export function matchesShortcut(event: KeyboardLike, def: ShortcutDef): boolean 
 	);
 }
 
+export function matchesShortcutIgnoringShift(event: KeyboardLike, def: ShortcutDef): boolean {
+	return (
+		event.key.toLowerCase() === def.key.toLowerCase() &&
+		!!event.altKey === !!def.alt &&
+		!!event.ctrlKey === !!def.ctrl
+	);
+}
+
 const KEY_DISPLAY: Record<string, string> = {
 	arrowup: '↑',
 	arrowdown: '↓',

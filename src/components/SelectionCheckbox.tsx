@@ -2,16 +2,18 @@ import styles from './SelectionCheckbox.module.css';
 
 interface Props {
 	isSelected: boolean;
-	onMouseDown: () => void;
-	onMouseEnter?: () => void;
+	onMouseDown: (event: React.MouseEvent) => void;
+	onMouseEnter?: (event: React.MouseEvent) => void;
+	onToggle?: () => void;
+	rowID?: string;
 	className?: string;
 }
 
-export default function SelectionCheckbox({ isSelected, onMouseDown, onMouseEnter, className = '' }: Props) {
+export default function SelectionCheckbox({ isSelected, onMouseDown, onMouseEnter, onToggle, rowID, className = '' }: Props) {
 	function onKeyDown(e: React.KeyboardEvent) {
 		if (e.key === ' ' || e.key === 'Enter') {
 			e.preventDefault();
-			onMouseDown();
+			onToggle?.();
 		}
 	}
 
@@ -20,7 +22,8 @@ export default function SelectionCheckbox({ isSelected, onMouseDown, onMouseEnte
 			role="checkbox"
 			aria-checked={isSelected}
 			tabIndex={0}
-			onMouseDown={e => { e.preventDefault(); onMouseDown(); }}
+			data-row-id={rowID}
+			onMouseDown={e => { e.preventDefault(); onMouseDown(e); }}
 			onMouseEnter={onMouseEnter}
 			onKeyDown={onKeyDown}
 			className={`${styles.box} ${isSelected ? styles.boxChecked : ''} ${className}`}

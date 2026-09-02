@@ -47,11 +47,78 @@
 }
 
 .sortIndicator {
-	font-size: var(--font-size-extra-small);
+	display: inline-flex;
+	vertical-align: middle;
+}
+
+.sortIndicatorIcon {
+	width: 0.85rem;
+	height: 0.85rem;
+	color: var(--color-text-subtle);
+}
+
+.sortableHeader:hover .sortIndicatorIcon {
+	color: var(--color-text-primary);
+}
+
+.sortIndicatorIconActive {
+	color: var(--color-accent);
 }
 
 .emptyMessage {
 	color: var(--color-text-subtle);
 	text-align: center;
 	padding: var(--space-extra-extra-large) 0;
+}
+
+.columnHeaderIcon {
+	width: 0.9rem;
+	height: 0.9rem;
+}
+
+.iconColumn {
+	width: 1%;
+	padding-right: var(--space-small);
+	text-align: center;
+	white-space: nowrap;
+}
+
+.selectionColumnHeader {
+	padding-left: var(--space-small);
+}
+
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+@media (max-width: 1024px) {
+	.repeatColumn {
+		display: none;
+	}
+}
+
+@media (max-width: 840px) {
+	.startColumn {
+		display: none;
+	}
+}
+
+@media (max-width: 700px) {
+	.durationColumn {
+		display: none;
+	}
+}
+
+@media (max-width: 560px) {
+	.deadlineColumn {
+		display: none;
+	}
 }

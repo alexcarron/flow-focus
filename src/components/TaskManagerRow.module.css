@@ -8,7 +8,43 @@
 }
 
 .rowSelected {
-	background-color: var(--color-surface-inset);
+	background-color: var(--color-accent-selected-background);
+	border-bottom: none;
+	border-radius: var(--radius-medium);
+	box-shadow:
+		inset var(--border-width-primary-accent-emphasis) 0 0 0 var(--color-accent-border),
+		inset calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 0 var(--color-accent-border),
+		inset 0 var(--border-width-primary-accent-emphasis) 0 0 var(--color-accent-border),
+		inset 0 calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 var(--color-accent-border);
+}
+
+.rowSelected:hover {
+	background-color: var(--color-accent-selected-background-hover);
+}
+
+.rowSelected + .rowSelected {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	box-shadow:
+		inset var(--border-width-primary-accent-emphasis) 0 0 0 var(--color-accent-border),
+		inset calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 0 var(--color-accent-border),
+		inset 0 calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 var(--color-accent-border);
+}
+
+.rowSelected:has(+ .rowSelected) {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	box-shadow:
+		inset var(--border-width-primary-accent-emphasis) 0 0 0 var(--color-accent-border),
+		inset calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 0 var(--color-accent-border),
+		inset 0 var(--border-width-primary-accent-emphasis) 0 0 var(--color-accent-border);
+}
+
+.rowSelected + .rowSelected:has(+ .rowSelected) {
+	border-radius: 0;
+	box-shadow:
+		inset var(--border-width-primary-accent-emphasis) 0 0 0 var(--color-accent-border),
+		inset calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 0 var(--color-accent-border);
 }
 
 .cell {
@@ -19,7 +55,7 @@
 }
 
 .selectionCell {
-	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) var(--space-small);
 }
 
 .descriptionCell {
@@ -30,9 +66,14 @@
 }
 
 .stepsCell {
-	padding: 0 var(--space-medium) var(--space-small) 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 	min-width: 12rem;
 	vertical-align: top;
+}
+
+.stepsCellCompact {
+	padding: 0 var(--space-medium) 0 0;
+	vertical-align: middle;
 }
 
 .stepsArrayInput {
@@ -78,8 +119,23 @@
 	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
 }
 
+.iconColumn {
+	width: 1%;
+	padding-right: var(--space-small);
+	text-align: center;
+	white-space: nowrap;
+}
+
 .actionsCell {
-	padding: 0 0;
+	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
+	width: 1%;
+	white-space: nowrap;
+	vertical-align: top;
+}
+
+.actionsCellCompact {
+	padding: 0;
+	vertical-align: middle;
 }
 
 .descriptionInput {
@@ -101,4 +157,32 @@
 	width: 0.9rem;
 	height: 0.9rem;
 	flex-shrink: 0;
+}
+
+.emptyValue {
+	color: var(--color-text-faint);
+}
+
+@media (max-width: 1024px) {
+	.repeatColumn {
+		display: none;
+	}
+}
+
+@media (max-width: 840px) {
+	.startColumn {
+		display: none;
+	}
+}
+
+@media (max-width: 700px) {
+	.durationColumn {
+		display: none;
+	}
+}
+
+@media (max-width: 560px) {
+	.deadlineColumn {
+		display: none;
+	}
 }

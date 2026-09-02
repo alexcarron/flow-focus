@@ -6,7 +6,9 @@
 
 .nav {
 	display: flex;
-	gap: var(--space-large);
+	flex-wrap: wrap;
+	row-gap: var(--space-small);
+	column-gap: var(--space-large);
 	padding: var(--space-medium);
 	background-color: var(--color-surface);
 	border-bottom: 1px solid var(--color-border);

@@ -7,7 +7,7 @@ import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStep
 import StepCheckbox from './StepCheckbox';
 import { formatDate } from '../utils/formatters';
 import { mergeRefs } from '../utils/mergeRefs';
-import { SHORTCUTS, matchesShortcut, getShortcutKeyParts } from '../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../config/shortcuts';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';
@@ -240,7 +240,7 @@ export default function TaskCard({ task }: Props) {
 												if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
 											}
 										}
-										else if (matchesShortcut(event, SHORTCUTS.stepInsert.insertBefore)) {
+										else if (matchesShortcutIgnoringShift(event, SHORTCUTS.stepInsert.insertBefore)) {
 											event.preventDefault();
 											const typedText = event.currentTarget.textContent ?? '';
 											if (typedText !== step.text) store.setStepText(task, step.id, typedText);

@@ -1,5 +1,5 @@
 import ChecklistItem from '../model/checklist/ChecklistItem';
-import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../config/shortcuts';
 import parsePastedTextIntoListItems from '../utils/parsePastedTextIntoListItems';
 import styles from './QuickToDoChecklistSection.module.css';
 
@@ -101,7 +101,7 @@ export default function ChecklistItemRow({
 					onPasteLines(lines);
 				}}
 				onKeyDown={event => {
-					if (matchesShortcut(event, SHORTCUTS.checklistInsert.insertBefore)) {
+					if (matchesShortcutIgnoringShift(event, SHORTCUTS.checklistInsert.insertBefore)) {
 						event.preventDefault();
 						onInsertBefore(event.currentTarget.textContent ?? '');
 					}

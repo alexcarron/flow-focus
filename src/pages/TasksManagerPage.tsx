@@ -6,6 +6,12 @@ import SelectionCheckbox from '../components/SelectionCheckbox';
 import TaskManagerRow, { TaskManagerRowActions } from '../components/TaskManagerRow';
 import TimingOptionsPopup from '../components/TimingOptionsPopup';
 import ConfirmModal from '../components/ConfirmModal';
+import CheckIcon from '../components/svg-icons/CheckIcon';
+import MandatoryIcon from '../components/svg-icons/MandatoryIcon';
+import SortAscIcon from '../components/svg-icons/SortAscIcon';
+import SortDescIcon from '../components/svg-icons/SortDescIcon';
+import SortUnsortedIcon from '../components/svg-icons/SortUnsortedIcon';
+import { useRowSelectionDrag } from '../hooks/useRowSelectionDrag';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All }
@@ -14,29 +20,28 @@ enum SortDir { Asc, Desc }
 
 const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = [
 	{
-		value: Filter.Active,
-		label: 'Active',
-		description: 'Tasks that are open right now (started, not finished, not completed) and have a deadline',
-	},
-	{
-		value: Filter.MustStartToday,
-		label: 'Must Start Today',
-		description: 'Active tasks that need to be started today to still meet their deadline',
-	},
-	{
-		value: Filter.Recurring,
-		label: 'Recurring',
-		description: 'Tasks that repeat on a schedule',
-	},
-	{
 		value: Filter.All,
 		label: 'All Tasks',
 		description: 'Every task, regardless of status, deadline, or completion',
 	},
+	{
+		value: Filter.Active,
+		label: 'Active Tasks',
+		description: 'Tasks that are open right now (started, not finished, not completed) and have a deadline',
+	},
+	{
+		value: Filter.MustStartToday,
+		label: 'Today\'s Tasks',
+		description: 'Active tasks that need to be started today to still meet their deadline',
+	},
+	{
+		value: Filter.Recurring,
+		label: 'Recurring Tasks',
+		description: 'Tasks that repeat on a schedule',
+	},
 ];
 
-const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline>, string> = {
-	[SortBy.Priority]: 'Priority',
+const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority>, string> = {
 	[SortBy.Name]: 'Name',
 	[SortBy.Steps]: 'Steps',
 	[SortBy.TimeAvailable]: 'Time Available',
@@ -116,8 +121,6 @@ export default function TasksManagerPage() {
 	const [taskPendingDeletion, setTaskPendingDeletion] = useState<Task | null>(null);
 	const [isDeleteSelectedConfirmOpen, setIsDeleteSelectedConfirmOpen] = useState(false);
 	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
-	const [isDragSelecting, setIsDragSelecting] = useState(false);
-	const [dragSelectValue, setDragSelectValue] = useState(true);
 
 	const now = new Date();
 	const displayed = applyFilter(applySort(tasks, sortBy, sortDir), filter);
@@ -125,15 +128,6 @@ export default function TasksManagerPage() {
 	useEffect(() => {
 		setSelectedRowIDs(new Set());
 	}, [filter]);
-
-	useEffect(() => {
-		if (!isDragSelecting) return;
-		function stopDragSelecting() {
-			setIsDragSelecting(false);
-		}
-		window.addEventListener('mouseup', stopDragSelecting);
-		return () => window.removeEventListener('mouseup', stopDragSelecting);
-	}, [isDragSelecting]);
 
 	function setRowSelected(rowID: string, isSelected: boolean) {
 		setSelectedRowIDs(current => {
@@ -144,15 +138,13 @@ export default function TasksManagerPage() {
 		});
 	}
 
-	function onRowSelectMouseDown(rowID: string) {
-		const nextValue = !selectedRowIDs.has(rowID);
-		setIsDragSelecting(true);
-		setDragSelectValue(nextValue);
-		setRowSelected(rowID, nextValue);
-	}
+	const { rowsContainerRef, getRowSelectionDragHandlers } = useRowSelectionDrag<HTMLTableElement>({
+		isRowSelected: rowID => selectedRowIDs.has(rowID),
+		setRowSelected,
+	});
 
-	function onRowSelectMouseEnter(rowID: string) {
-		if (isDragSelecting) setRowSelected(rowID, dragSelectValue);
+	function toggleRowSelected(rowID: string) {
+		setRowSelected(rowID, !selectedRowIDs.has(rowID));
 	}
 
 	function toggleSelectAll() {
@@ -189,9 +181,12 @@ export default function TasksManagerPage() {
 		}
 	}
 
-	function sortIcon(col: SortBy): string {
-		if (sortBy !== col) return '↕';
-		return sortDir === SortDir.Asc ? '↑' : '↓';
+	function renderSortIcon(col: SortBy) {
+		if (sortBy !== col) return <SortUnsortedIcon className={styles.sortIndicatorIcon} />;
+
+		if (sortDir === SortDir.Asc) return <SortAscIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
+
+		return <SortDescIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
 	}
 
 	const rowIDs = displayed.map((task) => getRowID(task));
@@ -212,30 +207,57 @@ export default function TasksManagerPage() {
 				)}
 			</div>
 
-			<table className={styles.table}>
+			<table ref={rowsContainerRef} className={styles.table}>
 				<thead>
 					<tr className={styles.headerRow}>
-						<th className={styles.columnHeader}>
-							<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} />
+						<th className={`${styles.columnHeader} ${styles.iconColumn} ${styles.selectionColumnHeader}`}>
+							<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} onToggle={toggleSelectAll} />
 						</th>
-						{(Object.entries(SORT_LABELS) as [string, string][]).map(([key, label]) => (
-							<th
-								key={key}
-								className={`${styles.columnHeader} ${styles.sortableHeader}`}
-								onClick={() => toggleSort(parseInt(key) as SortBy)}
-							>
-								{label} <span className={styles.sortIndicator}>{sortIcon(parseInt(key) as SortBy)}</span>
-							</th>
-						))}
-						<th className={styles.columnHeader}>Done</th>
-						<th className={styles.columnHeader}>Mandatory</th>
+						<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Done">
+							<CheckIcon className={styles.columnHeaderIcon} />
+							<span className={styles.srOnly}>Done</span>
+						</th>
+						<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Mandatory">
+							<MandatoryIcon className={styles.columnHeaderIcon} />
+							<span className={styles.srOnly}>Mandatory</span>
+						</th>
 						<th
 							className={`${styles.columnHeader} ${styles.sortableHeader}`}
+							onClick={() => toggleSort(SortBy.Name)}
+						>
+							{SORT_LABELS[SortBy.Name]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Name)}</span>
+						</th>
+						<th
+							className={`${styles.columnHeader} ${styles.sortableHeader}`}
+							onClick={() => toggleSort(SortBy.Steps)}
+						>
+							{SORT_LABELS[SortBy.Steps]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Steps)}</span>
+						</th>
+						<th
+							className={`${styles.columnHeader} ${styles.sortableHeader}`}
+							onClick={() => toggleSort(SortBy.TimeAvailable)}
+						>
+							{SORT_LABELS[SortBy.TimeAvailable]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.TimeAvailable)}</span>
+						</th>
+						<th
+							className={`${styles.columnHeader} ${styles.sortableHeader} ${styles.durationColumn}`}
+							onClick={() => toggleSort(SortBy.Duration)}
+						>
+							{SORT_LABELS[SortBy.Duration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Duration)}</span>
+						</th>
+						<th className={`${styles.columnHeader} ${styles.startColumn}`}>Start</th>
+						<th
+							className={`${styles.columnHeader} ${styles.sortableHeader} ${styles.repeatColumn}`}
+							onClick={() => toggleSort(SortBy.RepeatInterval)}
+						>
+							{SORT_LABELS[SortBy.RepeatInterval]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.RepeatInterval)}</span>
+						</th>
+						<th
+							className={`${styles.columnHeader} ${styles.sortableHeader} ${styles.deadlineColumn}`}
 							onClick={() => toggleSort(SortBy.Deadline)}
 						>
-							Deadline <span className={styles.sortIndicator}>{sortIcon(SortBy.Deadline)}</span>
+							Deadline <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Deadline)}</span>
 						</th>
-						<th className={styles.columnHeader}>Start</th>
 						<th className={styles.columnHeader}>Actions</th>
 					</tr>
 				</thead>
@@ -245,12 +267,13 @@ export default function TasksManagerPage() {
 						return (
 							<TaskManagerRow
 								key={rowID}
+								rowID={rowID}
 								task={task}
 								now={now}
 								store={store}
 								isSelected={selectedRowIDs.has(rowID)}
-								onSelectMouseDown={() => onRowSelectMouseDown(rowID)}
-								onSelectMouseEnter={() => onRowSelectMouseEnter(rowID)}
+								selectionDragHandlers={getRowSelectionDragHandlers(rowID)}
+								onToggleSelected={() => toggleRowSelected(rowID)}
 								onOpenTiming={() => setTimingTask(task)}
 								onRequestDelete={() => setTaskPendingDeletion(task)}
 							/>
