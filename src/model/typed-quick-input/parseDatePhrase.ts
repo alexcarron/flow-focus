@@ -1,6 +1,7 @@
 import Time from '../time-management/Time';
 import { DEFAULT_SETTINGS } from '../AppSettings';
 import Weekday from '../time-management/Weekday';
+import parseRelativeDurationPhrase from './parseRelativeDurationPhrase';
 
 export type ParsedDatePhrase = {
 	date: Date;
@@ -187,8 +188,13 @@ function makeParseMonthAndDay(monthWordAlternation: string) {
 	};
 }
 
+function parseRelativeDuration(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
+	return parseRelativeDurationPhrase(text, now);
+}
+
 const dateParsers = [
 	parseRelativeDay,
+	parseRelativeDuration,
 	makeParseNextWeekday(weekdayAlternation),
 	makeParseWeekday(weekdayAlternation),
 	makeParseMonthAndDay(monthAlternation),
@@ -196,6 +202,7 @@ const dateParsers = [
 
 const fullWordDateParsers = [
 	parseRelativeDay,
+	parseRelativeDuration,
 	makeParseNextWeekday(weekdayAlternationFullWordsOnly),
 	makeParseWeekday(weekdayAlternationFullWordsOnly),
 	makeParseMonthAndDay(monthAlternationFullWordsOnly),

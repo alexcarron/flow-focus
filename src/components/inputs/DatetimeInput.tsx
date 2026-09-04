@@ -172,7 +172,7 @@ export default function DatetimeInput({ value, onChange, label, description, cla
 						ref={typedInputRef}
 						type="text"
 						value={typedText}
-						placeholder="Type a date and time like 'tomorrow' or 'sep 3 11pm'"
+						placeholder="Type a date and time like 'tomorrow', 'sep 3 11pm', or 'in 3 days'"
 						className="field"
 						onChange={event => setTypedText(event.target.value)}
 						onKeyDown={event => {

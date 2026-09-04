@@ -126,4 +126,27 @@ describe('parseDatePhrase', () => {
 		expect(parsed?.date.getDate()).toBe(5);
 		expect(parsed?.timeOfDay).toEqual(expectedTimeOfDay);
 	});
+
+	it('parses "in <duration>" as an exact future time for sub-day units', () => {
+		const parsed = parseDatePhrase({ text: 'in 10 minutes', now: testNow });
+		expect(parsed?.date.getTime()).toBe(testNow.getTime() + 10 * 60 * 1000);
+		expect(parsed?.timeOfDay).toEqual({ hour: testNow.getHours(), minute: 10 });
+	});
+
+	it('parses "in 3 days" as a bare date, applying an "at" time suffix if present', () => {
+		const bareParsed = parseDatePhrase({ text: 'in 3 days', now: testNow });
+		expect(bareParsed?.timeOfDay).toBeUndefined();
+
+		const withTime = parseDatePhrase({ text: 'in 3 days at 5pm', now: testNow });
+		expect(withTime?.date.getDate()).toBe(bareParsed?.date.getDate());
+		expect(withTime?.timeOfDay).toEqual({ hour: 17, minute: 0 });
+	});
+
+	it('parses "<duration> ago"', () => {
+		const parsed = parseDatePhrase({ text: '2 weeks ago', now: testNow });
+		const expected = new Date(testNow);
+		expected.setDate(expected.getDate() - 14);
+		expected.setHours(0, 0, 0, 0);
+		expect(parsed?.date.getTime()).toBe(expected.getTime());
+	});
 });
