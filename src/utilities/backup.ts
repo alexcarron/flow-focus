@@ -80,11 +80,11 @@ function taskToBackupTask(task: Task): BackupTask {
 }
 
 export function createBackup(): BackupData {
-	const { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating } = useSettingsStore.getState();
+	const { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage } = useSettingsStore.getState();
 	return {
 		format: BACKUP_FORMAT,
 		exportedAt: new Date().toISOString(),
-		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating },
+		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage },
 		tasks: useTasksStore.getState().tasks.map(taskToBackupTask),
 		checklist: useChecklistStore.getState().items,
 	};

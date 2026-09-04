@@ -12,11 +12,13 @@ export default function SettingsPage() {
 	const bedtime = useSettingsStore(s => s.bedtime);
 	const wakeTime = useSettingsStore(s => s.wakeTime);
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
+	const shouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.shouldShowQuickAddTaskBarOnFocusPage);
 	const setMorningTime = useSettingsStore(s => s.setMorningTime);
 	const setNightTime = useSettingsStore(s => s.setNightTime);
 	const setBedtime = useSettingsStore(s => s.setBedtime);
 	const setWakeTime = useSettingsStore(s => s.setWakeTime);
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
+	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.setShouldShowQuickAddTaskBarOnFocusPage);
 
 	const tasks = useTasksStore(s => s.tasks);
 	const [backupStatus, setBackupStatus] = useState<string | null>(null);
@@ -128,6 +130,18 @@ export default function SettingsPage() {
 					value={shouldKeepTaskDetailsAfterCreating}
 					onChange={setShouldKeepTaskDetailsAfterCreating}
 					label="Keep task details when creating task"
+				/>
+			</section>
+
+			<section className={styles.section}>
+				<div>
+					<h2 className={styles.sectionHeading}>Focus Page</h2>
+				</div>
+
+				<CheckboxInput
+					value={shouldShowQuickAddTaskBarOnFocusPage}
+					onChange={setShouldShowQuickAddTaskBarOnFocusPage}
+					label="Show quick-add task bar above the focused task"
 				/>
 			</section>
 

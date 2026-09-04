@@ -162,7 +162,7 @@ export default function TaskCreatorPage() {
 					tokens={parseResult.tokens}
 					onUnlinkToken={handleUnlinkToken}
 					demotedRange={demotedRange}
-					placeholder="Calculus Homework 3.2 due thursday takes 1-2 hours"
+					placeholderTiersLongestFirst={['Calculus Homework 3.2 due thursday takes 1-2 hours']}
 					onSubmit={() => handleCreateRef.current()}
 				/>
 			</div>

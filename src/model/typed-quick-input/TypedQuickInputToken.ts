@@ -6,7 +6,8 @@ export type TypedQuickInputField =
 	| 'endTime'
 	| 'repeatInterval'
 	| 'duration'
-	| 'isMandatory';
+	| 'isMandatory'
+	| 'ignoredDate';
 
 export type TypedQuickInputToken = {
 	field: TypedQuickInputField;

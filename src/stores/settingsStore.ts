@@ -17,6 +17,7 @@ interface SettingsActions {
 	setBedtime: (value: string) => Promise<void>;
 	setWakeTime: (value: string) => Promise<void>;
 	setShouldKeepTaskDetailsAfterCreating: (value: boolean) => Promise<void>;
+	setShouldShowQuickAddTaskBarOnFocusPage: (value: boolean) => Promise<void>;
 	importSettings: (settings: AppSettings) => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ function pickSettings(state: SettingsState): AppSettings {
 		bedtime: state.bedtime,
 		wakeTime: state.wakeTime,
 		shouldKeepTaskDetailsAfterCreating: state.shouldKeepTaskDetailsAfterCreating,
+		shouldShowQuickAddTaskBarOnFocusPage: state.shouldShowQuickAddTaskBarOnFocusPage,
 	};
 }
 
@@ -77,6 +79,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 	async setShouldKeepTaskDetailsAfterCreating(value: boolean) {
 		set({ shouldKeepTaskDetailsAfterCreating: value });
 		await persistSettings({ ...pickSettings(get()), shouldKeepTaskDetailsAfterCreating: value });
+	},
+
+	async setShouldShowQuickAddTaskBarOnFocusPage(value: boolean) {
+		set({ shouldShowQuickAddTaskBarOnFocusPage: value });
+		await persistSettings({ ...pickSettings(get()), shouldShowQuickAddTaskBarOnFocusPage: value });
 	},
 
 	async importSettings(settings: AppSettings) {

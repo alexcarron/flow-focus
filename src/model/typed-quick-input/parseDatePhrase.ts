@@ -45,6 +45,14 @@ function toAlternation(words: string[]): string {
 const weekdayAlternation = toAlternation(Object.keys(weekdayNameToWeekday));
 const monthAlternation = toAlternation(Object.keys(monthNameToIndex));
 
+const fullWeekdayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const fullMonthNames = [
+	'january', 'february', 'march', 'april', 'may', 'june',
+	'july', 'august', 'september', 'october', 'november', 'december',
+];
+const weekdayAlternationFullWordsOnly = toAlternation(fullWeekdayNames);
+const monthAlternationFullWordsOnly = toAlternation(fullMonthNames);
+
 const CLOCK_TIME_REGEX = /^(?:at\s+)?((?:[01]?\d|2[0-3]):[0-5]\d(?:\s?[ap]m)?|(?:0?[1-9]|1[0-2])\s?[ap]m)\b/i;
 const NAMED_TIME_OF_DAY_REGEX = /^(?:at\s+)?(noon|afternoon|evening|morning|night|midnight)\b/i;
 
@@ -132,54 +140,73 @@ function parseRelativeDay(text: string, now: Date, nightTime: Time): ParsedDateP
 	return { date, matchedLength: match[0].length };
 }
 
-function parseNextWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
-	const match = new RegExp(`^next\\s+(${weekdayAlternation})`, 'i').exec(text);
-	if (!match) return null;
+function makeParseNextWeekday(weekdayWordAlternation: string) {
+	return function parseNextWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
+		const match = new RegExp(`^next\\s+(${weekdayWordAlternation})`, 'i').exec(text);
+		if (!match) return null;
 
-	const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
-	const upcoming = nextDateForWeekday(weekday, false, now);
-	upcoming.setDate(upcoming.getDate() + 7);
-	return { date: upcoming, matchedLength: match[0].length };
+		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
+		const upcoming = nextDateForWeekday(weekday, false, now);
+		upcoming.setDate(upcoming.getDate() + 7);
+		return { date: upcoming, matchedLength: match[0].length };
+	};
 }
 
-function parseWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
-	const match = new RegExp(`^(${weekdayAlternation})`, 'i').exec(text);
-	if (!match) return null;
+function makeParseWeekday(weekdayWordAlternation: string) {
+	return function parseWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
+		const match = new RegExp(`^(${weekdayWordAlternation})`, 'i').exec(text);
+		if (!match) return null;
 
-	const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
-	return { date: nextDateForWeekday(weekday, true, now), matchedLength: match[0].length };
+		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
+		return { date: nextDateForWeekday(weekday, true, now), matchedLength: match[0].length };
+	};
 }
 
-function parseMonthAndDay(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
-	const match = new RegExp(
-		`^(${monthAlternation})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?`,
-		'i'
-	).exec(text);
-	if (!match) return null;
+function makeParseMonthAndDay(monthWordAlternation: string) {
+	return function parseMonthAndDay(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
+		const match = new RegExp(
+			`^(${monthWordAlternation})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?`,
+			'i'
+		).exec(text);
+		if (!match) return null;
 
-	const monthIndex = monthNameToIndex[match[1].toLowerCase()];
-	const dayOfMonth = parseInt(match[2], 10);
-	if (dayOfMonth < 1 || dayOfMonth > 31) return null;
+		const monthIndex = monthNameToIndex[match[1].toLowerCase()];
+		const dayOfMonth = parseInt(match[2], 10);
+		if (dayOfMonth < 1 || dayOfMonth > 31) return null;
 
-	const explicitYear = match[3] ? parseInt(match[3], 10) : null;
-	let year = explicitYear ?? now.getFullYear();
+		const explicitYear = match[3] ? parseInt(match[3], 10) : null;
+		let year = explicitYear ?? now.getFullYear();
 
-	const date = new Date(year, monthIndex, dayOfMonth, 0, 0, 0, 0);
+		const date = new Date(year, monthIndex, dayOfMonth, 0, 0, 0, 0);
 
-	if (explicitYear === null && date < atStartOfDay(now)) {
-		date.setFullYear(year + 1);
-	}
+		if (explicitYear === null && date < atStartOfDay(now)) {
+			date.setFullYear(year + 1);
+		}
 
-	return { date, matchedLength: match[0].length };
+		return { date, matchedLength: match[0].length };
+	};
 }
 
-const dateParsers = [parseRelativeDay, parseNextWeekday, parseWeekday, parseMonthAndDay];
+const dateParsers = [
+	parseRelativeDay,
+	makeParseNextWeekday(weekdayAlternation),
+	makeParseWeekday(weekdayAlternation),
+	makeParseMonthAndDay(monthAlternation),
+];
+
+const fullWordDateParsers = [
+	parseRelativeDay,
+	makeParseNextWeekday(weekdayAlternationFullWordsOnly),
+	makeParseWeekday(weekdayAlternationFullWordsOnly),
+	makeParseMonthAndDay(monthAlternationFullWordsOnly),
+];
 
 export default function parseDatePhrase(config: {
 	text: string;
 	now?: Date;
 	nightTime?: Time;
 	morningTime?: Time;
+	restrictToFullWords?: boolean;
 }): ParsedDatePhrase | null {
 	const now = config.now ?? new Date();
 	const nightTime = config.nightTime ?? defaultNightTime;
@@ -188,7 +215,8 @@ export default function parseDatePhrase(config: {
 	const leadingWhitespace = /^\s*/.exec(config.text)?.[0].length ?? 0;
 	const trimmed = config.text.slice(leadingWhitespace);
 
-	for (const parse of dateParsers) {
+	const parsers = config.restrictToFullWords ? fullWordDateParsers : dateParsers;
+	for (const parse of parsers) {
 		const parsed = parse(trimmed, now, nightTime);
 		if (parsed) {
 			if (parsed.timeOfDay) {

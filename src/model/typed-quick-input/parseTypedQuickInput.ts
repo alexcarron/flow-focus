@@ -88,6 +88,7 @@ export default function parseTypedQuickInput(config: {
 
 	const removedIndices = new Set<number>();
 	for (const match of keptMatches) {
+		if (match.keepInName) continue;
 		for (let index = match.startIndex; index < match.endIndex; index++) removedIndices.add(index);
 	}
 

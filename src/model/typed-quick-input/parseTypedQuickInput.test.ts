@@ -171,6 +171,31 @@ describe('parseTypedQuickInput', () => {
 		expect(result.cleanedName).toBe('read "War and Peace"');
 		expect(result.tokens).toHaveLength(0);
 	});
+
+	it('treats an abbreviated weekday at the end of the input as an implied due date', () => {
+		const result = parseTypedQuickInput({ input: 'Read Chp.7 tue', now: testNow });
+		expect(result.cleanedName).toBe('Read Chp.7');
+		expect(result.timing.deadline?.getDay()).toBe(2);
+		expect(result.tokens).toHaveLength(1);
+		expect(result.tokens[0].field).toBe('deadline');
+	});
+
+	it('still treats an abbreviated weekday at the end as an implied due date when followed by trailing punctuation', () => {
+		const result = parseTypedQuickInput({ input: 'Read Chp.7 tue.', now: testNow });
+		expect(result.timing.deadline?.getDay()).toBe(2);
+	});
+
+	it('does not treat an abbreviated weekday in the middle of the input as an implied due date', () => {
+		const result = parseTypedQuickInput({ input: 'Read Chp.7 tue morning before class', now: testNow });
+		expect(result.timing.deadline).toBeUndefined();
+		expect(result.tokens).toHaveLength(0);
+	});
+
+	it('does not treat a word that happens to match an abbreviated weekday as an implied due date when not at the end', () => {
+		const result = parseTypedQuickInput({ input: 'I sat on a chair', now: testNow });
+		expect(result.timing.deadline).toBeUndefined();
+		expect(result.tokens).toHaveLength(0);
+	});
 });
 
 describe('escapeTokenInText', () => {

@@ -12,6 +12,12 @@
 .editor:empty::before {
 	content: attr(data-placeholder);
 	color: var(--color-text-subtle);
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
 .editor:focus {
@@ -23,6 +29,7 @@
 	font-weight: var(--font-weight-bold);
 	border-radius: var(--radius-small);
 	padding: 0 var(--space-extra-extra-small);
+	margin: 0 var(--space-extra-extra-small);
 	cursor: help;
 }
 
@@ -54,6 +61,12 @@
 .tokenMandatory {
 	color: var(--color-typed-quick-input-mandatory);
 	background-color: color-mix(in srgb, var(--color-typed-quick-input-mandatory) 15%, transparent);
+}
+
+.tokenIgnoredDate {
+	color: var(--color-text-muted);
+	text-decoration: line-through;
+	background-color: transparent;
 }
 
 .demoting {

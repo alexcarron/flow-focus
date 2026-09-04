@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
+import { useFittingPlaceholder } from '../../hooks/useFittingPlaceholder';
 import styles from './TypedQuickInput.module.css';
 
 interface Props {
@@ -8,8 +9,9 @@ interface Props {
 	tokens: TypedQuickInputToken[];
 	onUnlinkToken: (token: TypedQuickInputToken) => void;
 	demotedRange?: { start: number; end: number } | null;
-	placeholder?: string;
+	placeholderTiersLongestFirst?: string[];
 	onSubmit?: () => void;
+	editorClassName?: string;
 }
 
 const fieldToColorClass: Record<TypedQuickInputField, string> = {
@@ -19,6 +21,7 @@ const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	repeatInterval: styles.tokenRepeat,
 	duration: styles.tokenDuration,
 	isMandatory: styles.tokenMandatory,
+	ignoredDate: styles.tokenIgnoredDate,
 };
 
 function escapeHtml(text: string): string {
@@ -117,10 +120,12 @@ export default function TypedQuickInput({
 	tokens,
 	onUnlinkToken,
 	demotedRange = null,
-	placeholder,
+	placeholderTiersLongestFirst = [],
 	onSubmit,
+	editorClassName = '',
 }: Props) {
 	const editorRef = useRef<HTMLDivElement>(null);
+	const fittingPlaceholder = useFittingPlaceholder(placeholderTiersLongestFirst, editorRef);
 	const [hoveredTokenIndex, setHoveredTokenIndex] = useState<number | null>(null);
 	const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
 	const [demotingRange, setDemotingRange] = useState<{ start: number; end: number } | null>(null);
@@ -195,8 +200,8 @@ export default function TypedQuickInput({
 				role="textbox"
 				aria-label="Task name"
 				spellCheck={false}
-				data-placeholder={placeholder}
-				className={`field large ${styles.editor}`}
+				data-placeholder={fittingPlaceholder}
+				className={`field large ${styles.editor} ${editorClassName}`.trim()}
 				onInput={handleInput}
 				onKeyDown={handleKeyDown}
 				onPointerOver={handlePointerOver}
