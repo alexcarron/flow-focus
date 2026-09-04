@@ -1,3 +1,17 @@
+import Duration from '../model/time-management/Duration';
+import { TimeUnitName } from '../model/time-management/StandardTimeUnit';
+
+const TIME_UNIT_NAME_TO_ABBREVIATIONS: Record<TimeUnitName, { singular: string; plural: string }> = {
+	[TimeUnitName.Milliseconds]: { singular: 'ms', plural: 'ms' },
+	[TimeUnitName.Seconds]: { singular: 'sec', plural: 'sec' },
+	[TimeUnitName.Minutes]: { singular: 'min', plural: 'min' },
+	[TimeUnitName.Hours]: { singular: 'hr', plural: 'hrs' },
+	[TimeUnitName.Days]: { singular: 'day', plural: 'days' },
+	[TimeUnitName.Weeks]: { singular: 'week', plural: 'wks' },
+	[TimeUnitName.Months]: { singular: 'mo', plural: 'mos' },
+	[TimeUnitName.Years]: { singular: 'year', plural: 'yrs' },
+};
+
 export function formatTime(ms: number): string {
 	const isNegative = ms < 0;
 	let abs = Math.abs(ms);
@@ -21,26 +35,6 @@ export function formatTime(ms: number): string {
 
 	return isNegative ? `-${result}` : result;
 }
-
-import DateUtils from '../model/time-management/DateUtils';
-import Duration from '../model/time-management/Duration';
-import { TimeUnitName } from '../model/time-management/StandardTimeUnit';
-
-export function formatDate(date: Date | null, fallback = ''): string {
-	if (date === null) return fallback;
-	return DateUtils.formatDate(date);
-}
-
-const TIME_UNIT_NAME_TO_ABBREVIATIONS: Record<TimeUnitName, { singular: string; plural: string }> = {
-	[TimeUnitName.Milliseconds]: { singular: 'ms', plural: 'ms' },
-	[TimeUnitName.Seconds]: { singular: 'sec', plural: 'sec' },
-	[TimeUnitName.Minutes]: { singular: 'min', plural: 'min' },
-	[TimeUnitName.Hours]: { singular: 'hr', plural: 'hrs' },
-	[TimeUnitName.Days]: { singular: 'day', plural: 'days' },
-	[TimeUnitName.Weeks]: { singular: 'week', plural: 'wks' },
-	[TimeUnitName.Months]: { singular: 'mo', plural: 'mos' },
-	[TimeUnitName.Years]: { singular: 'year', plural: 'yrs' },
-};
 
 function getAbbreviatedUnitLabel(amountOfUnits: number, unitName: TimeUnitName): string {
 	const abbreviations = TIME_UNIT_NAME_TO_ABBREVIATIONS[unitName];

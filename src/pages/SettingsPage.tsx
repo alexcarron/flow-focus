@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTasksStore } from '../stores/tasksStore';
-import { applyBackup, createBackup, downloadBackup, readBackupFile, BackupData } from '../utils/backup';
+import { applyBackup, createBackup, downloadBackup, readBackupFile, BackupData } from '../utilities/backup';
 import ConfirmModal from '../components/ConfirmModal';
 import CheckboxInput from '../components/inputs/CheckboxInput';
 import styles from './SettingsPage.module.css';

@@ -1,6 +1,6 @@
 import ChecklistItem from '../model/checklist/ChecklistItem';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../config/shortcuts';
-import parsePastedTextIntoListItems from '../utils/parsePastedTextIntoListItems';
+import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import styles from './QuickToDoChecklistSection.module.css';
 
 interface Props {

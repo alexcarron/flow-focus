@@ -8,7 +8,7 @@ import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
 import { db } from '../db/flowfocus.db';
 import { serializeTask, deserializeRow } from '../db/task.serializer';
-import type { BackupTask } from '../utils/backup';
+import type { BackupTask } from '../utilities/backup';
 
 enablePatches();
 setAutoFreeze(false);

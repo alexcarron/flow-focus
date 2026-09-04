@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import parsePastedTextIntoListItems from '../../utils/parsePastedTextIntoListItems';
+import parsePastedTextIntoListItems from '../../utilities/parsePastedTextIntoListItems';
 import DeleteIcon from '../svg-icons/DeleteIcon';
 import styles from './ArrayInput.module.css';
 

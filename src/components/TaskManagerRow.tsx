@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import Task from '../model/task/Task';
 import Duration from '../model/time-management/Duration';
-import { formatDate, formatTime, formatAbbreviatedDurationRange } from '../utils/formatters';
+import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
+import { formatDate } from '../utilities/dateFormatting';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
-import { mergeRefs } from '../utils/mergeRefs';
+import { mergeRefs } from '../utilities/mergeRefs';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../config/shortcuts';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';

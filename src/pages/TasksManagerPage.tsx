@@ -13,7 +13,7 @@ import SortDescIcon from '../components/svg-icons/SortDescIcon';
 import SortUnsortedIcon from '../components/svg-icons/SortUnsortedIcon';
 import { useRowSelectionDrag } from '../hooks/useRowSelectionDrag';
 import { useOverflowAwareTableColumns } from '../hooks/useOverflowAwareTableColumns';
-import { mergeRefs } from '../utils/mergeRefs';
+import { mergeRefs } from '../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All }
