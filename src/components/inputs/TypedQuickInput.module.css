@@ -63,6 +63,11 @@
 	background-color: color-mix(in srgb, var(--color-typed-quick-input-mandatory) 15%, transparent);
 }
 
+.tokenSteps {
+	color: var(--color-typed-quick-input-steps);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-steps) 15%, transparent);
+}
+
 .tokenIgnoredDate {
 	color: var(--color-text-muted);
 	text-decoration: line-through;

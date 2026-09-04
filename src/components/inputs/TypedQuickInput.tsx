@@ -11,6 +11,7 @@ interface Props {
 	demotedRange?: { start: number; end: number } | null;
 	placeholderTiersLongestFirst?: string[];
 	onSubmit?: () => void;
+	onShiftEnter?: () => void;
 	editorClassName?: string;
 	disabled?: boolean;
 }
@@ -23,6 +24,7 @@ const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	duration: styles.tokenDuration,
 	isMandatory: styles.tokenMandatory,
 	ignoredDate: styles.tokenIgnoredDate,
+	steps: styles.tokenSteps,
 };
 
 function escapeHtml(text: string): string {
@@ -123,6 +125,7 @@ export default function TypedQuickInput({
 	demotedRange = null,
 	placeholderTiersLongestFirst = [],
 	onSubmit,
+	onShiftEnter,
 	editorClassName = '',
 	disabled = false,
 }: Props) {
@@ -162,6 +165,12 @@ export default function TypedQuickInput({
 
 	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
 		if (disabled) return;
+		if (event.key === 'Enter' && event.shiftKey) {
+			event.preventDefault();
+			event.stopPropagation();
+			onShiftEnter?.();
+			return;
+		}
 		if (event.key === 'Enter') {
 			event.preventDefault();
 			event.stopPropagation();

@@ -5,7 +5,7 @@ import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import parseTypedQuickInput, { escapeTokenInText } from '../model/typed-quick-input/parseTypedQuickInput';
 import { TypedQuickInputToken } from '../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../model/time-management/Time';
-import ArrayInput from '../components/inputs/ArrayInput';
+import ArrayInput, { ArrayInputHandle } from '../components/inputs/ArrayInput';
 import CheckboxInput from '../components/inputs/CheckboxInput';
 import DatetimeInput from '../components/inputs/DatetimeInput';
 import TypedQuickInput from '../components/inputs/TypedQuickInput';
@@ -54,6 +54,7 @@ export default function TaskCreatorPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [confirmationKey, setConfirmationKey] = useState(0);
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
+	const stepsInputRef = useRef<ArrayInputHandle>(null);
 
 	const parseResult = useMemo(
 		() => parseTypedQuickInput({
@@ -95,6 +96,11 @@ export default function TaskCreatorPage() {
 		setDemotedRange({ start: token.startIndex, end: token.endIndex + 1 });
 	}
 
+	function handleShiftEnter() {
+		setShowMoreOptions(true);
+		setTimeout(() => stepsInputRef.current?.focusRow(steps.length), 0);
+	}
+
 	function handleTimingChange(nextTiming: TaskTimingOptions) {
 		const changedKeys = (Object.keys(nextTiming) as Array<keyof TaskTimingOptions>)
 			.filter(key => nextTiming[key] !== effectiveTiming[key]);
@@ -131,7 +137,10 @@ export default function TaskCreatorPage() {
 		isCreatingTaskRef.current = true;
 		setIsCreatingTask(true);
 		try {
-			const cleanedSteps = steps.map(step => step.trim()).filter(step => step !== '');
+			const cleanedSteps = [
+				...(parseResult.steps ?? []),
+				...steps.map(step => step.trim()).filter(step => step !== ''),
+			];
 
 			const task = await addTask(description, effectiveTiming);
 			task.editStepsText(cleanedSteps);
@@ -176,6 +185,7 @@ export default function TaskCreatorPage() {
 					demotedRange={demotedRange}
 					placeholderTiersLongestFirst={['Calculus Homework 3.2 due thursday takes 1-2 hours']}
 					onSubmit={() => handleCreateRef.current()}
+					onShiftEnter={handleShiftEnter}
 					disabled={isCreatingTask}
 				/>
 			</div>
@@ -202,6 +212,7 @@ export default function TaskCreatorPage() {
 					<div className="field-group">
 						<label className="field-label">Steps</label>
 						<ArrayInput
+							ref={stepsInputRef}
 							value={steps}
 							onChange={setSteps}
 							placeholder="Type a step, or paste a checklist…"

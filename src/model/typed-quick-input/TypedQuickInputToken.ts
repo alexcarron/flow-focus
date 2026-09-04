@@ -7,7 +7,8 @@ export type TypedQuickInputField =
 	| 'repeatInterval'
 	| 'duration'
 	| 'isMandatory'
-	| 'ignoredDate';
+	| 'ignoredDate'
+	| 'steps';
 
 export type TypedQuickInputToken = {
 	field: TypedQuickInputField;
@@ -21,5 +22,6 @@ export type TypedQuickInputToken = {
 export type TypedQuickInputParseResult = {
 	cleanedName: string;
 	timing: Partial<TaskTimingOptions>;
+	steps: string[] | null;
 	tokens: TypedQuickInputToken[];
 };

@@ -112,8 +112,10 @@ export default function parseTypedQuickInput(config: {
 	}
 
 	const timing: Partial<TaskTimingOptions> = {};
+	let steps: string[] | null = null;
 	for (const match of keptMatches) {
 		Object.assign(timing, match.timing);
+		if (match.stepsList) steps = match.stepsList;
 	}
 
 	const tokens: TypedQuickInputToken[] = keptMatches
@@ -130,6 +132,7 @@ export default function parseTypedQuickInput(config: {
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
 		timing,
+		steps,
 		tokens,
 	};
 }

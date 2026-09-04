@@ -4,6 +4,7 @@ import { timeUnits, TimeUnitName } from '../time-management/StandardTimeUnit';
 import Weekday from '../time-management/Weekday';
 import parseDatePhrase, { nextDateForWeekday } from './parseDatePhrase';
 import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
+import { stepsMatcher } from './stepsMatcher';
 import { TypedQuickInputField } from './TypedQuickInputToken';
 
 export type RawMatch = {
@@ -14,6 +15,7 @@ export type RawMatch = {
 	matchedText: string;
 	explanation: string;
 	timing: Partial<TaskTimingOptions>;
+	stepsList?: string[];
 	keepInName?: boolean;
 };
 
@@ -516,5 +518,6 @@ export const typedQuickInputMatchers: Matcher[] = [
 	repeatMatcher,
 	durationMatcher,
 	mandatoryMatcher,
+	stepsMatcher,
 	impliedDueDateMatcher,
 ];
