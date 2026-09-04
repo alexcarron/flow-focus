@@ -12,6 +12,7 @@ interface Props {
 	placeholderTiersLongestFirst?: string[];
 	onSubmit?: () => void;
 	editorClassName?: string;
+	disabled?: boolean;
 }
 
 const fieldToColorClass: Record<TypedQuickInputField, string> = {
@@ -123,6 +124,7 @@ export default function TypedQuickInput({
 	placeholderTiersLongestFirst = [],
 	onSubmit,
 	editorClassName = '',
+	disabled = false,
 }: Props) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const fittingPlaceholder = useFittingPlaceholder(placeholderTiersLongestFirst, editorRef);
@@ -159,8 +161,10 @@ export default function TypedQuickInput({
 	}
 
 	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+		if (disabled) return;
 		if (event.key === 'Enter') {
 			event.preventDefault();
+			event.stopPropagation();
 			onSubmit?.();
 		}
 	}
@@ -195,10 +199,11 @@ export default function TypedQuickInput({
 		<div className={styles.wrapper}>
 			<div
 				ref={editorRef}
-				contentEditable
+				contentEditable={!disabled}
 				suppressContentEditableWarning
 				role="textbox"
 				aria-label="Task name"
+				aria-disabled={disabled}
 				spellCheck={false}
 				data-placeholder={fittingPlaceholder}
 				className={`field large ${styles.editor} ${editorClassName}`.trim()}

@@ -53,6 +53,7 @@ export default function TaskCreatorPage() {
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmationKey, setConfirmationKey] = useState(0);
+	const [isCreatingTask, setIsCreatingTask] = useState(false);
 
 	const parseResult = useMemo(
 		() => parseTypedQuickInput({
@@ -67,6 +68,8 @@ export default function TaskCreatorPage() {
 
 	const handleCreateRef = useRef(handleCreate);
 	useEffect(() => { handleCreateRef.current = handleCreate; });
+
+	const isCreatingTaskRef = useRef(false);
 
 	useEffect(() => {
 		const shortcuts = SHORTCUTS.taskCreator;
@@ -117,24 +120,33 @@ export default function TaskCreatorPage() {
 	}
 
 	async function handleCreate() {
+		if (isCreatingTaskRef.current) return;
+
 		const description = parseResult.cleanedName.trim();
 		if (!description) {
 			setError('Task name is required');
 			return;
 		}
 
-		const cleanedSteps = steps.map(step => step.trim()).filter(step => step !== '');
+		isCreatingTaskRef.current = true;
+		setIsCreatingTask(true);
+		try {
+			const cleanedSteps = steps.map(step => step.trim()).filter(step => step !== '');
 
-		const task = await addTask(description, effectiveTiming);
-		task.editStepsText(cleanedSteps);
+			const task = await addTask(description, effectiveTiming);
+			task.editStepsText(cleanedSteps);
 
-		await useTasksStore.getState().persistChangedTasks([task]);
-		useTasksStore.getState().refreshTasks();
+			await useTasksStore.getState().persistChangedTasks([task]);
+			useTasksStore.getState().refreshTasks();
 
-		setError(null);
-		setConfirmationKey(previous => previous + 1);
-		if (!shouldKeepTaskDetailsAfterCreating) {
-			handleReset();
+			setError(null);
+			setConfirmationKey(previous => previous + 1);
+			if (!shouldKeepTaskDetailsAfterCreating) {
+				handleReset();
+			}
+		} finally {
+			isCreatingTaskRef.current = false;
+			setIsCreatingTask(false);
 		}
 	}
 
@@ -164,6 +176,7 @@ export default function TaskCreatorPage() {
 					demotedRange={demotedRange}
 					placeholderTiersLongestFirst={['Calculus Homework 3.2 due thursday takes 1-2 hours']}
 					onSubmit={() => handleCreateRef.current()}
+					disabled={isCreatingTask}
 				/>
 			</div>
 
@@ -207,6 +220,7 @@ export default function TaskCreatorPage() {
 					onClick={handleCreate}
 					title="Create Task (Ctrl+Enter)"
 					className={`button primary ${styles.submitButton}`}
+					disabled={isCreatingTask}
 				>
 					Create Task
 				</button>

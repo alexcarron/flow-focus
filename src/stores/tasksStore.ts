@@ -290,8 +290,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				}
 				if (timingOptions.isMandatory !== undefined) task.setMandatory(timingOptions.isMandatory);
 			}
-			set(state => { state.tasks = [...tasksManager.getTasks()]; });
 			await persistTask(task);
+			set(state => { state.tasks = [...tasksManager.getTasks()]; });
 			return task;
 		},
 

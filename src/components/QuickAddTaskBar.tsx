@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
@@ -31,6 +31,8 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 
 	const [name, setName] = useState('');
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
+	const [isCreatingTask, setIsCreatingTask] = useState(false);
+	const isCreatingTaskRef = useRef(false);
 
 	const parseResult = useMemo(
 		() => parseTypedQuickInput({
@@ -48,17 +50,26 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	}
 
 	async function handleCreate() {
+		if (isCreatingTaskRef.current) return;
+
 		const description = parseResult.cleanedName.trim();
 		if (!description) return;
 
-		const timing: TaskTimingOptions = { ...DEFAULT_TIMING, ...parseResult.timing };
-		const task = await addTask(description, timing);
+		isCreatingTaskRef.current = true;
+		setIsCreatingTask(true);
+		try {
+			const timing: TaskTimingOptions = { ...DEFAULT_TIMING, ...parseResult.timing };
+			const task = await addTask(description, timing);
 
-		await useTasksStore.getState().persistChangedTasks([task]);
-		useTasksStore.getState().refreshTasks();
+			await useTasksStore.getState().persistChangedTasks([task]);
+			useTasksStore.getState().refreshTasks();
 
-		setName('');
-		setDemotedRange(null);
+			setName('');
+			setDemotedRange(null);
+		} finally {
+			isCreatingTaskRef.current = false;
+			setIsCreatingTask(false);
+		}
 	}
 
 	return (
@@ -72,12 +83,14 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 				placeholderTiersLongestFirst={placeholderTiersLongestFirst}
 				onSubmit={handleCreate}
 				editorClassName={styles.editor}
+				disabled={isCreatingTask}
 			/>
 			<button
 				type="button"
 				onClick={handleCreate}
 				className={`button primary ${styles.createButton}`}
 				title="Create task (Enter)"
+				disabled={isCreatingTask}
 			>
 				Add
 			</button>
