@@ -37,7 +37,7 @@ interface TasksActions {
 	completeStepAndPrecedingSteps: (task: Task, stepID: string) => void;
 	uncompleteStepAndFollowingSteps: (task: Task, stepID: string) => void;
 	skipNextStep: (task: Task) => void;
-	deferTask: (task: Task, ms: number) => void;
+	deferTaskUntil: (task: Task, date: Date) => void;
 	setDescription: (task: Task, description: string) => void;
 	setSteps: (task: Task, stepTexts: string[]) => void;
 	setStepText: (task: Task, stepID: string, newText: string) => void;
@@ -193,11 +193,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().executeWithPatches(() => task.skipNextStep(), [task]);
 		},
 
-		deferTask(task: Task, ms: number) {
-			get().executeWithPatches(() => {
-				const newStartTime = new Date(Date.now() + ms);
-				task.setStartTime(newStartTime);
-			}, [task]);
+		deferTaskUntil(task: Task, date: Date) {
+			get().executeWithPatches(() => task.setStartTime(date), [task]);
 		},
 
 		setDescription(task: Task, description: string) {

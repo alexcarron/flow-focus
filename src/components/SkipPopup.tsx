@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Task from '../model/task/Task';
 import { useTasksStore } from '../stores/tasksStore';
-import DurationInput from './inputs/DurationInput';
+import DatetimeInput from './inputs/DatetimeInput';
 
 interface Props {
 	task: Task;
@@ -9,17 +9,15 @@ interface Props {
 	onClose: () => void;
 }
 
-const DEFAULT_SKIP_MS = 3_600_000; // 1 hour
-
 export default function SkipPopup({ task, isOpen, onClose }: Props) {
-	const [durationMs, setDurationMs] = useState<number | null>(DEFAULT_SKIP_MS);
-	const deferTask = useTasksStore(s => s.deferTask);
+	const [deferUntilDate, setDeferUntilDate] = useState<Date | null>(null);
+	const deferTaskUntil = useTasksStore(s => s.deferTaskUntil);
 
 	if (!isOpen) return null;
 
 	function handleConfirm() {
-		if (durationMs !== null) {
-			deferTask(task, durationMs);
+		if (deferUntilDate !== null) {
+			deferTaskUntil(task, deferUntilDate);
 		}
 		onClose();
 	}
@@ -31,17 +29,18 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 		>
 			<div className="modal-backdrop" />
 			<div className="modal">
-				<h2 className="modal-title">Skip task for…</h2>
-				<DurationInput
-					value={durationMs}
-					onChange={setDurationMs}
-					label="Defer by"
+				<h2 className="modal-title">Skip task until…</h2>
+				<DatetimeInput
+					value={deferUntilDate}
+					onChange={setDeferUntilDate}
+					label="New Start Date"
+					defaultTimeOfDay="morning"
 				/>
 				<div className="modal-actions">
 					<button onClick={onClose} className="button">
 						Cancel
 					</button>
-					<button onClick={handleConfirm} className="button primary">
+					<button onClick={handleConfirm} className="button primary" disabled={deferUntilDate === null}>
 						Skip
 					</button>
 				</div>
