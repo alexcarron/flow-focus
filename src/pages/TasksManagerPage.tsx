@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTasksStore, selectTasksInPriorityOrder } from '../stores/tasksStore';
 import Task from '../model/task/Task';
 import FilterDropdown from '../components/FilterDropdown';
+import TextInput from '../components/inputs/TextInput';
 import SelectionCheckbox from '../components/SelectionCheckbox';
 import TaskManagerRow, { TaskManagerRowActions, HidableColumnKey } from '../components/TaskManagerRow';
 import TimingOptionsPopup from '../components/TimingOptionsPopup';
@@ -52,6 +53,12 @@ const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority>, st
 	[SortBy.Duration]: 'Duration',
 	[SortBy.RepeatInterval]: 'Repeat',
 };
+
+function applySearch(tasks: Task[], searchText: string): Task[] {
+	const normalizedSearchText = searchText.trim().toLowerCase();
+	if (normalizedSearchText === '') return tasks;
+	return tasks.filter(t => t.getDescription().toLowerCase().includes(normalizedSearchText));
+}
 
 function applyFilter(tasks: Task[], filter: Filter): Task[] {
 	const now = new Date();
@@ -119,6 +126,7 @@ export default function TasksManagerPage() {
 	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reorderSteps, insertStepBeforeStep, insertStepAfterStep, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
 
 	const [filter, setFilter] = useState<Filter>(Filter.All);
+	const [searchText, setSearchText] = useState('');
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
 	const [timingTask, setTimingTask] = useState<Task | null>(null);
@@ -127,11 +135,11 @@ export default function TasksManagerPage() {
 	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
 
 	const now = new Date();
-	const displayed = applyFilter(applySort(tasks, sortBy, sortDir), filter);
+	const displayed = applySearch(applyFilter(applySort(tasks, sortBy, sortDir), filter), searchText);
 
 	useEffect(() => {
 		setSelectedRowIDs(new Set());
-	}, [filter]);
+	}, [filter, searchText]);
 
 	function setRowSelected(rowID: string, isSelected: boolean) {
 		setSelectedRowIDs(current => {
@@ -202,6 +210,13 @@ export default function TasksManagerPage() {
 		<div className={styles.page}>
 			<div className={styles.toolbar}>
 				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
+
+				<TextInput
+					value={searchText}
+					onChange={setSearchText}
+					placeholder="Search tasks..."
+					className={`field ${styles.searchInput}`}
+				/>
 
 				{selectedRowIDs.size > 0 && (
 					<button
@@ -292,7 +307,7 @@ export default function TasksManagerPage() {
 			</div>
 
 			{displayed.length === 0 && (
-				<p className={styles.emptyMessage}>No tasks match the current filter</p>
+				<p className={styles.emptyMessage}>No tasks match the current filter or search</p>
 			)}
 
 			<TimingOptionsPopup

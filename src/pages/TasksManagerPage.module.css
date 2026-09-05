@@ -15,6 +15,12 @@
 	margin-bottom: var(--space-large);
 }
 
+.searchInput {
+	display: inline-block;
+	flex: 1 1 auto;
+	min-width: 12ch;
+}
+
 .deleteSelectedButton {
 	margin-left: auto;
 }
