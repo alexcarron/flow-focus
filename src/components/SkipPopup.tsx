@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Task from '../model/task/Task';
+import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
 import { useTasksStore } from '../stores/tasksStore';
 import DatetimeInput from './inputs/DatetimeInput';
 
@@ -11,15 +12,31 @@ interface Props {
 
 export default function SkipPopup({ task, isOpen, onClose }: Props) {
 	const [deferUntilDate, setDeferUntilDate] = useState<Date | null>(null);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const deferTaskUntil = useTasksStore(s => s.deferTaskUntil);
 	const datetimeInputContainerRef = useRef<HTMLDivElement>(null);
 
 	function handleConfirm(overrideDate: Date | null = deferUntilDate) {
 		if (overrideDate !== null) {
-			deferTaskUntil(task, overrideDate);
+			try {
+				deferTaskUntil(task, overrideDate);
+			} catch (deferError) {
+				if (deferError instanceof StartTimeAfterEndTimeError) {
+					setErrorMessage('The task ends before the start date. Choose a start date before the end time, or change the end time.');
+				} else if (deferError instanceof StartTimeAfterDeadlineError) {
+					setErrorMessage('The task is due before the start date. Choose a start date before the deadline, or change the deadline.');
+				} else {
+					setErrorMessage('Failed to defer task.');
+				}
+				return;
+			}
 		}
 		onClose();
 	}
+
+	useEffect(() => {
+		if (isOpen) setErrorMessage(null);
+	}, [isOpen]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -55,6 +72,7 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 						defaultTimeOfDay="morning"
 					/>
 				</div>
+				{errorMessage && <p className="modal-error">{errorMessage}</p>}
 				<div className="modal-actions">
 					<button onClick={onClose} className="button">
 						Cancel

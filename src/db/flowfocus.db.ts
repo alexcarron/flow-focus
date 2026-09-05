@@ -18,6 +18,7 @@ export interface PlainTaskRow {
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
 	repeatInterval: number | null;
+	reccurenceStartTime: string | null;
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
@@ -73,6 +74,15 @@ export class FlowFocusDB extends Dexie {
 			tasks: '++id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime',
 			settings: 'id',
 			checklist: 'id',
+		});
+		this.version(5).stores({
+			tasks: '++id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime',
+			settings: 'id',
+			checklist: 'id',
+		}).upgrade(transaction => {
+			return transaction.table('tasks').toCollection().modify(row => {
+				row.reccurenceStartTime = row.repeatInterval !== null ? row.startTime : null;
+			});
 		});
 	}
 }

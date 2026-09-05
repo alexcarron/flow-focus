@@ -6,9 +6,10 @@ import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useChecklistStore } from '../stores/checklistStore';
 
-export const BACKUP_FORMAT = 'flow-focus-backup-v3';
+export const BACKUP_FORMAT = 'flow-focus-backup-v4';
 const LEGACY_BACKUP_FORMAT_V1 = 'flow-focus-backup-v1';
 const LEGACY_BACKUP_FORMAT_V2 = 'flow-focus-backup-v2';
+const LEGACY_BACKUP_FORMAT_V3 = 'flow-focus-backup-v3';
 
 export interface BackupStep {
 	id: string;
@@ -25,6 +26,7 @@ export interface BackupTask {
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
 	repeatInterval: number | null;
+	reccurenceStartTime: string | null;
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
@@ -72,6 +74,7 @@ function taskToBackupTask(task: Task): BackupTask {
 		minRequiredTime: state.minDuration,
 		maxRequiredTime: state.maxDuration,
 		repeatInterval: state.repeatInterval,
+		reccurenceStartTime: state.reccurenceStartTime ? state.reccurenceStartTime.toISOString() : null,
 		isMandatory: state.isMandatory,
 		isComplete: state.isComplete,
 		isSkipped: state.isSkipped,
@@ -108,7 +111,8 @@ function isBackupTask(value: unknown): value is BackupTask {
 		Array.isArray(t.steps) && t.steps.every(isBackupStep) &&
 		typeof t.isMandatory === 'boolean' &&
 		typeof t.isComplete === 'boolean' &&
-		typeof t.isSkipped === 'boolean'
+		typeof t.isSkipped === 'boolean' &&
+		(t.reccurenceStartTime === null || typeof t.reccurenceStartTime === 'string')
 	);
 }
 
@@ -182,6 +186,7 @@ function migrateLegacyBackupTaskV1(legacyTask: LegacyBackupTaskV1): BackupTask {
 		minRequiredTime: legacyTask.minRequiredTime,
 		maxRequiredTime: legacyTask.maxRequiredTime,
 		repeatInterval: legacyTask.repeatInterval,
+		reccurenceStartTime: legacyTask.repeatInterval !== null ? legacyTask.startTime : null,
 		isMandatory: legacyTask.isMandatory,
 		isComplete: legacyTask.isComplete,
 		isSkipped: legacyTask.isSkipped,
@@ -201,11 +206,25 @@ function migrateLegacyBackupDataV1(legacyData: LegacyBackupDataV1): BackupData {
 	};
 }
 
+type LegacyBackupTaskV2 = Omit<BackupTask, 'reccurenceStartTime'>;
+
 interface LegacyBackupDataV2 {
 	format: typeof LEGACY_BACKUP_FORMAT_V2;
 	exportedAt: string;
 	settings: AppSettings;
-	tasks: BackupTask[];
+	tasks: LegacyBackupTaskV2[];
+}
+
+function isLegacyBackupTaskV2(value: unknown): value is LegacyBackupTaskV2 {
+	if (typeof value !== 'object' || value === null) return false;
+	const t = value as Record<string, unknown>;
+	return (
+		typeof t.description === 'string' &&
+		Array.isArray(t.steps) && t.steps.every(isBackupStep) &&
+		typeof t.isMandatory === 'boolean' &&
+		typeof t.isComplete === 'boolean' &&
+		typeof t.isSkipped === 'boolean'
+	);
 }
 
 function isLegacyBackupDataV2(value: unknown): value is LegacyBackupDataV2 {
@@ -216,7 +235,7 @@ function isLegacyBackupDataV2(value: unknown): value is LegacyBackupDataV2 {
 		typeof v.exportedAt === 'string' &&
 		typeof v.settings === 'object' && v.settings !== null &&
 		Array.isArray(v.tasks) &&
-		v.tasks.every(isBackupTask)
+		v.tasks.every(isLegacyBackupTaskV2)
 	);
 }
 
@@ -225,8 +244,48 @@ function migrateLegacyBackupDataV2(legacyData: LegacyBackupDataV2): BackupData {
 		format: BACKUP_FORMAT,
 		exportedAt: legacyData.exportedAt,
 		settings: legacyData.settings,
-		tasks: legacyData.tasks,
+		tasks: legacyData.tasks.map(legacyTask => ({
+			...legacyTask,
+			reccurenceStartTime: legacyTask.repeatInterval !== null ? legacyTask.startTime : null,
+		})),
 		checklist: [],
+	};
+}
+
+type LegacyBackupTaskV3 = LegacyBackupTaskV2;
+
+interface LegacyBackupDataV3 {
+	format: typeof LEGACY_BACKUP_FORMAT_V3;
+	exportedAt: string;
+	settings: AppSettings;
+	tasks: LegacyBackupTaskV3[];
+	checklist: ChecklistItem[];
+}
+
+function isLegacyBackupDataV3(value: unknown): value is LegacyBackupDataV3 {
+	if (typeof value !== 'object' || value === null) return false;
+	const v = value as Record<string, unknown>;
+	return (
+		v.format === LEGACY_BACKUP_FORMAT_V3 &&
+		typeof v.exportedAt === 'string' &&
+		typeof v.settings === 'object' && v.settings !== null &&
+		Array.isArray(v.tasks) &&
+		v.tasks.every(isLegacyBackupTaskV2) &&
+		Array.isArray(v.checklist) &&
+		v.checklist.every(isBackupChecklistItem)
+	);
+}
+
+function migrateLegacyBackupDataV3(legacyData: LegacyBackupDataV3): BackupData {
+	return {
+		format: BACKUP_FORMAT,
+		exportedAt: legacyData.exportedAt,
+		settings: legacyData.settings,
+		tasks: legacyData.tasks.map(legacyTask => ({
+			...legacyTask,
+			reccurenceStartTime: legacyTask.repeatInterval !== null ? legacyTask.startTime : null,
+		})),
+		checklist: legacyData.checklist,
 	};
 }
 
@@ -255,6 +314,9 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 	}
 	if (isBackupData(parsed)) {
 		return parsed;
+	}
+	if (isLegacyBackupDataV3(parsed)) {
+		return migrateLegacyBackupDataV3(parsed);
 	}
 	if (isLegacyBackupDataV2(parsed)) {
 		return migrateLegacyBackupDataV2(parsed);

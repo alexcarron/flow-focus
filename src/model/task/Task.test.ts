@@ -86,6 +86,181 @@ describe('Task', () => {
 		});
 	});
 
+	describe('reccurenceStartTime', () => {
+		it('deferring startTime should not shift when the next occurrence starts', () => {
+			const repeatInterval = 24 * 60 * 60 * 1000;
+			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(repeatInterval, intervalStartTime);
+
+			const deferredStartTime = new Date('2023-01-01T20:00:00Z');
+			task.setStartTime(deferredStartTime);
+
+			const beforeNextOccurrence = new Date('2023-01-02T07:00:00Z');
+			expect(task.isPastIntervalEndTime(beforeNextOccurrence)).toBe(false);
+
+			const afterNextOccurrence = new Date('2023-01-02T09:00:00Z');
+			expect(task.isPastIntervalEndTime(afterNextOccurrence)).toBe(true);
+
+			task.onPastIntervalEndTime(afterNextOccurrence);
+
+			expect(task.getStartTime()).toEqual(new Date('2023-01-02T08:00:00Z'));
+		});
+
+		it('setFromTaskTimingOptions should reset reccurenceStartTime when repeat interval is turned on', () => {
+			const startTime = new Date('2023-01-01T08:00:00Z');
+			task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				startTime,
+				deadline: null,
+				repeatInterval: 1000,
+			});
+
+			expect(task.isRecurring()).toBe(true);
+			expect(task.getReccurenceStartTime()).toEqual(startTime);
+			expect(task.getDeadline()).toEqual(new Date(startTime.getTime() + 1000));
+		});
+
+		it('setFromTaskTimingOptions should reset reccurenceStartTime and clamp the deadline when a shorter interval no longer fits it', () => {
+			const startTime = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(2000, startTime);
+
+			task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				repeatInterval: 1000,
+			});
+
+			expect(task.getReccurenceStartTime()).toEqual(startTime);
+			expect(task.getDeadline()).toEqual(new Date(startTime.getTime() + 1000));
+		});
+
+		it('setFromTaskTimingOptions should clear reccurenceStartTime when repeat interval is turned off', () => {
+			task.makeRecurring(1000, new Date('2023-01-01T08:00:00Z'));
+
+			task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				repeatInterval: null,
+			});
+
+			expect(task.isRecurring()).toBe(false);
+			expect(task.getReccurenceStartTime()).toBeNull();
+		});
+	});
+
+	describe('start time cannot be after end time', () => {
+		it('updateStartTime should throw if the new start time is after the end time', () => {
+			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.updateStartTime(new Date('2023-01-01T13:00:00Z'))).toThrow();
+			expect(task.getStartTime()).toBeNull();
+		});
+
+		it('updateStartTime should not throw if the new start time is before the end time', () => {
+			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.updateStartTime(new Date('2023-01-01T11:00:00Z'))).not.toThrow();
+			expect(task.getStartTime()).toEqual(new Date('2023-01-01T11:00:00Z'));
+		});
+
+		it('setFromTaskTimingOptions should throw if the new start time is after the new end time', () => {
+			expect(() => task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				startTime: new Date('2023-01-01T13:00:00Z'),
+				endTime: new Date('2023-01-01T12:00:00Z'),
+			})).toThrow();
+		});
+
+		it('setFromTaskTimingOptions should throw when turning on recurrence would start after the existing end time', () => {
+			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				startTime: new Date('2023-01-01T13:00:00Z'),
+				repeatInterval: 1000,
+			})).toThrow();
+		});
+
+		it('makeRecurring should throw if intervalStartTime is after the existing end time', () => {
+			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.makeRecurring(1000, new Date('2023-01-01T13:00:00Z'))).toThrow();
+		});
+
+		it('restoreState should throw if the restored state has a start time after its end time', () => {
+			const state = task.getState();
+
+			expect(() => task.restoreState({
+				...state,
+				startTime: new Date('2023-01-01T13:00:00Z'),
+				endTime: new Date('2023-01-01T12:00:00Z'),
+			})).toThrow();
+		});
+	});
+
+	describe('start time cannot be after deadline', () => {
+		it('updateStartTime should throw if the new start time is after the deadline', () => {
+			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.updateStartTime(new Date('2023-01-01T13:00:00Z'))).toThrow();
+			expect(task.getStartTime()).toBeNull();
+		});
+
+		it('updateStartTime should not throw if the new start time is before the deadline', () => {
+			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.updateStartTime(new Date('2023-01-01T11:00:00Z'))).not.toThrow();
+			expect(task.getStartTime()).toEqual(new Date('2023-01-01T11:00:00Z'));
+		});
+
+		it('setFromTaskTimingOptions should throw if the new start time is after the new deadline', () => {
+			expect(() => task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				startTime: new Date('2023-01-01T13:00:00Z'),
+				deadline: new Date('2023-01-01T12:00:00Z'),
+			})).toThrow();
+		});
+
+		it('setFromTaskTimingOptions should throw when turning on recurrence would start after the existing deadline', () => {
+			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				startTime: new Date('2023-01-01T13:00:00Z'),
+				repeatInterval: 1000,
+			})).toThrow();
+		});
+
+		it('makeRecurring should throw if intervalStartTime is after the existing deadline', () => {
+			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+
+			expect(() => task.makeRecurring(1000, new Date('2023-01-01T13:00:00Z'))).toThrow();
+		});
+
+		it('makeRecurring should not throw when the existing deadline is before the interval end but still after intervalStartTime', () => {
+			task.setDeadline(new Date('2023-01-01T10:30:00Z'));
+
+			expect(() => task.makeRecurring(60 * 60 * 1000, new Date('2023-01-01T10:00:00Z'))).not.toThrow();
+			expect(task.getDeadline()).toEqual(new Date('2023-01-01T10:30:00Z'));
+		});
+
+		it('restoreState should throw if the restored state has a start time after its deadline', () => {
+			const state = task.getState();
+
+			expect(() => task.restoreState({
+				...state,
+				startTime: new Date('2023-01-01T13:00:00Z'),
+				deadline: new Date('2023-01-01T12:00:00Z'),
+			})).toThrow();
+		});
+
+		it('onPastIntervalEndTime should throw if the recurrence deadline is already before the reccurenceStartTime', () => {
+			task.setRepeatInterval(60 * 60 * 1000);
+			task.setReccurenceStartTime(new Date('2023-01-01T10:00:00Z'));
+			task.setDeadline(new Date('2023-01-01T09:00:00Z'));
+
+			expect(() => task.onPastIntervalEndTime(new Date('2023-01-01T10:30:00Z'))).toThrow();
+		});
+	});
+
 	describe('isPastIntervalEndTime', () => {
 		it('should return true if current time is past interval end time', () => {
 			// 1 day

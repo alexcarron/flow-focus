@@ -41,3 +41,8 @@
 	justify-content: flex-end;
 	gap: var(--space-small);
 }
+
+.modal-error {
+	color: var(--color-danger-text);
+	font-size: var(--font-size-small);
+}

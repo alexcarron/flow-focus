@@ -11,6 +11,7 @@ import DatetimeInput from '../components/inputs/DatetimeInput';
 import TypedQuickInput from '../components/inputs/TypedQuickInput';
 import TimingOptionsInput from '../components/inputs/TimingOptionsInput';
 import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
+import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
 
 const DEFAULT_TIMING: TaskTimingOptions = {
@@ -142,7 +143,19 @@ export default function TaskCreatorPage() {
 				...steps.map(step => step.trim()).filter(step => step !== ''),
 			];
 
-			const task = await addTask(description, effectiveTiming);
+			let task;
+			try {
+				task = await addTask(description, effectiveTiming);
+			} catch (creationError) {
+				if (creationError instanceof StartTimeAfterEndTimeError) {
+					setError('Start time cannot be after end time.');
+				} else if (creationError instanceof StartTimeAfterDeadlineError) {
+					setError('Start time cannot be after the deadline.');
+				} else {
+					setError('Failed to create task.');
+				}
+				return;
+			}
 			task.editStepsText(cleanedSteps);
 
 			await useTasksStore.getState().persistChangedTasks([task]);

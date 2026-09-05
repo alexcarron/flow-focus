@@ -15,6 +15,7 @@ export function serializeTask(task: Task, existingId?: number): PlainTaskRow {
 		minRequiredTime: state.minDuration,
 		maxRequiredTime: state.maxDuration,
 		repeatInterval: state.repeatInterval,
+		reccurenceStartTime: state.reccurenceStartTime ? state.reccurenceStartTime.toISOString() : null,
 		isMandatory: state.isMandatory,
 		isComplete: state.isComplete,
 		isSkipped: state.isSkipped,
@@ -31,6 +32,7 @@ export function deserializeRow(row: PlainTaskRow): {
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
 	repeatInterval: number | null;
+	reccurenceStartTime: Date | null;
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
@@ -45,6 +47,7 @@ export function deserializeRow(row: PlainTaskRow): {
 		minRequiredTime: row.minRequiredTime,
 		maxRequiredTime: row.maxRequiredTime,
 		repeatInterval: row.repeatInterval,
+		reccurenceStartTime: row.reccurenceStartTime ? new Date(row.reccurenceStartTime) : null,
 		isMandatory: row.isMandatory,
 		isComplete: row.isComplete,
 		isSkipped: row.isSkipped,

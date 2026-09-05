@@ -51,7 +51,6 @@ export default function FocusPage() {
 		return () => window.removeEventListener('keydown', onKeyDown);
 	}, [priorityTask, completeNextStep]);
 
-	// Double-tap → complete next step
 	function onTouchStart(event: React.TouchEvent) {
 		const target = event.target as HTMLElement;
 		if (

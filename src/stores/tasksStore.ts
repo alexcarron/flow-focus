@@ -112,6 +112,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 					task.setMinRequiredTime(data.minRequiredTime);
 					task.setMaxRequiredTime(data.maxRequiredTime);
 					task.setRepeatInterval(data.repeatInterval);
+					task.setReccurenceStartTime(data.reccurenceStartTime);
 					task.setMandatory(data.isMandatory);
 					task.setComplete(data.isComplete);
 					task.setSkipped(data.isSkipped);
@@ -194,7 +195,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		deferTaskUntil(task: Task, date: Date) {
-			get().executeWithPatches(() => task.setStartTime(date), [task]);
+			get().executeWithPatches(() => task.updateStartTime(date), [task]);
 		},
 
 		setDescription(task: Task, description: string) {
@@ -275,6 +276,13 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		async addTask(description: string, timingOptions?: Partial<TaskTimingOptions>) {
+			if (timingOptions?.startTime !== undefined && timingOptions?.endTime !== undefined) {
+				Task.assertStartTimeNotAfterEndTime(timingOptions.startTime, timingOptions.endTime);
+			}
+			if (timingOptions?.startTime !== undefined && timingOptions?.deadline !== undefined) {
+				Task.assertStartTimeNotAfterDeadline(timingOptions.startTime, timingOptions.deadline);
+			}
+
 			const task = tasksManager.addCreatedTask(description);
 			if (timingOptions) {
 				if (timingOptions.startTime !== undefined) task.setStartTime(timingOptions.startTime);
@@ -312,6 +320,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				task.setMinRequiredTime(bt.minRequiredTime);
 				task.setMaxRequiredTime(bt.maxRequiredTime);
 				task.setRepeatInterval(bt.repeatInterval);
+				task.setReccurenceStartTime(bt.reccurenceStartTime ? new Date(bt.reccurenceStartTime) : null);
 				task.setMandatory(bt.isMandatory);
 				task.setComplete(bt.isComplete);
 				task.setSkipped(bt.isSkipped);

@@ -5,6 +5,7 @@ import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
 import Step from "./Step";
 import TaskState from "./TaskState";
+import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from "./TaskTimingError";
 
 export default class Task {
 	static [immerable] = true;
@@ -21,6 +22,7 @@ export default class Task {
 	protected minRequiredTime: number | null = null;
 	protected maxRequiredTime: number | null = null;
 	protected repeatInterval: number | null = null;
+	protected reccurenceStartTime: Date | null = null;
 	protected isMandatory: boolean = false;
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
@@ -45,6 +47,18 @@ export default class Task {
 		return this.minRequiredTime === this.maxRequiredTime;
 	}
 
+	static assertStartTimeNotAfterEndTime(startTime: Date | null, endTime: Date | null): void {
+		if (startTime !== null && endTime !== null && startTime.getTime() > endTime.getTime()) {
+			throw new StartTimeAfterEndTimeError(startTime, endTime);
+		}
+	}
+
+	static assertStartTimeNotAfterDeadline(startTime: Date | null, deadline: Date | null): void {
+		if (startTime !== null && deadline !== null && startTime.getTime() > deadline.getTime()) {
+			throw new StartTimeAfterDeadlineError(startTime, deadline);
+		}
+	}
+
 	getStartTime(): Date | null {return this.startTime};
 
 	setStartTime(startTime: Date | null): void {this.startTime = startTime};
@@ -52,6 +66,16 @@ export default class Task {
 	getEndTime(): Date | null {return this.endTime}
 
 	setEndTime(endTime: Date | null): void {this.endTime = endTime};
+
+	/**
+	 * Updates the start time and ensures that the new start time is not after the end time or deadline.
+	 * @throws Error if the new start time is after the end time or deadline
+	 */
+	updateStartTime(newStartTime: Date): void {
+		Task.assertStartTimeNotAfterEndTime(newStartTime, this.endTime);
+		Task.assertStartTimeNotAfterDeadline(newStartTime, this.deadline);
+		this.setStartTime(newStartTime);
+	}
 
 	getDeadline(): Date | null {return this.deadline};
 
@@ -104,32 +128,49 @@ export default class Task {
 
 	isRecurring(): boolean {return this.repeatInterval !== null};
 
+	getReccurenceStartTime(): Date | null {return this.reccurenceStartTime};
+
+	setReccurenceStartTime(reccurenceStartTime: Date | null): void {this.reccurenceStartTime = reccurenceStartTime};
+
+	/**
+	 * Sets reccurenceStartTime to intervalStartTime. Future occurrences are always
+	 * computed from reccurenceStartTime, not from startTime, so deferring startTime (see SkipPopup)
+	 * only postpones the current occurrence without shifting later ones.
+	 */
 	makeRecurring(repeatInterval: number, intervalStartTime: Date): void {
+		Task.assertStartTimeNotAfterEndTime(intervalStartTime, this.endTime);
+
+		const intervalEndTime = new Date(intervalStartTime.getTime() + repeatInterval);
+		const finalDeadline =
+			this.deadline === null || this.deadline.getTime() > intervalEndTime.getTime()
+				? intervalEndTime
+				: this.deadline;
+
+		Task.assertStartTimeNotAfterDeadline(intervalStartTime, finalDeadline);
+
 		this.setRepeatInterval(repeatInterval);
+		this.setReccurenceStartTime(intervalStartTime);
 		this.setStartTime(intervalStartTime);
+		this.setDeadline(finalDeadline);
+	};
 
-		const intervalEndTime = new Date(this.startTime!.getTime() + repeatInterval);
-
-		if (
-			this.deadline === null ||
-			this.deadline.getTime() > intervalEndTime.getTime()
-		) {
-			this.setDeadline(intervalEndTime);
-		}
+	makeNonRecurring(): void {
+		this.setRepeatInterval(null);
+		this.setReccurenceStartTime(null);
 	};
 
 	isPastIntervalEndTime(currentTime: Date): boolean {
-		if (!this.isRecurring() || !this.startTime || !this.repeatInterval) {
+		if (!this.isRecurring() || !this.reccurenceStartTime || !this.repeatInterval) {
 			return false;
 		}
 
-		const intervalEndTime = new Date(this.startTime.getTime() + this.repeatInterval);
+		const intervalEndTime = new Date(this.reccurenceStartTime.getTime() + this.repeatInterval);
 
 		return currentTime.getTime() > intervalEndTime.getTime();
 	};
 
 	onPastIntervalEndTime(currentTime: Date): void {
-		if (!this.isRecurring() || !this.startTime || !this.repeatInterval) {
+		if (!this.isRecurring() || !this.reccurenceStartTime || !this.repeatInterval) {
 			return;
 		}
 
@@ -138,14 +179,12 @@ export default class Task {
 		let isNextIntervalStartTimeInFuture: boolean = false;
 		while (!isNextIntervalStartTimeInFuture) {
 			const nextIntervalStartTime: Date =
-				new Date(this.startTime.getTime() + this.repeatInterval);
+				new Date(this.reccurenceStartTime.getTime() + this.repeatInterval);
 
 			if (nextIntervalStartTime.getTime() > currentTime.getTime()) {
 				isNextIntervalStartTimeInFuture = true;
 			}
 			else {
-				this.setStartTime(nextIntervalStartTime);
-
 				if (this.deadline !== null) {
 					const nextIntervalDeadline =
 						new Date(this.deadline.getTime() + this.repeatInterval);
@@ -159,9 +198,15 @@ export default class Task {
 
 					this.setEndTime(nextIntervalEndTime);
 				}
+
+				this.setReccurenceStartTime(nextIntervalStartTime);
 			}
 		}
 
+		this.setStartTime(this.reccurenceStartTime);
+
+		Task.assertStartTimeNotAfterEndTime(this.startTime, this.endTime);
+		Task.assertStartTimeNotAfterDeadline(this.startTime, this.deadline);
 	};
 
 	protected resetProgress() {
@@ -279,8 +324,8 @@ export default class Task {
 
 	hasTaskStarted(currentTime: Date): boolean {
 		return (
-			this.getStartTime() === null || this.getStartTime()! <= currentTime &&
-			this.getEndTime() === null || this.getEndTime()! >= currentTime
+			(this.getStartTime() === null || this.getStartTime()! <= currentTime) &&
+			(this.getEndTime() === null || this.getEndTime()! >= currentTime)
 		);
 	}
 
@@ -510,13 +555,31 @@ export default class Task {
 	}
 
 	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
+		const isRepeatIntervalChanging = taskTimingOptions.repeatInterval !== this.repeatInterval;
+		const isBecomingRecurring = isRepeatIntervalChanging && taskTimingOptions.repeatInterval !== null;
+		const finalStartTime = isBecomingRecurring
+			? taskTimingOptions.startTime ?? new Date()
+			: taskTimingOptions.startTime;
+
+		Task.assertStartTimeNotAfterEndTime(finalStartTime, taskTimingOptions.endTime);
+		Task.assertStartTimeNotAfterDeadline(finalStartTime, taskTimingOptions.deadline);
+
 		this.setStartTime(taskTimingOptions.startTime);
 		this.setEndTime(taskTimingOptions.endTime);
 		this.setDeadline(taskTimingOptions.deadline);
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
-		this.setRepeatInterval(taskTimingOptions.repeatInterval);
 		this.setMandatory(taskTimingOptions.isMandatory)
+
+		if (isRepeatIntervalChanging && taskTimingOptions.repeatInterval !== null) {
+			this.makeRecurring(taskTimingOptions.repeatInterval, taskTimingOptions.startTime ?? new Date());
+		}
+		else if (isRepeatIntervalChanging && taskTimingOptions.repeatInterval === null) {
+			this.makeNonRecurring();
+		}
+		else {
+			this.setRepeatInterval(taskTimingOptions.repeatInterval);
+		}
 	}
 
 	getMinSlackTime(currentTime: Date): number {
@@ -578,12 +641,16 @@ export default class Task {
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
 			repeatInterval: this.repeatInterval,
+			reccurenceStartTime: this.reccurenceStartTime,
 			steps: this.steps.map(step => ({ ...step })),
 			lastActionedStep: this.lastActionedStep
 		};
 	}
 
 	restoreState(taskState: TaskState) {
+		Task.assertStartTimeNotAfterEndTime(taskState.startTime, taskState.endTime);
+		Task.assertStartTimeNotAfterDeadline(taskState.startTime, taskState.deadline);
+
 		this.setDescription(taskState.description);
 		this.setComplete(taskState.isComplete);
 		this.setMandatory(taskState.isMandatory);
@@ -594,6 +661,7 @@ export default class Task {
 		this.setMinRequiredTime(taskState.minDuration);
 		this.setMaxRequiredTime(taskState.maxDuration);
 		this.setRepeatInterval(taskState.repeatInterval);
+		this.setReccurenceStartTime(taskState.reccurenceStartTime);
 		this.replaceAllSteps(taskState.steps.map(step => ({ ...step })));
 		this.setLastActionedStep(taskState.lastActionedStep);
 	}

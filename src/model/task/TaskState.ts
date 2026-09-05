@@ -8,6 +8,7 @@ type TaskState = {
 	isComplete: boolean,
 	isSkipped: boolean,
 	lastActionedStep: {stepID: string, status: StepStatus} | null,
+	reccurenceStartTime: Date | null,
 } & TaskTimingOptions;
 
 export default TaskState;
