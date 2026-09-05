@@ -11,6 +11,7 @@ type TimeOfDayPreset = 'morning' | 'night';
 interface Props {
 	value: Date | null;
 	onChange: (value: Date | null) => void;
+	onSubmit?: (committedValue: Date | null) => void;
 	label?: string;
 	description?: string;
 	className?: string;
@@ -60,7 +61,7 @@ function formatTimeOfDay(hour: number, minute: number): string {
 
 const shortcuts = SHORTCUTS.datetime;
 
-export default function DatetimeInput({ value, onChange, label, description, className = '', defaultTimeOfDay }: Props) {
+export default function DatetimeInput({ value, onChange, onSubmit, label, description, className = '', defaultTimeOfDay }: Props) {
 	const morningTime = useSettingsStore(s => s.morningTime);
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morning = Time.fromString(morningTime);
@@ -109,12 +110,17 @@ export default function DatetimeInput({ value, onChange, label, description, cla
 		? parseDatePhrase({ text: typedText, morningTime: morning, nightTime: night })
 		: null;
 
-	function commitTypedText() {
-		if (parsedTypedPhrase) {
-			onChange(resolveTypedPhraseDate(parsedTypedPhrase.date, parsedTypedPhrase.timeOfDay));
+	function commitTypedText(): Date | null {
+		if (!parsedTypedPhrase) {
+			setIsTypingMode(false);
+			setTypedText('');
+			return value;
 		}
+		const committedDate = resolveTypedPhraseDate(parsedTypedPhrase.date, parsedTypedPhrase.timeOfDay);
+		onChange(committedDate);
 		setIsTypingMode(false);
 		setTypedText('');
+		return committedDate;
 	}
 
 	function cancelTypedText() {
@@ -155,6 +161,9 @@ export default function DatetimeInput({ value, onChange, label, description, cla
 		} else if (matchesShortcut(event, shortcuts.clear)) {
 			event.preventDefault();
 			onChange(null);
+		} else if (matchesShortcut(event, shortcuts.submit)) {
+			event.preventDefault();
+			onSubmit?.(value);
 		} else if (isUnmodifiedLetterKeydown(event)) {
 			event.preventDefault();
 			setTypedText(event.key);
@@ -178,7 +187,8 @@ export default function DatetimeInput({ value, onChange, label, description, cla
 						onKeyDown={event => {
 							if (event.key === 'Enter') {
 								event.preventDefault();
-								commitTypedText();
+								const committedValue = commitTypedText();
+								if (event.ctrlKey) onSubmit?.(committedValue);
 							} else if (event.key === 'Escape') {
 								event.preventDefault();
 								cancelTypedText();

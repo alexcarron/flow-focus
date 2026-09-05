@@ -13,6 +13,7 @@ export const SHORTCUTS = {
 		nextDay: { key: 'arrowup', shift: true },
 		prevDay: { key: 'arrowdown', shift: true },
 		clear: { key: 'backspace', alt: true },
+		submit: { key: 'enter', ctrl: true },
 	},
 	duration: {
 		increment1: { key: 'arrowup' },
