@@ -51,6 +51,7 @@ interface TasksActions {
 	reorderSteps: (task: Task, newStepIDOrder: string[]) => void;
 	insertStepBeforeStep: (task: Task, stepID: string) => string;
 	insertStepAfterStep: (task: Task, stepID: string) => string;
+	addFirstStep: (task: Task) => string;
 	deleteStep: (task: Task, stepID: string) => void;
 
 	addTask: (description: string, timingOptions?: Partial<TaskTimingOptions>) => Promise<Task>;
@@ -267,6 +268,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			let newStepID = '';
 			get().executeWithPatches(() => {
 				newStepID = task.createStepRightOfStep(stepID).id;
+			}, [task]);
+			return newStepID;
+		},
+
+		addFirstStep(task: Task) {
+			let newStepID = '';
+			get().executeWithPatches(() => {
+				newStepID = task.addStep('').id;
 			}, [task]);
 			return newStepID;
 		},

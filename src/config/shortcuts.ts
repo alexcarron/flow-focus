@@ -43,6 +43,7 @@ export const SHORTCUTS = {
 	stepInsert: {
 		insertAfter: { key: 'enter' },
 		insertBefore: { key: 'enter', ctrl: true },
+		insertFirst: { key: 'enter', shift: true },
 	},
 	checklistInsert: {
 		insertAfter: { key: 'enter' },

@@ -58,6 +58,7 @@ export default function TaskCard({ task }: Props) {
 	const [isSkipOpen, setIsSkipOpen] = useState(false);
 	const [isTimingOpen, setIsTimingOpen] = useState(false);
 	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; x: number; y: number } | null>(null);
+	const [cardContextMenu, setCardContextMenu] = useState<{ x: number; y: number } | null>(null);
 	const [stepPendingFocusID, setStepPendingFocusID] = useState<string | null>(null);
 	const [stepPendingDeletionID, setStepPendingDeletionID] = useState<string | null>(null);
 	const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
@@ -153,7 +154,21 @@ export default function TaskCard({ task }: Props) {
 	const stepPendingDeletion = stepPendingDeletionID === null ? null : displaySteps.find(step => step.id === stepPendingDeletionID) ?? null;
 
 	return (
-		<div className={styles.card}>
+		<div
+			className={styles.card}
+			onContextMenu={event => {
+				if (steps.length === 0) {
+					event.preventDefault();
+					setCardContextMenu({ x: event.clientX, y: event.clientY });
+				}
+			}}
+			onKeyDown={event => {
+				if (steps.length === 0 && matchesShortcut(event, SHORTCUTS.stepInsert.insertFirst)) {
+					event.preventDefault();
+					setStepPendingFocusID(store.addFirstStep(task));
+				}
+			}}
+		>
 			<div className={styles.progressTrack}>
 				<div
 					className={styles.progressBar}
@@ -169,12 +184,12 @@ export default function TaskCard({ task }: Props) {
 				className={styles.description}
 			/>
 
-			{task.hasNextStep() && (
+			{steps.length > 0 && (
 				<div ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={draggingStepID !== null ? `${styles.steps} ${styles.stepsDragging}` : styles.steps}>
 					{displaySteps.map(step => {
 						const isCompleted = task.isStepComplete(step.id);
 						const isCurrentStep = step.id === nextStep?.id;
-						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(step.id) < nextStepIndex;
+						const isPreviousStep = nextStep === null ? isCompleted : task.getStepIndex(step.id) < nextStepIndex;
 						const isPlaceholder = step.id === draggingStepID;
 
 						return (
@@ -279,7 +294,7 @@ export default function TaskCard({ task }: Props) {
 						if (!draggingStep) return null;
 						const isCompleted = task.isStepComplete(draggingStep.id);
 						const isCurrentStep = draggingStep.id === nextStep?.id;
-						const isPreviousStep = nextStepIndex !== -1 && task.getStepIndex(draggingStep.id) < nextStepIndex;
+						const isPreviousStep = nextStep === null ? isCompleted : task.getStepIndex(draggingStep.id) < nextStepIndex;
 
 						return (
 							<div
@@ -373,6 +388,14 @@ export default function TaskCard({ task }: Props) {
 					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.stepID) },
 					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => setStepPendingDeletionID(stepContextMenu.stepID) },
 				] : []}
+			/>
+
+			<ContextMenu
+				position={cardContextMenu}
+				onClose={() => setCardContextMenu(null)}
+				items={[
+					{ label: 'Add a step', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertFirst), onClick: () => setStepPendingFocusID(store.addFirstStep(task)) },
+				]}
 			/>
 
 			<ConfirmModal
