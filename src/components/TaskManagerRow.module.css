@@ -96,6 +96,18 @@
 	height: 0.75rem;
 }
 
+.stepsCell [data-step-row] {
+	align-items: flex-start;
+}
+
+.stepsCell [data-step] {
+	margin-top: 0.25rem;
+}
+
+.stepsCell .stepRowElevated {
+	align-items: flex-start;
+}
+
 .stepRowPlaceholder {
 	position: relative;
 	border-radius: var(--radius-medium);

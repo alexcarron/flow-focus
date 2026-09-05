@@ -42,7 +42,7 @@
 
 .stepRow {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: var(--space-small);
 	cursor: text;
 }
@@ -80,6 +80,7 @@
 	flex-shrink: 0;
 	width: 0.85rem;
 	height: 0.85rem;
+	margin-top: 0.25rem;
 	border-radius: var(--radius-small);
 	border: 1px solid var(--color-border-control);
 	background-color: transparent;
@@ -93,6 +94,7 @@
 .stepRowCurrent .stepCheckbox {
 	width: 1rem;
 	height: 1rem;
+	margin-top: 0.3rem;
 }
 
 .stepCheckboxChecked {
