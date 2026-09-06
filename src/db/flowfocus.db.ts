@@ -43,13 +43,15 @@ export interface QuickToDoChecklistRow extends PersistedRecordMetadata {
 	items: QuickToDoChecklistItem[];
 }
 
+export const DEFAULT_FLOW_FOCUS_DATABASE_NAME = 'FlowFocusDB';
+
 export class FlowFocusDB extends Dexie {
 	tasks!: Table<PlainTaskRow, string>;
 	settings!: Table<SettingsRow, number>;
 	quickToDoChecklist!: Table<QuickToDoChecklistRow, number>;
 
-	constructor() {
-		super('FlowFocusDB');
+	constructor(databaseName: string = DEFAULT_FLOW_FOCUS_DATABASE_NAME) {
+		super(databaseName);
 		this.version(1).stores({
 			tasks: '++id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime',
 		});
@@ -93,12 +95,6 @@ export class FlowFocusDB extends Dexie {
 				row.reccurenceStartTime = row.repeatInterval !== null ? row.startTime : null;
 			});
 		});
-		// Dexie cannot change a table's primary key within one version bump
-		// (throws "Not yet support for changing primary key"), so the identity
-		// migration stages rows through a differently-named table across two versions:
-		// version 6 copies legacy auto-increment rows into `tasksWithIdentity`
-		// (keyed by the new UUID `id`), then version 7 recreates `tasks` under
-		// that same new schema and moves the staged rows back into it.
 		this.version(6).stores({
 			tasks: null,
 			tasksWithIdentity: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
