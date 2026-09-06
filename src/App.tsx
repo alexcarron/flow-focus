@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import { useTasksStore } from './stores/tasksStore';
 import { useSettingsStore } from './stores/settingsStore';
-import FocusPage from './pages/FocusPage';
-import TasksManagerPage from './pages/TasksManagerPage';
-import TaskCreatorPage from './pages/TaskCreatorPage';
-import QuickToDoPage from './pages/QuickToDoPage';
-import SettingsPage from './pages/SettingsPage';
+import FocusPage from './components/pages/FocusPage';
+import TasksManagerPage from './components/pages/TasksManagerPage';
+import TaskCreatorPage from './components/pages/TaskCreatorPage';
+import QuickToDoPage from './components/pages/QuickToDoPage';
+import SettingsPage from './components/pages/SettingsPage';
 import styles from './App.module.css';
 
 function navLinkClass({ isActive }: { isActive: boolean }) {

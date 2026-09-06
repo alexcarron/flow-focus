@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useTasksStore, selectTasksInPriorityOrder } from '../stores/tasksStore';
-import Task from '../model/task/Task';
-import FilterDropdown from '../components/FilterDropdown';
-import TextInput from '../components/inputs/TextInput';
-import SelectionCheckbox from '../components/SelectionCheckbox';
-import TaskManagerRow, { TaskManagerRowActions, HidableColumnKey } from '../components/TaskManagerRow';
-import TimingOptionsPopup from '../components/TimingOptionsPopup';
-import ConfirmModal from '../components/ConfirmModal';
-import CheckIcon from '../components/svg-icons/CheckIcon';
-import MandatoryIcon from '../components/svg-icons/MandatoryIcon';
-import SortAscIcon from '../components/svg-icons/SortAscIcon';
-import SortDescIcon from '../components/svg-icons/SortDescIcon';
-import SortUnsortedIcon from '../components/svg-icons/SortUnsortedIcon';
-import { useRowSelectionDrag } from '../hooks/useRowSelectionDrag';
-import { useOverflowAwareTableColumns } from '../hooks/useOverflowAwareTableColumns';
-import { mergeRefs } from '../utilities/mergeRefs';
+import { useTasksStore, selectTasksInPriorityOrder } from '../../stores/tasksStore';
+import Task from '../../model/task/Task';
+import FilterDropdown from '../FilterDropdown';
+import TextInput from '../inputs/TextInput';
+import SelectionCheckbox from '../SelectionCheckbox';
+import TaskManagerRow, { TaskManagerRowActions, HidableColumnKey } from '../TaskManagerRow';
+import TimingOptionsPopup from '../TimingOptionsPopup';
+import ConfirmModal from '../ConfirmModal';
+import CheckIcon from '../svg-icons/CheckIcon';
+import MandatoryIcon from '../svg-icons/MandatoryIcon';
+import SortAscIcon from '../svg-icons/SortAscIcon';
+import SortDescIcon from '../svg-icons/SortDescIcon';
+import SortUnsortedIcon from '../svg-icons/SortUnsortedIcon';
+import { useRowSelectionDrag } from '../../hooks/useRowSelectionDrag';
+import { useOverflowAwareTableColumns } from '../../hooks/useOverflowAwareTableColumns';
+import { mergeRefs } from '../../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }

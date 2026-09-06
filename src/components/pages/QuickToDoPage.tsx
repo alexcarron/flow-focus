@@ -1,4 +1,4 @@
-import QuickToDoChecklistSection from '../components/QuickToDoChecklistSection';
+import QuickToDoChecklistSection from '../QuickToDoChecklistSection';
 import styles from './QuickToDoPage.module.css';
 
 export default function QuickToDoPage() {

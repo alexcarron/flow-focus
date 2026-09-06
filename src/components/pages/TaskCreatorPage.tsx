@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useTasksStore } from '../stores/tasksStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import TaskTimingOptions from '../model/task/TaskTimingOptions';
-import parseTypedQuickInput, { escapeTokenInText } from '../model/typed-quick-input/parseTypedQuickInput';
-import { TypedQuickInputToken } from '../model/typed-quick-input/TypedQuickInputToken';
-import Time from '../model/time-management/Time';
-import ArrayInput, { ArrayInputHandle } from '../components/inputs/ArrayInput';
-import CheckboxInput from '../components/inputs/CheckboxInput';
-import DatetimeInput from '../components/inputs/DatetimeInput';
-import TypedQuickInput from '../components/inputs/TypedQuickInput';
-import TimingOptionsInput from '../components/inputs/TimingOptionsInput';
-import { SHORTCUTS, matchesShortcut } from '../config/shortcuts';
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
+import { useTasksStore } from '../../stores/tasksStore';
+import { useSettingsStore } from '../../stores/settingsStore';
+import TaskTimingOptions from '../../model/task/TaskTimingOptions';
+import parseTypedQuickInput, { escapeTokenInText } from '../../model/typed-quick-input/parseTypedQuickInput';
+import { TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
+import Time from '../../model/time-management/Time';
+import ArrayInput, { ArrayInputHandle } from '../inputs/ArrayInput';
+import CheckboxInput from '../inputs/CheckboxInput';
+import DatetimeInput from '../inputs/DatetimeInput';
+import TypedQuickInput from '../inputs/TypedQuickInput';
+import TimingOptionsInput from '../inputs/TimingOptionsInput';
+import { SHORTCUTS, matchesShortcut } from '../../config/shortcuts';
+import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
 
 const DEFAULT_TIMING: TaskTimingOptions = {

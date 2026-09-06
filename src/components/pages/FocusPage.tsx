@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { useTasksStore, selectPriorityTask } from '../stores/tasksStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import TaskCard from '../components/TaskCard';
-import QuickAddTaskBar from '../components/QuickAddTaskBar';
-import QuickToDoChecklistSection from '../components/QuickToDoChecklistSection';
+import { useTasksStore, selectPriorityTask } from '../../stores/tasksStore';
+import { useSettingsStore } from '../../stores/settingsStore';
+import TaskCard from '../TaskCard';
+import QuickAddTaskBar from '../QuickAddTaskBar';
+import QuickToDoChecklistSection from '../QuickToDoChecklistSection';
 import styles from './FocusPage.module.css';
 
 const PRIORITY_TASK_PLACEHOLDER_TIERS_LONGEST_FIRST = [
