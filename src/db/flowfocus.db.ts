@@ -93,8 +93,15 @@ export class FlowFocusDB extends Dexie {
 				row.reccurenceStartTime = row.repeatInterval !== null ? row.startTime : null;
 			});
 		});
+		// Dexie cannot change a table's primary key within one version bump
+		// (throws "Not yet support for changing primary key"), so the identity
+		// migration stages rows through a differently-named table across two versions:
+		// version 6 copies legacy auto-increment rows into `tasksWithIdentity`
+		// (keyed by the new UUID `id`), then version 7 recreates `tasks` under
+		// that same new schema and moves the staged rows back into it.
 		this.version(6).stores({
-			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			tasks: null,
+			tasksWithIdentity: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
 			settings: 'id',
 			checklist: null,
 			quickToDoChecklist: 'id',
@@ -102,17 +109,13 @@ export class FlowFocusDB extends Dexie {
 			const now = new Date().toISOString();
 
 			const legacyTaskRows = await transaction.table('tasks').toArray();
-			await transaction.table('tasks').clear();
-			for (const legacyRow of legacyTaskRows) {
-				delete legacyRow.id;
-				await transaction.table('tasks').add({
-					...legacyRow,
-					id: crypto.randomUUID(),
-					updatedAt: now,
-					deletedAt: null,
-					isSynced: false,
-				});
-			}
+			await transaction.table('tasksWithIdentity').bulkAdd(legacyTaskRows.map(legacyRow => ({
+				...legacyRow,
+				id: crypto.randomUUID(),
+				updatedAt: now,
+				deletedAt: null,
+				isSynced: false,
+			})));
 
 			await transaction.table('settings').toCollection().modify(row => {
 				row.updatedAt = now;
@@ -127,6 +130,15 @@ export class FlowFocusDB extends Dexie {
 					isSynced: false,
 				});
 			}
+		});
+		this.version(7).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			tasksWithIdentity: null,
+			settings: 'id',
+			quickToDoChecklist: 'id',
+		}).upgrade(async transaction => {
+			const stagedTaskRows = await transaction.table('tasksWithIdentity').toArray();
+			await transaction.table('tasks').bulkAdd(stagedTaskRows);
 		});
 	}
 }
