@@ -4,6 +4,7 @@ import DatetimeInput from './DatetimeInput';
 import DurationInput from './DurationInput';
 import DurationRangeInput from './DurationRangeInput';
 import CheckboxInput from './CheckboxInput';
+import MandatoryIcon from '../svg-icons/MandatoryIcon';
 import styles from './TimingOptionsInput.module.css';
 
 interface Props {
@@ -71,6 +72,7 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 				onChange={isMandatory => update({ isMandatory })}
 				label="Mandatory"
 				description="Whether this task should jump ahead of other optional tasks that are due sooner."
+				icon={<MandatoryIcon />}
 			/>
 		</div>
 	);

@@ -14,6 +14,7 @@ import SelectionCheckbox from './SelectionCheckbox';
 import StepCheckbox from './StepCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
 import DeleteIcon from './svg-icons/DeleteIcon';
+import MandatoryIcon from './svg-icons/MandatoryIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import checkboxInputStyles from './inputs/CheckboxInput.module.css';
 import arrayInputStyles from './inputs/ArrayInput.module.css';
@@ -156,6 +157,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 				<CheckboxInput
 					value={task.getIsMandatory()}
 					onChange={v => store.setMandatory(task, v)}
+					icon={<MandatoryIcon />}
 				/>
 			</td>
 

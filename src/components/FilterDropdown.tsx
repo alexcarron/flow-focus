@@ -42,7 +42,7 @@ export default function FilterDropdown<Value extends string | number>({ value, o
 			<button
 				type="button"
 				onClick={() => setIsOpen(isCurrentlyOpen => !isCurrentlyOpen)}
-				className="button small outlined"
+				className="button outlined"
 				title={selectedOption.description}
 			>
 				{selectedOption.label}

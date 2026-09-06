@@ -21,6 +21,11 @@
 	min-width: 12ch;
 }
 
+.toolbar :global(.button) {
+	padding-top: var(--space-extra-small);
+	padding-bottom: var(--space-extra-small);
+}
+
 .deleteSelectedButton {
 	margin-left: auto;
 }

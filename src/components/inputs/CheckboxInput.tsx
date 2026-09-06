@@ -1,4 +1,6 @@
+import { cloneElement } from 'react';
 import FieldDescription from './FieldDescription';
+import CheckIcon from '../svg-icons/CheckIcon';
 import styles from './CheckboxInput.module.css';
 
 interface Props {
@@ -7,9 +9,10 @@ interface Props {
 	label?: string;
 	description?: string;
 	className?: string;
+	icon?: React.ReactElement<{ className?: string }>;
 }
 
-export default function CheckboxInput({ value, onChange, label, description, className = '' }: Props) {
+export default function CheckboxInput({ value, onChange, label, description, className = '', icon = <CheckIcon /> }: Props) {
 	return (
 		<label className={`${styles.checkbox} ${className}`}>
 			<div
@@ -20,11 +23,7 @@ export default function CheckboxInput({ value, onChange, label, description, cla
 				onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') onChange(!value, event); }}
 				className={value ? `${styles.box} ${styles.boxChecked}` : styles.box}
 			>
-				{value && (
-					<svg className={styles.checkmark} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-					</svg>
-				)}
+				{value && cloneElement(icon, { className: styles.checkmark })}
 			</div>
 			{label && <span className={styles.label}>{label}</span>}
 			{description && <FieldDescription text={description} />}

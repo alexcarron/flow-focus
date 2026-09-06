@@ -17,8 +17,8 @@ import { useOverflowAwareTableColumns } from '../hooks/useOverflowAwareTableColu
 import { mergeRefs } from '../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
-enum Filter { Active, MustStartToday, Recurring, All }
-enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval, Deadline }
+enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
+enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval, StartTime, Deadline }
 enum SortDir { Asc, Desc }
 
 const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'deadline', 'duration'];
@@ -27,12 +27,17 @@ const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = 
 	{
 		value: Filter.All,
 		label: 'All Tasks',
-		description: 'Every task, regardless of status, deadline, or completion',
+		description: 'Every task',
+	},
+	{
+		value: Filter.Uncompleted,
+		label: 'Unfinished Tasks',
+		description: 'Every task that has not been completed',
 	},
 	{
 		value: Filter.Active,
 		label: 'Active Tasks',
-		description: 'Tasks that are open right now (started, not finished, not completed) and have a deadline',
+		description: 'Tasks that have started, haven\'t ended, are not completed, and have a deadline',
 	},
 	{
 		value: Filter.MustStartToday,
@@ -46,7 +51,7 @@ const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = 
 	},
 ];
 
-const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority>, string> = {
+const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | SortBy.StartTime>, string> = {
 	[SortBy.Name]: 'Name',
 	[SortBy.Steps]: 'Steps',
 	[SortBy.TimeAvailable]: 'Time Available',
@@ -62,13 +67,26 @@ function applySearch(tasks: Task[], searchText: string): Task[] {
 
 function applyFilter(tasks: Task[], filter: Filter): Task[] {
 	const now = new Date();
-	if (filter === Filter.Active)
-		return tasks.filter(t => t.isActive(now) && t.getDeadline() !== null);
-	if (filter === Filter.MustStartToday)
-		return tasks.filter(t => t.mustStartToday(now));
-	if (filter === Filter.Recurring)
-		return tasks.filter(t => t.isRecurring());
-	return tasks;
+
+	switch (filter) {
+		case Filter.All:
+			return tasks;
+
+		case Filter.Uncompleted:
+			return tasks.filter(task => !task.getIsComplete())
+			
+		case Filter.Active:
+			return tasks.filter(task => task.isActive(now) && task.getDeadline() !== null);
+			
+		case Filter.MustStartToday:
+			return tasks.filter(task => task.mustStartToday(now));
+	
+		case Filter.Recurring:
+			return tasks.filter(task => task.isRecurring());
+			
+		default:
+			throw new Error(`Task manager filter does not handle filter of type: ${filter}`);
+	}
 }
 
 function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
@@ -88,6 +106,14 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 			if (a.getRepeatInterval() === null) return -1;
 			if (b.getRepeatInterval() === null) return 1;
 			return a.getRepeatInterval()! - b.getRepeatInterval()!;
+		});
+	else if (sortBy === SortBy.StartTime)
+		sorted.sort((a, b) => {
+			const startTimeA = a.getStartTime();
+			const startTimeB = b.getStartTime();
+			if (startTimeA === null) return 1;
+			if (startTimeB === null) return -1;
+			return startTimeA.getTime() - startTimeB.getTime();
 		});
 	else if (sortBy === SortBy.Deadline)
 		sorted.sort((a, b) => {
@@ -135,7 +161,7 @@ export default function TasksManagerPage() {
 	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
 
 	const now = new Date();
-	const displayed = applySearch(applyFilter(applySort(tasks, sortBy, sortDir), filter), searchText);
+	const displayedTasks = applySearch(applyFilter(applySort(tasks, sortBy, sortDir), filter), searchText);
 
 	useEffect(() => {
 		setSelectedRowIDs(new Set());
@@ -162,12 +188,12 @@ export default function TasksManagerPage() {
 	}
 
 	function toggleSelectAll() {
-		const rowIDs = displayed.map((task) => getRowID(task));
+		const rowIDs = displayedTasks.map((task) => getRowID(task));
 		const areAllSelected = rowIDs.length > 0 && rowIDs.every(id => selectedRowIDs.has(id));
 		setSelectedRowIDs(areAllSelected ? new Set() : new Set(rowIDs));
 	}
 
-	const selectedTasks = displayed.filter((task) => selectedRowIDs.has(getRowID(task)));
+	const selectedTasks = displayedTasks.filter((task) => selectedRowIDs.has(getRowID(task)));
 
 	function requestDeleteSelectedTasks() {
 		if (selectedTasks.length === 0) return;
@@ -203,7 +229,7 @@ export default function TasksManagerPage() {
 		return <SortDescIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
 	}
 
-	const rowIDs = displayed.map((task) => getRowID(task));
+	const rowIDs = displayedTasks.map((task) => getRowID(task));
 	const areAllDisplayedSelected = rowIDs.length > 0 && rowIDs.every(id => selectedRowIDs.has(id));
 
 	return (
@@ -221,7 +247,7 @@ export default function TasksManagerPage() {
 				{selectedRowIDs.size > 0 && (
 					<button
 						onClick={requestDeleteSelectedTasks}
-						className={`button small danger ${styles.deleteSelectedButton}`}
+						className={`button danger ${styles.deleteSelectedButton}`}
 					>
 						Delete {selectedRowIDs.size} Selected
 					</button>
@@ -267,7 +293,12 @@ export default function TasksManagerPage() {
 							>
 								{SORT_LABELS[SortBy.Duration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Duration)}</span>
 							</th>
-							<th className={`${styles.columnHeader}${hiddenColumnKeys.has('start') ? ` ${styles.hiddenColumn}` : ''}`}>Start</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('start') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.StartTime)}
+							>
+								Start <span className={styles.sortIndicator}>{renderSortIcon(SortBy.StartTime)}</span>
+							</th>
 							<th
 								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('repeat') ? ` ${styles.hiddenColumn}` : ''}`}
 								onClick={() => toggleSort(SortBy.RepeatInterval)}
@@ -284,7 +315,7 @@ export default function TasksManagerPage() {
 						</tr>
 					</thead>
 					<tbody>
-						{displayed.map((task) => {
+						{displayedTasks.map((task) => {
 							const rowID = getRowID(task);
 							return (
 								<TaskManagerRow
@@ -306,7 +337,7 @@ export default function TasksManagerPage() {
 				</table>
 			</div>
 
-			{displayed.length === 0 && (
+			{displayedTasks.length === 0 && (
 				<p className={styles.emptyMessage}>No tasks match the current filter or search</p>
 			)}
 

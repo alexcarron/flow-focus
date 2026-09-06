@@ -21,7 +21,7 @@ export default function App() {
 	useEffect(() => {
 		loadTasks();
 		loadSettings();
-	}, [loadTasks, loadSettings]);
+}, [loadTasks, loadSettings]);
 
 	return (
 		<div className={styles.app}>
@@ -30,7 +30,7 @@ export default function App() {
 					Focus
 				</NavLink>
 				<NavLink to="/tasks" className={navLinkClass}>
-					All Tasks
+					Manage Tasks
 				</NavLink>
 				<NavLink to="/create-task" className={navLinkClass}>
 					Create Task
