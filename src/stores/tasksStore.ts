@@ -6,8 +6,8 @@ import TaskState from '../model/task/TaskState';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
-import { db } from '../db/flowfocus.db';
 import { serializeTask, deserializeRow } from '../db/task.serializer';
+import { localTaskRepository } from '../persistence/local/LocalTaskRepository';
 import type { BackupTask } from '../utilities/backup';
 
 enablePatches();
@@ -70,20 +70,15 @@ let loadTasksInProgress = false;
 
 async function persistTask(task: Task): Promise<void> {
 	try {
-		if (task.dbId !== undefined) {
-			await db.tasks.put(serializeTask(task, task.dbId));
-		} else {
-			const id = await db.tasks.add(serializeTask(task));
-			task.dbId = id as number;
-		}
+		await localTaskRepository.save(serializeTask(task));
 	} catch (err) {
 		console.error('Failed to persist task:', err);
 	}
 }
 
-async function deleteFromDb(id: number): Promise<void> {
+async function softDeleteFromDB(id: string): Promise<void> {
 	try {
-		await db.tasks.delete(id);
+		await localTaskRepository.softDelete(id);
 	} catch (err) {
 		console.error('Failed to delete task from Dexie:', err);
 	}
@@ -101,11 +96,10 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			loadTasksInProgress = true;
 			try {
 				tasksManager.clearTasks();
-				const rows = await db.tasks.toArray();
+				const rows = await localTaskRepository.getAll();
 				rows.forEach(row => {
 					const data = deserializeRow(row);
-					const task = tasksManager.addCreatedTask(data.description);
-					task.dbId = row.id;
+					const task = tasksManager.addCreatedTask(data.description, row.id);
 					task.replaceAllSteps(data.steps);
 					task.setStartTime(data.startTime);
 					task.setEndTime(data.endTime);
@@ -310,16 +304,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		async deleteTask(task: Task) {
-			if (task.dbId !== undefined) {
-				await deleteFromDb(task.dbId);
-			}
+			await softDeleteFromDB(task.id);
 			tasksManager.deleteTask(task);
 			set(state => { state.tasks = [...tasksManager.getTasks()]; });
 		},
 
 		async importTasks(backupTasks: BackupTask[]) {
 			tasksManager.clearTasks();
-			await db.tasks.clear();
+			await localTaskRepository.clear();
 			for (const bt of backupTasks) {
 				const task = tasksManager.addCreatedTask(bt.description);
 				task.replaceAllSteps(bt.steps.map(step => ({ ...step })));

@@ -1,16 +1,16 @@
-import ChecklistItem from './ChecklistItem';
+import QuickToDoChecklistItem from './QuickToDoChecklistItem';
 
-export interface FlattenedChecklistItem {
-	item: ChecklistItem;
+export interface FlattenedQuickToDoChecklistItem {
+	item: QuickToDoChecklistItem;
 	depth: number;
 	parentID: string | null;
 }
 
-export function createChecklistItem(text: string): ChecklistItem {
+export function createQuickToDoChecklistItem(text: string): QuickToDoChecklistItem {
 	return { id: crypto.randomUUID(), text, isChecked: false, children: [] };
 }
 
-export function findItemWithParent(tree: ChecklistItem[], itemID: string, parentID: string | null = null): { item: ChecklistItem; parentID: string | null } | null {
+export function findItemWithParent(tree: QuickToDoChecklistItem[], itemID: string, parentID: string | null = null): { item: QuickToDoChecklistItem; parentID: string | null } | null {
 	for (const item of tree) {
 		if (item.id === itemID) return { item, parentID };
 		const found = findItemWithParent(item.children, itemID, item.id);
@@ -19,17 +19,17 @@ export function findItemWithParent(tree: ChecklistItem[], itemID: string, parent
 	return null;
 }
 
-export function getSiblings(tree: ChecklistItem[], parentID: string | null): ChecklistItem[] {
+export function getSiblings(tree: QuickToDoChecklistItem[], parentID: string | null): QuickToDoChecklistItem[] {
 	if (parentID === null) return tree;
 	return findItemWithParent(tree, parentID)?.item.children ?? [];
 }
 
-export function getSubtreeIDsIncludingSelf(tree: ChecklistItem[], itemID: string): Set<string> {
+export function getSubtreeIDsIncludingSelf(tree: QuickToDoChecklistItem[], itemID: string): Set<string> {
 	const ids = new Set<string>();
 	const item = findItemWithParent(tree, itemID)?.item;
 	if (!item) return ids;
 
-	function collect(item: ChecklistItem) {
+	function collect(item: QuickToDoChecklistItem) {
 		ids.add(item.id);
 		item.children.forEach(collect);
 	}
@@ -37,20 +37,20 @@ export function getSubtreeIDsIncludingSelf(tree: ChecklistItem[], itemID: string
 	return ids;
 }
 
-export function isDescendant(tree: ChecklistItem[], ancestorID: string, candidateID: string): boolean {
+export function isDescendant(tree: QuickToDoChecklistItem[], ancestorID: string, candidateID: string): boolean {
 	const ancestor = findItemWithParent(tree, ancestorID)?.item;
 	if (!ancestor) return false;
 
-	function search(items: ChecklistItem[]): boolean {
+	function search(items: QuickToDoChecklistItem[]): boolean {
 		return items.some(item => item.id === candidateID || search(item.children));
 	}
 	return search(ancestor.children);
 }
 
-export function flattenForDisplay(tree: ChecklistItem[]): FlattenedChecklistItem[] {
-	const result: FlattenedChecklistItem[] = [];
+export function flattenForDisplay(tree: QuickToDoChecklistItem[]): FlattenedQuickToDoChecklistItem[] {
+	const result: FlattenedQuickToDoChecklistItem[] = [];
 
-	function recurse(items: ChecklistItem[], depth: number, parentID: string | null) {
+	function recurse(items: QuickToDoChecklistItem[], depth: number, parentID: string | null) {
 		for (const item of items) {
 			result.push({ item, depth, parentID });
 			recurse(item.children, depth + 1, item.id);
@@ -60,34 +60,34 @@ export function flattenForDisplay(tree: ChecklistItem[]): FlattenedChecklistItem
 	return result;
 }
 
-function mapItem(tree: ChecklistItem[], itemID: string, transform: (item: ChecklistItem) => ChecklistItem): ChecklistItem[] {
+function mapItem(tree: QuickToDoChecklistItem[], itemID: string, transform: (item: QuickToDoChecklistItem) => QuickToDoChecklistItem): QuickToDoChecklistItem[] {
 	return tree.map(item => {
 		if (item.id === itemID) return transform(item);
 		return { ...item, children: mapItem(item.children, itemID, transform) };
 	});
 }
 
-function setCheckedRecursively(item: ChecklistItem, isChecked: boolean): ChecklistItem {
+function setCheckedRecursively(item: QuickToDoChecklistItem, isChecked: boolean): QuickToDoChecklistItem {
 	return { ...item, isChecked, children: item.children.map(child => setCheckedRecursively(child, isChecked)) };
 }
 
-export function toggleItemChecked(tree: ChecklistItem[], itemID: string): ChecklistItem[] {
+export function toggleItemChecked(tree: QuickToDoChecklistItem[], itemID: string): QuickToDoChecklistItem[] {
 	return mapItem(tree, itemID, item => setCheckedRecursively(item, !item.isChecked));
 }
 
-export function setItemChecked(tree: ChecklistItem[], itemID: string, isChecked: boolean): ChecklistItem[] {
+export function setItemChecked(tree: QuickToDoChecklistItem[], itemID: string, isChecked: boolean): QuickToDoChecklistItem[] {
 	return mapItem(tree, itemID, item => setCheckedRecursively(item, isChecked));
 }
 
-export function editItemText(tree: ChecklistItem[], itemID: string, text: string): ChecklistItem[] {
+export function editItemText(tree: QuickToDoChecklistItem[], itemID: string, text: string): QuickToDoChecklistItem[] {
 	return mapItem(tree, itemID, item => ({ ...item, text }));
 }
 
-function removeItemWithSubtree(tree: ChecklistItem[], itemID: string): { tree: ChecklistItem[]; removed: ChecklistItem | null } {
-	let removed: ChecklistItem | null = null;
+function removeItemWithSubtree(tree: QuickToDoChecklistItem[], itemID: string): { tree: QuickToDoChecklistItem[]; removed: QuickToDoChecklistItem | null } {
+	let removed: QuickToDoChecklistItem | null = null;
 
-	function recurse(items: ChecklistItem[]): ChecklistItem[] {
-		const filtered: ChecklistItem[] = [];
+	function recurse(items: QuickToDoChecklistItem[]): QuickToDoChecklistItem[] {
+		const filtered: QuickToDoChecklistItem[] = [];
 		for (const item of items) {
 			if (item.id === itemID) {
 				removed = item;
@@ -102,17 +102,17 @@ function removeItemWithSubtree(tree: ChecklistItem[], itemID: string): { tree: C
 	return { tree: newTree, removed };
 }
 
-export function deleteItem(tree: ChecklistItem[], itemID: string): ChecklistItem[] {
+export function deleteItem(tree: QuickToDoChecklistItem[], itemID: string): QuickToDoChecklistItem[] {
 	return removeItemWithSubtree(tree, itemID).tree;
 }
 
-export function hasAnyCheckedItem(tree: ChecklistItem[]): boolean {
+export function hasAnyCheckedItem(tree: QuickToDoChecklistItem[]): boolean {
 	return tree.some(item => item.isChecked || hasAnyCheckedItem(item.children));
 }
 
-export function deleteCheckedItems(tree: ChecklistItem[]): ChecklistItem[] {
-	function recurse(items: ChecklistItem[]): ChecklistItem[] {
-		const result: ChecklistItem[] = [];
+export function deleteCheckedItems(tree: QuickToDoChecklistItem[]): QuickToDoChecklistItem[] {
+	function recurse(items: QuickToDoChecklistItem[]): QuickToDoChecklistItem[] {
+		const result: QuickToDoChecklistItem[] = [];
 		for (const item of items) {
 			const newChildren = recurse(item.children);
 			if (item.isChecked) result.push(...newChildren);
@@ -123,15 +123,15 @@ export function deleteCheckedItems(tree: ChecklistItem[]): ChecklistItem[] {
 	return recurse(tree);
 }
 
-export function appendTopLevelItem(tree: ChecklistItem[], text: string): { tree: ChecklistItem[]; newItem: ChecklistItem } {
-	const newItem = createChecklistItem(text);
+export function appendTopLevelItem(tree: QuickToDoChecklistItem[], text: string): { tree: QuickToDoChecklistItem[]; newItem: QuickToDoChecklistItem } {
+	const newItem = createQuickToDoChecklistItem(text);
 	return { tree: [...tree, newItem], newItem };
 }
 
-export function insertSiblingRelativeToItem(tree: ChecklistItem[], itemID: string, position: 'before' | 'after', text: string): { tree: ChecklistItem[]; newItem: ChecklistItem } {
-	const newItem = createChecklistItem(text);
+export function insertSiblingRelativeToItem(tree: QuickToDoChecklistItem[], itemID: string, position: 'before' | 'after', text: string): { tree: QuickToDoChecklistItem[]; newItem: QuickToDoChecklistItem } {
+	const newItem = createQuickToDoChecklistItem(text);
 
-	function recurse(items: ChecklistItem[]): ChecklistItem[] {
+	function recurse(items: QuickToDoChecklistItem[]): QuickToDoChecklistItem[] {
 		const index = items.findIndex(item => item.id === itemID);
 		if (index !== -1) {
 			const insertAt = position === 'before' ? index : index + 1;
@@ -143,10 +143,10 @@ export function insertSiblingRelativeToItem(tree: ChecklistItem[], itemID: strin
 	return { tree: recurse(tree), newItem };
 }
 
-export function insertSiblingsAfterItem(tree: ChecklistItem[], itemID: string, texts: string[]): { tree: ChecklistItem[]; newItems: ChecklistItem[] } {
-	const newItems = texts.map(createChecklistItem);
+export function insertSiblingsAfterItem(tree: QuickToDoChecklistItem[], itemID: string, texts: string[]): { tree: QuickToDoChecklistItem[]; newItems: QuickToDoChecklistItem[] } {
+	const newItems = texts.map(createQuickToDoChecklistItem);
 
-	function recurse(items: ChecklistItem[]): ChecklistItem[] {
+	function recurse(items: QuickToDoChecklistItem[]): QuickToDoChecklistItem[] {
 		const index = items.findIndex(item => item.id === itemID);
 		if (index !== -1) {
 			return [...items.slice(0, index + 1), ...newItems, ...items.slice(index + 1)];
@@ -157,8 +157,8 @@ export function insertSiblingsAfterItem(tree: ChecklistItem[], itemID: string, t
 	return { tree: recurse(tree), newItems };
 }
 
-export function indentItem(tree: ChecklistItem[], itemID: string): ChecklistItem[] {
-	function recurse(items: ChecklistItem[]): { items: ChecklistItem[]; didIndent: boolean } {
+export function indentItem(tree: QuickToDoChecklistItem[], itemID: string): QuickToDoChecklistItem[] {
+	function recurse(items: QuickToDoChecklistItem[]): { items: QuickToDoChecklistItem[]; didIndent: boolean } {
 		const index = items.findIndex(item => item.id === itemID);
 		if (index !== -1) {
 			if (index === 0) return { items, didIndent: false };
@@ -184,8 +184,8 @@ export function indentItem(tree: ChecklistItem[], itemID: string): ChecklistItem
 	return recurse(tree).items;
 }
 
-export function unindentItem(tree: ChecklistItem[], itemID: string): ChecklistItem[] {
-	function recurse(siblingsArray: ChecklistItem[]): { items: ChecklistItem[]; didUnindent: boolean } {
+export function unindentItem(tree: QuickToDoChecklistItem[], itemID: string): QuickToDoChecklistItem[] {
+	function recurse(siblingsArray: QuickToDoChecklistItem[]): { items: QuickToDoChecklistItem[]; didUnindent: boolean } {
 		for (let i = 0; i < siblingsArray.length; i++) {
 			const parentCandidate = siblingsArray[i];
 			const childIndex = parentCandidate.children.findIndex(child => child.id === itemID);
@@ -213,8 +213,8 @@ export function unindentItem(tree: ChecklistItem[], itemID: string): ChecklistIt
 	return recurse(tree).items;
 }
 
-export function moveItemAmongSiblings(tree: ChecklistItem[], itemID: string, direction: 'up' | 'down'): ChecklistItem[] {
-	function recurse(items: ChecklistItem[]): { items: ChecklistItem[]; didMove: boolean } {
+export function moveItemAmongSiblings(tree: QuickToDoChecklistItem[], itemID: string, direction: 'up' | 'down'): QuickToDoChecklistItem[] {
+	function recurse(items: QuickToDoChecklistItem[]): { items: QuickToDoChecklistItem[]; didMove: boolean } {
 		const index = items.findIndex(item => item.id === itemID);
 		if (index !== -1) {
 			const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -240,7 +240,7 @@ export function moveItemAmongSiblings(tree: ChecklistItem[], itemID: string, dir
 	return recurse(tree).items;
 }
 
-function insertIntoChildrenOf(tree: ChecklistItem[], parentID: string, itemToInsert: ChecklistItem, index: number): ChecklistItem[] {
+function insertIntoChildrenOf(tree: QuickToDoChecklistItem[], parentID: string, itemToInsert: QuickToDoChecklistItem, index: number): QuickToDoChecklistItem[] {
 	return tree.map(item => {
 		if (item.id === parentID) {
 			const children = [...item.children.slice(0, index), itemToInsert, ...item.children.slice(index)];
@@ -250,7 +250,7 @@ function insertIntoChildrenOf(tree: ChecklistItem[], parentID: string, itemToIns
 	});
 }
 
-export function reparentAndReorderItem(tree: ChecklistItem[], draggedItemID: string, newParentID: string | null, newIndexAmongSiblings: number): ChecklistItem[] {
+export function reparentAndReorderItem(tree: QuickToDoChecklistItem[], draggedItemID: string, newParentID: string | null, newIndexAmongSiblings: number): QuickToDoChecklistItem[] {
 	const { tree: treeWithoutDragged, removed } = removeItemWithSubtree(tree, draggedItemID);
 	if (!removed) return tree;
 

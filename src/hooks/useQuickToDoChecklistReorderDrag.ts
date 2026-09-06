@@ -1,20 +1,20 @@
 import { useRef, useState } from 'react';
-import ChecklistItem from '../model/checklist/ChecklistItem';
-import { FlattenedChecklistItem, flattenForDisplay, getSiblings, getSubtreeIDsIncludingSelf } from '../model/checklist/checklistTree';
+import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
+import { FlattenedQuickToDoChecklistItem, flattenForDisplay, getSiblings, getSubtreeIDsIncludingSelf } from '../model/quickToDoChecklist/quickToDoChecklistTree';
 import { usePressAndHold } from './usePressAndHold';
 import { useFlipListAnimation } from './useFlipListAnimation';
 
-const CHECKLIST_REORDER_HOLD_DELAY_MS = 200;
+const QUICK_TO_DO_CHECKLIST_REORDER_HOLD_DELAY_MS = 200;
 const NEST_UNDER_HOVERED_DRAG_THRESHOLD_PX = 32;
-const PLACEHOLDER_ROW_ID = '__checklist-drop-placeholder__';
+const PLACEHOLDER_ROW_ID = '__quick-to-do-checklist-drop-placeholder__';
 
 interface DropTarget {
 	parentID: string | null;
 	index: number;
 }
 
-interface UseChecklistReorderDragOptions {
-	items: ChecklistItem[];
+interface UseQuickToDoChecklistReorderDragOptions {
+	items: QuickToDoChecklistItem[];
 	onReorder: (draggedItemID: string, newParentID: string | null, newIndexAmongSiblings: number) => void;
 }
 
@@ -22,8 +22,8 @@ interface RowDragHandlers {
 	onMouseDown: (event: React.MouseEvent) => void;
 }
 
-export type ChecklistDisplayRow =
-	| { kind: 'item'; item: ChecklistItem; depth: number }
+export type QuickToDoChecklistDisplayRow =
+	| { kind: 'item'; item: QuickToDoChecklistItem; depth: number }
 	| { kind: 'placeholder'; depth: number; height: number };
 
 export function getDraggingRowOverlayStyle(draggingRowRect: DOMRect, dragOffsetY: number): React.CSSProperties {
@@ -38,14 +38,14 @@ export function getDraggingRowOverlayStyle(draggingRowRect: DOMRect, dragOffsetY
 	};
 }
 
-function findSubtreeEndIndex(list: FlattenedChecklistItem[], startIndex: number): number {
+function findSubtreeEndIndex(list: FlattenedQuickToDoChecklistItem[], startIndex: number): number {
 	const startDepth = list[startIndex].depth;
 	let i = startIndex + 1;
 	while (i < list.length && list[i].depth > startDepth) i++;
 	return i;
 }
 
-function computeInsertionPointInVisibleList(visibleFlattened: FlattenedChecklistItem[], dropTarget: DropTarget): number {
+function computeInsertionPointInVisibleList(visibleFlattened: FlattenedQuickToDoChecklistItem[], dropTarget: DropTarget): number {
 	const { parentID, index } = dropTarget;
 
 	const siblingsInVisibleList = visibleFlattened.filter(flattened => flattened.parentID === parentID);
@@ -65,7 +65,7 @@ function computeInsertionPointInVisibleList(visibleFlattened: FlattenedChecklist
 	return findSubtreeEndIndex(visibleFlattened, lastSiblingAbsoluteIndex);
 }
 
-export function useChecklistReorderDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ items, onReorder }: UseChecklistReorderDragOptions) {
+export function useQuickToDoChecklistReorderDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ items, onReorder }: UseQuickToDoChecklistReorderDragOptions) {
 	const [draggingItemID, setDraggingItemID] = useState<string | null>(null);
 	const [dragOffsetX, setDragOffsetX] = useState(0);
 	const [dragOffsetY, setDragOffsetY] = useState(0);
@@ -86,10 +86,10 @@ export function useChecklistReorderDrag<TContainerElement extends HTMLElement = 
 			? 0
 			: (fullFlattened.find(flattened => flattened.item.id === dropTarget.parentID)?.depth ?? 0) + 1;
 
-	const displayRows: ChecklistDisplayRow[] = draggingItemID !== null && dropTarget !== null
+	const displayRows: QuickToDoChecklistDisplayRow[] = draggingItemID !== null && dropTarget !== null
 		? (() => {
 			const insertionPoint = computeInsertionPointInVisibleList(visibleFlattened, dropTarget);
-			const rows: ChecklistDisplayRow[] = visibleFlattened.map(flattened => ({ kind: 'item', item: flattened.item, depth: flattened.depth }));
+			const rows: QuickToDoChecklistDisplayRow[] = visibleFlattened.map(flattened => ({ kind: 'item', item: flattened.item, depth: flattened.depth }));
 			rows.splice(insertionPoint, 0, { kind: 'placeholder', depth: targetDepth, height: draggingSubtreeHeight });
 			return rows;
 		})()
@@ -103,10 +103,10 @@ export function useChecklistReorderDrag<TContainerElement extends HTMLElement = 
 	});
 
 	const { containerRef: itemsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
-		itemAttribute: 'data-checklist-row',
-		excludeSelector: '[data-checklist-checkbox]',
-		mouseHoldDelayMs: CHECKLIST_REORDER_HOLD_DELAY_MS,
-		touchHoldDelayMs: CHECKLIST_REORDER_HOLD_DELAY_MS,
+		itemAttribute: 'data-quick-to-do-checklist-row',
+		excludeSelector: '[data-quick-to-do-checklist-checkbox]',
+		mouseHoldDelayMs: QUICK_TO_DO_CHECKLIST_REORDER_HOLD_DELAY_MS,
+		touchHoldDelayMs: QUICK_TO_DO_CHECKLIST_REORDER_HOLD_DELAY_MS,
 		onHoldStart: (itemID, startClientX, startClientY) => {
 			const rowElement = rowElementsByItemIDRef.current.get(itemID);
 			setDraggingItemID(itemID);

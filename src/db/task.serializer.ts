@@ -1,12 +1,13 @@
 import Task from '../model/task/Task';
 import Step from '../model/task/Step';
 import StepStatus from '../model/task/StepStatus';
+import { TaskWriteInput } from '../persistence/TaskRepository';
 import { PlainTaskRow } from './flowfocus.db';
 
-export function serializeTask(task: Task, existingId?: number): PlainTaskRow {
+export function serializeTask(task: Task): TaskWriteInput {
 	const state = task.getState();
 	return {
-		...(existingId !== undefined ? { id: existingId } : {}),
+		id: task.id,
 		description: state.description,
 		steps: state.steps.map(step => ({ id: step.id, text: step.text, status: step.status })),
 		startTime: state.startTime ? state.startTime.toISOString() : null,

@@ -1,6 +1,6 @@
 import Dexie, { Table } from 'dexie';
 import { AppSettings } from '../model/AppSettings';
-import ChecklistItem from '../model/checklist/ChecklistItem';
+import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 
 export interface PlainStepRow {
 	id: string;
@@ -8,8 +8,17 @@ export interface PlainStepRow {
 	status: string;
 }
 
-export interface PlainTaskRow {
-	id?: number;
+export interface PersistedRecordMetadata {
+	updatedAt: string;
+	isSynced: boolean;
+}
+
+export interface DeletableRecordMetadata extends PersistedRecordMetadata {
+	deletedAt: string | null;
+}
+
+export interface PlainTaskRow extends DeletableRecordMetadata {
+	id: string;
 	description: string;
 	steps: PlainStepRow[];
 	startTime: string | null;
@@ -25,19 +34,19 @@ export interface PlainTaskRow {
 	lastActionedStep: { stepID: string; status: string } | null;
 }
 
-export interface SettingsRow extends AppSettings {
+export interface SettingsRow extends AppSettings, PersistedRecordMetadata {
 	id: number;
 }
 
-export interface ChecklistRow {
+export interface QuickToDoChecklistRow extends PersistedRecordMetadata {
 	id: number;
-	items: ChecklistItem[];
+	items: QuickToDoChecklistItem[];
 }
 
 export class FlowFocusDB extends Dexie {
-	tasks!: Table<PlainTaskRow, number>;
+	tasks!: Table<PlainTaskRow, string>;
 	settings!: Table<SettingsRow, number>;
-	checklist!: Table<ChecklistRow, number>;
+	quickToDoChecklist!: Table<QuickToDoChecklistRow, number>;
 
 	constructor() {
 		super('FlowFocusDB');
@@ -83,6 +92,41 @@ export class FlowFocusDB extends Dexie {
 			return transaction.table('tasks').toCollection().modify(row => {
 				row.reccurenceStartTime = row.repeatInterval !== null ? row.startTime : null;
 			});
+		});
+		this.version(6).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			checklist: null,
+			quickToDoChecklist: 'id',
+		}).upgrade(async transaction => {
+			const now = new Date().toISOString();
+
+			const legacyTaskRows = await transaction.table('tasks').toArray();
+			await transaction.table('tasks').clear();
+			for (const legacyRow of legacyTaskRows) {
+				delete legacyRow.id;
+				await transaction.table('tasks').add({
+					...legacyRow,
+					id: crypto.randomUUID(),
+					updatedAt: now,
+					deletedAt: null,
+					isSynced: false,
+				});
+			}
+
+			await transaction.table('settings').toCollection().modify(row => {
+				row.updatedAt = now;
+				row.isSynced = false;
+			});
+
+			const legacyChecklistRows = await transaction.table('checklist').toArray();
+			for (const legacyRow of legacyChecklistRows) {
+				await transaction.table('quickToDoChecklist').add({
+					...legacyRow,
+					updatedAt: now,
+					isSynced: false,
+				});
+			}
 		});
 	}
 }

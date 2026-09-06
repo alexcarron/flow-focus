@@ -10,9 +10,7 @@ import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from "./TaskT
 export default class Task {
 	static [immerable] = true;
 
-	readonly id: string = crypto.randomUUID();
-
-	dbId: number | undefined = undefined;
+	readonly id: string;
 
 	protected description: string;
 	protected steps: Step[] = [];
@@ -31,7 +29,9 @@ export default class Task {
 	constructor(
 		protected tasksManager: TasksManager,
 		description: string,
+		id: string = crypto.randomUUID(),
 	) {
+		this.id = id;
 		this.description = description;
 	}
 

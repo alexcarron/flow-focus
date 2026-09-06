@@ -1,4 +1,4 @@
-import ChecklistItem from './ChecklistItem';
+import QuickToDoChecklistItem from './QuickToDoChecklistItem';
 import {
 	appendTopLevelItem,
 	deleteItem,
@@ -12,17 +12,17 @@ import {
 	unindentItem,
 	reparentAndReorderItem,
 	toggleItemChecked,
-} from './checklistTree';
+} from './quickToDoChecklistTree';
 
-function makeItem(id: string, children: ChecklistItem[] = []): ChecklistItem {
+function makeItem(id: string, children: QuickToDoChecklistItem[] = []): QuickToDoChecklistItem {
 	return { id, text: id, isChecked: false, children };
 }
 
-function ids(tree: ChecklistItem[]): string[] {
+function ids(tree: QuickToDoChecklistItem[]): string[] {
 	return tree.map(item => item.id);
 }
 
-describe('checklistTree', () => {
+describe('quickToDoChecklistTree', () => {
 	describe('appendTopLevelItem', () => {
 		it('adds a new item to the end of the top-level list', () => {
 			const tree = [makeItem('a')];

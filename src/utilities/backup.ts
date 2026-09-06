@@ -1,15 +1,16 @@
 import Task from '../model/task/Task';
 import StepStatus from '../model/task/StepStatus';
 import { AppSettings } from '../model/AppSettings';
-import ChecklistItem from '../model/checklist/ChecklistItem';
+import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useChecklistStore } from '../stores/checklistStore';
+import { useQuickToDoChecklistStore } from '../stores/quickToDoChecklistStore';
 
-export const BACKUP_FORMAT = 'flow-focus-backup-v4';
+export const BACKUP_FORMAT = 'flow-focus-backup-v5';
 const LEGACY_BACKUP_FORMAT_V1 = 'flow-focus-backup-v1';
 const LEGACY_BACKUP_FORMAT_V2 = 'flow-focus-backup-v2';
 const LEGACY_BACKUP_FORMAT_V3 = 'flow-focus-backup-v3';
+const LEGACY_BACKUP_FORMAT_V4 = 'flow-focus-backup-v4';
 
 export interface BackupStep {
 	id: string;
@@ -38,7 +39,7 @@ export interface BackupData {
 	exportedAt: string;
 	settings: AppSettings;
 	tasks: BackupTask[];
-	checklist: ChecklistItem[];
+	quickToDoChecklist: QuickToDoChecklistItem[];
 }
 
 interface LegacyBackupTaskV1 {
@@ -89,7 +90,7 @@ export function createBackup(): BackupData {
 		exportedAt: new Date().toISOString(),
 		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage },
 		tasks: useTasksStore.getState().tasks.map(taskToBackupTask),
-		checklist: useChecklistStore.getState().items,
+		quickToDoChecklist: useQuickToDoChecklistStore.getState().items,
 	};
 }
 
@@ -116,14 +117,14 @@ function isBackupTask(value: unknown): value is BackupTask {
 	);
 }
 
-function isBackupChecklistItem(value: unknown): value is ChecklistItem {
+function isBackupQuickToDoChecklistItem(value: unknown): value is QuickToDoChecklistItem {
 	if (typeof value !== 'object' || value === null) return false;
 	const item = value as Record<string, unknown>;
 	return (
 		typeof item.id === 'string' &&
 		typeof item.text === 'string' &&
 		typeof item.isChecked === 'boolean' &&
-		Array.isArray(item.children) && item.children.every(isBackupChecklistItem)
+		Array.isArray(item.children) && item.children.every(isBackupQuickToDoChecklistItem)
 	);
 }
 
@@ -136,8 +137,8 @@ export function isBackupData(value: unknown): value is BackupData {
 		typeof v.settings === 'object' && v.settings !== null &&
 		Array.isArray(v.tasks) &&
 		v.tasks.every(isBackupTask) &&
-		Array.isArray(v.checklist) &&
-		v.checklist.every(isBackupChecklistItem)
+		Array.isArray(v.quickToDoChecklist) &&
+		v.quickToDoChecklist.every(isBackupQuickToDoChecklistItem)
 	);
 }
 
@@ -202,7 +203,7 @@ function migrateLegacyBackupDataV1(legacyData: LegacyBackupDataV1): BackupData {
 		exportedAt: legacyData.exportedAt,
 		settings: legacyData.settings,
 		tasks: legacyData.tasks.map(migrateLegacyBackupTaskV1),
-		checklist: [],
+		quickToDoChecklist: [],
 	};
 }
 
@@ -248,7 +249,7 @@ function migrateLegacyBackupDataV2(legacyData: LegacyBackupDataV2): BackupData {
 			...legacyTask,
 			reccurenceStartTime: legacyTask.repeatInterval !== null ? legacyTask.startTime : null,
 		})),
-		checklist: [],
+		quickToDoChecklist: [],
 	};
 }
 
@@ -259,7 +260,7 @@ interface LegacyBackupDataV3 {
 	exportedAt: string;
 	settings: AppSettings;
 	tasks: LegacyBackupTaskV3[];
-	checklist: ChecklistItem[];
+	checklist: QuickToDoChecklistItem[];
 }
 
 function isLegacyBackupDataV3(value: unknown): value is LegacyBackupDataV3 {
@@ -272,7 +273,7 @@ function isLegacyBackupDataV3(value: unknown): value is LegacyBackupDataV3 {
 		Array.isArray(v.tasks) &&
 		v.tasks.every(isLegacyBackupTaskV2) &&
 		Array.isArray(v.checklist) &&
-		v.checklist.every(isBackupChecklistItem)
+		v.checklist.every(isBackupQuickToDoChecklistItem)
 	);
 }
 
@@ -285,7 +286,41 @@ function migrateLegacyBackupDataV3(legacyData: LegacyBackupDataV3): BackupData {
 			...legacyTask,
 			reccurenceStartTime: legacyTask.repeatInterval !== null ? legacyTask.startTime : null,
 		})),
-		checklist: legacyData.checklist,
+		quickToDoChecklist: legacyData.checklist,
+	};
+}
+
+type LegacyBackupTaskV4 = BackupTask;
+
+interface LegacyBackupDataV4 {
+	format: typeof LEGACY_BACKUP_FORMAT_V4;
+	exportedAt: string;
+	settings: AppSettings;
+	tasks: LegacyBackupTaskV4[];
+	checklist: QuickToDoChecklistItem[];
+}
+
+function isLegacyBackupDataV4(value: unknown): value is LegacyBackupDataV4 {
+	if (typeof value !== 'object' || value === null) return false;
+	const v = value as Record<string, unknown>;
+	return (
+		v.format === LEGACY_BACKUP_FORMAT_V4 &&
+		typeof v.exportedAt === 'string' &&
+		typeof v.settings === 'object' && v.settings !== null &&
+		Array.isArray(v.tasks) &&
+		v.tasks.every(isBackupTask) &&
+		Array.isArray(v.checklist) &&
+		v.checklist.every(isBackupQuickToDoChecklistItem)
+	);
+}
+
+function migrateLegacyBackupDataV4(legacyData: LegacyBackupDataV4): BackupData {
+	return {
+		format: BACKUP_FORMAT,
+		exportedAt: legacyData.exportedAt,
+		settings: legacyData.settings,
+		tasks: legacyData.tasks,
+		quickToDoChecklist: legacyData.checklist,
 	};
 }
 
@@ -315,6 +350,9 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 	if (isBackupData(parsed)) {
 		return parsed;
 	}
+	if (isLegacyBackupDataV4(parsed)) {
+		return migrateLegacyBackupDataV4(parsed);
+	}
 	if (isLegacyBackupDataV3(parsed)) {
 		return migrateLegacyBackupDataV3(parsed);
 	}
@@ -330,5 +368,5 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 export async function applyBackup(data: BackupData): Promise<void> {
 	await useSettingsStore.getState().importSettings(data.settings);
 	await useTasksStore.getState().importTasks(data.tasks);
-	await useChecklistStore.getState().importChecklist(data.checklist);
+	await useQuickToDoChecklistStore.getState().importQuickToDoChecklist(data.quickToDoChecklist);
 }

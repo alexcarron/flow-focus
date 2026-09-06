@@ -1,10 +1,10 @@
-import ChecklistItem from '../model/checklist/ChecklistItem';
+import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../config/shortcuts';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import styles from './QuickToDoChecklistSection.module.css';
 
 interface Props {
-	item: ChecklistItem;
+	item: QuickToDoChecklistItem;
 	depth: number;
 	rowDragHandlers: { onMouseDown: (event: React.MouseEvent) => void };
 	checkboxDragHandlers: { onMouseDown: (event: React.MouseEvent) => void; onMouseEnter: (event: React.MouseEvent) => void };
@@ -24,7 +24,7 @@ interface Props {
 	onContextMenu: (x: number, y: number) => void;
 }
 
-export default function ChecklistItemRow({
+export default function QuickToDoChecklistItemRow({
 	item,
 	depth,
 	rowDragHandlers,
@@ -47,7 +47,7 @@ export default function ChecklistItemRow({
 	return (
 		<div
 			ref={registerRowElement}
-			data-checklist-row={item.id}
+			data-quick-to-do-checklist-row={item.id}
 			className={styles.row}
 			style={{ paddingLeft: `calc(${depth} * var(--space-large))` }}
 			onMouseDown={rowDragHandlers.onMouseDown}
@@ -60,7 +60,7 @@ export default function ChecklistItemRow({
 				role="checkbox"
 				aria-checked={item.isChecked}
 				tabIndex={0}
-				data-checklist-checkbox={item.id}
+				data-quick-to-do-checklist-checkbox={item.id}
 				onMouseDown={event => {
 					event.stopPropagation();
 					checkboxDragHandlers.onMouseDown(event);
@@ -101,27 +101,27 @@ export default function ChecklistItemRow({
 					onPasteLines(lines);
 				}}
 				onKeyDown={event => {
-					if (matchesShortcutIgnoringShift(event, SHORTCUTS.checklistInsert.insertBefore)) {
+					if (matchesShortcutIgnoringShift(event, SHORTCUTS.quickToDoChecklistInsert.insertBefore)) {
 						event.preventDefault();
 						onInsertBefore(event.currentTarget.textContent ?? '');
 					}
-					else if (matchesShortcut(event, SHORTCUTS.checklistInsert.insertAfter)) {
+					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistInsert.insertAfter)) {
 						event.preventDefault();
 						onInsertAfter(event.currentTarget.textContent ?? '');
 					}
-					else if (matchesShortcut(event, SHORTCUTS.checklistIndent.unindent)) {
+					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistIndent.unindent)) {
 						event.preventDefault();
 						onUnindent();
 					}
-					else if (matchesShortcut(event, SHORTCUTS.checklistIndent.indent)) {
+					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistIndent.indent)) {
 						event.preventDefault();
 						onIndent();
 					}
-					else if (matchesShortcut(event, SHORTCUTS.checklistReorder.moveUp)) {
+					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistReorder.moveUp)) {
 						event.preventDefault();
 						onMoveUp();
 					}
-					else if (matchesShortcut(event, SHORTCUTS.checklistReorder.moveDown)) {
+					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistReorder.moveDown)) {
 						event.preventDefault();
 						onMoveDown();
 					}

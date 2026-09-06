@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useChecklistStore } from '../stores/checklistStore';
-import { useChecklistReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useChecklistReorderDrag';
+import { useQuickToDoChecklistStore } from '../stores/quickToDoChecklistStore';
+import { useQuickToDoChecklistReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useQuickToDoChecklistReorderDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
-import { findItemWithParent, hasAnyCheckedItem } from '../model/checklist/checklistTree';
+import { findItemWithParent, hasAnyCheckedItem } from '../model/quickToDoChecklist/quickToDoChecklistTree';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import { mergeRefs } from '../utilities/mergeRefs';
 import { SHORTCUTS, getShortcutKeyParts } from '../config/shortcuts';
-import ChecklistItemRow from './ChecklistItemRow';
+import QuickToDoChecklistItemRow from './QuickToDoChecklistItemRow';
 import ContextMenu from './context-menu/ContextMenu';
 import ConfirmModal from './ConfirmModal';
 import FieldDescription from './inputs/FieldDescription';
@@ -23,23 +23,23 @@ function focusElementAtEnd(element: HTMLElement) {
 }
 
 export default function QuickToDoChecklistSection() {
-	const items = useChecklistStore(s => s.items);
-	const isLoaded = useChecklistStore(s => s.isLoaded);
-	const loadChecklist = useChecklistStore(s => s.loadChecklist);
-	const addTopLevelItem = useChecklistStore(s => s.addTopLevelItem);
-	const insertItemBeforeOrAfter = useChecklistStore(s => s.insertItemBeforeOrAfter);
-	const editItemText = useChecklistStore(s => s.editItemText);
-	const setItemChecked = useChecklistStore(s => s.setItemChecked);
-	const checkItemAndPrecedingItems = useChecklistStore(s => s.checkItemAndPrecedingItems);
-	const uncheckItemAndFollowingItems = useChecklistStore(s => s.uncheckItemAndFollowingItems);
-	const insertItemsFromPastedLines = useChecklistStore(s => s.insertItemsFromPastedLines);
-	const deleteItem = useChecklistStore(s => s.deleteItem);
-	const deleteCheckedItems = useChecklistStore(s => s.deleteCheckedItems);
-	const indentItem = useChecklistStore(s => s.indentItem);
-	const unindentItem = useChecklistStore(s => s.unindentItem);
-	const moveItemUp = useChecklistStore(s => s.moveItemUp);
-	const moveItemDown = useChecklistStore(s => s.moveItemDown);
-	const reparentAndReorderItem = useChecklistStore(s => s.reparentAndReorderItem);
+	const items = useQuickToDoChecklistStore(s => s.items);
+	const isLoaded = useQuickToDoChecklistStore(s => s.isLoaded);
+	const loadQuickToDoChecklist = useQuickToDoChecklistStore(s => s.loadQuickToDoChecklist);
+	const addTopLevelItem = useQuickToDoChecklistStore(s => s.addTopLevelItem);
+	const insertItemBeforeOrAfter = useQuickToDoChecklistStore(s => s.insertItemBeforeOrAfter);
+	const editItemText = useQuickToDoChecklistStore(s => s.editItemText);
+	const setItemChecked = useQuickToDoChecklistStore(s => s.setItemChecked);
+	const checkItemAndPrecedingItems = useQuickToDoChecklistStore(s => s.checkItemAndPrecedingItems);
+	const uncheckItemAndFollowingItems = useQuickToDoChecklistStore(s => s.uncheckItemAndFollowingItems);
+	const insertItemsFromPastedLines = useQuickToDoChecklistStore(s => s.insertItemsFromPastedLines);
+	const deleteItem = useQuickToDoChecklistStore(s => s.deleteItem);
+	const deleteCheckedItems = useQuickToDoChecklistStore(s => s.deleteCheckedItems);
+	const indentItem = useQuickToDoChecklistStore(s => s.indentItem);
+	const unindentItem = useQuickToDoChecklistStore(s => s.unindentItem);
+	const moveItemUp = useQuickToDoChecklistStore(s => s.moveItemUp);
+	const moveItemDown = useQuickToDoChecklistStore(s => s.moveItemDown);
+	const reparentAndReorderItem = useQuickToDoChecklistStore(s => s.reparentAndReorderItem);
 
 	const [newItemText, setNewItemText] = useState('');
 	const [itemPendingFocusID, setItemPendingFocusID] = useState<string | null>(null);
@@ -57,19 +57,19 @@ export default function QuickToDoChecklistSection() {
 		displayRows,
 		dragOffsetY,
 		draggingRowRect,
-	} = useChecklistReorderDrag({
+	} = useQuickToDoChecklistReorderDrag({
 		items,
 		onReorder: reparentAndReorderItem,
 	});
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
-		itemAttribute: 'data-checklist-checkbox',
+		itemAttribute: 'data-quick-to-do-checklist-checkbox',
 		isStepChecked: itemID => findItemWithParent(items, itemID)?.item.isChecked ?? false,
 		setStepChecked: (itemID, isChecked) => setItemChecked(itemID, isChecked),
 	});
 
 	useEffect(() => {
-		loadChecklist();
+		loadQuickToDoChecklist();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -170,7 +170,7 @@ export default function QuickToDoChecklistSection() {
 
 					const item = row.item;
 					return (
-						<ChecklistItemRow
+						<QuickToDoChecklistItemRow
 							key={item.id}
 							item={item}
 							depth={row.depth}
@@ -257,12 +257,12 @@ export default function QuickToDoChecklistSection() {
 				position={itemContextMenu !== null ? { x: itemContextMenu.x, y: itemContextMenu.y } : null}
 				onClose={() => setItemContextMenu(null)}
 				items={itemContextMenu !== null ? [
-					{ label: 'Move up', hintKeys: getShortcutKeyParts(SHORTCUTS.checklistReorder.moveUp), onClick: () => moveItemUp(itemContextMenu.itemID) },
-					{ label: 'Move down', hintKeys: getShortcutKeyParts(SHORTCUTS.checklistReorder.moveDown), onClick: () => moveItemDown(itemContextMenu.itemID) },
-					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.checklistIndent.indent), onClick: () => indentItem(itemContextMenu.itemID) },
-					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.checklistIndent.unindent), onClick: () => unindentItem(itemContextMenu.itemID) },
-					{ label: 'Add item above', hintKeys: getShortcutKeyParts(SHORTCUTS.checklistInsert.insertBefore), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'before')) },
-					{ label: 'Add item below', hintKeys: getShortcutKeyParts(SHORTCUTS.checklistInsert.insertAfter), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'after')) },
+					{ label: 'Move up', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveUp), onClick: () => moveItemUp(itemContextMenu.itemID) },
+					{ label: 'Move down', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveDown), onClick: () => moveItemDown(itemContextMenu.itemID) },
+					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.indent), onClick: () => indentItem(itemContextMenu.itemID) },
+					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.unindent), onClick: () => unindentItem(itemContextMenu.itemID) },
+					{ label: 'Add item above', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertBefore), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'before')) },
+					{ label: 'Add item below', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertAfter), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'after')) },
 					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => deleteItem(itemContextMenu.itemID) },
 				] : []}
 			/>

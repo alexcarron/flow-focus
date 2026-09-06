@@ -23,12 +23,12 @@ export default class TasksManager {
 		this.tasks.push(task);
 	}
 
-	protected createNewTask(taskDescription: string): Task {
-		return new Task(this, taskDescription);
+	protected createNewTask(taskDescription: string, taskID?: string): Task {
+		return new Task(this, taskDescription, taskID);
 	}
 
-	public addCreatedTask(taskDescription: string): Task {
-		const task = this.createNewTask(taskDescription);
+	public addCreatedTask(taskDescription: string, taskID?: string): Task {
+		const task = this.createNewTask(taskDescription, taskID);
 		this.addTask(task);
 		return task;
 	}

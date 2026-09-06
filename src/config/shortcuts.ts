@@ -45,15 +45,15 @@ export const SHORTCUTS = {
 		insertBefore: { key: 'enter', ctrl: true },
 		insertFirst: { key: 'enter', shift: true },
 	},
-	checklistInsert: {
+	quickToDoChecklistInsert: {
 		insertAfter: { key: 'enter' },
 		insertBefore: { key: 'enter', ctrl: true },
 	},
-	checklistIndent: {
+	quickToDoChecklistIndent: {
 		indent: { key: 'tab' },
 		unindent: { key: 'tab', shift: true },
 	},
-	checklistReorder: {
+	quickToDoChecklistReorder: {
 		moveUp: { key: 'arrowup', alt: true },
 		moveDown: { key: 'arrowdown', alt: true },
 	},

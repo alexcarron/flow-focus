@@ -1,10 +1,8 @@
 import { create } from 'zustand';
 import { AppSettings, DEFAULT_SETTINGS } from '../model/AppSettings';
 import TimeWindow from '../model/time-management/TimeWindow';
-import { db } from '../db/flowfocus.db';
+import { localSettingsRepository } from '../persistence/local/LocalSettingsRepository';
 import { tasksManager } from './tasksStore';
-
-const SETTINGS_ID = 1;
 
 interface SettingsState extends AppSettings {
 	isLoaded: boolean;
@@ -33,7 +31,7 @@ function pickSettings(state: SettingsState): AppSettings {
 }
 
 async function persistSettings(settings: AppSettings): Promise<void> {
-	await db.settings.put({ id: SETTINGS_ID, ...settings });
+	await localSettingsRepository.save(settings);
 }
 
 function applySleepWindow(settings: AppSettings): void {
@@ -45,11 +43,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 	isLoaded: false,
 
 	async loadSettings() {
-		const row = await db.settings.get(SETTINGS_ID);
-		const settings = { ...DEFAULT_SETTINGS, ...row };
+		const storedSettings = await localSettingsRepository.get();
+		const settings = { ...DEFAULT_SETTINGS, ...storedSettings };
 		set({ ...settings, isLoaded: true });
 		applySleepWindow(settings);
-		if (!row) await persistSettings(DEFAULT_SETTINGS);
+		if (!storedSettings) await persistSettings(DEFAULT_SETTINGS);
 	},
 
 	async setMorningTime(value: string) {
