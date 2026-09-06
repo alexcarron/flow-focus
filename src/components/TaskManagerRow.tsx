@@ -158,6 +158,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 					value={task.getIsMandatory()}
 					onChange={v => store.setMandatory(task, v)}
 					icon={<MandatoryIcon />}
+					accentColor="var(--color-mandatory)"
 				/>
 			</td>
 

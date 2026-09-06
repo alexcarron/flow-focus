@@ -73,6 +73,7 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 				label="Mandatory"
 				description="Whether this task should jump ahead of other optional tasks that are due sooner."
 				icon={<MandatoryIcon />}
+				accentColor="var(--color-mandatory)"
 			/>
 		</div>
 	);

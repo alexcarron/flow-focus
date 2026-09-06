@@ -19,8 +19,8 @@
 }
 
 .boxChecked {
-	background-color: var(--color-accent);
-	border-color: var(--color-accent);
+	background-color: var(--checkbox-accent-color, var(--color-accent));
+	border-color: var(--checkbox-accent-color, var(--color-accent));
 }
 
 .checkmark {

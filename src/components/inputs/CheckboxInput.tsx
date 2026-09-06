@@ -10,9 +10,10 @@ interface Props {
 	description?: string;
 	className?: string;
 	icon?: React.ReactElement<{ className?: string }>;
+	accentColor?: string;
 }
 
-export default function CheckboxInput({ value, onChange, label, description, className = '', icon = <CheckIcon /> }: Props) {
+export default function CheckboxInput({ value, onChange, label, description, className = '', icon = <CheckIcon />, accentColor }: Props) {
 	return (
 		<label className={`${styles.checkbox} ${className}`}>
 			<div
@@ -22,6 +23,7 @@ export default function CheckboxInput({ value, onChange, label, description, cla
 				onClick={event => onChange(!value, event)}
 				onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') onChange(!value, event); }}
 				className={value ? `${styles.box} ${styles.boxChecked}` : styles.box}
+				style={accentColor ? { '--checkbox-accent-color': accentColor } as React.CSSProperties : undefined}
 			>
 				{value && cloneElement(icon, { className: styles.checkmark })}
 			</div>

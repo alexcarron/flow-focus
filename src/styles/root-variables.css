@@ -26,6 +26,8 @@
 
 	--border-width-primary-accent-emphasis: 3px;
 
+	--color-mandatory: #e03838;
+
 	--color-danger: #ef4444;
 	--color-danger-text: #f87171;
 	--color-danger-text-hover: #fca5a5;
@@ -33,12 +35,12 @@
 
 	--color-backdrop: rgba(0, 0, 0, 0.6);
 
-	--color-typed-quick-input-deadline: #f87171;
+	--color-typed-quick-input-deadline: #f871c0;
 	--color-typed-quick-input-start: #34d399;
 	--color-typed-quick-input-end: #fbbf24;
 	--color-typed-quick-input-repeat: #a78bfa;
 	--color-typed-quick-input-duration: #38bdf8;
-	--color-typed-quick-input-mandatory: #f472b6;
+	--color-typed-quick-input-mandatory: #f47272;
 	--color-typed-quick-input-steps: #2dd4bf;
 
 	--readable-content-width: 40rem;
