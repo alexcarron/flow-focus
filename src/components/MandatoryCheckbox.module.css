@@ -6,10 +6,19 @@
 	background-color: transparent;
 	cursor: pointer;
 	user-select: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .boxChecked {
-	background-color: var(--color-accent-border);
-	border-color: var(--color-accent);
+	background-color: var(--color-mandatory);
+	border-color: var(--color-mandatory);
+}
+
+.icon {
+	width: 0.65rem;
+	height: 0.65rem;
+	color: var(--color-text-primary);
 }

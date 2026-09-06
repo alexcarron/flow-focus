@@ -72,8 +72,7 @@
 }
 
 .stepsCellCompact {
-	padding: 0 var(--space-medium) 0 0;
-	vertical-align: middle;
+	padding: var(--space-small) var(--space-medium) 0 0;
 }
 
 .stepsArrayInput {

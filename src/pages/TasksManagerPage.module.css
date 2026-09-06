@@ -38,6 +38,7 @@
 
 .headerRow {
 	text-align: left;
+	vertical-align: middle;
 	color: var(--color-text-muted);
 	border-bottom: 1px solid var(--color-border);
 }
@@ -88,6 +89,7 @@
 .columnHeaderIcon {
 	width: 0.9rem;
 	height: 0.9rem;
+	vertical-align: middle;
 }
 
 .iconColumn {
