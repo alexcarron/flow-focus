@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { AppSettings, DEFAULT_SETTINGS } from '../model/AppSettings';
 import TimeWindow from '../model/time-management/TimeWindow';
-import { localSettingsRepository } from '../persistence/local/LocalSettingsRepository';
+import { getActiveRepositories } from '../persistence/activeRepositories';
 import { tasksManager } from './tasksStore';
 
 interface SettingsState extends AppSettings {
@@ -31,7 +31,7 @@ function pickSettings(state: SettingsState): AppSettings {
 }
 
 async function persistSettings(settings: AppSettings): Promise<void> {
-	await localSettingsRepository.save(settings);
+	await getActiveRepositories().settingsRepository.save(settings);
 }
 
 function applySleepWindow(settings: AppSettings): void {
@@ -43,7 +43,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 	isLoaded: false,
 
 	async loadSettings() {
-		const storedSettings = await localSettingsRepository.get();
+		const storedSettings = await getActiveRepositories().settingsRepository.get();
 		const settings = { ...DEFAULT_SETTINGS, ...storedSettings };
 		set({ ...settings, isLoaded: true });
 		applySleepWindow(settings);

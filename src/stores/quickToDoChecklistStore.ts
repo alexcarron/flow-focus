@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import * as quickToDoChecklistTree from '../model/quickToDoChecklist/quickToDoChecklistTree';
-import { localQuickToDoChecklistRepository } from '../persistence/local/LocalQuickToDoChecklistRepository';
+import { getActiveRepositories } from '../persistence/activeRepositories';
 
 interface QuickToDoChecklistState {
 	items: QuickToDoChecklistItem[];
@@ -29,7 +29,7 @@ interface QuickToDoChecklistActions {
 }
 
 async function persistQuickToDoChecklist(items: QuickToDoChecklistItem[]): Promise<void> {
-	await localQuickToDoChecklistRepository.save(items);
+	await getActiveRepositories().quickToDoChecklistRepository.save(items);
 }
 
 export const useQuickToDoChecklistStore = create<QuickToDoChecklistState & QuickToDoChecklistActions>()((set, get) => ({
@@ -37,7 +37,7 @@ export const useQuickToDoChecklistStore = create<QuickToDoChecklistState & Quick
 	isLoaded: false,
 
 	async loadQuickToDoChecklist() {
-		const items = await localQuickToDoChecklistRepository.getItems();
+		const items = await getActiveRepositories().quickToDoChecklistRepository.getItems();
 		set({ items, isLoaded: true });
 	},
 

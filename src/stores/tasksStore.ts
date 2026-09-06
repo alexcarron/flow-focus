@@ -7,7 +7,7 @@ import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
 import { serializeTask, deserializeRow } from '../db/task.serializer';
-import { localTaskRepository } from '../persistence/local/LocalTaskRepository';
+import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
 
 enablePatches();
@@ -70,17 +70,17 @@ let loadTasksInProgress = false;
 
 async function persistTask(task: Task): Promise<void> {
 	try {
-		await localTaskRepository.save(serializeTask(task));
+		await getActiveRepositories().taskRepository.save(serializeTask(task));
 	} catch (err) {
 		console.error('Failed to persist task:', err);
 	}
 }
 
-async function softDeleteFromDB(id: string): Promise<void> {
+async function softDeleteTask(id: string): Promise<void> {
 	try {
-		await localTaskRepository.softDelete(id);
+		await getActiveRepositories().taskRepository.softDelete(id);
 	} catch (err) {
-		console.error('Failed to delete task from Dexie:', err);
+		console.error('Failed to delete task:', err);
 	}
 }
 
@@ -96,7 +96,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			loadTasksInProgress = true;
 			try {
 				tasksManager.clearTasks();
-				const rows = await localTaskRepository.getAll();
+				const rows = await getActiveRepositories().taskRepository.getAll();
 				rows.forEach(row => {
 					const data = deserializeRow(row);
 					const task = tasksManager.addCreatedTask(data.description, row.id);
@@ -304,14 +304,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		async deleteTask(task: Task) {
-			await softDeleteFromDB(task.id);
+			await softDeleteTask(task.id);
 			tasksManager.deleteTask(task);
 			set(state => { state.tasks = [...tasksManager.getTasks()]; });
 		},
 
 		async importTasks(backupTasks: BackupTask[]) {
 			tasksManager.clearTasks();
-			await localTaskRepository.clear();
+			await getActiveRepositories().taskRepository.clear();
 			for (const bt of backupTasks) {
 				const task = tasksManager.addCreatedTask(bt.description);
 				task.replaceAllSteps(bt.steps.map(step => ({ ...step })));
