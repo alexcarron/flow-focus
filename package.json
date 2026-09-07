@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite --port 5174",
     "build": "tsc && vite build",
-    "test": "vitest",
-    "deploy": "npm run build && gh-pages -d dist"
+    "test": "vitest"
   },
   "dependencies": {
     "@google/generative-ai": "^0.17.0",
@@ -27,7 +26,6 @@
     "@vitejs/plugin-react": "^4.3.1",
     "dotenv": "^17.4.2",
     "fake-indexeddb": "^6.2.5",
-    "gh-pages": "^6.1.1",
     "jsdom": "^29.1.1",
     "typescript": "~5.5.3",
     "vite": "^5.4.2",
