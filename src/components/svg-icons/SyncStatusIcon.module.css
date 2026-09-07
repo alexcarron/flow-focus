@@ -1,0 +1,27 @@
+.icon {
+	display: inline-block;
+}
+
+.synced {
+	color: var(--color-accent);
+}
+
+.syncing,
+.offline {
+	color: var(--color-text-muted);
+}
+
+.unsynced {
+	color: var(--color-danger);
+}
+
+.spinning {
+	animation: spin 1s linear infinite;
+	transform-origin: center;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

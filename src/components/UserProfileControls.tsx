@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useUserAuthorization } from '../hooks/useUserAuthorization';
+import { useSyncStatusIndicator } from '../hooks/useSyncStatusIndicator';
 import GoogleIcon from './svg-icons/GoogleIcon';
+import SyncStatusIcon from './svg-icons/SyncStatusIcon';
 import SignOutConfirmationModal from './SignOutConfirmationModal';
 import styles from './UserProfileControls.module.css';
 
@@ -16,6 +18,7 @@ export default function UserProfileControls() {
 		cancelSignOutConfirmation,
 		updateDisplayName,
 	} = useUserAuthorization();
+	const { state: syncStatusState, tooltipText: syncStatusTooltipText } = useSyncStatusIndicator();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const displayNameRef = useRef<HTMLSpanElement>(null);
 
@@ -77,6 +80,9 @@ export default function UserProfileControls() {
 
 	return (
 		<div className={styles.controls}>
+			<span className={styles.syncStatusIcon} title={syncStatusTooltipText} aria-label={syncStatusTooltipText}>
+				<SyncStatusIcon state={syncStatusState} />
+			</span>
 			<span
 				ref={displayNameRef}
 				contentEditable
