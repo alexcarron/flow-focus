@@ -1,17 +1,15 @@
-import { db } from './flowfocus.db';
+import { db, SETTINGS_ROW_ID } from './flowfocus.db';
 import { AppSettings } from '../../model/AppSettings';
 import { SettingsRepository } from '../SettingsRepository';
 
-const SETTINGS_ID = 1;
-
 export class LocalSettingsRepository implements SettingsRepository {
 	async get(): Promise<AppSettings | undefined> {
-		return await db.settings.get(SETTINGS_ID);
+		return await db.settings.get(SETTINGS_ROW_ID);
 	}
 
 	async save(settings: AppSettings): Promise<void> {
 		await db.settings.put({
-			id: SETTINGS_ID,
+			id: SETTINGS_ROW_ID,
 			...settings,
 			updatedAt: new Date().toISOString(),
 			isSynced: false,

@@ -43,6 +43,7 @@ describe('opening a fresh database', () => {
 		expect(await db.tasks.toArray()).toEqual([]);
 		expect(await db.settings.toArray()).toEqual([]);
 		expect(await db.quickToDoChecklist.toArray()).toEqual([]);
+		expect(await db.syncStatus.toArray()).toEqual([]);
 
 		db.close();
 	});

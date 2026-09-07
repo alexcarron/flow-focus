@@ -43,12 +43,21 @@ export interface QuickToDoChecklistRow extends PersistedRecordMetadata {
 	items: QuickToDoChecklistItem[];
 }
 
+export interface SyncStatusRow {
+	id: number;
+	timeLastSyncedTasksAt: string | null;
+}
+
 export const DEFAULT_FLOW_FOCUS_DATABASE_NAME = 'FlowFocusDB';
+export const SETTINGS_ROW_ID = 1;
+export const QUICK_TO_DO_CHECKLIST_ROW_ID = 1;
+export const SYNC_STATUS_ROW_ID = 1;
 
 export class FlowFocusDB extends Dexie {
 	tasks!: Table<PlainTaskRow, string>;
 	settings!: Table<SettingsRow, number>;
 	quickToDoChecklist!: Table<QuickToDoChecklistRow, number>;
+	syncStatus!: Table<SyncStatusRow, number>;
 
 	constructor(databaseName: string = DEFAULT_FLOW_FOCUS_DATABASE_NAME) {
 		super(databaseName);
@@ -135,6 +144,12 @@ export class FlowFocusDB extends Dexie {
 		}).upgrade(async transaction => {
 			const stagedTaskRows = await transaction.table('tasksWithIdentity').toArray();
 			await transaction.table('tasks').bulkAdd(stagedTaskRows);
+		});
+		this.version(8).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
 		});
 	}
 }
