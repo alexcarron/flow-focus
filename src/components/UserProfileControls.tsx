@@ -1,10 +1,21 @@
 import { useRef, useState } from 'react';
 import { useUserAuthorization } from '../hooks/useUserAuthorization';
 import GoogleIcon from './svg-icons/GoogleIcon';
+import SignOutConfirmationModal from './SignOutConfirmationModal';
 import styles from './UserProfileControls.module.css';
 
 export default function UserProfileControls() {
-	const { user, displayName, isLoading, signInWithGoogle, signOut, updateDisplayName } = useUserAuthorization();
+	const {
+		user,
+		displayName,
+		isLoading,
+		isSignOutConfirmationRequired,
+		signInWithGoogle,
+		signOut,
+		confirmSignOut,
+		cancelSignOutConfirmation,
+		updateDisplayName,
+	} = useUserAuthorization();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const displayNameRef = useRef<HTMLSpanElement>(null);
 
@@ -22,6 +33,16 @@ export default function UserProfileControls() {
 		try {
 			await signOut();
 		} catch (err) {
+			setErrorMessage(err instanceof Error ? err.message : 'Failed to sign out.');
+		}
+	}
+
+	async function onConfirmSignOutClick() {
+		setErrorMessage(null);
+		try {
+			await confirmSignOut();
+		} 
+		catch (err) {
 			setErrorMessage(err instanceof Error ? err.message : 'Failed to sign out.');
 		}
 	}
@@ -69,6 +90,11 @@ export default function UserProfileControls() {
 				Sign out
 			</button>
 			{errorMessage && <span className={styles.errorMessage}>{errorMessage}</span>}
+			<SignOutConfirmationModal
+				isOpen={isSignOutConfirmationRequired}
+				onConfirm={onConfirmSignOutClick}
+				onClose={cancelSignOutConfirmation}
+			/>
 		</div>
 	);
 }

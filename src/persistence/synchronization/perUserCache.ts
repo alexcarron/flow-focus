@@ -1,4 +1,4 @@
-import { FlowFocusDB } from '../local/flowfocus.db';
+import { FlowFocusDB, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
 
 function getUserCacheDatabaseName(userID: string): string {
 	return `FlowFocusDB-user-cache-${userID}`;
@@ -29,4 +29,20 @@ export function closeActiveUserCacheDatabase(): void {
 	activeUserCacheDatabase.close();
 	activeUserCacheDatabase = undefined;
 	activeUserID = undefined;
+}
+
+export async function hasUnsyncedCachedChanges(cacheDB: FlowFocusDB | undefined = activeUserCacheDatabase): Promise<boolean> {
+	if (!cacheDB) return false;
+
+	const [unsyncedTaskCount, settingsRow, checklistRow] = await Promise.all([
+		cacheDB.tasks.filter(row => !row.isSynced).count(),
+		cacheDB.settings.get(SETTINGS_ROW_ID),
+		cacheDB.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID),
+	]);
+
+	return (
+		unsyncedTaskCount > 0 || 
+		Boolean(settingsRow && !settingsRow.isSynced) || 
+		Boolean(checklistRow && !checklistRow.isSynced)
+	);
 }

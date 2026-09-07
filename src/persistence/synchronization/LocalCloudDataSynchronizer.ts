@@ -1,5 +1,6 @@
 import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, SYNC_STATUS_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
+import { hasUnsyncedCachedChanges } from './perUserCache';
 
 export interface SyncStatusSnapshot {
 	isSyncing: boolean;
@@ -219,12 +220,6 @@ export class LocalCloudDataSynchronizer {
 	}
 
 	private async computeHasUnsyncedChanges(): Promise<boolean> {
-		const [unsyncedTaskCount, settingsRow, checklistRow] = await Promise.all([
-			this.cacheDB.tasks.filter(row => !row.isSynced).count(),
-			this.cacheDB.settings.get(SETTINGS_ROW_ID),
-			this.cacheDB.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID),
-		]);
-
-		return unsyncedTaskCount > 0 || Boolean(settingsRow && !settingsRow.isSynced) || Boolean(checklistRow && !checklistRow.isSynced);
+		return hasUnsyncedCachedChanges(this.cacheDB);
 	}
 }

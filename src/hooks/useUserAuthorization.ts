@@ -10,14 +10,18 @@ import {
 	resolveDisplayName,
 	type UserProfile,
 } from '../user-authorization/userAuthorizationService';
+import { hasUnsyncedCachedChanges } from '../persistence/synchronization/perUserCache';
 
 export interface UseUserAuthorizationApi {
 	readonly user: User | null;
 	readonly profile: UserProfile | null;
 	readonly displayName: string | null;
 	readonly isLoading: boolean;
+	readonly isSignOutConfirmationRequired: boolean;
 	signInWithGoogle(): Promise<void>;
 	signOut(): Promise<void>;
+	confirmSignOut(): Promise<void>;
+	cancelSignOutConfirmation(): void;
 	updateDisplayName(name: string): Promise<void>;
 }
 
@@ -25,6 +29,7 @@ export function useUserAuthorization(): UseUserAuthorizationApi {
 	const [user, setUser] = useState<User | null>(null);
 	const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isSignOutConfirmationRequired, setIsSignOutConfirmationRequired] = useState(false);
 	const isMounted = useRef(true);
 
 	const loadUserProfile = useCallback(async (user: User | null): Promise<void> => {
@@ -75,12 +80,29 @@ export function useUserAuthorization(): UseUserAuthorizationApi {
 		[user],
 	);
 
-	const signOut = useCallback(async (): Promise<void> => {
+	const performSignOut = useCallback(async (): Promise<void> => {
 		await signOutOfSupabase();
 		if (isMounted.current) {
 			setUser(null);
 			setUserProfile(null);
+			setIsSignOutConfirmationRequired(false);
 		}
+	}, []);
+
+	const signOut = useCallback(async (): Promise<void> => {
+		if (await hasUnsyncedCachedChanges()) {
+			if (isMounted.current) setIsSignOutConfirmationRequired(true);
+			return;
+		}
+		await performSignOut();
+	}, [performSignOut]);
+
+	const confirmSignOut = useCallback(async (): Promise<void> => {
+		await performSignOut();
+	}, [performSignOut]);
+
+	const cancelSignOutConfirmation = useCallback((): void => {
+		setIsSignOutConfirmationRequired(false);
 	}, []);
 
 	const displayName = useMemo(
@@ -89,7 +111,18 @@ export function useUserAuthorization(): UseUserAuthorizationApi {
 	);
 
 	return useMemo<UseUserAuthorizationApi>(
-		() => ({ user, profile: userProfile, displayName, isLoading, signInWithGoogle, signOut, updateDisplayName }),
-		[user, userProfile, displayName, isLoading, signOut, updateDisplayName],
+		() => ({
+			user,
+			profile: userProfile,
+			displayName,
+			isLoading,
+			isSignOutConfirmationRequired,
+			signInWithGoogle,
+			signOut,
+			confirmSignOut,
+			cancelSignOutConfirmation,
+			updateDisplayName,
+		}),
+		[user, userProfile, displayName, isLoading, isSignOutConfirmationRequired, signOut, confirmSignOut, cancelSignOutConfirmation, updateDisplayName],
 	);
 }
