@@ -44,7 +44,12 @@ export class CachedTaskRepository implements TaskRepository {
 	}
 
 	async clear(): Promise<void> {
-		await this.db.tasks.clear();
+		const existingRows = await this.db.tasks.toArray();
+		if (existingRows.length === 0) return;
+
+		const now = new Date().toISOString();
+		await this.db.tasks.bulkPut(existingRows.map(row => ({ ...row, deletedAt: now, updatedAt: now, isSynced: false })));
+		this.notifyLocalWrite();
 	}
 
 	private notifyLocalWrite(): void {

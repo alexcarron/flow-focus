@@ -1,8 +1,23 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import Dexie from 'dexie';
 import { CachedTaskRepository } from './CachedTaskRepository';
-import { closeActiveUserCacheDatabase } from './perUserCache';
+import { closeActiveUserCacheDatabase, openUserCacheDatabase } from './perUserCache';
 import { TaskWriteInput } from '../TaskRepository';
+import { LocalCloudDataSynchronizer } from './LocalCloudDataSynchronizer';
+import { SupabaseDataService } from '../cloud/supabaseDataService';
+
+function makeCloudDataService(overrides: Partial<SupabaseDataService> = {}): SupabaseDataService {
+	return {
+		upsertTask: vi.fn().mockResolvedValue(undefined),
+		upsertChecklist: vi.fn().mockResolvedValue(undefined),
+		upsertSettings: vi.fn().mockResolvedValue(undefined),
+		pullTasks: vi.fn().mockResolvedValue([]),
+		pullChecklist: vi.fn().mockResolvedValue(undefined),
+		pullSettings: vi.fn().mockResolvedValue(undefined),
+		hasAnyTasks: vi.fn().mockResolvedValue(false),
+		...overrides,
+	};
+}
 
 const USER_A_ID = 'user-a-uuid';
 const USER_B_ID = 'user-b-uuid';
@@ -75,6 +90,39 @@ describe('softDelete', () => {
 
 		await expect(repository.softDelete('missing-id')).resolves.not.toThrow();
 		expect(syncTrigger.notifyLocalWrite).not.toHaveBeenCalled();
+	});
+});
+
+describe('clear', () => {
+	it('does nothing and does not notify when there are no tasks', async () => {
+		const syncTrigger = { notifyLocalWrite: vi.fn() };
+		const repository = new CachedTaskRepository(USER_A_ID, syncTrigger);
+
+		await repository.clear();
+
+		expect(syncTrigger.notifyLocalWrite).not.toHaveBeenCalled();
+	});
+
+	it('notifies the sync trigger so a real synchronizer pushes the deletions to the cloud instead of leaving them stranded', async () => {
+		const setupRepository = new CachedTaskRepository(USER_A_ID, { notifyLocalWrite: vi.fn() });
+		await setupRepository.save(makeTaskWriteInput({ description: 'Old task one' }));
+		await setupRepository.save(makeTaskWriteInput({ description: 'Old task two' }));
+
+		const cloudDataService = makeCloudDataService();
+		const synchronizer = new LocalCloudDataSynchronizer({
+			cacheDB: openUserCacheDatabase(USER_A_ID),
+			cloudDataService,
+			isOnline: () => false,
+		});
+		const repository = new CachedTaskRepository(USER_A_ID, synchronizer);
+
+		await repository.clear();
+		await synchronizer.sync();
+
+		expect(await repository.getAll()).toEqual([]);
+		expect(cloudDataService.upsertTask).toHaveBeenCalledTimes(2);
+		const pushedRows = vi.mocked(cloudDataService.upsertTask).mock.calls.map(call => call[0]);
+		expect(pushedRows.every(row => row.deletedAt !== null)).toBe(true);
 	});
 });
 
