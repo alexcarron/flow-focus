@@ -5,7 +5,7 @@ import { doesLocalDataNeedMigrationToCloud, migrateLocalDataToCloud } from '../p
 
 export interface UseRepositorySwitcherAPI {
 	readonly isMigrationConfirmationRequired: boolean;
-	confirmMigration(): Promise<void>;
+	confirmMigration(shouldKeepLocalData: boolean): Promise<void>;
 	declineMigration(): Promise<void>;
 }
 
@@ -43,13 +43,13 @@ export function useRepositorySwitcher(user: User | null): UseRepositorySwitcherA
 		}
 	}, [user]);
 
-	const confirmMigration = useCallback(async (): Promise<void> => {
+	const confirmMigration = useCallback(async (shouldKeepLocalData: boolean): Promise<void> => {
 		if (!pendingMigrationUserID) return;
 		const userID = pendingMigrationUserID;
 		const isRepositorySwitchStale = () => userIDRepositoryIsBoundTo.current !== userID;
 
 		setPendingMigrationUserID(null);
-		await migrateLocalDataToCloud(userID);
+		await migrateLocalDataToCloud({ userID, shouldKeepLocalData });
 		if (isRepositorySwitchStale()) return;
 
 		await switchRepositoriesToCloud(userID, isRepositorySwitchStale);

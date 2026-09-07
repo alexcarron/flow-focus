@@ -18,7 +18,7 @@ export async function doesLocalDataNeedMigrationToCloud(userID: string): Promise
 	return localTaskRows.length > 0 || !!localSettingsRow || !!localChecklistRow;
 }
 
-export async function migrateLocalDataToCloud({ userID, shouldKeepBrowserCopy }: { userID: string; shouldKeepBrowserCopy: boolean }): Promise<void> {
+export async function migrateLocalDataToCloud({ userID, shouldKeepLocalData }: { userID: string; shouldKeepLocalData: boolean }): Promise<void> {
 	const cloudDataService = createSupabaseDataService(userID);
 
 	const [localTaskRows, localSettingsRow, localChecklistRow] = await Promise.all([
@@ -36,7 +36,7 @@ export async function migrateLocalDataToCloud({ userID, shouldKeepBrowserCopy }:
 			localChecklistRow ? cloudDataService.upsertChecklist(localChecklistRow) : Promise.resolve(),
 		]);
 
-		if (!shouldKeepBrowserCopy) {
+		if (!shouldKeepLocalData) {
 			await Promise.all([
 				db.tasks.clear(),
 				db.settings.clear(),

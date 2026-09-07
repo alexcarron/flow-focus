@@ -10,7 +10,7 @@ import TaskCreatorPage from './components/pages/TaskCreatorPage';
 import QuickToDoPage from './components/pages/QuickToDoPage';
 import SettingsPage from './components/pages/SettingsPage';
 import UserProfileControls from './components/UserProfileControls';
-import ConfirmModal from './components/ConfirmModal';
+import MigrateLocalDataToCloudConfirmationModal from './components/MigrateLocalDataToCloudConfirmationModal';
 import styles from './App.module.css';
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -67,15 +67,10 @@ export default function App() {
 				</main>
 			)}
 
-			<ConfirmModal
-				headingText="Move your local task data to this account?"
-				descriptionText="You have tasks, settings, and/or a quick to-do checklist saved on this browser, and the account you signed into has no tasks yet. Do you want to move them to your account, losing access to them if you sign out? If you say no, your account starts empty. "
-				confirmButtonLabel="Yes, move it"
-				cancelButtonLabel="No, start with no tasks"
-				isConfirmDanger={false}
+			<MigrateLocalDataToCloudConfirmationModal
 				isOpen={isMigrationConfirmationRequired}
 				onConfirm={confirmMigration}
-				onClose={declineMigration}
+				onDecline={declineMigration}
 			/>
 		</div>
 	);
