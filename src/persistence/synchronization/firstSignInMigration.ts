@@ -3,11 +3,11 @@ import { createSupabaseDataService } from '../cloud/supabaseDataService';
 import { useSyncStatusStore } from '../../stores/syncStatusStore';
 import { toErrorMessage } from '../../utilities/errorMessage';
 
-export async function runFirstSignInMigration(userID: string): Promise<void> {
+export async function doesLocalDataNeedMigrationToCloud(userID: string): Promise<boolean> {
 	const cloudDataService = createSupabaseDataService(userID);
-
 	const cloudAccountAlreadyHasTasks = await cloudDataService.hasAnyTasks();
-	if (cloudAccountAlreadyHasTasks) return;
+	if (cloudAccountAlreadyHasTasks) 
+		return false;
 
 	const [localTaskRows, localSettingsRow, localChecklistRow] = await Promise.all([
 		db.tasks.toArray(),
@@ -15,7 +15,17 @@ export async function runFirstSignInMigration(userID: string): Promise<void> {
 		db.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID),
 	]);
 
-	if (localTaskRows.length === 0 && !localSettingsRow && !localChecklistRow) return;
+	return localTaskRows.length > 0 || !!localSettingsRow || !!localChecklistRow;
+}
+
+export async function migrateLocalDataToCloud({ userID, shouldKeepBrowserCopy }: { userID: string; shouldKeepBrowserCopy: boolean }): Promise<void> {
+	const cloudDataService = createSupabaseDataService(userID);
+
+	const [localTaskRows, localSettingsRow, localChecklistRow] = await Promise.all([
+		db.tasks.toArray(),
+		db.settings.get(SETTINGS_ROW_ID),
+		db.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID),
+	]);
 
 	useSyncStatusStore.getState().reportSyncStatus({ isSyncing: true, lastSyncError: null, hasUnsyncedChanges: false });
 
@@ -26,11 +36,13 @@ export async function runFirstSignInMigration(userID: string): Promise<void> {
 			localChecklistRow ? cloudDataService.upsertChecklist(localChecklistRow) : Promise.resolve(),
 		]);
 
-		await Promise.all([
-			db.tasks.clear(),
-			db.settings.clear(),
-			db.quickToDoChecklist.clear(),
-		]);
+		if (!shouldKeepBrowserCopy) {
+			await Promise.all([
+				db.tasks.clear(),
+				db.settings.clear(),
+				db.quickToDoChecklist.clear(),
+			]);
+		}
 
 		useSyncStatusStore.getState().reportSyncStatus({ isSyncing: false, lastSyncError: null, hasUnsyncedChanges: false });
 	}
