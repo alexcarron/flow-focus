@@ -1,5 +1,5 @@
-import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
-import { QuickToDoChecklistRow } from './flowfocus.db';
+import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
+import { QuickToDoChecklistRow } from '../local/flowfocus.db';
 import { fromCloudTimestamp, toCloudTimestamp } from './cloudTimestamp';
 
 export interface CloudChecklistRow {

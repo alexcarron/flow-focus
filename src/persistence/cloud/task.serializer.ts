@@ -1,8 +1,8 @@
-import Task from '../model/task/Task';
-import Step from '../model/task/Step';
-import StepStatus from '../model/task/StepStatus';
-import { TaskWriteInput } from '../persistence/TaskRepository';
-import { PlainStepRow, PlainTaskRow } from './flowfocus.db';
+import Task from '../../model/task/Task';
+import Step from '../../model/task/Step';
+import StepStatus from '../../model/task/StepStatus';
+import { TaskWriteInput } from '../TaskRepository';
+import { PlainStepRow, PlainTaskRow } from '../local/flowfocus.db';
 import { fromCloudTimestamp, fromNullableCloudTimestamp, toCloudTimestamp, toNullableCloudTimestamp } from './cloudTimestamp';
 
 export function serializeTask(task: Task): TaskWriteInput {

@@ -1,4 +1,4 @@
-import { PlainTaskRow } from '../db/flowfocus.db';
+import { PlainTaskRow } from './local/flowfocus.db';
 
 export type TaskWriteInput = Omit<PlainTaskRow, 'updatedAt' | 'deletedAt' | 'isSynced'>;
 

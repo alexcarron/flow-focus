@@ -1,4 +1,4 @@
-import { SettingsRow } from './flowfocus.db';
+import { SettingsRow } from '../local/flowfocus.db';
 import { fromCloudTimestamp, toCloudTimestamp } from './cloudTimestamp';
 
 export interface CloudSettingsRow {

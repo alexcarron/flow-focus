@@ -1,6 +1,6 @@
 import Dexie, { Table } from 'dexie';
-import { AppSettings } from '../model/AppSettings';
-import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
+import { AppSettings } from '../../model/AppSettings';
+import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
 
 export interface PlainStepRow {
 	id: string;

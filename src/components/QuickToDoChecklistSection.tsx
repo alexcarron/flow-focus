@@ -5,7 +5,7 @@ import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { findItemWithParent, hasAnyCheckedItem } from '../model/quickToDoChecklist/quickToDoChecklistTree';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import { mergeRefs } from '../utilities/mergeRefs';
-import { SHORTCUTS, getShortcutKeyParts } from '../config/shortcuts';
+import { SHORTCUTS, getShortcutKeyParts } from '../utilities/shortcuts';
 import QuickToDoChecklistItemRow from './QuickToDoChecklistItemRow';
 import ContextMenu from './context-menu/ContextMenu';
 import ConfirmModal from './ConfirmModal';

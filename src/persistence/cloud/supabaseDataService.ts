@@ -1,8 +1,8 @@
-import { requireSupabase } from '../../auth/supabaseClient';
-import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow } from '../../db/flowfocus.db';
-import { CloudTaskRow, cloudRowToTaskRow, taskRowToCloudRow } from '../../db/task.serializer';
-import { CloudChecklistRow, cloudRowToQuickToDoChecklistRow, quickToDoChecklistRowToCloudRow } from '../../db/quickToDoChecklist.serializer';
-import { CloudSettingsRow, cloudRowToSettingsRow, settingsRowToCloudRow } from '../../db/settings.serializer';
+import { requireSupabase } from './supabaseClient';
+import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow } from '../local/flowfocus.db';
+import { CloudTaskRow, cloudRowToTaskRow, taskRowToCloudRow } from './task.serializer';
+import { CloudChecklistRow, cloudRowToQuickToDoChecklistRow, quickToDoChecklistRowToCloudRow } from './quickToDoChecklist.serializer';
+import { CloudSettingsRow, cloudRowToSettingsRow, settingsRowToCloudRow } from './settings.serializer';
 
 export interface SupabaseDataService {
 	upsertTask(row: PlainTaskRow): Promise<void>;

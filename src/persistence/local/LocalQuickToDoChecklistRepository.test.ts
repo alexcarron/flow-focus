@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from '../../db/flowfocus.db';
+import { db } from './flowfocus.db';
 import { LocalQuickToDoChecklistRepository } from './LocalQuickToDoChecklistRepository';
 import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
 

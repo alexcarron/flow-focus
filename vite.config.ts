@@ -11,6 +11,6 @@ export default defineConfig(({ command }) => ({
 	test: {
 		globals: true,
 		environment: 'jsdom',
-		setupFiles: ['src/test/setupIndexedDB.ts'],
+		setupFiles: ['src/testing/setupIndexedDB.ts'],
 	},
 }));

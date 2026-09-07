@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, formatShortcut } from '../../utilities/shortcuts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import Time from '../../model/time-management/Time';
 import parseDatePhrase from '../../model/typed-quick-input/parseDatePhrase';

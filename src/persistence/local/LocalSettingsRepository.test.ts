@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from '../../db/flowfocus.db';
+import { db } from './flowfocus.db';
 import { LocalSettingsRepository } from './LocalSettingsRepository';
 import { DEFAULT_SETTINGS } from '../../model/AppSettings';
 

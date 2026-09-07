@@ -6,7 +6,7 @@ import TaskState from '../model/task/TaskState';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
-import { serializeTask, deserializeRow } from '../db/task.serializer';
+import { serializeTask, deserializeRow } from '../persistence/cloud/task.serializer';
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
 
@@ -62,10 +62,8 @@ interface TasksActions {
 	redo: () => void;
 }
 
-// Single TasksManager instance shared across the store
 export const tasksManager = new TasksManager();
 
-// Guard against concurrent loadTasks calls (e.g. React StrictMode double-effect)
 let loadTasksInProgress = false;
 
 async function persistTask(task: Task): Promise<void> {

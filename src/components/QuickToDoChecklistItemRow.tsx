@@ -1,5 +1,5 @@
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
-import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import styles from './QuickToDoChecklistSection.module.css';
 

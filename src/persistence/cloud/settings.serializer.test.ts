@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { cloudRowToSettingsRow, settingsRowToCloudRow } from './settings.serializer';
-import { SettingsRow } from './flowfocus.db';
+import { SettingsRow } from '../local/flowfocus.db';
 
 const USER_ID = 'user-a-uuid';
 

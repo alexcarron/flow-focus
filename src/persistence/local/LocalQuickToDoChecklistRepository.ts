@@ -1,4 +1,4 @@
-import { db } from '../../db/flowfocus.db';
+import { db } from './flowfocus.db';
 import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { QuickToDoChecklistRepository } from '../QuickToDoChecklistRepository';
 

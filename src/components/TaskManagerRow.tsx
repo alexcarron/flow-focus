@@ -6,7 +6,7 @@ import { formatDate } from '../utilities/dateFormatting';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
 import { mergeRefs } from '../utilities/mergeRefs';
-import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../utilities/shortcuts';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
 import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';

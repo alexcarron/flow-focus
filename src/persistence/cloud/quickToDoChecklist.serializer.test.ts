@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { cloudRowToQuickToDoChecklistRow, quickToDoChecklistRowToCloudRow } from './quickToDoChecklist.serializer';
-import { QuickToDoChecklistRow } from './flowfocus.db';
+import { QuickToDoChecklistRow } from '../local/flowfocus.db';
 
 const USER_ID = 'user-a-uuid';
 

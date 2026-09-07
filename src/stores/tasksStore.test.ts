@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { db } from '../db/flowfocus.db';
+import { db } from '../persistence/local/flowfocus.db';
 import StepStatus from '../model/task/StepStatus';
 import { useTasksStore, tasksManager } from './tasksStore';
 

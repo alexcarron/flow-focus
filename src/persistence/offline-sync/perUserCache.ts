@@ -1,4 +1,4 @@
-import { FlowFocusDB } from '../../db/flowfocus.db';
+import { FlowFocusDB } from '../local/flowfocus.db';
 
 function getUserCacheDatabaseName(userID: string): string {
 	return `FlowFocusDB-user-cache-${userID}`;

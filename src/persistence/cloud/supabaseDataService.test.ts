@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createSupabaseDataService } from './supabaseDataService';
-import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow } from '../../db/flowfocus.db';
+import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow } from '../local/flowfocus.db';
 
 const USER_ID = 'user-a-uuid';
 
@@ -20,7 +20,7 @@ function makeQueryBuilder(result: { data: unknown; error: null }) {
 let queryResult: { data: unknown; error: null };
 const fromMock = vi.fn(() => makeQueryBuilder(queryResult));
 
-vi.mock('../../auth/supabaseClient', () => ({
+vi.mock('./supabaseClient', () => ({
 	requireSupabase: () => ({ rpc: rpcMock, from: fromMock }),
 }));
 

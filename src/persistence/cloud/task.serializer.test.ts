@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CloudTaskRow, cloudRowToTaskRow, taskRowToCloudRow } from './task.serializer';
-import { PlainTaskRow } from './flowfocus.db';
+import { PlainTaskRow } from '../local/flowfocus.db';
 
 const USER_ID = 'user-a-uuid';
 

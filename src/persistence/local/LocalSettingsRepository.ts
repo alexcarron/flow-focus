@@ -1,4 +1,4 @@
-import { db } from '../../db/flowfocus.db';
+import { db } from './flowfocus.db';
 import { AppSettings } from '../../model/AppSettings';
 import { SettingsRepository } from '../SettingsRepository';
 

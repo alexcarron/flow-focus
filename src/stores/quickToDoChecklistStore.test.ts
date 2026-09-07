@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from '../db/flowfocus.db';
+import { db } from '../persistence/local/flowfocus.db';
 import { useQuickToDoChecklistStore } from './quickToDoChecklistStore';
 
 beforeEach(async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from '../../db/flowfocus.db';
+import { db } from './flowfocus.db';
 import { LocalTaskRepository } from './LocalTaskRepository';
 import { TaskWriteInput } from '../TaskRepository';
 

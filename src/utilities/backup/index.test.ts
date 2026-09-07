@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from '../../db/flowfocus.db';
+import { db } from '../../persistence/local/flowfocus.db';
 import { DEFAULT_SETTINGS } from '../../model/AppSettings';
 import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';

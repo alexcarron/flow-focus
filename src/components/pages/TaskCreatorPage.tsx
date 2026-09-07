@@ -10,7 +10,7 @@ import CheckboxInput from '../inputs/CheckboxInput';
 import DatetimeInput from '../inputs/DatetimeInput';
 import TypedQuickInput from '../inputs/TypedQuickInput';
 import TimingOptionsInput from '../inputs/TimingOptionsInput';
-import { SHORTCUTS, matchesShortcut } from '../../config/shortcuts';
+import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
 

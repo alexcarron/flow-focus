@@ -7,7 +7,7 @@ import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStep
 import StepCheckbox from './StepCheckbox';
 import { formatDate } from '../utilities/dateFormatting';
 import { mergeRefs } from '../utilities/mergeRefs';
-import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../config/shortcuts';
+import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../utilities/shortcuts';
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';

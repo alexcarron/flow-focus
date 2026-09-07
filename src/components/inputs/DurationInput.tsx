@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SHORTCUTS, matchesShortcut } from '../../config/shortcuts';
+import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import styles from './DurationInput.module.css';
 
 interface Props {

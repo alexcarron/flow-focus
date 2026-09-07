@@ -1,4 +1,4 @@
-import { db, PlainTaskRow } from '../../db/flowfocus.db';
+import { db, PlainTaskRow } from './flowfocus.db';
 import { TaskRepository, TaskWriteInput } from '../TaskRepository';
 
 export class LocalTaskRepository implements TaskRepository {
