@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import { useTasksStore } from './stores/tasksStore';
 import { useSettingsStore } from './stores/settingsStore';
+import { useUserAuthorization } from './hooks/useUserAuthorization';
+import { useRepositorySwitcher } from './hooks/useRepositorySwitcher';
 import FocusPage from './components/pages/FocusPage';
 import TasksManagerPage from './components/pages/TasksManagerPage';
 import TaskCreatorPage from './components/pages/TaskCreatorPage';
@@ -18,11 +20,14 @@ export default function App() {
 	const isLoading = useTasksStore(s => s.isLoading);
 	const loadTasks = useTasksStore(s => s.loadTasks);
 	const loadSettings = useSettingsStore(s => s.loadSettings);
+	const { user } = useUserAuthorization();
 
 	useEffect(() => {
 		loadTasks();
 		loadSettings();
-}, [loadTasks, loadSettings]);
+	}, [loadTasks, loadSettings]);
+
+	useRepositorySwitcher(user);
 
 	return (
 		<div className={styles.app}>
