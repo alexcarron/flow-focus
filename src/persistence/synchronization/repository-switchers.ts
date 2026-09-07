@@ -12,6 +12,7 @@ import { useTasksStore } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { useSyncStatusStore } from '../../stores/syncStatusStore';
+import { runFirstSignInMigration } from './firstSignInMigration';
 
 let activeSynchronizer: LocalCloudDataSynchronizer | undefined;
 
@@ -25,6 +26,9 @@ export async function reloadAllStores(): Promise<void> {
 
 export async function switchRepositoriesToCloud(userID: string, isRepositorySwitchStale: () => boolean): Promise<void> {
 	useTasksStore.setState({ isLoading: true });
+
+	await runFirstSignInMigration(userID);
+	if (isRepositorySwitchStale()) return;
 
 	activeSynchronizer?.stop();
 

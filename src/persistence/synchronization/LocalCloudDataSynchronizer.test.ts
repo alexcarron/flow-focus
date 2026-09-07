@@ -35,6 +35,7 @@ function makeCloudDataService(overrides: Partial<SupabaseDataService> = {}): Sup
 		pullTasks: vi.fn().mockResolvedValue([]),
 		pullChecklist: vi.fn().mockResolvedValue(undefined),
 		pullSettings: vi.fn().mockResolvedValue(undefined),
+		hasAnyTasks: vi.fn().mockResolvedValue(false),
 		...overrides,
 	};
 }

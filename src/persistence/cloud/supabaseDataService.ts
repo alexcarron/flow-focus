@@ -11,6 +11,7 @@ export interface SupabaseDataService {
 	pullTasks(sinceUpdatedAt?: string): Promise<PlainTaskRow[]>;
 	pullChecklist(localID: number): Promise<QuickToDoChecklistRow | undefined>;
 	pullSettings(localID: number): Promise<SettingsRow | undefined>;
+	hasAnyTasks(): Promise<boolean>;
 }
 
 export function createSupabaseDataService(userID: string): SupabaseDataService {
@@ -85,6 +86,21 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 			const { data, error } = await supabase.from('settings').select('*').eq('user_id', userID).maybeSingle();
 			if (error) throw error;
 			return data ? cloudRowToSettingsRow({ cloudRow: data as CloudSettingsRow, id: localID }) : undefined;
+		},
+
+		async hasAnyTasks() {
+			const { count, error } = await supabase
+				.from('tasks')
+				.select('id', { 
+					count: 'exact', 
+					head: true 
+				})
+				.eq('user_id', userID);
+
+			if (error) 
+				throw error;
+			
+			return (count ?? 0) > 0;
 		},
 	};
 }

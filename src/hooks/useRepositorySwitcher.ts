@@ -17,7 +17,7 @@ export function useRepositorySwitcher(user: User | null): void {
 
 		if (user) {
 			void switchRepositoriesToCloud(user.id, isRepositorySwitchStale);
-		} 
+		}
 		else {
 			void switchRepositoriesToLocal();
 		}
