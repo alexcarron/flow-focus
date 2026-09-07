@@ -1,10 +1,7 @@
 import { db, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
 import { createSupabaseDataService } from '../cloud/supabaseDataService';
 import { useSyncStatusStore } from '../../stores/syncStatusStore';
-
-function errorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}
+import { toErrorMessage } from '../../utilities/errorMessage';
 
 export async function runFirstSignInMigration(userID: string): Promise<void> {
 	const cloudDataService = createSupabaseDataService(userID);
@@ -38,6 +35,6 @@ export async function runFirstSignInMigration(userID: string): Promise<void> {
 		useSyncStatusStore.getState().reportSyncStatus({ isSyncing: false, lastSyncError: null, hasUnsyncedChanges: false });
 	}
 	catch (error) {
-		useSyncStatusStore.getState().reportSyncStatus({ isSyncing: false, lastSyncError: errorMessage(error), hasUnsyncedChanges: true });
+		useSyncStatusStore.getState().reportSyncStatus({ isSyncing: false, lastSyncError: toErrorMessage(error), hasUnsyncedChanges: true });
 	}
 }

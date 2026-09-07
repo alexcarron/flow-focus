@@ -1,6 +1,7 @@
 import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, SYNC_STATUS_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { hasUnsyncedCachedChanges } from './perUserCache';
+import { toErrorMessage } from '../../utilities/errorMessage';
 
 export interface SyncStatusSnapshot {
 	isSyncing: boolean;
@@ -16,10 +17,6 @@ export interface LocalCloudDataSynchronizerDependencies {
 	onChecklistChanged?: () => void;
 	onSyncStatusChange?: (status: SyncStatusSnapshot) => void;
 	isOnline?: () => boolean;
-}
-
-function errorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
 }
 
 export class LocalCloudDataSynchronizer {
@@ -114,7 +111,7 @@ export class LocalCloudDataSynchronizer {
 
 		const results = await Promise.allSettled(notSyncedTasks.map(row => this.pushTask(row)));
 		const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
-		return firstFailure ? errorMessage(firstFailure.reason) : null;
+		return firstFailure ? toErrorMessage(firstFailure.reason) : null;
 	}
 
 	private async pushTask(row: PlainTaskRow): Promise<void> {
@@ -130,7 +127,7 @@ export class LocalCloudDataSynchronizer {
 			await this.cacheDB.settings.update(SETTINGS_ROW_ID, { isSynced: true });
 			return null;
 		} catch (error) {
-			return errorMessage(error);
+			return toErrorMessage(error);
 		}
 	}
 
@@ -142,7 +139,7 @@ export class LocalCloudDataSynchronizer {
 			await this.cacheDB.quickToDoChecklist.put({ ...row, isSynced: true });
 			return null;
 		} catch (error) {
-			return errorMessage(error);
+			return toErrorMessage(error);
 		}
 	}
 
@@ -183,7 +180,7 @@ export class LocalCloudDataSynchronizer {
 			if (anyTaskChanged) this.onTasksChanged();
 			return null;
 		} catch (error) {
-			return errorMessage(error);
+			return toErrorMessage(error);
 		}
 	}
 
@@ -199,7 +196,7 @@ export class LocalCloudDataSynchronizer {
 			}
 			return null;
 		} catch (error) {
-			return errorMessage(error);
+			return toErrorMessage(error);
 		}
 	}
 
@@ -215,7 +212,7 @@ export class LocalCloudDataSynchronizer {
 			}
 			return null;
 		} catch (error) {
-			return errorMessage(error);
+			return toErrorMessage(error);
 		}
 	}
 

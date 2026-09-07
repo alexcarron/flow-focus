@@ -1,8 +1,12 @@
+import { useId } from 'react';
+
 interface Props {
 	className?: string;
 }
 
 export default function UnsyncedIcon({ className = '' }: Props) {
+	const slashCutoutMaskID = useId();
+
 	return (
 		<svg
 			className={className}
@@ -14,11 +18,12 @@ export default function UnsyncedIcon({ className = '' }: Props) {
 			strokeLinejoin="round"
 			aria-hidden="true"
 		>
-			<path d="M7 8a6 6 0 0 1 10-3.5" />
-			<polyline points="17 2 19 4.5 16.5 6" />
-			<path d="M17 16a6 6 0 0 1 -10 3.5" />
-			<polyline points="7 20 5 17.5 7.5 16" />
-			<line x1="3" y1="3" x2="21" y2="21" strokeWidth={3} />
+			<mask id={slashCutoutMaskID}>
+				<rect x="0" y="0" width="24" height="24" fill="white" />
+				<line x1="5" y1="5" x2="19" y2="19" stroke="black" strokeWidth={6.5} strokeLinecap="round" />
+			</mask>
+			<circle cx="12" cy="12" r="8" mask={`url(#${slashCutoutMaskID})`} />
+			<line x1="5" y1="5" x2="19" y2="19" />
 		</svg>
 	);
 }

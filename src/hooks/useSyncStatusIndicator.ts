@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSyncStatusStore } from '../stores/syncStatusStore';
+import { toErrorMessage } from '../utilities/errorMessage';
 
 export type SyncStatusIndicatorState = 'synced' | 'syncing' | 'offline' | 'unsynced';
 
@@ -41,7 +42,7 @@ export function useSyncStatusIndicator(): SyncStatusIndicatorResult {
 	if (hasUnsyncedChanges || lastSyncError) {
 		return {
 			state: 'unsynced',
-			tooltipText: lastSyncError ? `Sync failed: ${lastSyncError}` : 'Unsynced changes pending',
+			tooltipText: lastSyncError ? `Sync failed: ${toErrorMessage(lastSyncError)}` : 'Unsynced changes pending',
 		};
 	}
 	if (isSyncing) {
