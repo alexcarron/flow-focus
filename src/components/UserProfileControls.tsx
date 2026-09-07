@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useUserAuthorization } from '../hooks/useUserAuthorization';
 import { useSyncStatusIndicator } from '../hooks/useSyncStatusIndicator';
+import { useTasksStore } from '../stores/tasksStore';
 import GoogleIcon from './svg-icons/GoogleIcon';
 import SyncStatusIcon from './svg-icons/SyncStatusIcon';
 import SignOutConfirmationModal from './SignOutConfirmationModal';
@@ -19,6 +20,7 @@ export default function UserProfileControls() {
 		updateDisplayName,
 	} = useUserAuthorization();
 	const { state: syncStatusState, tooltipText: syncStatusTooltipText } = useSyncStatusIndicator();
+	const areTasksLoading = useTasksStore(s => s.isLoading);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const displayNameRef = useRef<HTMLSpanElement>(null);
 
@@ -64,7 +66,7 @@ export default function UserProfileControls() {
 		}
 	}
 
-	if (isLoading) return null;
+	if (isLoading || areTasksLoading) return null;
 
 	if (!user) {
 		return (

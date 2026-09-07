@@ -18,17 +18,18 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 }
 
 export default function App() {
-	const isLoading = useTasksStore(s => s.isLoading);
+	const areTasksLoading = useTasksStore(s => s.isLoading);
 	const loadTasks = useTasksStore(s => s.loadTasks);
 	const loadSettings = useSettingsStore(s => s.loadSettings);
-	const { user } = useUserAuthorization();
+	const { user, isLoading: isUserAuthorizationLoading } = useUserAuthorization();
+	const isAppDataSettling = areTasksLoading || isUserAuthorizationLoading;
 
 	useEffect(() => {
 		loadTasks();
 		loadSettings();
 	}, [loadTasks, loadSettings]);
 
-	const { isMigrationConfirmationRequired, confirmMigration, declineMigration } = useRepositorySwitcher(user);
+	const { isMigrationConfirmationRequired, confirmMigration, declineMigration } = useRepositorySwitcher(user, isUserAuthorizationLoading);
 
 	return (
 		<div className={styles.app}>
@@ -51,7 +52,7 @@ export default function App() {
 				<UserProfileControls />
 			</nav>
 
-			{isLoading ? (
+			{isAppDataSettling ? (
 				<div className={styles.loading}>
 					<div className={styles.spinner} />
 				</div>

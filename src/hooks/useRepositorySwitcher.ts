@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { switchRepositoriesToCloud, switchRepositoriesToLocal } from '../persistence/synchronization/repository-switchers';
 import { doesLocalDataNeedMigrationToCloud, migrateLocalDataToCloud } from '../persistence/synchronization/firstSignInMigration';
+import { useTasksStore } from '../stores/tasksStore';
 
 export interface UseRepositorySwitcherAPI {
 	readonly isMigrationConfirmationRequired: boolean;
@@ -9,12 +10,14 @@ export interface UseRepositorySwitcherAPI {
 	declineMigration(): Promise<void>;
 }
 
-export function useRepositorySwitcher(user: User | null): UseRepositorySwitcherAPI {
+export function useRepositorySwitcher(user: User | null, isAuthStateStillLoading: boolean): UseRepositorySwitcherAPI {
 	const userIDRepositoryIsBoundTo = useRef<string | null>(null);
 	const latestRepositorySwitchID = useRef(0);
 	const [pendingMigrationUserID, setPendingMigrationUserID] = useState<string | null>(null);
 
 	useEffect(() => {
+		if (isAuthStateStillLoading) return;
+
 		const nextUserIDRepositoryIsBoundTo = user?.id ?? null;
 		if (userIDRepositoryIsBoundTo.current === nextUserIDRepositoryIsBoundTo) return;
 		userIDRepositoryIsBoundTo.current = nextUserIDRepositoryIsBoundTo;
@@ -26,6 +29,8 @@ export function useRepositorySwitcher(user: User | null): UseRepositorySwitcherA
 		setPendingMigrationUserID(null);
 
 		if (user) {
+			useTasksStore.setState({ isLoading: true });
+
 			void (async () => {
 				const needsMigrationConfirmation = await doesLocalDataNeedMigrationToCloud(user.id);
 				if (isRepositorySwitchStale()) return;
@@ -41,7 +46,7 @@ export function useRepositorySwitcher(user: User | null): UseRepositorySwitcherA
 		else {
 			void switchRepositoriesToLocal();
 		}
-	}, [user]);
+	}, [user, isAuthStateStillLoading]);
 
 	const confirmMigration = useCallback(async (shouldKeepLocalData: boolean): Promise<void> => {
 		if (!pendingMigrationUserID) return;
@@ -49,8 +54,13 @@ export function useRepositorySwitcher(user: User | null): UseRepositorySwitcherA
 		const isRepositorySwitchStale = () => userIDRepositoryIsBoundTo.current !== userID;
 
 		setPendingMigrationUserID(null);
-		await migrateLocalDataToCloud({ userID, shouldKeepLocalData });
+		const didMigrationSucceed = await migrateLocalDataToCloud({ userID, shouldKeepLocalData });
 		if (isRepositorySwitchStale()) return;
+
+		if (!didMigrationSucceed) {
+			setPendingMigrationUserID(userID);
+			return;
+		}
 
 		await switchRepositoriesToCloud(userID, isRepositorySwitchStale);
 	}, [pendingMigrationUserID]);
