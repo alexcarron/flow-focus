@@ -7,6 +7,7 @@ import TasksManagerPage from './components/pages/TasksManagerPage';
 import TaskCreatorPage from './components/pages/TaskCreatorPage';
 import QuickToDoPage from './components/pages/QuickToDoPage';
 import SettingsPage from './components/pages/SettingsPage';
+import UserProfileControls from './components/UserProfileControls';
 import styles from './App.module.css';
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -41,6 +42,7 @@ export default function App() {
 				<NavLink to="/settings" className={navLinkClass}>
 					Settings
 				</NavLink>
+				<UserProfileControls />
 			</nav>
 
 			{isLoading ? (

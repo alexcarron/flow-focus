@@ -1,0 +1,30 @@
+.controls {
+	display: flex;
+	align-items: center;
+	gap: var(--space-medium);
+	margin-left: auto;
+}
+
+.googleIcon {
+	width: 1rem;
+	height: 1rem;
+}
+
+.displayName {
+	font-size: var(--font-size-small);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+	border-radius: var(--radius-small);
+	padding: var(--space-extra-small) var(--space-small);
+}
+
+.displayName:hover,
+.displayName:focus {
+	background-color: var(--color-surface-inset);
+	outline: none;
+}
+
+.errorMessage {
+	font-size: var(--font-size-extra-small);
+	color: var(--color-danger);
+}
