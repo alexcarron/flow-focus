@@ -15,12 +15,11 @@ interface Props {
 
 export default function CheckboxInput({ value, onChange, label, description, className = '', icon = <CheckIcon />, accentColor }: Props) {
 	return (
-		<label className={`${styles.checkbox} ${className}`}>
+		<label className={`${styles.checkbox} ${className}`} onClick={event => onChange(!value, event)}>
 			<div
 				role="checkbox"
 				aria-checked={value}
 				tabIndex={0}
-				onClick={event => onChange(!value, event)}
 				onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') onChange(!value, event); }}
 				className={value ? `${styles.box} ${styles.boxChecked}` : styles.box}
 				style={accentColor ? { '--checkbox-accent-color': accentColor } as React.CSSProperties : undefined}
