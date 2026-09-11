@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID } from '../local/flowfocus.db';
+import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { LocalCloudDataSynchronizer } from './LocalCloudDataSynchronizer';
 import { DEFAULT_SETTINGS } from '../../model/AppSettings';
@@ -313,13 +313,59 @@ describe('notifyLocalWrite', () => {
 });
 
 describe('concurrent sync passes', () => {
-	it('dedupes overlapping sync() calls into a single pass', async () => {
+	it('runs a trailing pass for a sync() call that arrives while a pass is already running', async () => {
 		const cacheDB = await openTestDatabase();
 		const cloudDataService = makeCloudDataService();
 		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });
 
 		await Promise.all([synchronizer.sync(), synchronizer.sync()]);
 
-		expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(1);
+		expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(2);
+	});
+
+	it('clears hasUnsyncedChanges after a checklist write that lands mid-push, without a manual retrigger', async () => {
+		const cacheDB = await openTestDatabase();
+		const checklistRowA = { id: QUICK_TO_DO_CHECKLIST_ROW_ID, items: [], updatedAt: '2026-01-01T00:00:00.000Z', isSynced: false };
+		await cacheDB.quickToDoChecklist.put(checklistRowA);
+
+		const checklistRowB = { id: QUICK_TO_DO_CHECKLIST_ROW_ID, items: [], updatedAt: '2026-01-01T00:00:00.001Z', isSynced: false };
+
+		const upsertChecklist = vi.fn().mockImplementationOnce(async () => {
+			await cacheDB.quickToDoChecklist.put(checklistRowB);
+			synchronizer.notifyLocalWrite();
+		}).mockResolvedValue(undefined);
+		const cloudDataService = makeCloudDataService({ upsertChecklist });
+
+		const statusUpdates: { isSyncing: boolean; hasUnsyncedChanges: boolean }[] = [];
+		const synchronizer = new LocalCloudDataSynchronizer({
+			cacheDB,
+			cloudDataService,
+			onSyncStatusChange: status => statusUpdates.push(status),
+		});
+
+		await synchronizer.sync();
+
+		expect(upsertChecklist).toHaveBeenCalledTimes(2);
+		expect(upsertChecklist).toHaveBeenNthCalledWith(2, checklistRowB);
+		expect((await cacheDB.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID))?.isSynced).toBe(true);
+		expect(statusUpdates.at(-1)?.hasUnsyncedChanges).toBe(false);
+	});
+
+	it('does not mark a checklist row synced if it changed again before the push finishes', async () => {
+		const cacheDB = await openTestDatabase();
+		const checklistRowAtPushTime = { id: QUICK_TO_DO_CHECKLIST_ROW_ID, items: [], updatedAt: '2026-01-01T00:00:00.000Z', isSynced: false };
+		await cacheDB.quickToDoChecklist.put(checklistRowAtPushTime);
+
+		const checklistRowWrittenDuringPush = { id: QUICK_TO_DO_CHECKLIST_ROW_ID, items: [], updatedAt: '2026-01-01T00:00:00.001Z', isSynced: false };
+
+		const upsertChecklist = vi.fn().mockImplementation(async () => {
+			await cacheDB.quickToDoChecklist.put(checklistRowWrittenDuringPush);
+		});
+		const cloudDataService = makeCloudDataService({ upsertChecklist });
+
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });
+		await synchronizer.sync();
+
+		expect((await cacheDB.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID))?.isSynced).toBe(false);
 	});
 });

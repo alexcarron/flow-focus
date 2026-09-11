@@ -37,16 +37,19 @@ export function useSyncStatusIndicator(): SyncStatusIndicatorResult {
 	const hasUnsyncedChanges = useSyncStatusStore(state => state.hasUnsyncedChanges);
 
 	if (!isOnline) {
-		return { state: 'offline', tooltipText: 'Offline' };
-	}
-	if (hasUnsyncedChanges || lastSyncError) {
 		return {
-			state: 'unsynced',
-			tooltipText: lastSyncError ? `Sync failed: ${toErrorMessage(lastSyncError)}` : 'Unsynced changes pending',
+			state: 'offline',
+			tooltipText: hasUnsyncedChanges ? 'Offline. Changes will sync when back online' : 'Offline',
 		};
 	}
 	if (isSyncing) {
 		return { state: 'syncing', tooltipText: 'Syncing…' };
 	}
-	return { state: 'synced', tooltipText: 'Online and synced' };
+	if (hasUnsyncedChanges || lastSyncError) {
+		return {
+			state: 'unsynced',
+			tooltipText: lastSyncError ? `Sync failed: ${toErrorMessage(lastSyncError)}` : 'Changes not yet synced',
+		};
+	}
+	return { state: 'synced', tooltipText: 'Online and synced changes' };
 }

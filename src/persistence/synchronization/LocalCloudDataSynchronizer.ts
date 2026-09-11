@@ -1,7 +1,9 @@
+import { Table, UpdateSpec } from 'dexie';
 import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, SYNC_STATUS_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { hasUnsyncedCachedChanges } from './perUserCache';
 import { toErrorMessage } from '../../utilities/errorMessage';
+import { RunOnceThenAgainIfChanged } from '../../utilities/runOnceThenAgainIfChanged';
 
 export interface SyncStatusSnapshot {
 	isSyncing: boolean;
@@ -29,7 +31,7 @@ export class LocalCloudDataSynchronizer {
 	private readonly isOnline: () => boolean;
 
 	private started = false;
-	private syncInProgress: Promise<void> | null = null;
+	private readonly syncRunner = new RunOnceThenAgainIfChanged();
 	private hasUnsyncedChanges = false;
 
 	constructor(dependencies: LocalCloudDataSynchronizerDependencies) {
@@ -65,12 +67,7 @@ export class LocalCloudDataSynchronizer {
 	}
 
 	sync(): Promise<void> {
-		if (!this.syncInProgress) {
-			this.syncInProgress = this.runSyncPass().finally(() => {
-				this.syncInProgress = null;
-			});
-		}
-		return this.syncInProgress;
+		return this.syncRunner.run(() => this.runSyncPass());
 	}
 
 	private handleOnline(): void {
@@ -116,7 +113,7 @@ export class LocalCloudDataSynchronizer {
 
 	private async pushTask(row: PlainTaskRow): Promise<void> {
 		await this.cloudDataService.upsertTask(row);
-		await this.cacheDB.tasks.update(row.id, { isSynced: true });
+		await this.markSyncedIfRowUnchangedSincePush(this.cacheDB.tasks, row.id, row.updatedAt);
 	}
 
 	private async pushSettingsIfNotSynced(): Promise<string | null> {
@@ -124,7 +121,7 @@ export class LocalCloudDataSynchronizer {
 			const row = await this.cacheDB.settings.get(SETTINGS_ROW_ID);
 			if (!row || row.isSynced) return null;
 			await this.cloudDataService.upsertSettings(row);
-			await this.cacheDB.settings.update(SETTINGS_ROW_ID, { isSynced: true });
+			await this.markSyncedIfRowUnchangedSincePush(this.cacheDB.settings, SETTINGS_ROW_ID, row.updatedAt);
 			return null;
 		} catch (error) {
 			return toErrorMessage(error);
@@ -136,10 +133,21 @@ export class LocalCloudDataSynchronizer {
 			const row = await this.cacheDB.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID);
 			if (!row || row.isSynced) return null;
 			await this.cloudDataService.upsertChecklist(row);
-			await this.cacheDB.quickToDoChecklist.put({ ...row, isSynced: true });
+			await this.markSyncedIfRowUnchangedSincePush(this.cacheDB.quickToDoChecklist, QUICK_TO_DO_CHECKLIST_ROW_ID, row.updatedAt);
 			return null;
 		} catch (error) {
 			return toErrorMessage(error);
+		}
+	}
+
+	private async markSyncedIfRowUnchangedSincePush<TRow extends { updatedAt: string; isSynced: boolean }, TKey>(
+		table: Table<TRow, TKey>,
+		key: TKey,
+		updatedAtAtTimeOfPush: string,
+	): Promise<void> {
+		const currentRow = await table.get(key);
+		if (currentRow && currentRow.updatedAt === updatedAtAtTimeOfPush) {
+			await table.update(key, { isSynced: true } as unknown as UpdateSpec<TRow>);
 		}
 	}
 
