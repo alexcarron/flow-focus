@@ -37,24 +37,30 @@ export function useUserAuthorization(): UseUserAuthorizationApi {
 			if (isMounted.current) setUserProfile(null);
 			return;
 		}
-		const nextProfile = await fetchProfile(user.id);
-		if (isMounted.current) setUserProfile(nextProfile);
+		try {
+			const nextProfile = await fetchProfile(user.id);
+			if (isMounted.current) setUserProfile(nextProfile);
+		} catch (error) {
+			console.error('Failed to load the signed-in user profile, falling back to the account name', error);
+			if (isMounted.current) setUserProfile(null);
+		}
 	}, []);
 
 	useEffect(() => {
 		isMounted.current = true;
 
 		void (async () => {
-			const session = await getSession();
-			
-			if (!isMounted.current) return;
-			
-			setUser(session?.user ?? null);
-			
-			await loadUserProfile(session?.user ?? null);
-			
-			if (isMounted.current) 
-				setIsLoading(false);
+			try {
+				const session = await getSession();
+				if (!isMounted.current) return;
+				setUser(session?.user ?? null);
+				await loadUserProfile(session?.user ?? null);
+			} catch (error) {
+				console.error('Failed to restore the signed-in session, continuing signed out', error);
+				if (isMounted.current) setUser(null);
+			} finally {
+				if (isMounted.current) setIsLoading(false);
+			}
 		})();
 
 		const subscription = onAuthStateChange((session) => {

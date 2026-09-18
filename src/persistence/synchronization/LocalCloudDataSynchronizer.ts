@@ -85,11 +85,16 @@ export class LocalCloudDataSynchronizer {
 	private async runSyncPass(): Promise<void> {
 		this.reportStatus({ isSyncing: true, lastSyncError: null, hasUnsyncedChanges: this.hasUnsyncedChanges });
 
-		const pushError = await this.pushPendingChanges();
-		const pullError = await this.pullRemoteChanges();
-		const lastSyncError = pushError ?? pullError;
+		let lastSyncError: string | null = null;
+		try {
+			const pushError = await this.pushPendingChanges();
+			const pullError = await this.pullRemoteChanges();
+			lastSyncError = pushError ?? pullError;
+			this.hasUnsyncedChanges = await this.computeHasUnsyncedChanges();
+		} catch (error) {
+			lastSyncError = toErrorMessage(error);
+		}
 
-		this.hasUnsyncedChanges = await this.computeHasUnsyncedChanges();
 		this.reportStatus({ isSyncing: false, lastSyncError, hasUnsyncedChanges: this.hasUnsyncedChanges });
 	}
 
@@ -103,12 +108,16 @@ export class LocalCloudDataSynchronizer {
 	}
 
 	private async pushNotSyncedTasks(): Promise<string | null> {
-		const allTasks = await this.cacheDB.tasks.toArray();
-		const notSyncedTasks = allTasks.filter(row => !row.isSynced);
+		try {
+			const allTasks = await this.cacheDB.tasks.toArray();
+			const notSyncedTasks = allTasks.filter(row => !row.isSynced);
 
-		const results = await Promise.allSettled(notSyncedTasks.map(row => this.pushTask(row)));
-		const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
-		return firstFailure ? toErrorMessage(firstFailure.reason) : null;
+			const results = await Promise.allSettled(notSyncedTasks.map(row => this.pushTask(row)));
+			const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+			return firstFailure ? toErrorMessage(firstFailure.reason) : null;
+		} catch (error) {
+			return toErrorMessage(error);
+		}
 	}
 
 	private async pushTask(row: PlainTaskRow): Promise<void> {

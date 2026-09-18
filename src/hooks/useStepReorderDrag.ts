@@ -59,7 +59,7 @@ export function useStepReorderDrag<TContainerElement extends HTMLElement = HTMLD
 
 	const { containerRef: stepsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
 		itemAttribute: 'data-step-row',
-		excludeSelector: '[data-step]',
+		excludeSelector: '[data-step], button',
 		mouseHoldDelayMs: STEP_REORDER_HOLD_DELAY_MS,
 		touchHoldDelayMs: STEP_REORDER_HOLD_DELAY_MS,
 		onHoldStart: (stepID, _startClientX, startClientY) => {

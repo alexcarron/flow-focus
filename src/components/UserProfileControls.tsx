@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useUserAuthorization } from '../hooks/useUserAuthorization';
 import { useSyncStatusIndicator } from '../hooks/useSyncStatusIndicator';
+import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
+import { mergeRefs } from '../utilities/mergeRefs';
 import { useTasksStore } from '../stores/tasksStore';
 import GoogleIcon from './svg-icons/GoogleIcon';
 import SyncStatusIcon from './svg-icons/SyncStatusIcon';
@@ -23,6 +25,7 @@ export default function UserProfileControls() {
 	const areTasksLoading = useTasksStore(s => s.isLoading);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const displayNameRef = useRef<HTMLSpanElement>(null);
+	const commitDisplayNameOnEnterRef = useCommitOnEnter<HTMLSpanElement>();
 
 	async function onSignInClick() {
 		setErrorMessage(null);
@@ -86,9 +89,10 @@ export default function UserProfileControls() {
 				<SyncStatusIcon state={syncStatusState} />
 			</span>
 			<span
-				ref={displayNameRef}
+				ref={mergeRefs(displayNameRef, commitDisplayNameOnEnterRef)}
 				contentEditable
 				suppressContentEditableWarning
+				spellCheck={false}
 				onBlur={onDisplayNameBlur}
 				className={styles.displayName}
 			>

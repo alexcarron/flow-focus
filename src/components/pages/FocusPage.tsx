@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useTasksStore, selectPriorityTask } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import TaskCard from '../TaskCard';
@@ -27,16 +27,12 @@ export default function FocusPage() {
 	const completeNextStep = useTasksStore(s => s.completeNextStep);
 	const shouldShowQuickAddTaskBar = useSettingsStore(s => s.shouldShowQuickAddTaskBarOnFocusPage);
 
-	const lastTapTime = useRef(0);
-	const tapCount = useRef(0);
-	const DOUBLE_TAP_THRESHOLD = 400;
-
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
 			if (event.repeat || !priorityTask) return;
 			const focused = document.activeElement as HTMLElement;
 			if (
-				focused.matches('button, input, select') ||
+				focused.matches('button, input, select, textarea, a, [role="checkbox"]') ||
 				focused.hasAttribute('contenteditable')
 			) return;
 
@@ -51,29 +47,8 @@ export default function FocusPage() {
 		return () => window.removeEventListener('keydown', onKeyDown);
 	}, [priorityTask, completeNextStep]);
 
-	function onTouchStart(event: React.TouchEvent) {
-		const target = event.target as HTMLElement;
-		if (
-			target.hasAttribute('contenteditable') ||
-			target.matches('button, input, select, textarea')
-		) return;
-
-		const now = Date.now();
-		if (now - lastTapTime.current < DOUBLE_TAP_THRESHOLD) {
-			tapCount.current++;
-		} else {
-			tapCount.current = 1;
-		}
-		lastTapTime.current = now;
-
-		if (tapCount.current === 2 && priorityTask) {
-			completeNextStep(priorityTask);
-			tapCount.current = 0;
-		}
-	}
-
 	return (
-		<div className={styles.page} onTouchStart={onTouchStart}>
+		<div className={styles.page}>
 			{shouldShowQuickAddTaskBar && (
 				<QuickAddTaskBar
 					placeholderTiersLongestFirst={

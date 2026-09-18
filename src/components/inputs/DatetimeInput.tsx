@@ -182,6 +182,7 @@ export default function DatetimeInput({ value, onChange, onSubmit, label, descri
 						type="text"
 						value={typedText}
 						placeholder="Type a date and time like 'tomorrow', 'sep 3 11pm', or 'in 3 days'"
+						enterKeyHint="done"
 						className="field"
 						onChange={event => setTypedText(event.target.value)}
 						onKeyDown={event => {
@@ -229,47 +230,64 @@ export default function DatetimeInput({ value, onChange, onSubmit, label, descri
 					)}
 				</div>
 			)}
-			{!isTypingMode && (
-				<div className={styles.quickActions}>
-					<button
-						type="button"
-						tabIndex={-1}
-						title={`Today (${formatShortcut(shortcuts.today)})`}
-						onClick={() => onChange(toToday(value))}
-						className="button adjust"
-					>
-						Today
-					</button>
-					<button
-						type="button"
-						tabIndex={-1}
-						title={`Morning ${morningTime} (${formatShortcut(shortcuts.morning)})`}
-						onClick={() => onChange(setTimeOfDay(value, morning.getHour(), morning.getMinute()))}
-						className="button adjust"
-					>
-						Morning
-					</button>
-					<button
-						type="button"
-						tabIndex={-1}
-						title={`Night ${nightTime} (${formatShortcut(shortcuts.night)})`}
-						onClick={() => onChange(setTimeOfDay(value, night.getHour(), night.getMinute()))}
-						className="button adjust"
-					>
-						Night
-					</button>
-					{value && (
+			<div className={styles.quickActions}>
+				{!isTypingMode && (
+					<>
 						<button
 							type="button"
 							tabIndex={-1}
-							onClick={() => onChange(null)}
-							className={styles.clearButton}
+							title={`Today (${formatShortcut(shortcuts.today)})`}
+							onClick={() => onChange(toToday(value))}
+							className="button adjust"
 						>
-							Clear
+							Today
 						</button>
-					)}
-				</div>
-			)}
+						<button
+							type="button"
+							tabIndex={-1}
+							title={`Morning ${morningTime} (${formatShortcut(shortcuts.morning)})`}
+							onClick={() => onChange(setTimeOfDay(value, morning.getHour(), morning.getMinute()))}
+							className="button adjust"
+						>
+							Morning
+						</button>
+						<button
+							type="button"
+							tabIndex={-1}
+							title={`Night ${nightTime} (${formatShortcut(shortcuts.night)})`}
+							onClick={() => onChange(setTimeOfDay(value, night.getHour(), night.getMinute()))}
+							className="button adjust"
+						>
+							Night
+						</button>
+					</>
+				)}
+				<button
+					type="button"
+					tabIndex={-1}
+					onMouseDown={event => event.preventDefault()}
+					onClick={() => {
+						if (isTypingMode) commitTypedText();
+						else {
+							setTypedText('');
+							setIsTypingMode(true);
+						}
+					}}
+					className="button adjust"
+				>
+					{isTypingMode ? 'Pick a date' : 'Type a date'}
+				</button>
+				{!isTypingMode && value && (
+					<button
+						type="button"
+						tabIndex={-1}
+						onClick={() => onChange(null)}
+						className={styles.clearButton}
+					>
+						Clear
+					</button>
+				)}
+			</div>
 		</div>
 	);
 }

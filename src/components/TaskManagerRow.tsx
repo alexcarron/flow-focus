@@ -5,6 +5,7 @@ import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFor
 import { formatDate } from '../utilities/dateFormatting';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
+import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { mergeRefs } from '../utilities/mergeRefs';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../utilities/shortcuts';
 import TextInput from './inputs/TextInput';
@@ -13,6 +14,7 @@ import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';
 import SelectionCheckbox from './SelectionCheckbox';
 import StepCheckbox from './StepCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
+import ContextMenuButton from './context-menu/ContextMenuButton';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import MandatoryIcon from './svg-icons/MandatoryIcon';
 import TimingIcon from './svg-icons/TimingIcon';
@@ -83,6 +85,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 
 	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; index: number; x: number; y: number } | null>(null);
 	const arrayInputRef = useRef<ArrayInputHandle>(null);
+	const isTouchDevice = useIsTouchDevice();
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
 		isStepChecked: stepID => task.isStepComplete(stepID),
@@ -165,7 +168,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 			<td className={styles.descriptionCell}>
 				<TextInput
 					value={task.getDescription()}
-					onChange={v => store.setDescription(task, v)}
+					onCommit={newDescription => store.setDescription(task, newDescription)}
 					className={styles.descriptionInput}
 				/>
 			</td>
@@ -204,6 +207,16 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 								dragHandlers={getCheckboxDragHandlers(step.id)}
 								className={isCompleted ? `${checkboxInputStyles.box} ${checkboxInputStyles.boxChecked}` : checkboxInputStyles.box}
 								checkmarkClassName={checkboxInputStyles.checkmark}
+							/>
+						);
+					}}
+					renderRowSuffix={index => {
+						if (!isTouchDevice) return null;
+						const step = displaySteps[index];
+						return (
+							<ContextMenuButton
+								label="Step options"
+								onOpen={(x, y) => setStepContextMenu({ stepID: step.id, index, x, y })}
 							/>
 						);
 					}}
@@ -281,7 +294,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 				<div className={styles.rowActions}>
 					<button
 						onClick={onOpenTiming}
-						className={`button icon ${styles.rowActionButton}`}
+						className={`button icon touch-hit-area ${styles.rowActionButton}`}
 						aria-label="Timing options"
 						title="Timing options"
 					>
@@ -289,7 +302,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 					</button>
 					<button
 						onClick={onRequestDelete}
-						className={`button icon danger ${styles.rowActionButton}`}
+						className={`button icon danger touch-hit-area ${styles.rowActionButton}`}
 						aria-label="Delete task"
 						title="Delete task"
 					>

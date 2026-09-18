@@ -28,7 +28,7 @@ export default function StepCheckbox({ stepID, isChecked, onToggle, dragHandlers
 			onKeyDown={event => {
 				if (event.key === ' ' || event.key === 'Enter') onToggle(stepID, !isChecked, event.shiftKey);
 			}}
-			className={className}
+			className={`touch-hit-area ${className}`}
 		>
 			{isChecked && (
 				<svg className={checkmarkClassName} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>

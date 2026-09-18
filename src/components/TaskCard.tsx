@@ -4,6 +4,8 @@ import { useTasksStore } from '../stores/tasksStore';
 import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
+import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
+import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import StepCheckbox from './StepCheckbox';
 import { formatDate } from '../utilities/dateFormatting';
 import { mergeRefs } from '../utilities/mergeRefs';
@@ -11,6 +13,7 @@ import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKe
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';
+import ContextMenuButton from './context-menu/ContextMenuButton';
 import ConfirmModal from './ConfirmModal';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
@@ -66,6 +69,7 @@ export default function TaskCard({ task }: Props) {
 
 	const descRef = useRef<HTMLHeadingElement>(null);
 	const stepSpanElementsByStepIDRef = useRef<Map<string, HTMLSpanElement>>(new Map());
+	const isTouchDevice = useIsTouchDevice();
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
 		isStepChecked: stepID => task.isStepComplete(stepID),
@@ -81,6 +85,20 @@ export default function TaskCard({ task }: Props) {
 		const id = setInterval(() => setCurrentTime(new Date()), 1000);
 		return () => clearInterval(id);
 	}, []);
+
+	const commitDescriptionOnEnterRef = useCommitOnEnter<HTMLDivElement>({ targetSelector: '[data-task-description]' });
+
+	const insertStepOnEnterRef = useCommitOnEnter<HTMLDivElement>({
+		targetSelector: '[data-step-row] [contenteditable]',
+		onEnter: stepSpanElement => {
+			const stepID = stepSpanElement.closest('[data-step-row]')?.getAttribute('data-step-row') ?? null;
+			const step = task.getSteps().find(candidate => candidate.id === stepID);
+			if (!step) return;
+			const typedText = stepSpanElement.textContent ?? '';
+			if (typedText !== step.text) store.setStepText(task, step.id, typedText);
+			setStepPendingFocusID(store.insertStepAfterStep(task, step.id));
+		},
+	});
 
 	useEffect(() => {
 		const el = descRef.current;
@@ -155,6 +173,7 @@ export default function TaskCard({ task }: Props) {
 
 	return (
 		<div
+			ref={mergeRefs(commitDescriptionOnEnterRef, insertStepOnEnterRef)}
 			className={styles.card}
 			onContextMenu={event => {
 				if (steps.length === 0) {
@@ -178,8 +197,10 @@ export default function TaskCard({ task }: Props) {
 
 			<h2
 				ref={descRef}
+				data-task-description
 				contentEditable
 				suppressContentEditableWarning
+				spellCheck={false}
 				onBlur={onDescriptionBlur}
 				className={styles.description}
 			/>
@@ -229,6 +250,7 @@ export default function TaskCard({ task }: Props) {
 									}}
 									contentEditable
 									suppressContentEditableWarning
+									spellCheck={false}
 									onBlur={event => onStepBlur(event, step.id, step.text)}
 									onKeyDown={event => {
 										if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {
@@ -261,12 +283,6 @@ export default function TaskCard({ task }: Props) {
 											if (typedText !== step.text) store.setStepText(task, step.id, typedText);
 											setStepPendingFocusID(store.insertStepBeforeStep(task, step.id));
 										}
-										else if (matchesShortcut(event, SHORTCUTS.stepInsert.insertAfter)) {
-											event.preventDefault();
-											const typedText = event.currentTarget.textContent ?? '';
-											if (typedText !== step.text) store.setStepText(task, step.id, typedText);
-											setStepPendingFocusID(store.insertStepAfterStep(task, step.id));
-										}
 										else if (event.key === 'Enter') {
 											event.preventDefault();
 										}
@@ -285,6 +301,14 @@ export default function TaskCard({ task }: Props) {
 												: styles.upcomingStep
 									}
 								/>
+
+								{isTouchDevice && (
+									<ContextMenuButton
+										label="Step options"
+										className={styles.stepMenuButton}
+										onOpen={(x, y) => setStepContextMenu({ stepID: step.id, x, y })}
+									/>
+								)}
 							</div>
 						);
 					})}
@@ -357,7 +381,7 @@ export default function TaskCard({ task }: Props) {
 				</button>
 				<button
 					onClick={() => setIsTimingOpen(true)}
-					className={`button icon ${styles.actionButton} ${styles.actionButtonSquare}`}
+					className={`button icon touch-hit-area ${styles.actionButton} ${styles.actionButtonSquare}`}
 					aria-label="Timing options"
 					title="Timing options"
 				>
@@ -365,7 +389,7 @@ export default function TaskCard({ task }: Props) {
 				</button>
 				<button
 					onClick={onDeleteClick}
-					className={`button icon danger ${styles.actionButton} ${styles.actionButtonSquare}`}
+					className={`button icon danger touch-hit-area ${styles.actionButton} ${styles.actionButtonSquare}`}
 					aria-label="Delete task"
 					title="Delete task"
 				>

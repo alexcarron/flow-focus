@@ -34,8 +34,10 @@
 	font-size: var(--font-size-small);
 }
 
-.option:hover {
-	background-color: var(--color-surface-hover);
+@media (hover: hover) {
+	.option:hover {
+		background-color: var(--color-surface-hover);
+	}
 }
 
 .optionSelected {

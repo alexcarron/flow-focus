@@ -13,8 +13,10 @@
 	transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.button:hover {
-	background-color: var(--color-surface-hover);
+@media (hover: hover) {
+	.button:hover {
+		background-color: var(--color-surface-hover);
+	}
 }
 
 .button:active {
@@ -31,8 +33,10 @@
 	color: var(--color-text-primary);
 }
 
-.button.primary:hover {
-	background-color: var(--color-accent-hover);
+@media (hover: hover) {
+	.button.primary:hover {
+		background-color: var(--color-accent-hover);
+	}
 }
 
 .button.primary:active {
@@ -55,9 +59,11 @@
 	border: 1px solid var(--color-border-strong);
 }
 
-.button.outlined:hover {
-	background-color: var(--color-surface-inset);
-	border-color: var(--color-accent-border);
+@media (hover: hover) {
+	.button.outlined:hover {
+		background-color: var(--color-surface-inset);
+		border-color: var(--color-accent-border);
+	}
 }
 
 .button.outlined:active {
@@ -71,8 +77,10 @@
 	background-color: var(--color-surface-inset);
 }
 
-.button.adjust:hover {
-	background-color: var(--color-surface-hover);
+@media (hover: hover) {
+	.button.adjust:hover {
+		background-color: var(--color-surface-hover);
+	}
 }
 
 .button.adjust:active {
@@ -83,9 +91,11 @@
 	color: var(--color-danger);
 }
 
-.button.danger:hover {
-	background-color: var(--color-danger);
-	color: var(--color-text-primary);
+@media (hover: hover) {
+	.button.danger:hover {
+		background-color: var(--color-danger);
+		color: var(--color-text-primary);
+	}
 }
 
 .button.danger:active {
@@ -105,9 +115,11 @@
 	color: var(--color-danger);
 }
 
-.button.icon.danger:hover {
-	background-color: var(--color-danger);
-	color: var(--color-text-primary);
+@media (hover: hover) {
+	.button.icon.danger:hover {
+		background-color: var(--color-danger);
+		color: var(--color-text-primary);
+	}
 }
 
 .button.icon.danger:active {

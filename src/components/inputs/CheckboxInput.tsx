@@ -21,7 +21,7 @@ export default function CheckboxInput({ value, onChange, label, description, cla
 				aria-checked={value}
 				tabIndex={0}
 				onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') onChange(!value, event); }}
-				className={value ? `${styles.box} ${styles.boxChecked}` : styles.box}
+				className={value ? `touch-hit-area ${styles.box} ${styles.boxChecked}` : `touch-hit-area ${styles.box}`}
 				style={accentColor ? { '--checkbox-accent-color': accentColor } as React.CSSProperties : undefined}
 			>
 				{value && cloneElement(icon, { className: styles.checkmark })}

@@ -74,6 +74,8 @@
 	transition: color var(--transition-fast);
 }
 
-.clearButton:hover {
-	color: var(--color-danger-text);
+@media (hover: hover) {
+	.clearButton:hover {
+		color: var(--color-danger-text);
+	}
 }

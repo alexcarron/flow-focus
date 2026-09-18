@@ -24,10 +24,15 @@
 	padding: var(--space-extra-small) var(--space-small);
 }
 
-.displayName:hover,
 .displayName:focus {
 	background-color: var(--color-surface-inset);
 	outline: none;
+}
+
+@media (hover: hover) {
+	.displayName:hover {
+		background-color: var(--color-surface-inset);
+	}
 }
 
 .errorMessage {

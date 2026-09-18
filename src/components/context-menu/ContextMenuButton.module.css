@@ -1,0 +1,13 @@
+.button {
+	flex-shrink: 0;
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: var(--space-extra-extra-small);
+	background-color: transparent;
+	color: var(--color-text-muted);
+}
+
+.icon {
+	width: 1rem;
+	height: 1rem;
+}

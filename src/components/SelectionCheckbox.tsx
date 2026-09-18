@@ -26,7 +26,7 @@ export default function SelectionCheckbox({ isSelected, onMouseDown, onMouseEnte
 			onMouseDown={e => { e.preventDefault(); onMouseDown(e); }}
 			onMouseEnter={onMouseEnter}
 			onKeyDown={onKeyDown}
-			className={`${styles.box} ${isSelected ? styles.boxChecked : ''} ${className}`}
+			className={`touch-hit-area ${styles.box} ${isSelected ? styles.boxChecked : ''} ${className}`}
 		/>
 	);
 }

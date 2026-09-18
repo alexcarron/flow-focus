@@ -47,6 +47,8 @@ export function usePressAndHold<TContainerElement extends HTMLElement = HTMLDivE
 	const isHoldActiveRef = useRef(false);
 	const touchHoldTimerRef = useRef<number | null>(null);
 	const isTouchHoldArmedRef = useRef(false);
+	const isTouchInProgressRef = useRef(false);
+	const touchStartClientRef = useRef({ x: 0, y: 0 });
 
 	const onHoldStartRef = useRef(onHoldStart);
 	onHoldStartRef.current = onHoldStart;
@@ -99,29 +101,38 @@ export function usePressAndHold<TContainerElement extends HTMLElement = HTMLDivE
 		const container = containerRef.current;
 		if (!container) return;
 
+		function clearTouchHoldTimer() {
+			if (touchHoldTimerRef.current !== null) {
+				clearTimeout(touchHoldTimerRef.current);
+				touchHoldTimerRef.current = null;
+			}
+		}
+
 		function onTouchStart(event: TouchEvent) {
+			isTouchInProgressRef.current = true;
 			if (isWithinExcludedElement(event.target, excludeSelector)) return;
 			const itemElement = findItemElement(event.target, itemAttribute);
 			if (!itemElement) return;
 			const itemKey = itemElement.getAttribute(itemAttribute)!;
 			const touch = event.touches[0];
+			touchStartClientRef.current = { x: touch.clientX, y: touch.clientY };
 			isTouchHoldArmedRef.current = false;
+			clearTouchHoldTimer();
 			touchHoldTimerRef.current = window.setTimeout(() => {
+				touchHoldTimerRef.current = null;
 				isTouchHoldArmedRef.current = true;
 				armHold(itemKey, touch.clientX, touch.clientY);
 			}, touchHoldDelayMs);
 		}
 
 		function onTouchMove(event: TouchEvent) {
+			const touch = event.touches[0];
 			if (!isTouchHoldArmedRef.current) {
-				if (touchHoldTimerRef.current !== null) {
-					clearTimeout(touchHoldTimerRef.current);
-					touchHoldTimerRef.current = null;
-				}
+				const movedPx = Math.hypot(touch.clientX - touchStartClientRef.current.x, touch.clientY - touchStartClientRef.current.y);
+				if (movedPx > movementToleranceForHoldPx) clearTouchHoldTimer();
 				return;
 			}
 			event.preventDefault();
-			const touch = event.touches[0];
 			onHoldMoveRef.current?.(touch.clientX, touch.clientY);
 			const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
 			const itemElement = findItemElement(elementUnderTouch, itemAttribute);
@@ -131,28 +142,36 @@ export function usePressAndHold<TContainerElement extends HTMLElement = HTMLDivE
 			}
 		}
 
-		function onTouchEnd() {
-			if (touchHoldTimerRef.current !== null) {
-				clearTimeout(touchHoldTimerRef.current);
-				touchHoldTimerRef.current = null;
-			}
+		function onTouchEnd(event: TouchEvent) {
+			clearTouchHoldTimer();
+			isTouchInProgressRef.current = false;
+			const wasHoldArmedByTouch = isTouchHoldArmedRef.current;
 			isTouchHoldArmedRef.current = false;
 			endHold();
+			if (wasHoldArmedByTouch && event.cancelable) event.preventDefault();
+		}
+
+		function onContextMenuDuringTouch(event: Event) {
+			if (!isTouchInProgressRef.current) return;
+			event.preventDefault();
+			event.stopPropagation();
 		}
 
 		container.addEventListener('touchstart', onTouchStart, { passive: true });
 		container.addEventListener('touchmove', onTouchMove, { passive: false });
-		container.addEventListener('touchend', onTouchEnd);
+		container.addEventListener('touchend', onTouchEnd, { passive: false });
 		container.addEventListener('touchcancel', onTouchEnd);
+		container.addEventListener('contextmenu', onContextMenuDuringTouch);
 
 		return () => {
 			container.removeEventListener('touchstart', onTouchStart);
 			container.removeEventListener('touchmove', onTouchMove);
 			container.removeEventListener('touchend', onTouchEnd);
 			container.removeEventListener('touchcancel', onTouchEnd);
-			if (touchHoldTimerRef.current !== null) clearTimeout(touchHoldTimerRef.current);
+			container.removeEventListener('contextmenu', onContextMenuDuringTouch);
+			clearTouchHoldTimer();
 		};
-	}, [itemAttribute, excludeSelector, touchHoldDelayMs]);
+	}, [itemAttribute, excludeSelector, touchHoldDelayMs, movementToleranceForHoldPx]);
 
 	function getPressHandlers(itemKey: string): PressHandlers {
 		return {

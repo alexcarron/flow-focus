@@ -10,6 +10,8 @@ import TaskCreatorPage from './components/pages/TaskCreatorPage';
 import QuickToDoPage from './components/pages/QuickToDoPage';
 import SettingsPage from './components/pages/SettingsPage';
 import UserProfileControls from './components/UserProfileControls';
+import UndoRedoButtons from './components/UndoRedoButtons';
+import { useIsTouchDevice } from './hooks/useIsTouchDevice';
 import MigrateLocalDataToCloudConfirmationModal from './components/MigrateLocalDataToCloudConfirmationModal';
 import styles from './App.module.css';
 
@@ -23,6 +25,7 @@ export default function App() {
 	const loadSettings = useSettingsStore(s => s.loadSettings);
 	const { user, isLoading: isUserAuthorizationLoading } = useUserAuthorization();
 	const isAppDataSettling = areTasksLoading || isUserAuthorizationLoading;
+	const isTouchDevice = useIsTouchDevice();
 
 	useEffect(() => {
 		loadTasks();
@@ -49,6 +52,7 @@ export default function App() {
 				<NavLink to="/settings" className={navLinkClass}>
 					Settings
 				</NavLink>
+				{isTouchDevice && <UndoRedoButtons />}
 				<UserProfileControls />
 			</nav>
 

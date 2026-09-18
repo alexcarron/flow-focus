@@ -27,8 +27,10 @@
 	transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.menuItem:hover {
-	background-color: var(--color-surface-hover);
+@media (hover: hover) {
+	.menuItem:hover {
+		background-color: var(--color-surface-hover);
+	}
 }
 
 .menuItem:active {
@@ -39,9 +41,11 @@
 	color: var(--color-danger);
 }
 
-.menuItemDanger:hover {
-	background-color: var(--color-danger);
-	color: var(--color-text-primary);
+@media (hover: hover) {
+	.menuItemDanger:hover {
+		background-color: var(--color-danger);
+		color: var(--color-text-primary);
+	}
 }
 
 .menuItemDanger:active {

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuickToDoChecklistStore } from '../stores/quickToDoChecklistStore';
 import { useQuickToDoChecklistReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useQuickToDoChecklistReorderDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
+import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
+import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { findItemWithParent, hasAnyCheckedItem } from '../model/quickToDoChecklist/quickToDoChecklistTree';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import { mergeRefs } from '../utilities/mergeRefs';
@@ -46,6 +48,7 @@ export default function QuickToDoChecklistSection() {
 	const [itemContextMenu, setItemContextMenu] = useState<{ itemID: string; x: number; y: number } | null>(null);
 	const [isDeleteCheckedConfirmOpen, setIsDeleteCheckedConfirmOpen] = useState(false);
 	const textElementsByItemIDRef = useRef(new Map<string, HTMLSpanElement>());
+	const isTouchDevice = useIsTouchDevice();
 
 	const {
 		itemsContainerRef: reorderDragContainerRef,
@@ -73,6 +76,19 @@ export default function QuickToDoChecklistSection() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
+	const insertItemOnEnterRef = useCommitOnEnter<HTMLDivElement>({
+		targetSelector: '[data-quick-to-do-checklist-row] [contenteditable]',
+		onEnter: textElement => {
+			const itemID = textElement.closest('[data-quick-to-do-checklist-row]')?.getAttribute('data-quick-to-do-checklist-row') ?? null;
+			if (itemID === null) return;
+			const item = findItemWithParent(items, itemID)?.item;
+			if (!item) return;
+			const typedText = textElement.textContent ?? '';
+			if (typedText !== item.text) editItemText(itemID, typedText);
+			setItemPendingFocusID(insertItemBeforeOrAfter(itemID, 'after'));
+		},
+	});
+
 	useEffect(() => {
 		if (itemPendingFocusID === null) return;
 		const textElement = textElementsByItemIDRef.current.get(itemPendingFocusID);
@@ -98,7 +114,7 @@ export default function QuickToDoChecklistSection() {
 		event.preventDefault();
 		const text = newItemText.trim();
 		if (!text) return;
-		setItemPendingFocusID(addTopLevelItem(text));
+		addTopLevelItem(text);
 		setNewItemText('');
 	}
 
@@ -155,7 +171,7 @@ export default function QuickToDoChecklistSection() {
 				<p className={styles.emptyHint}>No to-do items here yet.</p>
 			)}
 
-			<div ref={mergeRefs(reorderDragContainerRef, checkboxDragContainerRef)} className={draggingItemID !== null ? `${styles.list} ${styles.listDragging}` : styles.list}>
+			<div ref={mergeRefs(reorderDragContainerRef, checkboxDragContainerRef, insertItemOnEnterRef)} className={draggingItemID !== null ? `${styles.list} ${styles.listDragging}` : styles.list}>
 				{displayRows.map(row => {
 					if (row.kind === 'placeholder') {
 						return (
@@ -174,6 +190,7 @@ export default function QuickToDoChecklistSection() {
 							key={item.id}
 							item={item}
 							depth={row.depth}
+							isTouchDevice={isTouchDevice}
 							rowDragHandlers={getRowDragHandlers(item.id)}
 							checkboxDragHandlers={getCheckboxDragHandlers(item.id)}
 							registerRowElement={element => registerRowElement(item.id, element)}
@@ -227,6 +244,7 @@ export default function QuickToDoChecklistSection() {
 					onChange={event => setNewItemText(event.target.value)}
 					onPaste={onAddItemInputPaste}
 					placeholder="Add a to-do item..."
+					enterKeyHint="done"
 					className={`field ${styles.addItemInput}`}
 				/>
 				<button type="submit" className="button primary">Add</button>

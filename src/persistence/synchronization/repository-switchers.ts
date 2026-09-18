@@ -47,11 +47,14 @@ export async function switchRepositoriesToCloud(userID: string, isRepositorySwit
 		quickToDoChecklistRepository: new CachedQuickToDoChecklistRepository(userID, synchronizer),
 	});
 
-	synchronizer.start();
-	await synchronizer.sync();
+	await reloadAllStores();
 	if (isRepositorySwitchStale()) return;
 
-	await reloadAllStores();
+	synchronizer.start();
+}
+
+export function requestCloudSync(): Promise<void> {
+	return activeSynchronizer?.sync() ?? Promise.resolve();
 }
 
 export async function switchRepositoriesToLocal(): Promise<void> {

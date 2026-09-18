@@ -1,11 +1,13 @@
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
+import ContextMenuButton from './context-menu/ContextMenuButton';
 import styles from './QuickToDoChecklistSection.module.css';
 
 interface Props {
 	item: QuickToDoChecklistItem;
 	depth: number;
+	isTouchDevice: boolean;
 	rowDragHandlers: { onMouseDown: (event: React.MouseEvent) => void };
 	checkboxDragHandlers: { onMouseDown: (event: React.MouseEvent) => void; onMouseEnter: (event: React.MouseEvent) => void };
 	registerRowElement: (element: HTMLElement | null) => void;
@@ -27,6 +29,7 @@ interface Props {
 export default function QuickToDoChecklistItemRow({
 	item,
 	depth,
+	isTouchDevice,
 	rowDragHandlers,
 	checkboxDragHandlers,
 	registerRowElement,
@@ -75,7 +78,7 @@ export default function QuickToDoChecklistItemRow({
 						onToggle(!item.isChecked, event.shiftKey);
 					}
 				}}
-				className={item.isChecked ? `${styles.checkbox} ${styles.checkboxChecked}` : styles.checkbox}
+				className={item.isChecked ? `touch-hit-area ${styles.checkbox} ${styles.checkboxChecked}` : `touch-hit-area ${styles.checkbox}`}
 			>
 				{item.isChecked && (
 					<svg className={styles.checkmark} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -88,6 +91,7 @@ export default function QuickToDoChecklistItemRow({
 				ref={registerTextElement}
 				contentEditable
 				suppressContentEditableWarning
+				spellCheck={false}
 				onBlur={event => onTextBlur(event.currentTarget.textContent ?? '')}
 				onPaste={event => {
 					event.preventDefault();
@@ -104,10 +108,6 @@ export default function QuickToDoChecklistItemRow({
 					if (matchesShortcutIgnoringShift(event, SHORTCUTS.quickToDoChecklistInsert.insertBefore)) {
 						event.preventDefault();
 						onInsertBefore(event.currentTarget.textContent ?? '');
-					}
-					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistInsert.insertAfter)) {
-						event.preventDefault();
-						onInsertAfter(event.currentTarget.textContent ?? '');
 					}
 					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistIndent.unindent)) {
 						event.preventDefault();
@@ -139,6 +139,14 @@ export default function QuickToDoChecklistItemRow({
 				data-placeholder="New to-do"
 				className={item.isChecked ? `${styles.itemText} ${styles.itemTextChecked}` : styles.itemText}
 			/>
+
+			{isTouchDevice && (
+				<ContextMenuButton
+					label="To-do item options"
+					className={styles.itemMenuButton}
+					onOpen={onContextMenu}
+				/>
+			)}
 		</div>
 	);
 }

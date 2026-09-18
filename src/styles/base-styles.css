@@ -37,6 +37,28 @@ button {
 	color: inherit;
 	cursor: pointer;
 	border: unset;
+	touch-action: manipulation;
+}
+
+[role="checkbox"],
+[contenteditable] {
+	touch-action: manipulation;
+}
+
+.touch-hit-area {
+	position: relative;
+}
+
+@media (pointer: coarse) {
+	.touch-hit-area::before {
+		content: "";
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: max(100%, var(--touch-target-minimum-size));
+		height: max(100%, var(--touch-target-minimum-size));
+		transform: translate(-50%, -50%);
+	}
 }
 
 input,

@@ -59,6 +59,8 @@
 	text-underline-offset: 0.15rem;
 }
 
-.linkButton:hover {
-	color: var(--color-text-secondary);
+@media (hover: hover) {
+	.linkButton:hover {
+		color: var(--color-text-secondary);
+	}
 }

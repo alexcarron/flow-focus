@@ -45,6 +45,7 @@
 	--color-typed-quick-input-steps: #2dd4bf;
 
 	--readable-content-width: 40rem;
+	--touch-target-minimum-size: 44px;
 
 	--space-extra-extra-small: 0.125rem;
 	--space-extra-small: 0.25rem;

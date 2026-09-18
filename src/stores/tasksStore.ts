@@ -9,6 +9,7 @@ import TaskPrioritizer from '../model/TaskPrioritizer';
 import { serializeTask, deserializeRow } from '../persistence/cloud/task.serializer';
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
+import { RunOnceThenAgainIfChanged } from '../utilities/runOnceThenAgainIfChanged';
 
 enablePatches();
 setAutoFreeze(false);
@@ -64,7 +65,7 @@ interface TasksActions {
 
 export const tasksManager = new TasksManager();
 
-let loadTasksInProgress = false;
+const loadTasksRunner = new RunOnceThenAgainIfChanged();
 
 async function persistTask(task: Task): Promise<void> {
 	try {
@@ -82,6 +83,40 @@ async function softDeleteTask(id: string): Promise<void> {
 	}
 }
 
+async function loadTasksFromActiveRepository(): Promise<void> {
+	try {
+		const rows = await getActiveRepositories().taskRepository.getAll();
+		tasksManager.clearTasks();
+		rows.forEach(row => {
+			const data = deserializeRow(row);
+			const task = tasksManager.addCreatedTask(data.description, row.id);
+			task.replaceAllSteps(data.steps);
+			task.setStartTime(data.startTime);
+			task.setEndTime(data.endTime);
+			task.setDeadline(data.deadline);
+			task.setMinRequiredTime(data.minRequiredTime);
+			task.setMaxRequiredTime(data.maxRequiredTime);
+			task.setRepeatInterval(data.repeatInterval);
+			task.setReccurenceStartTime(data.reccurenceStartTime);
+			task.setMandatory(data.isMandatory);
+			task.setComplete(data.isComplete);
+			task.setSkipped(data.isSkipped);
+			task.setLastActionedStep(data.lastActionedStep);
+
+			if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {
+				task.onPastIntervalEndTime(new Date());
+			}
+		});
+		useTasksStore.setState(state => {
+			state.tasks = [...tasksManager.getTasks()];
+			state.isLoading = false;
+		});
+	} catch (err) {
+		console.error('Failed to load tasks from the active repository:', err);
+		useTasksStore.setState(state => { state.isLoading = false; });
+	}
+}
+
 export const useTasksStore = create<TasksState & TasksActions>()(
 	immer((set, get) => ({
 		tasks: [],
@@ -89,42 +124,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		undoStack: [],
 		redoStack: [],
 
-		async loadTasks() {
-			if (loadTasksInProgress) return;
-			loadTasksInProgress = true;
-			try {
-				tasksManager.clearTasks();
-				const rows = await getActiveRepositories().taskRepository.getAll();
-				rows.forEach(row => {
-					const data = deserializeRow(row);
-					const task = tasksManager.addCreatedTask(data.description, row.id);
-					task.replaceAllSteps(data.steps);
-					task.setStartTime(data.startTime);
-					task.setEndTime(data.endTime);
-					task.setDeadline(data.deadline);
-					task.setMinRequiredTime(data.minRequiredTime);
-					task.setMaxRequiredTime(data.maxRequiredTime);
-					task.setRepeatInterval(data.repeatInterval);
-					task.setReccurenceStartTime(data.reccurenceStartTime);
-					task.setMandatory(data.isMandatory);
-					task.setComplete(data.isComplete);
-					task.setSkipped(data.isSkipped);
-					task.setLastActionedStep(data.lastActionedStep);
-
-					if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {
-						task.onPastIntervalEndTime(new Date());
-					}
-				});
-				set(state => {
-					state.tasks = [...tasksManager.getTasks()];
-					state.isLoading = false;
-				});
-			} catch (err) {
-				console.error('Failed to load tasks from Dexie:', err);
-				set(state => { state.isLoading = false; });
-			} finally {
-				loadTasksInProgress = false;
-			}
+		loadTasks() {
+			return loadTasksRunner.run(() => loadTasksFromActiveRepository());
 		},
 
 		refreshTasks() {

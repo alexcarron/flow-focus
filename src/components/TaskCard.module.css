@@ -44,7 +44,10 @@
 	display: flex;
 	align-items: flex-start;
 	gap: var(--space-small);
+	padding-left: var(--space-small);
+	border-left: var(--border-width-primary-accent-emphasis) solid transparent;
 	cursor: text;
+	-webkit-touch-callout: none;
 }
 
 .stepsDragging .stepRow,
@@ -53,8 +56,7 @@
 }
 
 .stepRowCurrent {
-	border-left: var(--border-width-primary-accent-emphasis) solid var(--color-accent-border);
-	padding-left: var(--space-small);
+	border-left-color: var(--color-accent-border);
 }
 
 .stepRowPlaceholder {
@@ -78,8 +80,8 @@
 
 .stepCheckbox {
 	flex-shrink: 0;
-	width: 0.85rem;
-	height: 0.85rem;
+	width: 1rem;
+	height: 1rem;
 	margin-top: 0.25rem;
 	border-radius: var(--radius-small);
 	border: 1px solid var(--color-border-control);
@@ -91,21 +93,20 @@
 	transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.stepRowCurrent .stepCheckbox {
-	width: 1rem;
-	height: 1rem;
-	margin-top: 0.3rem;
-}
-
 .stepCheckboxChecked {
 	background-color: var(--color-accent);
 	border-color: var(--color-accent);
 }
 
 .stepCheckmark {
-	width: 0.5rem;
-	height: 0.5rem;
+	width: 0.625rem;
+	height: 0.625rem;
 	color: var(--color-text-primary);
+}
+
+.stepMenuButton {
+	margin-left: auto;
+	margin-top: 0;
 }
 
 .previousStep {

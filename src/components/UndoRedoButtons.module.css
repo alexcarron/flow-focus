@@ -1,0 +1,20 @@
+.buttons {
+	display: flex;
+	gap: var(--space-small);
+}
+
+.button {
+	width: 2rem;
+	height: 2rem;
+	padding: var(--space-extra-small);
+}
+
+.button:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.icon {
+	width: 1.125rem;
+	height: 1.125rem;
+}

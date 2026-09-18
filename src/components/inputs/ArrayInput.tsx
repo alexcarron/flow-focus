@@ -10,6 +10,7 @@ interface Props {
 	className?: string;
 	onItemKeyDown?: (index: number, step: string, e: React.KeyboardEvent) => void;
 	renderRowPrefix?: (index: number, item: string) => React.ReactNode;
+	renderRowSuffix?: (index: number, item: string) => React.ReactNode;
 	getRowProps?: (index: number, item: string) => { 'data-step-row'?: string; className?: string; style?: React.CSSProperties; ref?: (element: HTMLDivElement | null) => void; onMouseDown?: (event: React.MouseEvent) => void };
 	onRowContextMenu?: (index: number, item: string, event: React.MouseEvent) => void;
 }
@@ -19,7 +20,7 @@ export interface ArrayInputHandle {
 	focusRowAtPosition: (index: number, cursorPosition?: number) => void;
 }
 
-export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix, getRowProps, onRowContextMenu }: Props, ref) {
+export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, onChange, placeholder, className = '', onItemKeyDown, renderRowPrefix, renderRowSuffix, getRowProps, onRowContextMenu }: Props, ref) {
 	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	const displayedRows = [...value, ''];
@@ -158,16 +159,18 @@ export default forwardRef<ArrayInputHandle, Props>(function ArrayInput({ value, 
 							type="text"
 							value={item}
 							placeholder={isTrailingRow ? (placeholder ?? 'Add a step, or paste a list…') : 'Step…'}
+							enterKeyHint="next"
 							className={`field ${styles.input}`}
 							onChange={e => changeRow(i, e.target.value)}
 							onPaste={e => handlePaste(i, e)}
 							onKeyDown={e => handleKeyDown(i, e)}
 						/>
+						{!isTrailingRow && renderRowSuffix?.(i, item)}
 						{!isTrailingRow && (
 							<button
 								type="button"
 								onClick={() => removeRow(i)}
-								className={`button icon danger ${styles.removeButton}`}
+								className={`button icon danger touch-hit-area ${styles.removeButton}`}
 								aria-label="Remove step"
 							>
 								<DeleteIcon className={styles.removeIcon} />

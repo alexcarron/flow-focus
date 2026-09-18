@@ -11,7 +11,9 @@ export class RunOnceThenAgainIfChanged {
 
 		if (!this.taskToRerun) {
 			this.wasRerunRequested = true;
-			this.taskToRerun = this.currentTaskRunning.then(() => this.awaitCurrentTaskRunning());
+			this.taskToRerun = this.currentTaskRunning
+				.catch(() => undefined)
+				.then(() => this.awaitCurrentTaskRunning());
 		}
 		return this.taskToRerun;
 	}
@@ -26,13 +28,13 @@ export class RunOnceThenAgainIfChanged {
 		} 
 		finally {
 			this.currentTaskRunning = null;
+			if (this.wasRerunRequested) {
+				this.wasRerunRequested = false;
+				this.taskToRerun = null;
+				this.currentTaskRunning = this.runOnceThenRunRerunRequest(task);
+			}
 		}
 
-		if (this.wasRerunRequested) {
-			this.wasRerunRequested = false;
-			this.taskToRerun = null;
-			this.currentTaskRunning = this.runOnceThenRunRerunRequest(task);
-			await this.currentTaskRunning;
-		}
+		if (this.currentTaskRunning) await this.currentTaskRunning;
 	}
 }

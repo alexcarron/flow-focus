@@ -104,7 +104,7 @@ export function useQuickToDoChecklistReorderDrag<TContainerElement extends HTMLE
 
 	const { containerRef: itemsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
 		itemAttribute: 'data-quick-to-do-checklist-row',
-		excludeSelector: '[data-quick-to-do-checklist-checkbox]',
+		excludeSelector: '[data-quick-to-do-checklist-checkbox], button',
 		mouseHoldDelayMs: QUICK_TO_DO_CHECKLIST_REORDER_HOLD_DELAY_MS,
 		touchHoldDelayMs: QUICK_TO_DO_CHECKLIST_REORDER_HOLD_DELAY_MS,
 		onHoldStart: (itemID, startClientX, startClientY) => {

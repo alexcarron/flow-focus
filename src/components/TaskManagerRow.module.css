@@ -3,8 +3,10 @@
 	vertical-align: top;
 }
 
-.row:hover {
-	background-color: var(--color-row-hover);
+@media (hover: hover) {
+	.row:hover {
+		background-color: var(--color-row-hover);
+	}
 }
 
 .rowSelected {
@@ -18,8 +20,10 @@
 		inset 0 calc(var(--border-width-primary-accent-emphasis) * -1) 0 0 var(--color-accent-border);
 }
 
-.rowSelected:hover {
-	background-color: var(--color-accent-selected-background-hover);
+@media (hover: hover) {
+	.rowSelected:hover {
+		background-color: var(--color-accent-selected-background-hover);
+	}
 }
 
 .rowSelected + .rowSelected {

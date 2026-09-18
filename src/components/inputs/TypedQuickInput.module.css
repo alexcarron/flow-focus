@@ -122,7 +122,9 @@
 	cursor: pointer;
 }
 
-.keepAsTextButton:hover {
-	color: var(--color-text-primary);
-	border-color: var(--color-border-control);
+@media (hover: hover) {
+	.keepAsTextButton:hover {
+		color: var(--color-text-primary);
+		border-color: var(--color-border-control);
+	}
 }

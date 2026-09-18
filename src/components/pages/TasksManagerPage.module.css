@@ -57,8 +57,10 @@
 	white-space: nowrap;
 }
 
-.sortableHeader:hover {
-	color: var(--color-text-primary);
+@media (hover: hover) {
+	.sortableHeader:hover {
+		color: var(--color-text-primary);
+	}
 }
 
 .sortIndicator {
@@ -72,8 +74,10 @@
 	color: var(--color-text-subtle);
 }
 
-.sortableHeader:hover .sortIndicatorIcon {
-	color: var(--color-text-primary);
+@media (hover: hover) {
+	.sortableHeader:hover .sortIndicatorIcon {
+		color: var(--color-text-primary);
+	}
 }
 
 .sortIndicatorIconActive {
