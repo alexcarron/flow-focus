@@ -5,7 +5,7 @@ import Weekday from '../time-management/Weekday';
 import parseDatePhrase, { nextDateForWeekday } from './parseDatePhrase';
 import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
 import { stepsMatcher } from './stepsMatcher';
-import { TypedQuickInputField } from './TypedQuickInputToken';
+import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputField } from './TypedQuickInputToken';
 
 export type RawMatch = {
 	field: TypedQuickInputField;
@@ -24,6 +24,7 @@ export type FindMatchesConfig = {
 	now: Date;
 	nightTime: Time;
 	morningTime: Time;
+	escapedTokenLocations: EscapedTokenLocation[];
 };
 
 export type Matcher = {
@@ -150,7 +151,7 @@ function isFollowedByPossessiveSuffix(input: string, endIndex: number): boolean 
 
 const dateTriggerWords = ['due', 'deadline', 'starts', 'start', 'starting', 'ends', 'end', 'ending', 'until', 'every'];
 const dateTriggerWordAlternation = dateTriggerWords.sort((left, right) => right.length - left.length).join('|');
-const PRECEDING_DATE_TRIGGER_WORD_REGEX = new RegExp(`\\\\?(${dateTriggerWordAlternation})\\s+$`, 'i');
+const PRECEDING_DATE_TRIGGER_WORD_REGEX = new RegExp(`(${dateTriggerWordAlternation})\\s+$`, 'i');
 
 function isImmediatelyPrecededByDateTriggerWord(input: string, startIndex: number): boolean {
 	return PRECEDING_DATE_TRIGGER_WORD_REGEX.test(input.slice(0, startIndex));
@@ -193,7 +194,15 @@ const impliedDueDateMatcher: Matcher = {
 	field: 'deadline',
 	colorClass: 'deadline',
 	findMatches(config) {
-		const candidates = findBareDateCandidates(config);
+		const escapedKeys = new Set(config.escapedTokenLocations.map(serializeEscapedTokenLocation));
+		const candidates = findBareDateCandidates(config).filter(candidate =>
+			!escapedKeys.has(serializeEscapedTokenLocation({
+				field: 'deadline',
+				matchedText: candidate.matchedText,
+				startIndex: candidate.startIndex,
+				endIndex: candidate.endIndex,
+			}))
+		);
 		if (candidates.length === 0) return [];
 
 		const [winner, ...ignored] = [...candidates].sort((left, right) => left.startIndex - right.startIndex);

@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTasksStore } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
-import parseTypedQuickInput, { escapeTokenInText } from '../../model/typed-quick-input/parseTypedQuickInput';
 import { TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../../model/time-management/Time';
+import useTypedQuickInputEntry from '../../hooks/useTypedQuickInputEntry';
 import ArrayInput, { ArrayInputHandle } from '../inputs/ArrayInput';
 import CheckboxInput from '../inputs/CheckboxInput';
 import DatetimeInput from '../inputs/DatetimeInput';
@@ -47,7 +47,10 @@ export default function TaskCreatorPage() {
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morningTime = useSettingsStore(s => s.morningTime);
 
-	const [name, setName] = useState('');
+	const { name, setName, escapeToken, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
+		nightTime: Time.fromString(nightTime),
+		morningTime: Time.fromString(morningTime),
+	});
 	const [steps, setSteps] = useState<string[]>([]);
 	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -57,15 +60,6 @@ export default function TaskCreatorPage() {
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
 	const stepsInputRef = useRef<ArrayInputHandle>(null);
 
-	const parseResult = useMemo(
-		() => parseTypedQuickInput({
-			input: name,
-			now: new Date(),
-			nightTime: Time.fromString(nightTime),
-			morningTime: Time.fromString(morningTime),
-		}),
-		[name, nightTime, morningTime]
-	);
 	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
 
 	const handleCreateRef = useRef(handleCreate);
@@ -92,9 +86,9 @@ export default function TaskCreatorPage() {
 		setError(null);
 	}
 
-	function handleUnlinkToken(token: TypedQuickInputToken) {
-		setName(escapeTokenInText(name, token));
-		setDemotedRange({ start: token.startIndex, end: token.endIndex + 1 });
+	function handleEscapeToken(token: TypedQuickInputToken) {
+		escapeToken(token);
+		setDemotedRange({ start: token.startIndex, end: token.endIndex });
 	}
 
 	function handleShiftEnter() {
@@ -109,8 +103,8 @@ export default function TaskCreatorPage() {
 		for (const key of changedKeys) {
 			const token = findTokenForTimingKey(parseResult.tokens, key);
 			if (token) {
-				setName(escapeTokenInText(name, token));
-				setDemotedRange({ start: token.startIndex, end: token.endIndex + 1 });
+				escapeToken(token);
+				setDemotedRange({ start: token.startIndex, end: token.endIndex });
 				break;
 			}
 		}
@@ -173,7 +167,7 @@ export default function TaskCreatorPage() {
 	}
 
 	function handleReset() {
-		setName('');
+		resetTypedQuickInputEntry();
 		setSteps([]);
 		setManualTiming(DEFAULT_TIMING);
 		setDemotedRange(null);
@@ -194,7 +188,7 @@ export default function TaskCreatorPage() {
 					value={name}
 					onChange={handleNameChange}
 					tokens={parseResult.tokens}
-					onUnlinkToken={handleUnlinkToken}
+					onEscapeToken={handleEscapeToken}
 					demotedRange={demotedRange}
 					placeholderTiersLongestFirst={['Calculus Homework 3.2 due thursday takes 1-2 hours']}
 					onSubmit={() => handleCreateRef.current()}

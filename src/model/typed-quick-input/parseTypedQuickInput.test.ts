@@ -1,4 +1,5 @@
-import parseTypedQuickInput, { escapeTokenInText } from './parseTypedQuickInput';
+import parseTypedQuickInput from './parseTypedQuickInput';
+import { toEscapedTokenLocation } from './TypedQuickInputToken';
 import Time from '../time-management/Time';
 
 const testNow = new Date(2026, 0, 5, 9, 0, 0);
@@ -153,8 +154,10 @@ describe('parseTypedQuickInput', () => {
 		expect(result.timing.maxDuration).toBe(4 * oneHour);
 	});
 
-	it('treats a backslash-escaped trigger as literal text', () => {
-		const result = parseTypedQuickInput({ input: 'read \\due monday book', now: testNow });
+	it('treats an escaped trigger as literal text', () => {
+		const first = parseTypedQuickInput({ input: 'read due monday book', now: testNow });
+		const escapedTokenLocations = [toEscapedTokenLocation(first.tokens[0])];
+		const result = parseTypedQuickInput({ input: 'read due monday book', now: testNow, escapedTokenLocations });
 		expect(result.cleanedName).toBe('read due monday book');
 		expect(result.timing.deadline).toBeUndefined();
 		expect(result.tokens).toHaveLength(0);
@@ -201,14 +204,35 @@ describe('parseTypedQuickInput', () => {
 	});
 });
 
-describe('escapeTokenInText', () => {
-	it('inserts a backslash before the token so re-parsing keeps it literal', () => {
-		const first = parseTypedQuickInput({ input: 'essay due friday', now: testNow });
-		const escaped = escapeTokenInText('essay due friday', first.tokens[0]);
-		expect(escaped).toBe('essay \\due friday');
+describe('escapedTokenLocations', () => {
+	it('keeps a specific occurrence of a repeated word literal without affecting the other occurrence', () => {
+		const first = parseTypedQuickInput({ input: 'optional optional', now: testNow });
+		expect(first.tokens).toHaveLength(2);
 
-		const reparsed = parseTypedQuickInput({ input: escaped, now: testNow });
-		expect(reparsed.timing.deadline).toBeUndefined();
-		expect(reparsed.cleanedName).toBe('essay due friday');
+		const escapedTokenLocations = [toEscapedTokenLocation(first.tokens[0])];
+		const result = parseTypedQuickInput({ input: 'optional optional', now: testNow, escapedTokenLocations });
+		expect(result.tokens).toHaveLength(1);
+		expect(result.tokens[0].startIndex).toBe(9);
+		expect(result.cleanedName).toBe('optional');
+	});
+
+	it('does not let an escaped implied-due-date candidate block a later candidate from becoming the winner', () => {
+		const first = parseTypedQuickInput({ input: 'I sat on a chair', now: testNow });
+		expect(first.tokens).toHaveLength(1);
+		expect(first.tokens[0].matchedText).toBe('sat');
+
+		const escapedTokenLocations = [toEscapedTokenLocation(first.tokens[0])];
+		const withSecondSat = parseTypedQuickInput({
+			input: 'sat I sat on a chair',
+			now: testNow,
+			escapedTokenLocations: escapedTokenLocations.map(location => ({
+				...location,
+				startIndex: location.startIndex + 4,
+				endIndex: location.endIndex + 4,
+			})),
+		});
+		expect(withSecondSat.tokens).toHaveLength(1);
+		expect(withSecondSat.tokens[0].matchedText).toBe('sat');
+		expect(withSecondSat.tokens[0].startIndex).toBe(0);
 	});
 });

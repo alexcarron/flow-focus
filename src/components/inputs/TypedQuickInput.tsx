@@ -7,7 +7,7 @@ interface Props {
 	value: string;
 	onChange: (value: string) => void;
 	tokens: TypedQuickInputToken[];
-	onUnlinkToken: (token: TypedQuickInputToken) => void;
+	onEscapeToken: (token: TypedQuickInputToken) => void;
 	demotedRange?: { start: number; end: number } | null;
 	placeholderTiersLongestFirst?: string[];
 	onSubmit?: () => void;
@@ -121,7 +121,7 @@ export default function TypedQuickInput({
 	value,
 	onChange,
 	tokens,
-	onUnlinkToken,
+	onEscapeToken,
 	demotedRange = null,
 	placeholderTiersLongestFirst = [],
 	onSubmit,
@@ -144,6 +144,10 @@ export default function TypedQuickInput({
 	onShiftEnterRef.current = onShiftEnter;
 	const disabledRef = useRef(disabled);
 	disabledRef.current = disabled;
+	const tokensRef = useRef(tokens);
+	tokensRef.current = tokens;
+	const onEscapeTokenRef = useRef(onEscapeToken);
+	onEscapeTokenRef.current = onEscapeToken;
 
 	useEffect(() => {
 		if (!demotedRange) return;
@@ -186,6 +190,14 @@ export default function TypedQuickInput({
 			else if (event.inputType === 'insertParagraph') {
 				event.preventDefault();
 				onSubmitRef.current?.();
+			}
+			else if (event.inputType === 'insertText' && event.data === '\\' && editor) {
+				const caretOffset = getCaretCharacterOffset(editor);
+				const tokenStartingAtCaret = tokensRef.current.find(token => token.startIndex === caretOffset);
+				if (tokenStartingAtCaret) {
+					event.preventDefault();
+					onEscapeTokenRef.current(tokenStartingAtCaret);
+				}
 			}
 		}
 
@@ -348,7 +360,7 @@ export default function TypedQuickInput({
 						tabIndex={-1}
 						className={`touch-hit-area ${styles.keepAsTextButton}`}
 						onClick={() => {
-							onUnlinkToken(hoveredToken);
+							onEscapeToken(hoveredToken);
 							hideTooltip();
 						}}
 					>

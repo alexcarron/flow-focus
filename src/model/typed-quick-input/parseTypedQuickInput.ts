@@ -2,7 +2,7 @@ import { DEFAULT_SETTINGS } from '../AppSettings';
 import TaskTimingOptions from '../task/TaskTimingOptions';
 import Time from '../time-management/Time';
 import { RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
-import { TypedQuickInputParseResult, TypedQuickInputToken } from './TypedQuickInputToken';
+import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputParseResult } from './TypedQuickInputToken';
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
@@ -19,17 +19,6 @@ function findQuoteSpans(input: string): Array<{ openIndex: number; closeIndex: n
 	let match: RegExpExecArray | null;
 	while ((match = regex.exec(input)) !== null) {
 		spans.push({ openIndex: match.index, closeIndex: match.index + match[0].length - 1 });
-	}
-	return spans;
-}
-
-function findBackslashSpans(input: string): Array<{ backslashIndex: number; runEnd: number }> {
-	const spans: Array<{ backslashIndex: number; runEnd: number }> = [];
-	for (let index = 0; index < input.length; index++) {
-		if (input[index] !== '\\') continue;
-		let runEnd = index + 1;
-		while (runEnd < input.length && !/\s/.test(input[runEnd])) runEnd++;
-		spans.push({ backslashIndex: index, runEnd });
 	}
 	return spans;
 }
@@ -62,26 +51,32 @@ export default function parseTypedQuickInput(config: {
 	now?: Date;
 	nightTime?: Time;
 	morningTime?: Time;
+	escapedTokenLocations?: EscapedTokenLocation[];
 }): TypedQuickInputParseResult {
 	const input = config.input;
 	const now = config.now ?? new Date();
 	const nightTime = config.nightTime ?? defaultNightTime;
 	const morningTime = config.morningTime ?? defaultMorningTime;
+	const escapedTokenLocations = config.escapedTokenLocations ?? [];
 
-	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({ input, now, nightTime, morningTime }));
+	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({ input, now, nightTime, morningTime, escapedTokenLocations }));
 
 	const quoteSpans = findQuoteSpans(input);
-	const backslashSpans = findBackslashSpans(input);
 
-	const protectedRanges: Range[] = [
-		...quoteSpans.map(span => ({ start: span.openIndex + 1, end: span.closeIndex })),
-		...backslashSpans.map(span => ({ start: span.backslashIndex + 1, end: span.runEnd })),
-	];
+	const protectedRanges: Range[] = quoteSpans.map(span => ({ start: span.openIndex + 1, end: span.closeIndex }));
+
+	const escapedKeys = new Set(escapedTokenLocations.map(serializeEscapedTokenLocation));
 
 	const unprotectedMatches = rawMatches.filter(match =>
 		!protectedRanges.some(range =>
 			rangesOverlap({ start: match.startIndex, end: match.endIndex }, range)
-		)
+		) &&
+		!escapedKeys.has(serializeEscapedTokenLocation({
+			field: match.field,
+			matchedText: match.matchedText,
+			startIndex: match.startIndex,
+			endIndex: match.endIndex,
+		}))
 	);
 
 	const keptMatches = resolveOverlappingMatches(unprotectedMatches);
@@ -103,14 +98,6 @@ export default function parseTypedQuickInput(config: {
 		}
 	}
 
-	for (const span of backslashSpans) {
-		const runRange = { start: span.backslashIndex + 1, end: span.runEnd };
-		const protectsAToken = rawMatches.some(match =>
-			rangesOverlap({ start: match.startIndex, end: match.endIndex }, runRange)
-		);
-		if (protectsAToken) removedIndices.add(span.backslashIndex);
-	}
-
 	const timing: Partial<TaskTimingOptions> = {};
 	let steps: string[] | null = null;
 	for (const match of keptMatches) {
@@ -118,7 +105,7 @@ export default function parseTypedQuickInput(config: {
 		if (match.stepsList) steps = match.stepsList;
 	}
 
-	const tokens: TypedQuickInputToken[] = keptMatches
+	const tokens = keptMatches
 		.map(match => ({
 			field: match.field,
 			matchedText: match.matchedText,
@@ -135,8 +122,4 @@ export default function parseTypedQuickInput(config: {
 		steps,
 		tokens,
 	};
-}
-
-export function escapeTokenInText(input: string, token: TypedQuickInputToken): string {
-	return `${input.slice(0, token.startIndex)}\\${input.slice(token.startIndex)}`;
 }
