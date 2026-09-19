@@ -55,6 +55,16 @@ function isUnmodifiedLetterKeydown(event: React.KeyboardEvent): boolean {
 	);
 }
 
+function isBufferedDateSegmentKeydown(event: React.KeyboardEvent): boolean {
+	return (
+		event.key.length === 1 &&
+		/[0-9/: -]/.test(event.key) &&
+		!event.ctrlKey &&
+		!event.altKey &&
+		!event.metaKey
+	);
+}
+
 function formatTimeOfDay(hour: number, minute: number): string {
 	return new Date(2000, 0, 1, hour, minute).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
@@ -72,6 +82,7 @@ export default function DatetimeInput({ value, onChange, onSubmit, label, descri
 	const [isTypingMode, setIsTypingMode] = useState(false);
 	const [typedText, setTypedText] = useState('');
 	const typedInputRef = useRef<HTMLInputElement>(null);
+	const [keysTypedIntoDateInputSinceFocus, setKeysTypedIntoDateInputSinceFocus] = useState('');
 
 	useEffect(() => {
 		if (isTypingMode) typedInputRef.current?.focus();
@@ -166,8 +177,10 @@ export default function DatetimeInput({ value, onChange, onSubmit, label, descri
 			onSubmit?.(value);
 		} else if (isUnmodifiedLetterKeydown(event)) {
 			event.preventDefault();
-			setTypedText(event.key);
+			setTypedText(keysTypedIntoDateInputSinceFocus + event.key);
 			setIsTypingMode(true);
+		} else if (isBufferedDateSegmentKeydown(event)) {
+			setKeysTypedIntoDateInputSinceFocus(keysTypedIntoDateInputSinceFocus + event.key);
 		}
 	}
 
@@ -215,7 +228,10 @@ export default function DatetimeInput({ value, onChange, onSubmit, label, descri
 						type="datetime-local"
 						value={value ? toLocalDatetimeString(value) : ''}
 						className={`field ${showEmptyPlaceholder ? styles.dateInputTextHidden : ''}`}
-						onFocus={() => setIsDateFocused(true)}
+						onFocus={() => {
+							setIsDateFocused(true);
+							setKeysTypedIntoDateInputSinceFocus('');
+						}}
 						onBlur={() => setIsDateFocused(false)}
 						onChange={event => {
 							const wasEmptyBeforePick = value === null;
