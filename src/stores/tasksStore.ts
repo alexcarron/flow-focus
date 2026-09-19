@@ -406,6 +406,11 @@ export const selectTasksInPriorityOrder = (state: TasksState): Task[] => {
 	return prioritizer.getTasksInPriorityOrder(state.tasks, new Date());
 };
 
+export const selectTasksInTaskManagerOrder = (state: TasksState): Task[] => {
+	const prioritizer = new TaskPrioritizer(tasksManager);
+	return prioritizer.getTasksInTaskManagerOrder(state.tasks, new Date());
+};
+
 export function startRecurringTaskTick(): () => void {
 	const id = setInterval(() => {
 		tasksManager.update(new Date());

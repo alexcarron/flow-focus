@@ -80,6 +80,57 @@ export default class TaskPrioritizer {
 		return priorityTasks;
 	}
 
+	public getTasksInTaskManagerOrder(tasksToOrder: Task[], currentTime: Date): Task[] {
+		let orderedTasks: Task[] = tasksToOrder;
+
+		orderedTasks = orderedTasks.sort((task1, task2) => {
+			return (
+				this.compareByTaskManagerGroup(task1, task2, currentTime) ||
+				this.compareByTaskManagerGroupOrder(task1, task2, currentTime)
+			)
+		});
+
+		return orderedTasks;
+	}
+
+	private getTaskManagerGroup(task: Task, currentTime: Date): number {
+		if (task.getIsComplete()) return 2;
+		if (task.isActiveIgnoringSkip(currentTime)) return 0;
+		return 1;
+	}
+
+	private compareByTaskManagerGroup(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		const group1 = this.getTaskManagerGroup(task1, currentTime);
+		const group2 = this.getTaskManagerGroup(task2, currentTime);
+
+		if (group1 < group2) return SortOrder.FIRST_BEFORE_SECOND;
+		if (group1 > group2) return SortOrder.SECOND_BEFORE_FIRST;
+		return SortOrder.UNDETERMINED;
+	}
+
+	private compareByTaskManagerGroupOrder(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		if (this.getTaskManagerGroup(task1, currentTime) === 2) {
+			return this.compareByDeadline(task1, task2);
+		}
+
+		return (
+			this.compareByTimeToComplete(task1, task2, currentTime) ||
+			this.compareByProgress(task1, task2)
+		);
+	}
+
+	private compareByDeadline(task1: Task, task2: Task): SortOrder {
+		const deadline1 = task1.getDeadline();
+		const deadline2 = task2.getDeadline();
+
+		if (deadline1 === null && deadline2 === null) return SortOrder.UNDETERMINED;
+		if (deadline1 === null) return SortOrder.SECOND_BEFORE_FIRST;
+		if (deadline2 === null) return SortOrder.FIRST_BEFORE_SECOND;
+		if (deadline1.getTime() < deadline2.getTime()) return SortOrder.FIRST_BEFORE_SECOND;
+		if (deadline1.getTime() > deadline2.getTime()) return SortOrder.SECOND_BEFORE_FIRST;
+		return SortOrder.UNDETERMINED;
+	}
+
 	private compareBy(
 		compareFunction:
 			((task1: Task, task2: Task, currentTime: Date) => SortOrder) |

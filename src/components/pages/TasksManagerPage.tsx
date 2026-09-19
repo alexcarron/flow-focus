@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useTasksStore, selectTasksInPriorityOrder } from '../../stores/tasksStore';
+import { useTasksStore, selectTasksInTaskManagerOrder } from '../../stores/tasksStore';
 import Task from '../../model/task/Task';
 import FilterDropdown from '../FilterDropdown';
 import TextInput from '../inputs/TextInput';
@@ -133,7 +133,7 @@ function getRowID(task: Task): string {
 }
 
 export default function TasksManagerPage() {
-	const tasks = useTasksStore(selectTasksInPriorityOrder);
+	const tasks = useTasksStore(selectTasksInTaskManagerOrder);
 	const setSteps = useTasksStore(s => s.setSteps);
 	const setDescription = useTasksStore(s => s.setDescription);
 	const setStepComplete = useTasksStore(s => s.setStepComplete);

@@ -683,6 +683,17 @@ export default class Task {
 	}
 
 	isActive(currentTime: Date): boolean {
+		if (
+			this.skippedUntil !== null &&
+			this.skippedUntil > currentTime
+		) {
+			return false;
+		}
+
+		return this.isActiveIgnoringSkip(currentTime);
+	}
+
+	isActiveIgnoringSkip(currentTime: Date): boolean {
 		if (this.isComplete) {
 			return false;
 		}
@@ -697,13 +708,6 @@ export default class Task {
 		if (
 			this.endTime !== null &&
 			this.endTime < currentTime
-		) {
-			return false;
-		}
-
-		if (
-			this.skippedUntil !== null &&
-			this.skippedUntil > currentTime
 		) {
 			return false;
 		}
