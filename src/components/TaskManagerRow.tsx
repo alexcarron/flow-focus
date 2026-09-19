@@ -23,7 +23,7 @@ import checkboxInputStyles from './inputs/CheckboxInput.module.css';
 import arrayInputStyles from './inputs/ArrayInput.module.css';
 import styles from './TaskManagerRow.module.css';
 
-export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'deadline';
+export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'timeAvailable' | 'deadline';
 
 function toDurationString(ms: number): string {
 	const duration = Duration.fromMilliseconds(ms);
@@ -279,7 +279,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 				/>
 			</td>
 
-			<td className={styles.cell}>
+			<td className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getDeadline()
 					? formatTime(task.getTimeToComplete(now))
 					: '∞'}

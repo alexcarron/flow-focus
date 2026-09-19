@@ -21,7 +21,7 @@ enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
 enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval, StartTime, Deadline }
 enum SortDir { Asc, Desc }
 
-const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'deadline', 'duration'];
+const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'duration', 'timeAvailable', 'deadline'];
 
 const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = [
 	{
@@ -283,7 +283,7 @@ export default function TasksManagerPage() {
 								{SORT_LABELS[SortBy.Steps]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Steps)}</span>
 							</th>
 							<th
-								className={`${styles.columnHeader} ${styles.sortableHeader}`}
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('timeAvailable') ? ` ${styles.hiddenColumn}` : ''}`}
 								onClick={() => toggleSort(SortBy.TimeAvailable)}
 							>
 								{SORT_LABELS[SortBy.TimeAvailable]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.TimeAvailable)}</span>

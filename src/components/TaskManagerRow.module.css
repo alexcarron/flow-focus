@@ -71,7 +71,7 @@
 
 .stepsCell {
 	padding: var(--space-small) var(--space-medium) var(--space-small) 0;
-	min-width: 12rem;
+	min-width: 9rem;
 	vertical-align: top;
 }
 
