@@ -5,6 +5,9 @@ import { hasUnsyncedCachedChanges } from './perUserCache';
 import { toErrorMessage } from '../../utilities/errorMessage';
 import { RunOnceThenAgainIfChanged } from '../../utilities/runOnceThenAgainIfChanged';
 
+const SYNC_INTERVAL_WHEN_VISIBLE_MS = 60_000;
+const SYNC_INTERVAL_WHEN_HIDDEN_MS = 600_000;
+
 export interface SyncStatusSnapshot {
 	isSyncing: boolean;
 	lastSyncError: string | null;
@@ -33,6 +36,7 @@ export class LocalCloudDataSynchronizer {
 	private started = false;
 	private readonly syncRunner = new RunOnceThenAgainIfChanged();
 	private hasUnsyncedChanges = false;
+	private syncTickIntervalID: ReturnType<typeof setInterval> | undefined;
 
 	constructor(dependencies: LocalCloudDataSynchronizerDependencies) {
 		this.cacheDB = dependencies.cacheDB;
@@ -52,6 +56,7 @@ export class LocalCloudDataSynchronizer {
 		this.started = true;
 		window.addEventListener('online', this.handleOnline);
 		document.addEventListener('visibilitychange', this.handleVisibilityChange);
+		this.startSyncTick();
 		void this.sync();
 	}
 
@@ -60,6 +65,7 @@ export class LocalCloudDataSynchronizer {
 		this.started = false;
 		window.removeEventListener('online', this.handleOnline);
 		document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+		this.stopSyncTick();
 	}
 
 	notifyLocalWrite(): void {
@@ -75,7 +81,22 @@ export class LocalCloudDataSynchronizer {
 	}
 
 	private handleVisibilityChange(): void {
+		this.startSyncTick();
 		if (document.visibilityState === 'visible') void this.sync();
+	}
+
+	private startSyncTick(): void {
+		this.stopSyncTick();
+		const intervalMs = document.visibilityState === 'visible'
+			? SYNC_INTERVAL_WHEN_VISIBLE_MS
+			: SYNC_INTERVAL_WHEN_HIDDEN_MS;
+		this.syncTickIntervalID = setInterval(() => void this.sync(), intervalMs);
+	}
+
+	private stopSyncTick(): void {
+		if (this.syncTickIntervalID === undefined) return;
+		clearInterval(this.syncTickIntervalID);
+		this.syncTickIntervalID = undefined;
 	}
 
 	private reportStatus(status: SyncStatusSnapshot): void {
