@@ -226,7 +226,9 @@ export default function TaskCard({ task }: Props) {
 								].filter(Boolean).join(' ')}
 								onMouseDown={getRowDragHandlers(step.id).onMouseDown}
 								onClick={event => {
-									if ((event.target as HTMLElement).closest('[data-step]')) return;
+									const clickedElement = event.target as HTMLElement;
+									if (clickedElement.closest('[data-step]')) return;
+									if (clickedElement.closest('[contenteditable]')) return;
 									const stepSpanElement = stepSpanElementsByStepIDRef.current.get(step.id);
 									if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
 								}}
@@ -256,10 +258,14 @@ export default function TaskCard({ task }: Props) {
 									onKeyDown={event => {
 										if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {
 											event.preventDefault();
+											const typedText = event.currentTarget.textContent ?? '';
+											if (typedText !== step.text) store.setStepText(task, step.id, typedText);
 											store.moveStepUp(task, step.id);
 										}
 										else if (matchesShortcut(event, SHORTCUTS.stepReorder.moveDown)) {
 											event.preventDefault();
+											const typedText = event.currentTarget.textContent ?? '';
+											if (typedText !== step.text) store.setStepText(task, step.id, typedText);
 											store.moveStepDown(task, step.id);
 										}
 										else if (matchesShortcut(event, SHORTCUTS.stepNavigate.toPreviousStep)) {
