@@ -178,6 +178,34 @@
 	color: var(--color-text-faint);
 }
 
+.skippedBadge {
+	display: flex;
+	align-items: center;
+	gap: var(--space-extra-extra-small);
+	margin-top: var(--space-extra-extra-small);
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
+.cancelSkipButton {
+	display: inline-flex;
+	align-items: center;
+	color: var(--color-accent);
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	font-size: inherit;
+	line-height: 1;
+}
+
+.cancelSkipIcon {
+	width: var(--font-size-extra-small);
+	height: var(--font-size-extra-small);
+	flex-shrink: 0;
+}
+
 .hiddenColumn {
 	display: none;
 }

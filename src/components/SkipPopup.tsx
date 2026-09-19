@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Task from '../model/task/Task';
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
+import { SkipUntilDateInPastError } from '../model/task/TaskTimingError';
 import { useTasksStore } from '../stores/tasksStore';
 import DatetimeInput from './inputs/DatetimeInput';
 
@@ -11,22 +11,20 @@ interface Props {
 }
 
 export default function SkipPopup({ task, isOpen, onClose }: Props) {
-	const [deferUntilDate, setDeferUntilDate] = useState<Date | null>(null);
+	const [skipUntilDate, setSkipUntilDate] = useState<Date | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const deferTaskUntil = useTasksStore(s => s.deferTaskUntil);
+	const skipTaskUntil = useTasksStore(s => s.skipTaskUntil);
 	const datetimeInputContainerRef = useRef<HTMLDivElement>(null);
 
-	function handleConfirm(overrideDate: Date | null = deferUntilDate) {
+	function handleConfirm(overrideDate: Date | null = skipUntilDate) {
 		if (overrideDate !== null) {
 			try {
-				deferTaskUntil(task, overrideDate);
-			} catch (deferError) {
-				if (deferError instanceof StartTimeAfterEndTimeError) {
-					setErrorMessage('The task ends before the start date. Choose a start date before the end time, or change the end time.');
-				} else if (deferError instanceof StartTimeAfterDeadlineError) {
-					setErrorMessage('The task is due before the start date. Choose a start date before the deadline, or change the deadline.');
+				skipTaskUntil(task, overrideDate);
+			} catch (skipError) {
+				if (skipError instanceof SkipUntilDateInPastError) {
+					setErrorMessage('Choose a date and time in the future to skip until.');
 				} else {
-					setErrorMessage('Failed to defer task.');
+					setErrorMessage('Failed to skip task.');
 				}
 				return;
 			}
@@ -44,7 +42,7 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 		function onKeyDown(event: KeyboardEvent) {
 			if (event.key !== 'Enter') return;
 			if (datetimeInputContainerRef.current?.contains(document.activeElement)) return;
-			if (deferUntilDate === null) return;
+			if (skipUntilDate === null) return;
 			event.preventDefault();
 			handleConfirm();
 		}
@@ -65,10 +63,10 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 				<h2 className="modal-title">Skip task until…</h2>
 				<div ref={datetimeInputContainerRef}>
 					<DatetimeInput
-						value={deferUntilDate}
-						onChange={setDeferUntilDate}
+						value={skipUntilDate}
+						onChange={setSkipUntilDate}
 						onSubmit={handleConfirm}
-						label="New Start Date"
+						label="Skip Until"
 						defaultTimeOfDay="morning"
 					/>
 				</div>
@@ -77,7 +75,7 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 					<button onClick={onClose} className="button">
 						Cancel
 					</button>
-					<button onClick={() => handleConfirm()} className="button primary" disabled={deferUntilDate === null}>
+					<button onClick={() => handleConfirm()} className="button primary" disabled={skipUntilDate === null}>
 						Skip
 					</button>
 				</div>

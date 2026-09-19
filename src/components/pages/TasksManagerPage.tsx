@@ -146,10 +146,11 @@ export default function TasksManagerPage() {
 	const insertStepAfterStep = useTasksStore(s => s.insertStepAfterStep);
 	const setComplete = useTasksStore(s => s.setComplete);
 	const setMandatory = useTasksStore(s => s.setMandatory);
+	const cancelSkip = useTasksStore(s => s.cancelSkip);
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
-	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reorderSteps, insertStepBeforeStep, insertStepAfterStep, setComplete, setMandatory, deleteTask, refreshTasks, persistChangedTasks };
+	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reorderSteps, insertStepBeforeStep, insertStepAfterStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks };
 
 	const [filter, setFilter] = useState<Filter>(Filter.All);
 	const [searchText, setSearchText] = useState('');

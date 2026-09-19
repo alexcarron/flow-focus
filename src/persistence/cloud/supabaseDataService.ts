@@ -35,6 +35,7 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 				p_is_mandatory: cloudRow.is_mandatory,
 				p_is_complete: cloudRow.is_complete,
 				p_is_skipped: cloudRow.is_skipped,
+				p_skipped_until: cloudRow.skipped_until,
 				p_last_actioned_step: cloudRow.last_actioned_step,
 				p_updated_at: cloudRow.updated_at,
 				p_deleted_at: cloudRow.deleted_at,

@@ -5,7 +5,8 @@ import { isBackupDataV1 } from './versions/backupV1';
 import { isBackupDataV2, migrateV1ToV2 } from './versions/backupV2';
 import { isBackupDataV3, migrateV2ToV3 } from './versions/backupV3';
 import { isBackupDataV4, migrateV3ToV4 } from './versions/backupV4';
-import { BackupData, BackupTask, BackupStep, BACKUP_FORMAT, isBackupData, migrateV4ToV5, taskToBackupTask } from './versions/backupV5';
+import { isBackupDataV5, migrateV4ToV5 } from './versions/backupV5';
+import { BackupData, BackupTask, BackupStep, BACKUP_FORMAT, isBackupData, migrateV5ToV6, taskToBackupTask } from './versions/backupV6';
 
 export type { BackupData, BackupTask, BackupStep };
 
@@ -46,17 +47,20 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 	if (isBackupData(parsed)) {
 		return parsed;
 	}
+	if (isBackupDataV5(parsed)) {
+		return migrateV5ToV6(parsed);
+	}
 	if (isBackupDataV4(parsed)) {
-		return migrateV4ToV5(parsed);
+		return migrateV5ToV6(migrateV4ToV5(parsed));
 	}
 	if (isBackupDataV3(parsed)) {
-		return migrateV4ToV5(migrateV3ToV4(parsed));
+		return migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(parsed)));
 	}
 	if (isBackupDataV2(parsed)) {
-		return migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(parsed)));
+		return migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(parsed))));
 	}
 	if (isBackupDataV1(parsed)) {
-		return migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(parsed))));
+		return migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(parsed)))));
 	}
 	throw new Error('File is not a valid FlowFocus backup.');
 }

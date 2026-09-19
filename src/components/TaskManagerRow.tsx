@@ -15,6 +15,7 @@ import SelectionCheckbox from './SelectionCheckbox';
 import StepCheckbox from './StepCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
 import ContextMenuButton from './context-menu/ContextMenuButton';
+import CloseIcon from './svg-icons/CloseIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import MandatoryIcon from './svg-icons/MandatoryIcon';
 import TimingIcon from './svg-icons/TimingIcon';
@@ -52,6 +53,7 @@ export interface TaskManagerRowActions {
 	insertStepAfterStep: (task: Task, stepID: string) => string;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setMandatory: (task: Task, isMandatory: boolean) => void;
+	cancelSkip: (task: Task) => void;
 	deleteTask: (task: Task) => Promise<void>;
 	refreshTasks: () => void;
 	persistChangedTasks: (tasks: Task[]) => Promise<void>;
@@ -82,6 +84,8 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
 	const startTime = task.getStartTime();
 	const displayStartTime = startTime && startTime > now ? startTime : null;
+	const skippedUntil = task.getSkippedUntil();
+	const isSkipActive = skippedUntil !== null && skippedUntil > now;
 
 	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; index: number; x: number; y: number } | null>(null);
 	const arrayInputRef = useRef<ArrayInputHandle>(null);
@@ -171,6 +175,19 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 					onCommit={newDescription => store.setDescription(task, newDescription)}
 					className={styles.descriptionInput}
 				/>
+				{isSkipActive && (
+					<div className={styles.skippedBadge}>
+						Skipped until {formatDate(skippedUntil)}
+						<button
+							onClick={() => store.cancelSkip(task)}
+							className={styles.cancelSkipButton}
+							aria-label="Cancel skip"
+							title="Cancel skip"
+						>
+							<CloseIcon className={styles.cancelSkipIcon} />
+						</button>
+					</div>
+				)}
 			</td>
 
 			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={isCompactRow ? `${styles.stepsCell} ${styles.stepsCellCompact}` : styles.stepsCell}>

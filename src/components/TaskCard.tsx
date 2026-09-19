@@ -113,7 +113,8 @@ export default function TaskCard({ task }: Props) {
 	const timeLeftStr = timeUntilDeadline === Number.POSITIVE_INFINITY ? null : getTimeString(timeUntilDeadline);
 	const progress = task.getProgress();
 	const progressPct = progress * 94 + 3;
-	const isSkippable = !task.isUrgent(currentTime);
+	const skippedUntil = task.getSkippedUntil();
+	const isSkipActive = skippedUntil !== null && skippedUntil > currentTime;
 	const nextStep = task.getNextStep();
 	const steps = task.getSteps();
 	const nextStepIndex = nextStep === null ? -1 : task.getStepIndex(nextStep.id);
@@ -351,28 +352,39 @@ export default function TaskCard({ task }: Props) {
 			)}
 
 			<div className={styles.meta}>
-				{startTime && startTime > currentTime && (
-					<span>Starts {formatDate(startTime)}</span>
-				)}
-				{deadline && (
-					<span>Due {formatDate(deadline)}</span>
-				)}
-				{timeLeftStr && (
-					<span ref={timeRef} className={styles.timeLeft}>
-						{timeLeftStr}
+				<div className={styles.metaRow}>
+					{startTime && startTime > currentTime && (
+						<span>Starts {formatDate(startTime)}</span>
+					)}
+					{deadline && (
+						<span>Due {formatDate(deadline)}</span>
+					)}
+					{timeLeftStr && (
+						<span ref={timeRef} className={styles.timeLeft}>
+							{timeLeftStr}
+						</span>
+					)}
+				</div>
+				{isSkipActive && (
+					<span className={styles.skippedIndicator}>
+						Skipped until {formatDate(skippedUntil)}
+						<button
+							onClick={() => store.cancelSkip(task)}
+							className={styles.cancelSkipButton}
+						>
+							Cancel
+						</button>
 					</span>
 				)}
 			</div>
 
 			<div className={styles.actions}>
-				{isSkippable && (
-					<button
-						onClick={() => setIsSkipOpen(true)}
-						className={`button ${styles.actionButton} ${styles.actionGrows}`}
-					>
-						Skip
-					</button>
-				)}
+				<button
+					onClick={() => setIsSkipOpen(true)}
+					className={`button ${styles.actionButton} ${styles.actionGrows}`}
+				>
+					Skip
+				</button>
 				<button
 					onClick={() => store.completeAllSteps(task)}
 					className={`button button--primary ${styles.actionButton} ${styles.actionGrows}`}

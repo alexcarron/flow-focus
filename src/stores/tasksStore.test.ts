@@ -97,6 +97,52 @@ describe('completing a task', () => {
 	});
 });
 
+describe('skipping a task', () => {
+	it('keeps skippedUntil after reloading, without changing start time, end time, or deadline', async () => {
+		const startTime = new Date('2020-01-01T00:00:00.000Z');
+		const endTime = new Date('2020-01-01T01:00:00.000Z');
+		const deadline = new Date('2020-01-01T02:00:00.000Z');
+		const task = await useTasksStore.getState().addTask('Water the plants', { startTime, endTime, deadline });
+
+		const skipUntilDate = new Date(Date.now() + 1000 * 60 * 60);
+		useTasksStore.getState().skipTaskUntil(task, skipUntilDate);
+
+		await reload();
+
+		const reloadedTask = useTasksStore.getState().tasks[0];
+		expect(reloadedTask.getSkippedUntil()).toEqual(skipUntilDate);
+		expect(reloadedTask.getStartTime()).toEqual(startTime);
+		expect(reloadedTask.getEndTime()).toEqual(endTime);
+		expect(reloadedTask.getDeadline()).toEqual(deadline);
+	});
+
+	it('is undoable and redoable', async () => {
+		const task = await useTasksStore.getState().addTask('Water the plants');
+		const skipUntilDate = new Date(Date.now() + 1000 * 60 * 60);
+
+		useTasksStore.getState().skipTaskUntil(task, skipUntilDate);
+		expect(useTasksStore.getState().tasks[0].getSkippedUntil()).toEqual(skipUntilDate);
+
+		useTasksStore.getState().undo();
+		expect(useTasksStore.getState().tasks[0].getSkippedUntil()).toBeNull();
+
+		useTasksStore.getState().redo();
+		expect(useTasksStore.getState().tasks[0].getSkippedUntil()).toEqual(skipUntilDate);
+	});
+
+	it('clears skippedUntil after cancelling, and that is undoable too', async () => {
+		const task = await useTasksStore.getState().addTask('Water the plants');
+		const skipUntilDate = new Date(Date.now() + 1000 * 60 * 60);
+		useTasksStore.getState().skipTaskUntil(task, skipUntilDate);
+
+		useTasksStore.getState().cancelSkip(task);
+		expect(useTasksStore.getState().tasks[0].getSkippedUntil()).toBeNull();
+
+		useTasksStore.getState().undo();
+		expect(useTasksStore.getState().tasks[0].getSkippedUntil()).toEqual(skipUntilDate);
+	});
+});
+
 describe('a recurring task', () => {
 	it('advances to its next occurrence once time passes, and only once', async () => {
 		vi.useFakeTimers({ toFake: ['Date'] });

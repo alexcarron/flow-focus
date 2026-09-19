@@ -19,6 +19,7 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		isMandatory: false,
 		isComplete: false,
 		isSkipped: false,
+		skippedUntil: null,
 		lastActionedStep: null,
 		updatedAt: new Date().toISOString(),
 		deletedAt: null,

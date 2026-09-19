@@ -6,7 +6,7 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV5';
+import { BACKUP_FORMAT } from './versions/backupV6';
 import { BACKUP_FORMAT_V1 } from './versions/backupV1';
 import { getActiveRepositories, setActiveRepositories } from '../../persistence/activeRepositories';
 import { localTaskRepository } from '../../persistence/local/LocalTaskRepository';
@@ -146,6 +146,7 @@ describe('applyBackup', () => {
 					isMandatory: false,
 					isComplete: false,
 					isSkipped: false,
+					skippedUntil: null,
 					lastActionedStep: null,
 				},
 			],
@@ -183,6 +184,7 @@ describe('backup and restore while signed in', () => {
 			isMandatory: false,
 			isComplete: false,
 			isSkipped: false,
+			skippedUntil: null,
 			lastActionedStep: null,
 			updatedAt: new Date().toISOString(),
 			deletedAt: null,
@@ -224,6 +226,7 @@ describe('backup and restore while signed in', () => {
 					isMandatory: false,
 					isComplete: false,
 					isSkipped: false,
+					skippedUntil: null,
 					lastActionedStep: null,
 				},
 			],

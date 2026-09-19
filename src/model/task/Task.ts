@@ -5,7 +5,7 @@ import DateRange from "../time-management/DateRange";
 import StepStatus from "./StepStatus";
 import Step from "./Step";
 import TaskState from "./TaskState";
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from "./TaskTimingError";
+import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError, SkipUntilDateInPastError } from "./TaskTimingError";
 
 export default class Task {
 	static [immerable] = true;
@@ -24,6 +24,7 @@ export default class Task {
 	protected isMandatory: boolean = false;
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
+	protected skippedUntil: Date | null = null;
 	protected lastActionedStep: {stepID: string, status: StepStatus} | null = null;
 
 	constructor(
@@ -67,16 +68,6 @@ export default class Task {
 
 	setEndTime(endTime: Date | null): void {this.endTime = endTime};
 
-	/**
-	 * Updates the start time and ensures that the new start time is not after the end time or deadline.
-	 * @throws Error if the new start time is after the end time or deadline
-	 */
-	updateStartTime(newStartTime: Date): void {
-		Task.assertStartTimeNotAfterEndTime(newStartTime, this.endTime);
-		Task.assertStartTimeNotAfterDeadline(newStartTime, this.deadline);
-		this.setStartTime(newStartTime);
-	}
-
 	getDeadline(): Date | null {return this.deadline};
 
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
@@ -118,11 +109,33 @@ export default class Task {
 
 	getIsComplete(): boolean {return this.isComplete}
 
-	setComplete(isComplete: boolean): void {this.isComplete = isComplete}
+	setComplete(isComplete: boolean): void {
+		this.isComplete = isComplete;
+		if (isComplete) this.setSkippedUntil(null);
+	}
 
 	getIsSkipped(): boolean {return this.isSkipped}
 
 	setSkipped(isSkipped: boolean): void {this.isSkipped = isSkipped}
+
+	getSkippedUntil(): Date | null {return this.skippedUntil}
+
+	setSkippedUntil(skippedUntil: Date | null): void {this.skippedUntil = skippedUntil}
+
+	/**
+	 * Hides the task until skipUntilDate without changing its start time, end time, or deadline.
+	 * @throws SkipUntilDateInPastError if skipUntilDate is not after currentTime
+	 */
+	skipUntil(skipUntilDate: Date, currentTime: Date = new Date()): void {
+		if (skipUntilDate.getTime() <= currentTime.getTime()) {
+			throw new SkipUntilDateInPastError(skipUntilDate, currentTime);
+		}
+		this.setSkippedUntil(skipUntilDate);
+	}
+
+	cancelSkip(): void {
+		this.setSkippedUntil(null);
+	}
 
 	setLastActionedStep(lastActionedStep: {stepID: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
 
@@ -215,6 +228,7 @@ export default class Task {
 		});
 		this.setComplete(false);
 		this.setSkipped(false);
+		this.setSkippedUntil(null);
 		this.setLastActionedStep(null);
 	}
 
@@ -635,6 +649,7 @@ export default class Task {
 			isComplete: this.isComplete,
 			isMandatory: this.isMandatory,
 			isSkipped: this.isSkipped,
+			skippedUntil: this.skippedUntil,
 			startTime: this.startTime,
 			endTime: this.endTime,
 			deadline: this.deadline,
@@ -655,6 +670,7 @@ export default class Task {
 		this.setComplete(taskState.isComplete);
 		this.setMandatory(taskState.isMandatory);
 		this.setSkipped(taskState.isSkipped);
+		this.setSkippedUntil(taskState.skippedUntil);
 		this.setStartTime(taskState.startTime);
 		this.setEndTime(taskState.endTime);
 		this.setDeadline(taskState.deadline);
@@ -681,6 +697,13 @@ export default class Task {
 		if (
 			this.endTime !== null &&
 			this.endTime < currentTime
+		) {
+			return false;
+		}
+
+		if (
+			this.skippedUntil !== null &&
+			this.skippedUntil > currentTime
 		) {
 			return false;
 		}

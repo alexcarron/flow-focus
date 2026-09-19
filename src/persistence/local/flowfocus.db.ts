@@ -31,6 +31,7 @@ export interface PlainTaskRow extends DeletableRecordMetadata {
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
+	skippedUntil: string | null;
 	lastActionedStep: { stepID: string; status: string } | null;
 }
 

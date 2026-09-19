@@ -37,6 +37,7 @@ function makeTaskWriteInput(overrides: Partial<TaskWriteInput> = {}): TaskWriteI
 		isMandatory: false,
 		isComplete: false,
 		isSkipped: false,
+		skippedUntil: null,
 		lastActionedStep: null,
 		...overrides,
 	};

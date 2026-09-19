@@ -21,6 +21,7 @@ export function serializeTask(task: Task): TaskWriteInput {
 		isMandatory: state.isMandatory,
 		isComplete: state.isComplete,
 		isSkipped: state.isSkipped,
+		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
 		lastActionedStep: state.lastActionedStep,
 	};
 }
@@ -38,6 +39,7 @@ export function deserializeRow(row: PlainTaskRow): {
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
+	skippedUntil: Date | null;
 	lastActionedStep: { stepID: string; status: StepStatus } | null;
 } {
 	return {
@@ -53,6 +55,7 @@ export function deserializeRow(row: PlainTaskRow): {
 		isMandatory: row.isMandatory,
 		isComplete: row.isComplete,
 		isSkipped: row.isSkipped,
+		skippedUntil: row.skippedUntil ? new Date(row.skippedUntil) : null,
 		lastActionedStep: row.lastActionedStep
 			? { stepID: row.lastActionedStep.stepID, status: row.lastActionedStep.status as StepStatus }
 			: null,
@@ -74,6 +77,7 @@ export interface CloudTaskRow {
 	is_mandatory: boolean;
 	is_complete: boolean;
 	is_skipped: boolean;
+	skipped_until: string | null;
 	last_actioned_step: { stepID: string; status: string } | null;
 	updated_at: string;
 	deleted_at: string | null;
@@ -103,6 +107,7 @@ export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskR
 		is_mandatory: row.isMandatory,
 		is_complete: row.isComplete,
 		is_skipped: row.isSkipped,
+		skipped_until: normalizeNullableTimestamp(row.skippedUntil),
 		last_actioned_step: row.lastActionedStep,
 		updated_at: normalizeTimestamp(row.updatedAt),
 		deleted_at: normalizeNullableTimestamp(row.deletedAt),
@@ -124,6 +129,7 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		isMandatory: row.is_mandatory,
 		isComplete: row.is_complete,
 		isSkipped: row.is_skipped,
+		skippedUntil: normalizeNullableTimestamp(row.skipped_until),
 		lastActionedStep: row.last_actioned_step,
 		updatedAt: normalizeTimestamp(row.updated_at),
 		deletedAt: normalizeNullableTimestamp(row.deleted_at),

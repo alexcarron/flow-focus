@@ -38,7 +38,8 @@ interface TasksActions {
 	completeStepAndPrecedingSteps: (task: Task, stepID: string) => void;
 	uncompleteStepAndFollowingSteps: (task: Task, stepID: string) => void;
 	skipNextStep: (task: Task) => void;
-	deferTaskUntil: (task: Task, date: Date) => void;
+	skipTaskUntil: (task: Task, date: Date) => void;
+	cancelSkip: (task: Task) => void;
 	setDescription: (task: Task, description: string) => void;
 	setSteps: (task: Task, stepTexts: string[]) => void;
 	setStepText: (task: Task, stepID: string, newText: string) => void;
@@ -101,6 +102,7 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 			task.setMandatory(data.isMandatory);
 			task.setComplete(data.isComplete);
 			task.setSkipped(data.isSkipped);
+			task.setSkippedUntil(data.skippedUntil);
 			task.setLastActionedStep(data.lastActionedStep);
 
 			if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {
@@ -188,8 +190,12 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().executeWithPatches(() => task.skipNextStep(), [task]);
 		},
 
-		deferTaskUntil(task: Task, date: Date) {
-			get().executeWithPatches(() => task.updateStartTime(date), [task]);
+		skipTaskUntil(task: Task, date: Date) {
+			get().executeWithPatches(() => task.skipUntil(date), [task]);
+		},
+
+		cancelSkip(task: Task) {
+			get().executeWithPatches(() => task.cancelSkip(), [task]);
 		},
 
 		setDescription(task: Task, description: string) {
@@ -324,6 +330,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				task.setMandatory(bt.isMandatory);
 				task.setComplete(bt.isComplete);
 				task.setSkipped(bt.isSkipped);
+				task.setSkippedUntil(bt.skippedUntil ? new Date(bt.skippedUntil) : null);
 				task.setLastActionedStep(bt.lastActionedStep);
 
 				if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {

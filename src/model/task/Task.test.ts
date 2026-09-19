@@ -147,20 +147,6 @@ describe('Task', () => {
 	});
 
 	describe('start time cannot be after end time', () => {
-		it('updateStartTime should throw if the new start time is after the end time', () => {
-			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
-
-			expect(() => task.updateStartTime(new Date('2023-01-01T13:00:00Z'))).toThrow();
-			expect(task.getStartTime()).toBeNull();
-		});
-
-		it('updateStartTime should not throw if the new start time is before the end time', () => {
-			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
-
-			expect(() => task.updateStartTime(new Date('2023-01-01T11:00:00Z'))).not.toThrow();
-			expect(task.getStartTime()).toEqual(new Date('2023-01-01T11:00:00Z'));
-		});
-
 		it('setFromTaskTimingOptions should throw if the new start time is after the new end time', () => {
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
@@ -197,20 +183,6 @@ describe('Task', () => {
 	});
 
 	describe('start time cannot be after deadline', () => {
-		it('updateStartTime should throw if the new start time is after the deadline', () => {
-			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
-
-			expect(() => task.updateStartTime(new Date('2023-01-01T13:00:00Z'))).toThrow();
-			expect(task.getStartTime()).toBeNull();
-		});
-
-		it('updateStartTime should not throw if the new start time is before the deadline', () => {
-			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
-
-			expect(() => task.updateStartTime(new Date('2023-01-01T11:00:00Z'))).not.toThrow();
-			expect(task.getStartTime()).toEqual(new Date('2023-01-01T11:00:00Z'));
-		});
-
 		it('setFromTaskTimingOptions should throw if the new start time is after the new deadline', () => {
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
@@ -333,6 +305,7 @@ describe('Task', () => {
 			task.addStep('Step 1');
 			task.addStep('Step 2');
 			task.completeNextStep();
+			task.skipUntil(new Date(intervalStartTime.getTime() + 1000), intervalStartTime);
 
 			task.onPastIntervalEndTime(currentTime);
 
@@ -340,6 +313,7 @@ describe('Task', () => {
 			expect(task.getProgress()).toBe(0);
 			expect(task.getIsComplete()).toBe(false);
 			expect(task.getNextStep()?.text).toEqual('Step 1');
+			expect(task.getSkippedUntil()).toBeNull();
 		});
 
 		it('should update start time and deadline when past interval end time', () => {
@@ -1032,6 +1006,7 @@ describe('Task', () => {
 		expect(state.isComplete).toEqual(task.getIsComplete());
 		expect(state.isMandatory).toEqual(task.getIsMandatory());
 		expect(state.isSkipped).toEqual(task.getIsSkipped());
+		expect(state.skippedUntil).toEqual(task.getSkippedUntil());
 
 		expect(state.startTime).toEqual(task.getStartTime());
 		expect(state.deadline).toEqual(task.getDeadline());
@@ -1060,6 +1035,7 @@ describe('Task', () => {
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
 		task.makeRecurring(1000, currentTime);
+		task.skipUntil(new Date(currentTime.getTime() + 5000), currentTime);
 
 		const state = task.getState();
 
@@ -1071,6 +1047,7 @@ describe('Task', () => {
 		task.setDeadline(new Date(currentTime.getTime() + 1000));
 		task.setStartTime(new Date(currentTime.getTime() + 2000));
 		task.setMandatory(true);
+		task.cancelSkip();
 
 		task.restoreState(state);
 
@@ -1078,6 +1055,7 @@ describe('Task', () => {
 		expect(task.getIsComplete()).toEqual(false);
 		expect(task.getIsMandatory()).toEqual(false);
 		expect(task.getIsSkipped()).toEqual(false);
+		expect(task.getSkippedUntil()).toEqual(new Date(currentTime.getTime() + 5000));
 		expect(task.getDeadline()).toEqual(currentTime);
 		expect(task.getStartTime()).toEqual(currentTime);
 		expect(task.getMinRequiredTime()).toEqual(1000);
@@ -1130,6 +1108,92 @@ describe('Task', () => {
 		it('should return false if the task is completed', () => {
 			task.completeNextStep();
 			expect(task.isActive(currentTime)).toEqual(false);
+		});
+
+		it('should return false if skippedUntil is after the current time, even past its deadline and end time', () => {
+			task.setDeadline(new Date(currentTime.getTime() - 1000));
+			task.setEndTime(new Date(currentTime.getTime() + 1000));
+			task.skipUntil(new Date(currentTime.getTime() + 500), new Date(currentTime.getTime() - 2000));
+
+			expect(task.isActive(currentTime)).toEqual(false);
+		});
+
+		it('should return true once skippedUntil is in the past', () => {
+			task.skipUntil(new Date(currentTime.getTime() - 500), new Date(currentTime.getTime() - 2000));
+
+			expect(task.isActive(currentTime)).toEqual(true);
+		});
+	});
+
+	describe('skipUntil', () => {
+		it('should set skippedUntil without changing start time, end time, or deadline', () => {
+			const currentTime = new Date('2023-01-01T00:00:00Z');
+			const startTime = new Date('2023-01-01T01:00:00Z');
+			const endTime = new Date('2023-01-01T02:00:00Z');
+			const deadline = new Date('2023-01-01T03:00:00Z');
+			task.setStartTime(startTime);
+			task.setEndTime(endTime);
+			task.setDeadline(deadline);
+
+			const skipUntilDate = new Date('2023-02-01T00:00:00Z');
+			task.skipUntil(skipUntilDate, currentTime);
+
+			expect(task.getSkippedUntil()).toEqual(skipUntilDate);
+			expect(task.getStartTime()).toEqual(startTime);
+			expect(task.getEndTime()).toEqual(endTime);
+			expect(task.getDeadline()).toEqual(deadline);
+		});
+
+		it('should allow skipping a task whose deadline, end time, and start time have already passed', () => {
+			const currentTime = new Date('2023-01-01T04:00:00Z');
+			task.setStartTime(new Date('2023-01-01T01:00:00Z'));
+			task.setEndTime(new Date('2023-01-01T02:00:00Z'));
+			task.setDeadline(new Date('2023-01-01T03:00:00Z'));
+
+			const skipUntilDate = new Date('2023-02-01T00:00:00Z');
+
+			expect(() => task.skipUntil(skipUntilDate, currentTime)).not.toThrow();
+			expect(task.getSkippedUntil()).toEqual(skipUntilDate);
+		});
+
+		it('should throw if the skip until date is not after the current time', () => {
+			const currentTime = new Date('2023-01-01T00:00:00Z');
+
+			expect(() => task.skipUntil(currentTime, currentTime)).toThrow();
+			expect(() => task.skipUntil(new Date(currentTime.getTime() - 1000), currentTime)).toThrow();
+			expect(task.getSkippedUntil()).toBeNull();
+		});
+	});
+
+	describe('cancelSkip', () => {
+		it('should clear skippedUntil', () => {
+			const currentTime = new Date();
+			task.skipUntil(new Date(currentTime.getTime() + 1000), currentTime);
+
+			task.cancelSkip();
+
+			expect(task.getSkippedUntil()).toBeNull();
+		});
+	});
+
+	describe('setComplete', () => {
+		it('should clear skippedUntil when marking the task complete', () => {
+			const currentTime = new Date();
+			task.skipUntil(new Date(currentTime.getTime() + 1000), currentTime);
+
+			task.setComplete(true);
+
+			expect(task.getSkippedUntil()).toBeNull();
+		});
+
+		it('should not clear skippedUntil when marking the task incomplete', () => {
+			const currentTime = new Date();
+			const skipUntilDate = new Date(currentTime.getTime() + 1000);
+			task.skipUntil(skipUntilDate, currentTime);
+
+			task.setComplete(false);
+
+			expect(task.getSkippedUntil()).toEqual(skipUntilDate);
 		});
 	});
 });

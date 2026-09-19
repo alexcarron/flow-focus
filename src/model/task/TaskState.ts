@@ -7,6 +7,7 @@ type TaskState = {
 	steps: Step[],
 	isComplete: boolean,
 	isSkipped: boolean,
+	skippedUntil: Date | null,
 	lastActionedStep: {stepID: string, status: StepStatus} | null,
 	reccurenceStartTime: Date | null,
 } & TaskTimingOptions;
