@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useCommitOnEnter } from '../../hooks/useCommitOnEnter';
+import { usePlainTextContentEditable } from '../../hooks/usePlainTextContentEditable';
 import { mergeRefs } from '../../utilities/mergeRefs';
 
 interface Props {
@@ -24,6 +25,7 @@ export default function TextInput({ value, onChange, onCommit, placeholder, clas
 	}, [value]);
 
 	const commitOnEnterRef = useCommitOnEnter<HTMLSpanElement>();
+	const { onKeyDown: onPlainTextKeyDown, onPaste } = usePlainTextContentEditable();
 
 	function readText(element: HTMLSpanElement): string {
 		return element.textContent ?? '';
@@ -51,7 +53,11 @@ export default function TextInput({ value, onChange, onCommit, placeholder, clas
 				const text = readText(event.currentTarget);
 				if (text !== value) onCommit?.(text);
 			}}
-			onKeyDown={onKeyDown}
+			onPaste={onPaste}
+			onKeyDown={event => {
+				onPlainTextKeyDown(event);
+				onKeyDown?.(event);
+			}}
 		/>
 	);
 }

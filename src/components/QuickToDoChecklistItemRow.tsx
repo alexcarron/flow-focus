@@ -1,5 +1,6 @@
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
+import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import ContextMenuButton from './context-menu/ContextMenuButton';
 import styles from './QuickToDoChecklistSection.module.css';
@@ -47,6 +48,8 @@ export default function QuickToDoChecklistItemRow({
 	onBackspaceDelete,
 	onContextMenu,
 }: Props) {
+	const { onKeyDown: onPlainTextKeyDown } = usePlainTextContentEditable();
+
 	return (
 		<div
 			ref={registerRowElement}
@@ -105,6 +108,7 @@ export default function QuickToDoChecklistItemRow({
 					onPasteLines(lines);
 				}}
 				onKeyDown={event => {
+					onPlainTextKeyDown(event);
 					if (matchesShortcutIgnoringShift(event, SHORTCUTS.quickToDoChecklistInsert.insertBefore)) {
 						event.preventDefault();
 						onInsertBefore(event.currentTarget.textContent ?? '');

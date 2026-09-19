@@ -5,6 +5,7 @@ import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
+import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import StepCheckbox from './StepCheckbox';
 import { formatDate } from '../utilities/dateFormatting';
@@ -70,6 +71,7 @@ export default function TaskCard({ task }: Props) {
 	const descRef = useRef<HTMLHeadingElement>(null);
 	const stepSpanElementsByStepIDRef = useRef<Map<string, HTMLSpanElement>>(new Map());
 	const isTouchDevice = useIsTouchDevice();
+	const { onKeyDown: onPlainTextKeyDown, onPaste: onPlainTextPaste } = usePlainTextContentEditable();
 
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
 		isStepChecked: stepID => task.isStepComplete(stepID),
@@ -203,6 +205,8 @@ export default function TaskCard({ task }: Props) {
 				suppressContentEditableWarning
 				spellCheck={false}
 				onBlur={onDescriptionBlur}
+				onPaste={onPlainTextPaste}
+				onKeyDown={onPlainTextKeyDown}
 				className={styles.description}
 			/>
 
@@ -255,7 +259,9 @@ export default function TaskCard({ task }: Props) {
 									suppressContentEditableWarning
 									spellCheck={false}
 									onBlur={event => onStepBlur(event, step.id, step.text)}
+									onPaste={onPlainTextPaste}
 									onKeyDown={event => {
+										onPlainTextKeyDown(event);
 										if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {
 											event.preventDefault();
 											const typedText = event.currentTarget.textContent ?? '';

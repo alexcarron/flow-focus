@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getTokenBecomeLabel, TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import { useFittingPlaceholder } from '../../hooks/useFittingPlaceholder';
+import { usePlainTextContentEditable } from '../../hooks/usePlainTextContentEditable';
 import styles from './TypedQuickInput.module.css';
 
 interface Props {
@@ -148,6 +149,7 @@ export default function TypedQuickInput({
 }: Props) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const fittingPlaceholder = useFittingPlaceholder(placeholderTiersLongestFirst, editorRef);
+	const { onKeyDown: onPlainTextKeyDown, onPaste } = usePlainTextContentEditable();
 	const [hoveredToken, setHoveredToken] = useState<{ token: TypedQuickInputToken; isEscaped: boolean } | null>(null);
 	const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
 	const [demotingRange, setDemotingRange] = useState<{ start: number; end: number } | null>(null);
@@ -253,6 +255,7 @@ export default function TypedQuickInput({
 	}
 
 	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+		onPlainTextKeyDown(event);
 		if (disabled) return;
 		if (event.nativeEvent.isComposing) return;
 		if (event.key === 'Enter' && event.shiftKey) {
@@ -375,6 +378,7 @@ export default function TypedQuickInput({
 				onCompositionStart={handleCompositionStart}
 				onCompositionEnd={handleCompositionEnd}
 				onKeyDown={handleKeyDown}
+				onPaste={onPaste}
 				onClick={handleEditorClick}
 				onPointerOver={handlePointerOver}
 				onPointerLeave={handlePointerLeave}
