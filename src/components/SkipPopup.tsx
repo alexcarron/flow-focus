@@ -14,7 +14,14 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 	const [skipUntilDate, setSkipUntilDate] = useState<Date | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const skipTaskUntil = useTasksStore(s => s.skipTaskUntil);
+	const skipCurrentOccurrence = useTasksStore(s => s.skipCurrentOccurrence);
 	const datetimeInputContainerRef = useRef<HTMLDivElement>(null);
+	const canSkipCurrentOccurrence = task.isRecurring() && task.getShouldNotSkipMissedOccurrences();
+
+	function handleSkipCurrentOccurrence() {
+		skipCurrentOccurrence(task);
+		onClose();
+	}
 
 	function handleConfirm(overrideDate: Date | null = skipUntilDate) {
 		if (overrideDate !== null) {
@@ -72,6 +79,11 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 				</div>
 				{errorMessage && <p className="modal-error">{errorMessage}</p>}
 				<div className="modal-actions">
+					{canSkipCurrentOccurrence && (
+						<button onClick={handleSkipCurrentOccurrence} className="button">
+							Skip this occurrence
+						</button>
+					)}
 					<button onClick={onClose} className="button">
 						Cancel
 					</button>

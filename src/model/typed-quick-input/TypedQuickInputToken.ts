@@ -4,7 +4,7 @@ export type TypedQuickInputField =
 	| 'deadline'
 	| 'startTime'
 	| 'endTime'
-	| 'repeatInterval'
+	| 'recurrenceDuration'
 	| 'duration'
 	| 'isMandatory'
 	| 'ignoredDate'
@@ -38,7 +38,7 @@ const fieldToBecomeLabel: Record<TypedQuickInputField, string> = {
 	deadline: 'deadline',
 	startTime: 'start time',
 	endTime: 'end time',
-	repeatInterval: 'repeat interval',
+	recurrenceDuration: 'repeat interval',
 	duration: 'duration',
 	isMandatory: 'mandatory',
 	ignoredDate: 'date',

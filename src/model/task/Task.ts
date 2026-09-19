@@ -6,6 +6,11 @@ import StepStatus from "./StepStatus";
 import Step from "./Step";
 import TaskState from "./TaskState";
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError, SkipUntilDateInPastError } from "./TaskTimingError";
+import RecurrenceDuration, { addRecurrenceDurations, areRecurrenceDurationsEqual } from "./recurrence/RecurrenceDuration";
+import TaskOccurrence from "./recurrence/TaskOccurrence";
+import { computeCurrentTaskOccurrence, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
+
+const FIRST_OCCURRENCE_INDEX = 0;
 
 export default class Task {
 	static [immerable] = true;
@@ -19,8 +24,12 @@ export default class Task {
 	protected deadline: Date | null = null;
 	protected minRequiredTime: number | null = null;
 	protected maxRequiredTime: number | null = null;
-	protected repeatInterval: number | null = null;
-	protected reccurenceStartTime: Date | null = null;
+	protected recurrenceDuration: RecurrenceDuration | null = null;
+	protected shouldNotSkipMissedOccurrences: boolean = false;
+	protected completedOccurrenceIndex: number | null = null;
+	protected skippedOccurrenceIndex: number | null = null;
+	protected progressOccurrenceIndex: number | null = null;
+	protected currentOccurrence: TaskOccurrence | null = null;
 	protected isMandatory: boolean = false;
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
@@ -60,15 +69,30 @@ export default class Task {
 		}
 	}
 
-	getStartTime(): Date | null {return this.startTime};
+	getStartTime(): Date | null {
+		if (this.currentOccurrence !== null) return this.currentOccurrence.startTime;
+		return this.startTime;
+	}
+
+	getAnchorStartTime(): Date | null {return this.startTime}
 
 	setStartTime(startTime: Date | null): void {this.startTime = startTime};
 
-	getEndTime(): Date | null {return this.endTime}
+	getEndTime(): Date | null {
+		if (this.currentOccurrence !== null) return this.currentOccurrence.endTime;
+		return this.endTime;
+	}
+
+	getAnchorEndTime(): Date | null {return this.endTime}
 
 	setEndTime(endTime: Date | null): void {this.endTime = endTime};
 
-	getDeadline(): Date | null {return this.deadline};
+	getDeadline(): Date | null {
+		if (this.currentOccurrence !== null) return this.currentOccurrence.deadline;
+		return this.deadline;
+	}
+
+	getAnchorDeadline(): Date | null {return this.deadline}
 
 	setDeadline(deadline: Date | null): void {this.deadline = deadline};
 
@@ -87,7 +111,7 @@ export default class Task {
 
 	getMaxRequiredTime(currentTime: Date): number {
 		if (this.maxRequiredTime === null) {
-			if (this.deadline === null) {
+			if (this.getDeadline() === null) {
 				return Number.POSITIVE_INFINITY;
 			}
 			else {
@@ -99,19 +123,55 @@ export default class Task {
 
 	setMaxRequiredTime(maxRequriedTime: number | null): void {this.maxRequiredTime = maxRequriedTime};
 
-	getRepeatInterval(): number | null {return this.repeatInterval};
+	getRecurrenceDuration(): RecurrenceDuration | null {return this.recurrenceDuration};
 
-	setRepeatInterval(repeatInterval: number | null): void {this.repeatInterval = repeatInterval};
+	setRecurrenceDuration(recurrenceDuration: RecurrenceDuration | null): void {this.recurrenceDuration = recurrenceDuration};
+
+	getShouldNotSkipMissedOccurrences(): boolean {return this.shouldNotSkipMissedOccurrences}
+
+	setShouldNotSkipMissedOccurrences(shouldNotSkipMissedOccurrences: boolean): void {this.shouldNotSkipMissedOccurrences = shouldNotSkipMissedOccurrences}
+
+	getCompletedOccurrenceIndex(): number | null {return this.completedOccurrenceIndex}
+
+	setCompletedOccurrenceIndex(completedOccurrenceIndex: number | null): void {this.completedOccurrenceIndex = completedOccurrenceIndex}
+
+	getSkippedOccurrenceIndex(): number | null {return this.skippedOccurrenceIndex}
+
+	setSkippedOccurrenceIndex(skippedOccurrenceIndex: number | null): void {this.skippedOccurrenceIndex = skippedOccurrenceIndex}
+
+	getProgressOccurrenceIndex(): number | null {return this.progressOccurrenceIndex}
+
+	setProgressOccurrenceIndex(progressOccurrenceIndex: number | null): void {this.progressOccurrenceIndex = progressOccurrenceIndex}
 
 	getIsMandatory(): boolean {return this.isMandatory}
 
 	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
-	getIsComplete(): boolean {return this.isComplete}
+	getIsComplete(): boolean {
+		if (this.currentOccurrence !== null) {
+			return this.completedOccurrenceIndex === this.currentOccurrence.index;
+		}
+		return this.isComplete;
+	}
 
-	setComplete(isComplete: boolean): void {
+	setComplete(isComplete: boolean, currentTime: Date = new Date()): void {
 		this.isComplete = isComplete;
 		if (isComplete) this.setSkippedUntil(null);
+
+		if (this.currentOccurrence === null) return;
+
+		if (isComplete) {
+			this.completedOccurrenceIndex = this.currentOccurrence.index;
+		}
+		else if (this.completedOccurrenceIndex === this.currentOccurrence.index) {
+			this.completedOccurrenceIndex = this.getIndexOfOccurrenceBefore(this.currentOccurrence.index);
+		}
+		this.refreshCurrentOccurrence(currentTime);
+	}
+
+	protected getIndexOfOccurrenceBefore(occurrenceIndex: number): number | null {
+		if (occurrenceIndex <= FIRST_OCCURRENCE_INDEX) return null;
+		return occurrenceIndex - 1;
 	}
 
 	getIsSkipped(): boolean {return this.isSkipped}
@@ -139,94 +199,97 @@ export default class Task {
 
 	setLastActionedStep(lastActionedStep: {stepID: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
 
-	isRecurring(): boolean {return this.repeatInterval !== null};
+	isRecurring(): boolean {return this.recurrenceDuration !== null};
 
-	getReccurenceStartTime(): Date | null {return this.reccurenceStartTime};
+	getCurrentOccurrence(): TaskOccurrence | null {return this.currentOccurrence}
 
-	setReccurenceStartTime(reccurenceStartTime: Date | null): void {this.reccurenceStartTime = reccurenceStartTime};
+	protected getRecurrenceSnapshot(): TaskRecurrenceSnapshot | null {
+		if (this.recurrenceDuration === null || this.startTime === null) return null;
+		return {
+			anchorStartTime: this.startTime,
+			anchorEndTime: this.endTime,
+			anchorDeadline: this.deadline,
+			recurrenceDuration: this.recurrenceDuration,
+			completedOccurrenceIndex: this.completedOccurrenceIndex,
+			skippedOccurrenceIndex: this.skippedOccurrenceIndex,
+			shouldNotSkipMissedOccurrences: this.shouldNotSkipMissedOccurrences,
+		};
+	}
 
-	/**
-	 * Sets reccurenceStartTime to intervalStartTime. Future occurrences are always
-	 * computed from reccurenceStartTime, not from startTime, so deferring startTime (see SkipPopup)
-	 * only postpones the current occurrence without shifting later ones.
-	 */
-	makeRecurring(repeatInterval: number, intervalStartTime: Date): void {
-		Task.assertStartTimeNotAfterEndTime(intervalStartTime, this.endTime);
-
-		const intervalEndTime = new Date(intervalStartTime.getTime() + repeatInterval);
-		const finalDeadline =
-			this.deadline === null || this.deadline.getTime() > intervalEndTime.getTime()
-				? intervalEndTime
-				: this.deadline;
-
-		Task.assertStartTimeNotAfterDeadline(intervalStartTime, finalDeadline);
-
-		this.setRepeatInterval(repeatInterval);
-		this.setReccurenceStartTime(intervalStartTime);
-		this.setStartTime(intervalStartTime);
-		this.setDeadline(finalDeadline);
-	};
-
-	makeNonRecurring(): void {
-		this.setRepeatInterval(null);
-		this.setReccurenceStartTime(null);
-	};
-
-	isPastIntervalEndTime(currentTime: Date): boolean {
-		if (!this.isRecurring() || !this.reccurenceStartTime || !this.repeatInterval) {
-			return false;
-		}
-
-		const intervalEndTime = new Date(this.reccurenceStartTime.getTime() + this.repeatInterval);
-
-		return currentTime.getTime() > intervalEndTime.getTime();
-	};
-
-	onPastIntervalEndTime(currentTime: Date): void {
-		if (!this.isRecurring() || !this.reccurenceStartTime || !this.repeatInterval) {
+	refreshCurrentOccurrence(currentTime: Date): void {
+		const recurrenceSnapshot = this.getRecurrenceSnapshot();
+		if (recurrenceSnapshot === null) {
+			this.currentOccurrence = null;
 			return;
 		}
 
-		this.resetProgress();
+		this.currentOccurrence = computeCurrentTaskOccurrence(recurrenceSnapshot, currentTime);
 
-		let isNextIntervalStartTimeInFuture: boolean = false;
-		while (!isNextIntervalStartTimeInFuture) {
-			const nextIntervalStartTime: Date =
-				new Date(this.reccurenceStartTime.getTime() + this.repeatInterval);
-
-			if (nextIntervalStartTime.getTime() > currentTime.getTime()) {
-				isNextIntervalStartTimeInFuture = true;
-			}
-			else {
-				if (this.deadline !== null) {
-					const nextIntervalDeadline =
-						new Date(this.deadline.getTime() + this.repeatInterval);
-
-					this.setDeadline(nextIntervalDeadline);
-				}
-
-				if (this.endTime !== null) {
-					const nextIntervalEndTime =
-						new Date(this.endTime.getTime() + this.repeatInterval);
-
-					this.setEndTime(nextIntervalEndTime);
-				}
-
-				this.setReccurenceStartTime(nextIntervalStartTime);
-			}
+		if (this.progressOccurrenceIndex !== this.currentOccurrence.index) {
+			this.resetProgress();
+			this.progressOccurrenceIndex = this.currentOccurrence.index;
 		}
+	}
 
-		this.setStartTime(this.reccurenceStartTime);
+	protected getDefaultDeadlineForAnchorOccurrence(anchorStartTime: Date, recurrenceDuration: RecurrenceDuration, existingDeadline: Date | null): Date {
+		const nextOccurrenceStartTime = addRecurrenceDurations(anchorStartTime, recurrenceDuration, 1);
+		const isExistingDeadlineWithinFirstOccurrence =
+			existingDeadline !== null && existingDeadline.getTime() <= nextOccurrenceStartTime.getTime();
+		if (isExistingDeadlineWithinFirstOccurrence) return existingDeadline;
+		return nextOccurrenceStartTime;
+	}
 
-		Task.assertStartTimeNotAfterEndTime(this.startTime, this.endTime);
-		Task.assertStartTimeNotAfterDeadline(this.startTime, this.deadline);
+	makeRecurring(recurrenceDuration: RecurrenceDuration, anchorStartTime: Date, currentTime: Date = new Date()): void {
+		Task.assertStartTimeNotAfterEndTime(anchorStartTime, this.endTime);
+
+		const anchorDeadline = this.getDefaultDeadlineForAnchorOccurrence(anchorStartTime, recurrenceDuration, this.deadline);
+
+		Task.assertStartTimeNotAfterDeadline(anchorStartTime, anchorDeadline);
+
+		this.setRecurrenceDuration(recurrenceDuration);
+		this.setStartTime(anchorStartTime);
+		this.setDeadline(anchorDeadline);
+		this.setCompletedOccurrenceIndex(this.isComplete ? FIRST_OCCURRENCE_INDEX : null);
+		this.setSkippedOccurrenceIndex(null);
+		this.setProgressOccurrenceIndex(FIRST_OCCURRENCE_INDEX);
+		this.refreshCurrentOccurrence(currentTime);
 	};
+
+	makeNonRecurring(): void {
+		const isCurrentOccurrenceComplete = this.getIsComplete();
+		this.setStartTime(this.getStartTime());
+		this.setEndTime(this.getEndTime());
+		this.setDeadline(this.getDeadline());
+		this.setRecurrenceDuration(null);
+		this.setCompletedOccurrenceIndex(null);
+		this.setSkippedOccurrenceIndex(null);
+		this.setProgressOccurrenceIndex(null);
+		this.currentOccurrence = null;
+		this.isComplete = isCurrentOccurrenceComplete;
+	};
+
+	skipCurrentOccurrence(currentTime: Date = new Date()): void {
+		if (this.currentOccurrence === null) return;
+		this.setSkippedOccurrenceIndex(this.currentOccurrence.index);
+		this.refreshCurrentOccurrence(currentTime);
+	}
+
+	protected reanchorToCurrentOccurrence(): void {
+		if (this.currentOccurrence === null) return;
+
+		const currentIndex = this.currentOccurrence.index;
+		this.setStartTime(this.currentOccurrence.startTime);
+		this.setEndTime(this.currentOccurrence.endTime);
+		this.setDeadline(this.currentOccurrence.deadline);
+		this.setCompletedOccurrenceIndex(this.completedOccurrenceIndex === currentIndex ? FIRST_OCCURRENCE_INDEX : null);
+		this.setSkippedOccurrenceIndex(this.skippedOccurrenceIndex === currentIndex ? FIRST_OCCURRENCE_INDEX : null);
+		this.setProgressOccurrenceIndex(FIRST_OCCURRENCE_INDEX);
+	}
 
 	protected resetProgress() {
 		this.steps.forEach((step) => {
 			step.status = StepStatus.UNCOMPLETE;
 		});
-		this.setComplete(false);
 		this.setSkipped(false);
 		this.setSkippedUntil(null);
 		this.setLastActionedStep(null);
@@ -407,7 +470,7 @@ export default class Task {
 
 		step.status = StepStatus.UNCOMPLETE;
 
-		if (this.isComplete) {
+		if (this.getIsComplete()) {
 			this.setComplete(false);
 		}
 	}
@@ -558,42 +621,71 @@ export default class Task {
 
 	getTaskTimingOptions(): TaskTimingOptions {
 		return {
-			startTime: this.startTime,
-			endTime: this.endTime,
-			deadline: this.deadline,
+			startTime: this.getStartTime(),
+			endTime: this.getEndTime(),
+			deadline: this.getDeadline(),
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
-			repeatInterval: this.repeatInterval,
+			recurrenceDuration: this.recurrenceDuration,
+			shouldNotSkipMissedOccurrences: this.shouldNotSkipMissedOccurrences,
 			isMandatory: this.isMandatory
 		}
 	}
 
-	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions): void {
-		const isRepeatIntervalChanging = taskTimingOptions.repeatInterval !== this.repeatInterval;
-		const isBecomingRecurring = isRepeatIntervalChanging && taskTimingOptions.repeatInterval !== null;
-		const finalStartTime = isBecomingRecurring
-			? taskTimingOptions.startTime ?? new Date()
+	protected static areNullableDatesEqual(left: Date | null, right: Date | null): boolean {
+		if (left === null || right === null) return left === right;
+		return left.getTime() === right.getTime();
+	}
+
+	protected isOccurrenceScheduleChanging(taskTimingOptions: TaskTimingOptions): boolean {
+		return (
+			!Task.areNullableDatesEqual(taskTimingOptions.startTime, this.getStartTime()) ||
+			!Task.areNullableDatesEqual(taskTimingOptions.endTime, this.getEndTime()) ||
+			!Task.areNullableDatesEqual(taskTimingOptions.deadline, this.getDeadline()) ||
+			!areRecurrenceDurationsEqual(taskTimingOptions.recurrenceDuration, this.recurrenceDuration)
+		);
+	}
+
+	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions, currentTime: Date = new Date()): void {
+		const wasRecurring = this.isRecurring();
+		const recurrenceDuration = taskTimingOptions.recurrenceDuration;
+		const finalStartTime = recurrenceDuration !== null
+			? taskTimingOptions.startTime ?? currentTime
 			: taskTimingOptions.startTime;
 
 		Task.assertStartTimeNotAfterEndTime(finalStartTime, taskTimingOptions.endTime);
 		Task.assertStartTimeNotAfterDeadline(finalStartTime, taskTimingOptions.deadline);
 
-		this.setStartTime(taskTimingOptions.startTime);
-		this.setEndTime(taskTimingOptions.endTime);
-		this.setDeadline(taskTimingOptions.deadline);
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
-		this.setMandatory(taskTimingOptions.isMandatory)
+		this.setMandatory(taskTimingOptions.isMandatory);
+		this.setShouldNotSkipMissedOccurrences(taskTimingOptions.shouldNotSkipMissedOccurrences);
 
-		if (isRepeatIntervalChanging && taskTimingOptions.repeatInterval !== null) {
-			this.makeRecurring(taskTimingOptions.repeatInterval, taskTimingOptions.startTime ?? new Date());
-		}
-		else if (isRepeatIntervalChanging && taskTimingOptions.repeatInterval === null) {
+		if (wasRecurring && recurrenceDuration === null) {
 			this.makeNonRecurring();
 		}
-		else {
-			this.setRepeatInterval(taskTimingOptions.repeatInterval);
+
+		if (wasRecurring && recurrenceDuration !== null) {
+			if (!this.isOccurrenceScheduleChanging(taskTimingOptions)) {
+				this.refreshCurrentOccurrence(currentTime);
+				return;
+			}
+			this.reanchorToCurrentOccurrence();
 		}
+
+		this.setStartTime(finalStartTime);
+		this.setEndTime(taskTimingOptions.endTime);
+		this.setDeadline(taskTimingOptions.deadline);
+
+		if (recurrenceDuration === null) return;
+
+		if (!wasRecurring) {
+			this.makeRecurring(recurrenceDuration, finalStartTime as Date, currentTime);
+			return;
+		}
+
+		this.setRecurrenceDuration(recurrenceDuration);
+		this.refreshCurrentOccurrence(currentTime);
 	}
 
 	getMinSlackTime(currentTime: Date): number {
@@ -605,7 +697,7 @@ export default class Task {
 	}
 
 	isUrgent(currentTime: Date): boolean {
-		if (this.deadline === null) {
+		if (this.getDeadline() === null) {
 			return false;
 		}
 
@@ -655,19 +747,22 @@ export default class Task {
 			deadline: this.deadline,
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
-			repeatInterval: this.repeatInterval,
-			reccurenceStartTime: this.reccurenceStartTime,
+			recurrenceDuration: this.recurrenceDuration === null ? null : { ...this.recurrenceDuration },
+			shouldNotSkipMissedOccurrences: this.shouldNotSkipMissedOccurrences,
+			completedOccurrenceIndex: this.completedOccurrenceIndex,
+			skippedOccurrenceIndex: this.skippedOccurrenceIndex,
+			progressOccurrenceIndex: this.progressOccurrenceIndex,
 			steps: this.steps.map(step => ({ ...step })),
 			lastActionedStep: this.lastActionedStep
 		};
 	}
 
-	restoreState(taskState: TaskState) {
+	restoreState(taskState: TaskState, currentTime: Date = new Date()) {
 		Task.assertStartTimeNotAfterEndTime(taskState.startTime, taskState.endTime);
 		Task.assertStartTimeNotAfterDeadline(taskState.startTime, taskState.deadline);
 
 		this.setDescription(taskState.description);
-		this.setComplete(taskState.isComplete);
+		this.isComplete = taskState.isComplete;
 		this.setMandatory(taskState.isMandatory);
 		this.setSkipped(taskState.isSkipped);
 		this.setSkippedUntil(taskState.skippedUntil);
@@ -676,10 +771,14 @@ export default class Task {
 		this.setDeadline(taskState.deadline);
 		this.setMinRequiredTime(taskState.minDuration);
 		this.setMaxRequiredTime(taskState.maxDuration);
-		this.setRepeatInterval(taskState.repeatInterval);
-		this.setReccurenceStartTime(taskState.reccurenceStartTime);
+		this.setRecurrenceDuration(taskState.recurrenceDuration === null ? null : { ...taskState.recurrenceDuration });
+		this.setShouldNotSkipMissedOccurrences(taskState.shouldNotSkipMissedOccurrences);
+		this.setCompletedOccurrenceIndex(taskState.completedOccurrenceIndex);
+		this.setSkippedOccurrenceIndex(taskState.skippedOccurrenceIndex);
+		this.setProgressOccurrenceIndex(taskState.progressOccurrenceIndex);
 		this.replaceAllSteps(taskState.steps.map(step => ({ ...step })));
 		this.setLastActionedStep(taskState.lastActionedStep);
+		this.refreshCurrentOccurrence(currentTime);
 	}
 
 	isActive(currentTime: Date): boolean {
@@ -694,21 +793,17 @@ export default class Task {
 	}
 
 	isActiveIgnoringSkip(currentTime: Date): boolean {
-		if (this.isComplete) {
+		if (this.getIsComplete()) {
 			return false;
 		}
 
-		if (
-			this.startTime !== null &&
-			this.startTime > currentTime
-		) {
+		const startTime = this.getStartTime();
+		if (startTime !== null && startTime > currentTime) {
 			return false;
 		}
 
-		if (
-			this.endTime !== null &&
-			this.endTime < currentTime
-		) {
+		const endTime = this.getEndTime();
+		if (endTime !== null && endTime < currentTime) {
 			return false;
 		}
 

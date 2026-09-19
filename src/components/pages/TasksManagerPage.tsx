@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTasksStore, selectTasksInTaskManagerOrder } from '../../stores/tasksStore';
 import Task from '../../model/task/Task';
+import { getApproximateMillisecondsOfRecurrenceDuration } from '../../model/task/recurrence/RecurrenceDuration';
 import FilterDropdown from '../FilterDropdown';
 import TextInput from '../inputs/TextInput';
 import SelectionCheckbox from '../SelectionCheckbox';
@@ -18,7 +19,7 @@ import { mergeRefs } from '../../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
-enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RepeatInterval, StartTime, Deadline }
+enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartTime, Deadline }
 enum SortDir { Asc, Desc }
 
 const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'duration', 'timeAvailable', 'deadline'];
@@ -56,7 +57,7 @@ const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | So
 	[SortBy.Steps]: 'Steps',
 	[SortBy.TimeAvailable]: 'Time Available',
 	[SortBy.Duration]: 'Duration',
-	[SortBy.RepeatInterval]: 'Repeat',
+	[SortBy.RecurrenceDuration]: 'Repeat',
 };
 
 function applySearch(tasks: Task[], searchText: string): Task[] {
@@ -101,11 +102,13 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 		sorted.sort((a, b) => a.getTimeToComplete(now) - b.getTimeToComplete(now));
 	else if (sortBy === SortBy.Duration)
 		sorted.sort((a, b) => a.getMaxRequiredTime(now) - b.getMaxRequiredTime(now));
-	else if (sortBy === SortBy.RepeatInterval)
+	else if (sortBy === SortBy.RecurrenceDuration)
 		sorted.sort((a, b) => {
-			if (a.getRepeatInterval() === null) return -1;
-			if (b.getRepeatInterval() === null) return 1;
-			return a.getRepeatInterval()! - b.getRepeatInterval()!;
+			const recurrenceDurationA = a.getRecurrenceDuration();
+			const recurrenceDurationB = b.getRecurrenceDuration();
+			if (recurrenceDurationA === null) return -1;
+			if (recurrenceDurationB === null) return 1;
+			return getApproximateMillisecondsOfRecurrenceDuration(recurrenceDurationA) - getApproximateMillisecondsOfRecurrenceDuration(recurrenceDurationB);
 		});
 	else if (sortBy === SortBy.StartTime)
 		sorted.sort((a, b) => {
@@ -302,9 +305,9 @@ export default function TasksManagerPage() {
 							</th>
 							<th
 								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('repeat') ? ` ${styles.hiddenColumn}` : ''}`}
-								onClick={() => toggleSort(SortBy.RepeatInterval)}
+								onClick={() => toggleSort(SortBy.RecurrenceDuration)}
 							>
-								{SORT_LABELS[SortBy.RepeatInterval]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.RepeatInterval)}</span>
+								{SORT_LABELS[SortBy.RecurrenceDuration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.RecurrenceDuration)}</span>
 							</th>
 							<th
 								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('deadline') ? ` ${styles.hiddenColumn}` : ''}`}

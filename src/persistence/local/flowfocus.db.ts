@@ -1,6 +1,8 @@
 import Dexie, { Table } from 'dexie';
 import { AppSettings } from '../../model/AppSettings';
 import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
+import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
+import { convertRepeatIntervalTaskRowToRecurrenceDuration } from './convertRepeatIntervalTaskRowToRecurrenceDuration';
 
 export interface PlainStepRow {
 	id: string;
@@ -26,8 +28,11 @@ export interface PlainTaskRow extends DeletableRecordMetadata {
 	deadline: string | null;
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
-	repeatInterval: number | null;
-	reccurenceStartTime: string | null;
+	recurrenceDuration: RecurrenceDuration | null;
+	shouldNotSkipMissedOccurrences: boolean;
+	completedOccurrenceIndex: number | null;
+	skippedOccurrenceIndex: number | null;
+	progressOccurrenceIndex: number | null;
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
@@ -151,6 +156,17 @@ export class FlowFocusDB extends Dexie {
 			settings: 'id',
 			quickToDoChecklist: 'id',
 			syncStatus: 'id',
+		});
+		this.version(9).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+		}).upgrade(transaction => {
+			const migrationTime = new Date();
+			return transaction.table('tasks').toCollection().modify(row => {
+				convertRepeatIntervalTaskRowToRecurrenceDuration(row, migrationTime);
+			});
 		});
 	}
 }

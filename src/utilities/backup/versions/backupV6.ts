@@ -1,4 +1,3 @@
-import Task from '../../../model/task/Task';
 import StepStatus from '../../../model/task/StepStatus';
 import QuickToDoChecklistItem from '../../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { AppSettings } from '../../../model/AppSettings';
@@ -6,11 +5,11 @@ import { isBackupQuickToDoChecklistItem } from '../sharedGuards';
 import { BackupStep, isBackupStep } from './backupV2';
 import { BackupDataV5 } from './backupV5';
 
-export const BACKUP_FORMAT = 'flow-focus-backup-v6';
+export const BACKUP_FORMAT_V6 = 'flow-focus-backup-v6';
 
 export type { BackupStep };
 
-export interface BackupTask {
+export interface BackupTaskV6 {
 	description: string;
 	steps: BackupStep[];
 	startTime: string | null;
@@ -27,35 +26,15 @@ export interface BackupTask {
 	lastActionedStep: { stepID: string; status: StepStatus } | null;
 }
 
-export interface BackupData {
-	format: typeof BACKUP_FORMAT;
+export interface BackupDataV6 {
+	format: typeof BACKUP_FORMAT_V6;
 	exportedAt: string;
 	settings: AppSettings;
-	tasks: BackupTask[];
+	tasks: BackupTaskV6[];
 	quickToDoChecklist: QuickToDoChecklistItem[];
 }
 
-export function taskToBackupTask(task: Task): BackupTask {
-	const state = task.getState();
-	return {
-		description: state.description,
-		steps: state.steps.map(step => ({ id: step.id, text: step.text, status: step.status })),
-		startTime: state.startTime ? state.startTime.toISOString() : null,
-		endTime: state.endTime ? state.endTime.toISOString() : null,
-		deadline: state.deadline ? state.deadline.toISOString() : null,
-		minRequiredTime: state.minDuration,
-		maxRequiredTime: state.maxDuration,
-		repeatInterval: state.repeatInterval,
-		reccurenceStartTime: state.reccurenceStartTime ? state.reccurenceStartTime.toISOString() : null,
-		isMandatory: state.isMandatory,
-		isComplete: state.isComplete,
-		isSkipped: state.isSkipped,
-		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
-		lastActionedStep: state.lastActionedStep,
-	};
-}
-
-export function isBackupTask(value: unknown): value is BackupTask {
+export function isBackupTaskV6(value: unknown): value is BackupTaskV6 {
 	if (typeof value !== 'object' || value === null) return false;
 	const t = value as Record<string, unknown>;
 	return (
@@ -69,23 +48,23 @@ export function isBackupTask(value: unknown): value is BackupTask {
 	);
 }
 
-export function isBackupData(value: unknown): value is BackupData {
+export function isBackupDataV6(value: unknown): value is BackupDataV6 {
 	if (typeof value !== 'object' || value === null) return false;
 	const v = value as Record<string, unknown>;
 	return (
-		v.format === BACKUP_FORMAT &&
+		v.format === BACKUP_FORMAT_V6 &&
 		typeof v.exportedAt === 'string' &&
 		typeof v.settings === 'object' && v.settings !== null &&
 		Array.isArray(v.tasks) &&
-		v.tasks.every(isBackupTask) &&
+		v.tasks.every(isBackupTaskV6) &&
 		Array.isArray(v.quickToDoChecklist) &&
 		v.quickToDoChecklist.every(isBackupQuickToDoChecklistItem)
 	);
 }
 
-export function migrateV5ToV6(data: BackupDataV5): BackupData {
+export function migrateV5ToV6(data: BackupDataV5): BackupDataV6 {
 	return {
-		format: BACKUP_FORMAT,
+		format: BACKUP_FORMAT_V6,
 		exportedAt: data.exportedAt,
 		settings: data.settings,
 		tasks: data.tasks.map(task => ({

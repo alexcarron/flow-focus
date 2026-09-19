@@ -3,6 +3,8 @@ import Step from '../../model/task/Step';
 import StepStatus from '../../model/task/StepStatus';
 import { TaskWriteInput } from '../TaskRepository';
 import { PlainStepRow, PlainTaskRow } from '../local/flowfocus.db';
+import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
+import RecurrenceUnit, { isRecurrenceUnit } from '../../model/task/recurrence/RecurrenceUnit';
 import { fromCloudTimestamp, fromNullableCloudTimestamp, toCloudTimestamp, toNullableCloudTimestamp } from './cloudTimestamp';
 
 export function serializeTask(task: Task): TaskWriteInput {
@@ -16,8 +18,11 @@ export function serializeTask(task: Task): TaskWriteInput {
 		deadline: state.deadline ? state.deadline.toISOString() : null,
 		minRequiredTime: state.minDuration,
 		maxRequiredTime: state.maxDuration,
-		repeatInterval: state.repeatInterval,
-		reccurenceStartTime: state.reccurenceStartTime ? state.reccurenceStartTime.toISOString() : null,
+		recurrenceDuration: state.recurrenceDuration,
+		shouldNotSkipMissedOccurrences: state.shouldNotSkipMissedOccurrences,
+		completedOccurrenceIndex: state.completedOccurrenceIndex,
+		skippedOccurrenceIndex: state.skippedOccurrenceIndex,
+		progressOccurrenceIndex: state.progressOccurrenceIndex,
 		isMandatory: state.isMandatory,
 		isComplete: state.isComplete,
 		isSkipped: state.isSkipped,
@@ -34,8 +39,11 @@ export function deserializeRow(row: PlainTaskRow): {
 	deadline: Date | null;
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
-	repeatInterval: number | null;
-	reccurenceStartTime: Date | null;
+	recurrenceDuration: RecurrenceDuration | null;
+	shouldNotSkipMissedOccurrences: boolean;
+	completedOccurrenceIndex: number | null;
+	skippedOccurrenceIndex: number | null;
+	progressOccurrenceIndex: number | null;
 	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
@@ -50,8 +58,11 @@ export function deserializeRow(row: PlainTaskRow): {
 		deadline: row.deadline ? new Date(row.deadline) : null,
 		minRequiredTime: row.minRequiredTime,
 		maxRequiredTime: row.maxRequiredTime,
-		repeatInterval: row.repeatInterval,
-		reccurenceStartTime: row.reccurenceStartTime ? new Date(row.reccurenceStartTime) : null,
+		recurrenceDuration: row.recurrenceDuration,
+		shouldNotSkipMissedOccurrences: row.shouldNotSkipMissedOccurrences,
+		completedOccurrenceIndex: row.completedOccurrenceIndex,
+		skippedOccurrenceIndex: row.skippedOccurrenceIndex,
+		progressOccurrenceIndex: row.progressOccurrenceIndex,
 		isMandatory: row.isMandatory,
 		isComplete: row.isComplete,
 		isSkipped: row.isSkipped,
@@ -72,8 +83,12 @@ export interface CloudTaskRow {
 	deadline: string | null;
 	min_required_time: number | null;
 	max_required_time: number | null;
-	repeat_interval: number | null;
-	recurrence_start_time: string | null;
+	recurrence_duration_amount: number | null;
+	recurrence_duration_unit: string | null;
+	should_not_skip_missed_occurrences: boolean;
+	completed_occurrence_index: number | null;
+	skipped_occurrence_index: number | null;
+	progress_occurrence_index: number | null;
 	is_mandatory: boolean;
 	is_complete: boolean;
 	is_skipped: boolean;
@@ -91,6 +106,11 @@ function normalizeTimestamp(value: string): string {
 	return toCloudTimestamp(fromCloudTimestamp(value));
 }
 
+function cloudRecurrenceDurationColumnsToRecurrenceDuration(amount: number | null, unit: string | null): RecurrenceDuration | null {
+	if (amount === null || !isRecurrenceUnit(unit)) return null;
+	return { amount, unit: unit as RecurrenceUnit };
+}
+
 export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskRow {
 	return {
 		id: row.id,
@@ -102,8 +122,12 @@ export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskR
 		deadline: normalizeNullableTimestamp(row.deadline),
 		min_required_time: row.minRequiredTime,
 		max_required_time: row.maxRequiredTime,
-		repeat_interval: row.repeatInterval,
-		recurrence_start_time: normalizeNullableTimestamp(row.reccurenceStartTime),
+		recurrence_duration_amount: row.recurrenceDuration?.amount ?? null,
+		recurrence_duration_unit: row.recurrenceDuration?.unit ?? null,
+		should_not_skip_missed_occurrences: row.shouldNotSkipMissedOccurrences,
+		completed_occurrence_index: row.completedOccurrenceIndex,
+		skipped_occurrence_index: row.skippedOccurrenceIndex,
+		progress_occurrence_index: row.progressOccurrenceIndex,
 		is_mandatory: row.isMandatory,
 		is_complete: row.isComplete,
 		is_skipped: row.isSkipped,
@@ -124,8 +148,11 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		deadline: normalizeNullableTimestamp(row.deadline),
 		minRequiredTime: row.min_required_time,
 		maxRequiredTime: row.max_required_time,
-		repeatInterval: row.repeat_interval,
-		reccurenceStartTime: normalizeNullableTimestamp(row.recurrence_start_time),
+		recurrenceDuration: cloudRecurrenceDurationColumnsToRecurrenceDuration(row.recurrence_duration_amount, row.recurrence_duration_unit),
+		shouldNotSkipMissedOccurrences: row.should_not_skip_missed_occurrences,
+		completedOccurrenceIndex: row.completed_occurrence_index,
+		skippedOccurrenceIndex: row.skipped_occurrence_index,
+		progressOccurrenceIndex: row.progress_occurrence_index,
 		isMandatory: row.is_mandatory,
 		isComplete: row.is_complete,
 		isSkipped: row.is_skipped,

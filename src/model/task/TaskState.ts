@@ -9,7 +9,9 @@ type TaskState = {
 	isSkipped: boolean,
 	skippedUntil: Date | null,
 	lastActionedStep: {stepID: string, status: StepStatus} | null,
-	reccurenceStartTime: Date | null,
+	completedOccurrenceIndex: number | null,
+	skippedOccurrenceIndex: number | null,
+	progressOccurrenceIndex: number | null,
 } & TaskTimingOptions;
 
 export default TaskState;

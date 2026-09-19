@@ -1,6 +1,7 @@
 import parseTypedQuickInput from './parseTypedQuickInput';
 import { toEscapedTokenLocation } from './TypedQuickInputToken';
 import Time from '../time-management/Time';
+import RecurrenceUnit from '../task/recurrence/RecurrenceUnit';
 
 const testNow = new Date(2026, 0, 5, 9, 0, 0);
 const oneMinute = 1000 * 60;
@@ -115,19 +116,31 @@ describe('parseTypedQuickInput', () => {
 	it('extracts a daily repeat', () => {
 		const result = parseTypedQuickInput({ input: 'water plants everyday', now: testNow });
 		expect(result.cleanedName).toBe('water plants');
-		expect(result.timing.repeatInterval).toBe(oneDay);
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Day });
 	});
 
 	it('extracts a multi-week repeat', () => {
 		const result = parseTypedQuickInput({ input: 'report every 3 weeks', now: testNow });
 		expect(result.cleanedName).toBe('report');
-		expect(result.timing.repeatInterval).toBe(3 * oneWeek);
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 3, unit: RecurrenceUnit.Week });
+	});
+
+	it('extracts a monthly repeat as a calendar month rather than a fixed number of days', () => {
+		const result = parseTypedQuickInput({ input: 'pay rent monthly', now: testNow });
+		expect(result.cleanedName).toBe('pay rent');
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Month });
+	});
+
+	it('extracts an hourly repeat', () => {
+		const result = parseTypedQuickInput({ input: 'stretch every 2 hours', now: testNow });
+		expect(result.cleanedName).toBe('stretch');
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 2, unit: RecurrenceUnit.Hour });
 	});
 
 	it('extracts a weekly repeat anchored to a weekday', () => {
 		const result = parseTypedQuickInput({ input: 'gym every monday', now: testNow });
 		expect(result.cleanedName).toBe('gym');
-		expect(result.timing.repeatInterval).toBe(oneWeek);
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week });
 		expect(result.timing.startTime?.getDay()).toBe(1);
 	});
 
@@ -149,7 +162,7 @@ describe('parseTypedQuickInput', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due friday every week takes 2 to 4 hours', now: testNow });
 		expect(result.cleanedName).toBe('finish essay');
 		expect(result.timing.deadline).toBeInstanceOf(Date);
-		expect(result.timing.repeatInterval).toBe(oneWeek);
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week });
 		expect(result.timing.minDuration).toBe(2 * oneHour);
 		expect(result.timing.maxDuration).toBe(4 * oneHour);
 	});

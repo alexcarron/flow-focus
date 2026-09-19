@@ -22,7 +22,7 @@ const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	deadline: styles.tokenDeadline,
 	startTime: styles.tokenStart,
 	endTime: styles.tokenEnd,
-	repeatInterval: styles.tokenRepeat,
+	recurrenceDuration: styles.tokenRepeat,
 	duration: styles.tokenDuration,
 	isMandatory: styles.tokenMandatory,
 	ignoredDate: styles.tokenIgnoredDate,

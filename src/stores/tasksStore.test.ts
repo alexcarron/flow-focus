@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import RecurrenceUnit from '../model/task/recurrence/RecurrenceUnit';
 import { db } from '../persistence/local/flowfocus.db';
 import StepStatus from '../model/task/StepStatus';
 import { useTasksStore, tasksManager } from './tasksStore';
@@ -149,24 +150,46 @@ describe('a recurring task', () => {
 		const now = new Date('2026-01-01T00:00:00.000Z');
 		vi.setSystemTime(now);
 
-		const oneDay = 1000 * 60 * 60 * 24;
+		const oneDayMilliseconds = 1000 * 60 * 60 * 24;
 		const task = await useTasksStore.getState().addTask('Take out the trash', {
 			startTime: now,
-			repeatInterval: oneDay,
+			recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Day },
 		});
-		const firstOccurrenceStart = task.getReccurenceStartTime();
+		const firstOccurrenceStart = task.getStartTime() as Date;
 
-		vi.setSystemTime(new Date(now.getTime() + oneDay + 1000));
+		vi.setSystemTime(new Date(now.getTime() + oneDayMilliseconds + 1000));
 		tasksManager.update(new Date());
 		useTasksStore.getState().refreshTasks();
 
-		const advancedOccurrenceStart = useTasksStore.getState().tasks[0].getReccurenceStartTime();
-		expect(advancedOccurrenceStart?.getTime()).toBe((firstOccurrenceStart as Date).getTime() + oneDay);
+		const advancedOccurrenceStart = useTasksStore.getState().tasks[0].getStartTime();
+		expect(advancedOccurrenceStart?.getTime()).toBe(firstOccurrenceStart.getTime() + oneDayMilliseconds);
 
-		tasksManager.update(new Date(now.getTime() + oneDay + 2000));
+		tasksManager.update(new Date(now.getTime() + oneDayMilliseconds + 2000));
 		useTasksStore.getState().refreshTasks();
 
-		expect(useTasksStore.getState().tasks[0].getReccurenceStartTime()?.getTime())
-			.toBe((firstOccurrenceStart as Date).getTime() + oneDay);
+		expect(useTasksStore.getState().tasks[0].getStartTime()?.getTime())
+			.toBe(firstOccurrenceStart.getTime() + oneDayMilliseconds);
+		expect(useTasksStore.getState().tasks[0].getAnchorStartTime()?.getTime()).toBe(firstOccurrenceStart.getTime());
+	});
+
+	it('persists only the anchor occurrence, so reloading after time passes derives the same current occurrence', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		const now = new Date('2026-01-01T00:00:00.000Z');
+		vi.setSystemTime(now);
+
+		const oneDayMilliseconds = 1000 * 60 * 60 * 24;
+		await useTasksStore.getState().addTask('Take out the trash', {
+			startTime: now,
+			recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Day },
+		});
+
+		vi.setSystemTime(new Date(now.getTime() + 3 * oneDayMilliseconds + 1000));
+		tasksManager.update(new Date());
+		tasksManager.clearTasks();
+		await useTasksStore.getState().loadTasks();
+
+		const reloadedTask = useTasksStore.getState().tasks[0];
+		expect(reloadedTask.getAnchorStartTime()?.getTime()).toBe(now.getTime());
+		expect(reloadedTask.getStartTime()?.getTime()).toBe(now.getTime() + 3 * oneDayMilliseconds);
 	});
 });

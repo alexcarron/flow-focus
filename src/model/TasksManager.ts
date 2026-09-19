@@ -5,6 +5,7 @@ import Time from "./time-management/Time";
 import TimeWindow from "./time-management/TimeWindow";
 import Weekday from "./time-management/Weekday";
 import WeeklyDateRange from "./time-management/WeeklyDateRange";
+import RecurrenceUnit from "./task/recurrence/RecurrenceUnit";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
@@ -59,10 +60,8 @@ export default class TasksManager {
 		const sleepDateRange = this.asleepTimeWindow.toDateRange(currentTime);
 
 		const task = new Task(this, "Go To Sleep");
-		const day = 1000 * 60 * 60 * 24;
-		task.makeRecurring(day, sleepDateRange.getStartDate());
-		task.setStartTime(sleepDateRange.getStartDate());
 		task.setDeadline(sleepDateRange.getEndDate());
+		task.makeRecurring({ amount: 1, unit: RecurrenceUnit.Day }, sleepDateRange.getStartDate(), currentTime);
 
 		return task;
 	}
@@ -85,17 +84,14 @@ export default class TasksManager {
 		return this.tasks;
 	}
 
-	private checkRecurringTasks(currentTime: Date): void {
-		const recurringTasks = this.getRecurringTasks();
-		recurringTasks.forEach(recurringTask => {
-			if (recurringTask.isPastIntervalEndTime(currentTime)) {
-				recurringTask.onPastIntervalEndTime(currentTime);
-			}
+	private refreshRecurringTaskOccurrences(currentTime: Date): void {
+		this.getRecurringTasks().forEach(recurringTask => {
+			recurringTask.refreshCurrentOccurrence(currentTime);
 		});
 	}
 
 	public update(currentTime: Date): void {
-		this.checkRecurringTasks(currentTime);
+		this.refreshRecurringTaskOccurrences(currentTime);
 	}
 
 	public deleteTask(taskDeleting: Task): boolean {

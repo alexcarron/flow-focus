@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
 import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { LocalCloudDataSynchronizer } from './LocalCloudDataSynchronizer';
@@ -14,8 +15,11 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		deadline: null,
 		minRequiredTime: null,
 		maxRequiredTime: null,
-		repeatInterval: null,
-		reccurenceStartTime: null,
+		recurrenceDuration: null,
+		shouldNotSkipMissedOccurrences: false,
+		completedOccurrenceIndex: null,
+		skippedOccurrenceIndex: null,
+		progressOccurrenceIndex: null,
 		isMandatory: false,
 		isComplete: false,
 		isSkipped: false,
@@ -208,10 +212,11 @@ describe('delete-versus-edit resolution', () => {
 describe('recurring task advancement', () => {
 	it('overwrites the local occurrence with the server-advanced occurrence and creates no duplicate row', async () => {
 		const cacheDB = await openTestDatabase();
-		const occurrenceN = makeTaskRow({ id: 'recurring-id', repeatInterval: 86400000, updatedAt: '2026-01-01T00:00:00.000Z', isSynced: true });
+		const dailyRecurrence = { amount: 1, unit: RecurrenceUnit.Day };
+		const occurrenceN = makeTaskRow({ id: 'recurring-id', recurrenceDuration: dailyRecurrence, completedOccurrenceIndex: 0, updatedAt: '2026-01-01T00:00:00.000Z', isSynced: true });
 		await cacheDB.tasks.put(occurrenceN);
 
-		const occurrenceNPlusOne = makeTaskRow({ id: 'recurring-id', repeatInterval: 86400000, updatedAt: '2026-01-02T00:00:00.000Z', isSynced: true });
+		const occurrenceNPlusOne = makeTaskRow({ id: 'recurring-id', recurrenceDuration: dailyRecurrence, completedOccurrenceIndex: 1, updatedAt: '2026-01-02T00:00:00.000Z', isSynced: true });
 		const cloudDataService = makeCloudDataService({ pullTasks: vi.fn().mockResolvedValue([occurrenceNPlusOne]) });
 
 		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });

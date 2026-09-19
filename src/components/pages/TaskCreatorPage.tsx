@@ -20,7 +20,8 @@ const DEFAULT_TIMING: TaskTimingOptions = {
 	deadline: null,
 	minDuration: null,
 	maxDuration: null,
-	repeatInterval: null,
+	recurrenceDuration: null,
+	shouldNotSkipMissedOccurrences: false,
 	isMandatory: true,
 };
 
@@ -28,7 +29,7 @@ const timingKeyToTokenField: Partial<Record<keyof TaskTimingOptions, TypedQuickI
 	deadline: 'deadline',
 	startTime: 'startTime',
 	endTime: 'endTime',
-	repeatInterval: 'repeatInterval',
+	recurrenceDuration: 'recurrenceDuration',
 	minDuration: 'duration',
 	maxDuration: 'duration',
 	isMandatory: 'isMandatory',

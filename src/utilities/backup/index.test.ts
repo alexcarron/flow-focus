@@ -6,7 +6,8 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV6';
+import { BACKUP_FORMAT } from './versions/backupV7';
+import { BACKUP_FORMAT_V6 } from './versions/backupV6';
 import { BACKUP_FORMAT_V1 } from './versions/backupV1';
 import { getActiveRepositories, setActiveRepositories } from '../../persistence/activeRepositories';
 import { localTaskRepository } from '../../persistence/local/LocalTaskRepository';
@@ -119,6 +120,43 @@ describe('readBackupFile', () => {
 		expect(migrated.quickToDoChecklist).toEqual([]);
 	});
 
+	it('migrates a v6 backup with a repeat interval into a recurrence duration without losing the schedule', async () => {
+		const oneWeekMilliseconds = 7 * 24 * 60 * 60 * 1000;
+		const v6Backup = {
+			format: BACKUP_FORMAT_V6,
+			exportedAt: new Date().toISOString(),
+			settings: DEFAULT_SETTINGS,
+			tasks: [
+				{
+					description: 'Take out the bins',
+					steps: [],
+					startTime: '2026-09-13T08:00:00.000Z',
+					endTime: null,
+					deadline: '2026-09-27T08:00:00.000Z',
+					minRequiredTime: null,
+					maxRequiredTime: null,
+					repeatInterval: oneWeekMilliseconds,
+					reccurenceStartTime: '2026-09-13T08:00:00.000Z',
+					isMandatory: true,
+					isComplete: false,
+					isSkipped: false,
+					skippedUntil: null,
+					lastActionedStep: null,
+				},
+			],
+			quickToDoChecklist: [],
+		};
+
+		const migrated = await readBackupFile(makeBackupFile(v6Backup));
+
+		expect(migrated.format).toBe(BACKUP_FORMAT);
+		expect(migrated.tasks[0].recurrenceDuration).toEqual({ amount: 1, unit: 'week' });
+		expect(migrated.tasks[0].startTime).toBe('2026-09-13T08:00:00.000Z');
+		expect(migrated.tasks[0].deadline).toBe('2026-09-20T08:00:00.000Z');
+		expect(migrated.tasks[0].progressOccurrenceIndex).toBe(0);
+		expect(migrated.tasks[0]).not.toHaveProperty('repeatInterval');
+	});
+
 	it('rejects a file that is not a recognized backup', async () => {
 		await expect(readBackupFile(makeBackupFile({ not: 'a backup' }))).rejects.toThrow();
 	});
@@ -141,8 +179,11 @@ describe('applyBackup', () => {
 					deadline: null,
 					minRequiredTime: null,
 					maxRequiredTime: null,
-					repeatInterval: null,
-					reccurenceStartTime: null,
+					recurrenceDuration: null,
+					shouldNotSkipMissedOccurrences: false,
+					completedOccurrenceIndex: null,
+					skippedOccurrenceIndex: null,
+					progressOccurrenceIndex: null,
 					isMandatory: false,
 					isComplete: false,
 					isSkipped: false,
@@ -179,8 +220,11 @@ describe('backup and restore while signed in', () => {
 			deadline: null,
 			minRequiredTime: null,
 			maxRequiredTime: null,
-			repeatInterval: null,
-			reccurenceStartTime: null,
+			recurrenceDuration: null,
+			shouldNotSkipMissedOccurrences: false,
+			completedOccurrenceIndex: null,
+			skippedOccurrenceIndex: null,
+			progressOccurrenceIndex: null,
 			isMandatory: false,
 			isComplete: false,
 			isSkipped: false,
@@ -221,8 +265,11 @@ describe('backup and restore while signed in', () => {
 					deadline: null,
 					minRequiredTime: null,
 					maxRequiredTime: null,
-					repeatInterval: null,
-					reccurenceStartTime: null,
+					recurrenceDuration: null,
+					shouldNotSkipMissedOccurrences: false,
+					completedOccurrenceIndex: null,
+					skippedOccurrenceIndex: null,
+					progressOccurrenceIndex: null,
 					isMandatory: false,
 					isComplete: false,
 					isSkipped: false,

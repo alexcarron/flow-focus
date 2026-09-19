@@ -1,4 +1,6 @@
 import TaskTimingOptions from '../task/TaskTimingOptions';
+import RecurrenceDuration, { formatRecurrenceDuration } from '../task/recurrence/RecurrenceDuration';
+import RecurrenceUnit from '../task/recurrence/RecurrenceUnit';
 import Time from '../time-management/Time';
 import { timeUnits, TimeUnitName } from '../time-management/StandardTimeUnit';
 import Weekday from '../time-management/Weekday';
@@ -250,38 +252,40 @@ const weekdayAlternation = Object.keys(weekdayNameToWeekday)
 	.sort((left, right) => right.length - left.length)
 	.join('|');
 
-const repeatUnitWordToMilliseconds: Record<string, number> = {
-	day: timeUnits[TimeUnitName.Days].milliseconds, days: timeUnits[TimeUnitName.Days].milliseconds,
-	week: timeUnits[TimeUnitName.Weeks].milliseconds, weeks: timeUnits[TimeUnitName.Weeks].milliseconds,
-	month: timeUnits[TimeUnitName.Months].milliseconds, months: timeUnits[TimeUnitName.Months].milliseconds,
-	year: timeUnits[TimeUnitName.Years].milliseconds, years: timeUnits[TimeUnitName.Years].milliseconds,
+const repeatUnitWordToRecurrenceUnit: Record<string, RecurrenceUnit> = {
+	hour: RecurrenceUnit.Hour, hours: RecurrenceUnit.Hour,
+	day: RecurrenceUnit.Day, days: RecurrenceUnit.Day,
+	week: RecurrenceUnit.Week, weeks: RecurrenceUnit.Week,
+	month: RecurrenceUnit.Month, months: RecurrenceUnit.Month,
+	year: RecurrenceUnit.Year, years: RecurrenceUnit.Year,
 };
 
-const repeatUnitAlternation = Object.keys(repeatUnitWordToMilliseconds)
+const repeatUnitAlternation = Object.keys(repeatUnitWordToRecurrenceUnit)
 	.sort((left, right) => right.length - left.length)
 	.join('|');
 
-const namedRepeatWordToMilliseconds: Record<string, number> = {
-	everyday: timeUnits[TimeUnitName.Days].milliseconds,
-	daily: timeUnits[TimeUnitName.Days].milliseconds,
-	weekly: timeUnits[TimeUnitName.Weeks].milliseconds,
-	monthly: timeUnits[TimeUnitName.Months].milliseconds,
-	yearly: timeUnits[TimeUnitName.Years].milliseconds,
-	annually: timeUnits[TimeUnitName.Years].milliseconds,
+const namedRepeatWordToRecurrenceUnit: Record<string, RecurrenceUnit> = {
+	hourly: RecurrenceUnit.Hour,
+	everyday: RecurrenceUnit.Day,
+	daily: RecurrenceUnit.Day,
+	weekly: RecurrenceUnit.Week,
+	monthly: RecurrenceUnit.Month,
+	yearly: RecurrenceUnit.Year,
+	annually: RecurrenceUnit.Year,
 };
 
 function buildRepeatMatch(config: {
 	startIndex: number;
 	endIndex: number;
 	input: string;
-	intervalMilliseconds: number;
+	recurrenceDuration: RecurrenceDuration;
 	explanation: string;
 	startTime?: Date;
 }): RawMatch {
-	const timing: Partial<TaskTimingOptions> = { repeatInterval: config.intervalMilliseconds };
+	const timing: Partial<TaskTimingOptions> = { recurrenceDuration: config.recurrenceDuration };
 	if (config.startTime) timing.startTime = config.startTime;
 	return {
-		field: 'repeatInterval',
+		field: 'recurrenceDuration',
 		colorClass: 'repeat',
 		startIndex: config.startIndex,
 		endIndex: config.endIndex,
@@ -292,25 +296,23 @@ function buildRepeatMatch(config: {
 }
 
 const repeatMatcher: Matcher = {
-	field: 'repeatInterval',
+	field: 'recurrenceDuration',
 	colorClass: 'repeat',
 	findMatches({ input, now }) {
 		const matches: RawMatch[] = [];
 
-		const namedRegex = new RegExp(`\\b(${Object.keys(namedRepeatWordToMilliseconds).join('|')}|every\\s+day)\\b`, 'gi');
+		const namedRegex = new RegExp(`\\b(${Object.keys(namedRepeatWordToRecurrenceUnit).join('|')}|every\\s+day)\\b`, 'gi');
 		let namedMatch: RegExpExecArray | null;
 		while ((namedMatch = namedRegex.exec(input)) !== null) {
 			const word = namedMatch[1].toLowerCase().replace(/\s+/g, '');
-			const intervalMilliseconds = word === 'everyday'
-				? timeUnits[TimeUnitName.Days].milliseconds
-				: namedRepeatWordToMilliseconds[word];
+			const recurrenceDuration: RecurrenceDuration = { amount: 1, unit: namedRepeatWordToRecurrenceUnit[word] };
 			const endIndex = namedMatch.index + namedMatch[0].length;
 			matches.push(buildRepeatMatch({
 				startIndex: namedMatch.index,
 				endIndex,
 				input,
-				intervalMilliseconds,
-				explanation: `Repeats every ${formatDurationForExplanation(intervalMilliseconds)}`,
+				recurrenceDuration,
+				explanation: `Repeats every ${formatRecurrenceDuration(recurrenceDuration)}`,
 			}));
 		}
 
@@ -328,7 +330,7 @@ const repeatMatcher: Matcher = {
 					startIndex: everyMatch.index,
 					endIndex,
 					input,
-					intervalMilliseconds: timeUnits[TimeUnitName.Weeks].milliseconds,
+					recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Week },
 					explanation: `Repeats every week on ${weekdayMatch[1]}`,
 					startTime: nextDateForWeekday(weekday, true, now),
 				}));
@@ -338,16 +340,15 @@ const repeatMatcher: Matcher = {
 
 			const countUnitMatch = new RegExp(`^(?:(\\d+)\\s+)?(${repeatUnitAlternation})\\b`, 'i').exec(remainder);
 			if (countUnitMatch) {
-				const count = countUnitMatch[1] ? parseInt(countUnitMatch[1], 10) : 1;
-				const unitMilliseconds = repeatUnitWordToMilliseconds[countUnitMatch[2].toLowerCase()];
-				const intervalMilliseconds = count * unitMilliseconds;
+				const amount = countUnitMatch[1] ? parseInt(countUnitMatch[1], 10) : 1;
+				const recurrenceDuration: RecurrenceDuration = { amount, unit: repeatUnitWordToRecurrenceUnit[countUnitMatch[2].toLowerCase()] };
 				const endIndex = argumentStart + countUnitMatch[0].length;
 				matches.push(buildRepeatMatch({
 					startIndex: everyMatch.index,
 					endIndex,
 					input,
-					intervalMilliseconds,
-					explanation: `Repeats every ${formatDurationForExplanation(intervalMilliseconds)}`,
+					recurrenceDuration,
+					explanation: `Repeats every ${formatRecurrenceDuration(recurrenceDuration)}`,
 				}));
 				everyRegex.lastIndex = endIndex;
 			}

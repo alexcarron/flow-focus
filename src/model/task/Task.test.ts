@@ -2,6 +2,12 @@ import TasksManager from "../TasksManager";
 import StepStatus from "./StepStatus";
 import Step from "./Step";
 import Task from "./Task";
+import RecurrenceDuration from "./recurrence/RecurrenceDuration";
+import RecurrenceUnit from "./recurrence/RecurrenceUnit";
+
+const oneHour: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Hour };
+const oneDay: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Day };
+const oneWeek: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Week };
 
 function getStepTexts(task: Task): string[] {
 	return task.getSteps().map(step => step.text);
@@ -32,7 +38,7 @@ describe('Task', () => {
 
 	describe('isRecurring', () => {
 		it('should return true if task is recurring', () => {
-			task.makeRecurring(1000, new Date());
+			task.makeRecurring(oneDay, new Date());
 			expect(task.isRecurring()).toBe(true);
 		});
 
@@ -45,104 +51,324 @@ describe('Task', () => {
 		});
 	})
 
-	describe('makeReccuring', () => {
-		it('should set repeat interval and start time', () => {
-			const repeatInterval = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
+	describe('makeRecurring', () => {
+		it('should set the recurrence duration and anchor start time', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
 
-			task.makeRecurring(repeatInterval, intervalStartTime);
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
 
-			expect(task.getRepeatInterval()).toBe(repeatInterval);
-			expect(task.getStartTime()).toEqual(intervalStartTime);
+			expect(task.getRecurrenceDuration()).toEqual(oneDay);
+			expect(task.getAnchorStartTime()).toEqual(anchorStartTime);
+			expect(task.getStartTime()).toEqual(anchorStartTime);
 		});
 
-		it('should set deadline to start time + repeat interval if deadline is not set', () => {
-			task.makeRecurring(1000, new Date());
+		it('should set deadline to the next occurrence start if deadline is not set', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneHour, anchorStartTime, anchorStartTime);
 
-			const intervalEndTime = new Date(task.getStartTime()!.getTime() + 1000);
-
-			expect(task.getDeadline()).toEqual(intervalEndTime);
+			expect(task.getDeadline()).toEqual(new Date('2023-01-01T09:00:00Z'));
 		});
 
-		it('should set deadline to start time + repeat interval if deadline is past interval end time', () => {
-			task.setDeadline(
-				new Date(Date.now() + 2000)
-			);
+		it('should clamp the deadline to the next occurrence start if deadline is past it', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			task.setDeadline(new Date('2023-01-01T11:00:00Z'));
 
-			task.makeRecurring(1000, new Date());
+			task.makeRecurring(oneHour, anchorStartTime, anchorStartTime);
 
-			const intervalEndTime = new Date(task.getStartTime()!.getTime() + 1000);
-
-			expect(task.getDeadline()).toEqual(intervalEndTime);
+			expect(task.getDeadline()).toEqual(new Date('2023-01-01T09:00:00Z'));
 		});
 
-		it('should not set deadline if deadline is not past interval end time', () => {
-			const deadline = new Date(Date.now() + 500);
+		it('should keep the deadline if it is within the first occurrence', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			const deadline = new Date('2023-01-01T08:30:00Z');
 			task.setDeadline(deadline);
 
-			task.makeRecurring(1000, new Date());
+			task.makeRecurring(oneHour, anchorStartTime, anchorStartTime);
 
 			expect(task.getDeadline()).toEqual(deadline);
 		});
+
+		it('should start progress on the first occurrence', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+
+			expect(task.getProgressOccurrenceIndex()).toBe(0);
+			expect(task.getCompletedOccurrenceIndex()).toBeNull();
+			expect(task.getSkippedOccurrenceIndex()).toBeNull();
+		});
 	});
 
-	describe('reccurenceStartTime', () => {
-		it('deferring startTime should not shift when the next occurrence starts', () => {
-			const repeatInterval = 24 * 60 * 60 * 1000;
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
-			task.makeRecurring(repeatInterval, intervalStartTime);
+	describe('refreshCurrentOccurrence', () => {
+		const anchorStartTime = new Date('2023-01-01T08:00:00Z');
 
-			const deferredStartTime = new Date('2023-01-01T20:00:00Z');
-			task.setStartTime(deferredStartTime);
+		it('should do nothing for a non-recurring task', () => {
+			const deadline = new Date('2023-01-05T08:00:00Z');
+			task.setStartTime(anchorStartTime);
+			task.setDeadline(deadline);
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.completeNextStep();
 
-			const beforeNextOccurrence = new Date('2023-01-02T07:00:00Z');
-			expect(task.isPastIntervalEndTime(beforeNextOccurrence)).toBe(false);
+			task.refreshCurrentOccurrence(new Date('2023-01-10T08:00:00Z'));
 
-			const afterNextOccurrence = new Date('2023-01-02T09:00:00Z');
-			expect(task.isPastIntervalEndTime(afterNextOccurrence)).toBe(true);
+			expect(task.getCurrentOccurrence()).toBeNull();
+			expect(task.getStartTime()).toEqual(anchorStartTime);
+			expect(task.getDeadline()).toEqual(deadline);
+			expect(task.getNextStep()?.text).toEqual('Step 2');
+		});
 
-			task.onPastIntervalEndTime(afterNextOccurrence);
+		it('should expose the anchor occurrence while the current time is within it', () => {
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
 
+			task.refreshCurrentOccurrence(new Date('2023-01-01T20:00:00Z'));
+
+			expect(task.getCurrentOccurrence()?.index).toBe(0);
+			expect(task.getStartTime()).toEqual(anchorStartTime);
+			expect(task.getDeadline()).toEqual(new Date('2023-01-02T08:00:00Z'));
+		});
+
+		it('should advance the start time, end time, and deadline to the occurrence containing the current time', () => {
+			task.setEndTime(new Date('2023-01-01T22:00:00Z'));
+			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+
+			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
+
+			expect(task.getCurrentOccurrence()?.index).toBe(2);
+			expect(task.getStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getDeadline()).toEqual(new Date('2023-01-03T20:00:00Z'));
+			expect(task.getEndTime()).toEqual(new Date('2023-01-03T22:00:00Z'));
+			expect(task.getAnchorStartTime()).toEqual(anchorStartTime);
+		});
+
+		it('should reset progress when the occurrence changes', () => {
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.completeNextStep();
+			task.skipUntil(new Date('2023-01-01T09:00:00Z'), anchorStartTime);
+
+			task.refreshCurrentOccurrence(new Date('2023-01-02T09:00:00Z'));
+
+			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2']);
+			expect(task.getProgress()).toBe(0);
+			expect(task.getIsComplete()).toBe(false);
+			expect(task.getNextStep()?.text).toEqual('Step 1');
+			expect(task.getSkippedUntil()).toBeNull();
+			expect(task.getProgressOccurrenceIndex()).toBe(1);
+		});
+
+		it('should keep progress when refreshed again within the same occurrence', () => {
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.addStep('Step 1');
+			task.addStep('Step 2');
+			task.completeNextStep();
+
+			task.refreshCurrentOccurrence(new Date('2023-01-01T12:00:00Z'));
+			task.refreshCurrentOccurrence(new Date('2023-01-01T18:00:00Z'));
+
+			expect(task.getNextStep()?.text).toEqual('Step 2');
+		});
+
+		it('should be idempotent no matter how many times or in what order it runs', () => {
+			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneWeek, anchorStartTime, anchorStartTime);
+
+			task.refreshCurrentOccurrence(new Date('2023-01-20T09:00:00Z'));
+			task.refreshCurrentOccurrence(new Date('2023-01-20T09:00:01Z'));
+			task.refreshCurrentOccurrence(new Date('2023-01-20T09:00:02Z'));
+
+			expect(task.getStartTime()).toEqual(new Date('2023-01-15T08:00:00Z'));
+			expect(task.getDeadline()).toEqual(new Date('2023-01-15T20:00:00Z'));
+		});
+	});
+
+	describe('completing a recurring task', () => {
+		const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+
+		it('should mark the current occurrence complete until the next occurrence starts', () => {
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+
+			task.setComplete(true, new Date('2023-01-01T10:00:00Z'));
+
+			expect(task.getIsComplete()).toBe(true);
+			expect(task.getCompletedOccurrenceIndex()).toBe(0);
+
+			task.refreshCurrentOccurrence(new Date('2023-01-01T23:00:00Z'));
+			expect(task.getIsComplete()).toBe(true);
+
+			task.refreshCurrentOccurrence(new Date('2023-01-02T08:00:01Z'));
+			expect(task.getIsComplete()).toBe(false);
+			expect(task.getCompletedOccurrenceIndex()).toBe(0);
+		});
+
+		it('should count a late completion for the occurrence containing the current time', () => {
+			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-01T18:00:00Z'));
+
+			task.setComplete(true, new Date('2023-01-01T18:00:00Z'));
+
+			expect(task.getCompletedOccurrenceIndex()).toBe(0);
+			expect(task.getIsComplete()).toBe(true);
+		});
+
+		it('should uncomplete the current occurrence without forgetting earlier resolved occurrences', () => {
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
+			task.setComplete(true, new Date('2023-01-03T09:00:00Z'));
+
+			task.setComplete(false, new Date('2023-01-03T10:00:00Z'));
+
+			expect(task.getIsComplete()).toBe(false);
+			expect(task.getCompletedOccurrenceIndex()).toBe(1);
+			expect(task.getCurrentOccurrence()?.index).toBe(2);
+		});
+	});
+
+	describe('shouldNotSkipMissedOccurrences', () => {
+		const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+
+		it('should stay on the missed occurrence until it is completed', () => {
+			task.setShouldNotSkipMissedOccurrences(true);
+			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+
+			task.refreshCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
+
+			expect(task.getCurrentOccurrence()?.index).toBe(0);
+			expect(task.getDeadline()).toEqual(new Date('2023-01-01T20:00:00Z'));
+		});
+
+		it('should move to the very next occurrence after completing a missed one', () => {
+			task.setShouldNotSkipMissedOccurrences(true);
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
+
+			task.setComplete(true, new Date('2023-01-04T09:00:00Z'));
+
+			expect(task.getCompletedOccurrenceIndex()).toBe(0);
+			expect(task.getCurrentOccurrence()?.index).toBe(1);
+			expect(task.getIsComplete()).toBe(false);
 			expect(task.getStartTime()).toEqual(new Date('2023-01-02T08:00:00Z'));
 		});
 
-		it('setFromTaskTimingOptions should reset reccurenceStartTime when repeat interval is turned on', () => {
+		it('should move to the very next occurrence after skipping a missed one', () => {
+			task.setShouldNotSkipMissedOccurrences(true);
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
+
+			task.skipCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
+
+			expect(task.getSkippedOccurrenceIndex()).toBe(0);
+			expect(task.getCurrentOccurrence()?.index).toBe(1);
+			expect(task.getIsComplete()).toBe(false);
+		});
+
+		it('should wait for the next occurrence after skipping the occurrence containing the current time', () => {
+			task.setShouldNotSkipMissedOccurrences(true);
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-01T09:00:00Z'));
+
+			task.skipCurrentOccurrence(new Date('2023-01-01T09:00:00Z'));
+
+			expect(task.getCurrentOccurrence()?.index).toBe(1);
+			expect(task.getIsComplete()).toBe(false);
+			expect(task.isActive(new Date('2023-01-01T09:00:00Z'))).toBe(false);
+		});
+	});
+
+	describe('makeNonRecurring', () => {
+		it('should keep the current occurrence schedule as the task schedule', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
+
+			task.makeNonRecurring();
+
+			expect(task.isRecurring()).toBe(false);
+			expect(task.getStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getDeadline()).toEqual(new Date('2023-01-03T20:00:00Z'));
+			expect(task.getCompletedOccurrenceIndex()).toBeNull();
+			expect(task.getProgressOccurrenceIndex()).toBeNull();
+		});
+
+		it('should keep a completed current occurrence as a completed task', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.setComplete(true, new Date('2023-01-01T09:00:00Z'));
+
+			task.makeNonRecurring();
+
+			expect(task.getIsComplete()).toBe(true);
+		});
+	});
+
+	describe('setFromTaskTimingOptions with recurrence', () => {
+		it('should anchor the first occurrence at the start time when recurrence is turned on', () => {
 			const startTime = new Date('2023-01-01T08:00:00Z');
 			task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
 				startTime,
 				deadline: null,
-				repeatInterval: 1000,
-			});
+				recurrenceDuration: oneHour,
+			}, startTime);
 
 			expect(task.isRecurring()).toBe(true);
-			expect(task.getReccurenceStartTime()).toEqual(startTime);
-			expect(task.getDeadline()).toEqual(new Date(startTime.getTime() + 1000));
+			expect(task.getAnchorStartTime()).toEqual(startTime);
+			expect(task.getDeadline()).toEqual(new Date('2023-01-01T09:00:00Z'));
 		});
 
-		it('setFromTaskTimingOptions should reset reccurenceStartTime and clamp the deadline when a shorter interval no longer fits it', () => {
-			const startTime = new Date('2023-01-01T08:00:00Z');
-			task.makeRecurring(2000, startTime);
+		it('should keep the current occurrence values and indices when only unrelated fields change', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
+			task.setComplete(true, new Date('2023-01-03T09:00:00Z'));
 
 			task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				repeatInterval: 1000,
-			});
+				isMandatory: true,
+			}, new Date('2023-01-03T09:00:00Z'));
 
-			expect(task.getReccurenceStartTime()).toEqual(startTime);
-			expect(task.getDeadline()).toEqual(new Date(startTime.getTime() + 1000));
+			expect(task.getAnchorStartTime()).toEqual(anchorStartTime);
+			expect(task.getCurrentOccurrence()?.index).toBe(2);
+			expect(task.getIsComplete()).toBe(true);
 		});
 
-		it('setFromTaskTimingOptions should clear reccurenceStartTime when repeat interval is turned off', () => {
-			task.makeRecurring(1000, new Date('2023-01-01T08:00:00Z'));
+		it('should re-anchor to the edited occurrence and re-tag completion when the schedule changes', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			const currentTime = new Date('2023-01-03T09:00:00Z');
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(currentTime);
+			task.setComplete(true, currentTime);
 
 			task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				repeatInterval: null,
-			});
+				deadline: new Date('2023-01-03T21:00:00Z'),
+			}, currentTime);
+
+			expect(task.getAnchorStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getAnchorDeadline()).toEqual(new Date('2023-01-03T21:00:00Z'));
+			expect(task.getCurrentOccurrence()?.index).toBe(0);
+			expect(task.getCompletedOccurrenceIndex()).toBe(0);
+			expect(task.getIsComplete()).toBe(true);
+		});
+
+		it('should bake the current occurrence into the task when recurrence is turned off', () => {
+			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			const currentTime = new Date('2023-01-03T09:00:00Z');
+			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.refreshCurrentOccurrence(currentTime);
+
+			task.setFromTaskTimingOptions({
+				...task.getTaskTimingOptions(),
+				recurrenceDuration: null,
+			}, currentTime);
 
 			expect(task.isRecurring()).toBe(false);
-			expect(task.getReccurenceStartTime()).toBeNull();
+			expect(task.getStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getCurrentOccurrence()).toBeNull();
 		});
 	});
 
@@ -161,14 +387,14 @@ describe('Task', () => {
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
 				startTime: new Date('2023-01-01T13:00:00Z'),
-				repeatInterval: 1000,
+				recurrenceDuration: oneHour,
 			})).toThrow();
 		});
 
-		it('makeRecurring should throw if intervalStartTime is after the existing end time', () => {
+		it('makeRecurring should throw if the anchor start time is after the existing end time', () => {
 			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
 
-			expect(() => task.makeRecurring(1000, new Date('2023-01-01T13:00:00Z'))).toThrow();
+			expect(() => task.makeRecurring(oneHour, new Date('2023-01-01T13:00:00Z'))).toThrow();
 		});
 
 		it('restoreState should throw if the restored state has a start time after its end time', () => {
@@ -197,21 +423,21 @@ describe('Task', () => {
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
 				startTime: new Date('2023-01-01T13:00:00Z'),
-				repeatInterval: 1000,
+				recurrenceDuration: oneHour,
 			})).toThrow();
 		});
 
-		it('makeRecurring should throw if intervalStartTime is after the existing deadline', () => {
+		it('makeRecurring should throw if the anchor start time is after the existing deadline', () => {
 			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
 
-			expect(() => task.makeRecurring(1000, new Date('2023-01-01T13:00:00Z'))).toThrow();
+			expect(() => task.makeRecurring(oneHour, new Date('2023-01-01T13:00:00Z'))).toThrow();
 		});
 
-		it('makeRecurring should not throw when the existing deadline is before the interval end but still after intervalStartTime', () => {
+		it('makeRecurring should not throw when the existing deadline is before the next occurrence but still after the anchor start time', () => {
 			task.setDeadline(new Date('2023-01-01T10:30:00Z'));
 
-			expect(() => task.makeRecurring(60 * 60 * 1000, new Date('2023-01-01T10:00:00Z'))).not.toThrow();
-			expect(task.getDeadline()).toEqual(new Date('2023-01-01T10:30:00Z'));
+			expect(() => task.makeRecurring(oneHour, new Date('2023-01-01T10:00:00Z'))).not.toThrow();
+			expect(task.getAnchorDeadline()).toEqual(new Date('2023-01-01T10:30:00Z'));
 		});
 
 		it('restoreState should throw if the restored state has a start time after its deadline', () => {
@@ -223,175 +449,6 @@ describe('Task', () => {
 				deadline: new Date('2023-01-01T12:00:00Z'),
 			})).toThrow();
 		});
-
-		it('onPastIntervalEndTime should throw if the recurrence deadline is already before the reccurenceStartTime', () => {
-			task.setRepeatInterval(60 * 60 * 1000);
-			task.setReccurenceStartTime(new Date('2023-01-01T10:00:00Z'));
-			task.setDeadline(new Date('2023-01-01T09:00:00Z'));
-
-			expect(() => task.onPastIntervalEndTime(new Date('2023-01-01T10:30:00Z'))).toThrow();
-		});
-	});
-
-	describe('isPastIntervalEndTime', () => {
-		it('should return true if current time is past interval end time', () => {
-			// 1 day
-			const repeatInterval = 24 * 60 * 60 * 1000;
-
-			// Jan 1, 8 AM
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
-
-			// Jan 2, 9 AM
-			const currentTime = new Date('2023-01-02T09:00:00Z');
-
-			task.makeRecurring(repeatInterval, intervalStartTime);
-
-			expect(task.isPastIntervalEndTime(currentTime)).toBe(true);
-		})
-
-		it('should return false if current time is not past interval end time', () => {
-			// 1 day
-			const repeatInterval = 24 * 60 * 60 * 1000;
-
-			// Jan 1, 8 AM
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
-
-			// Jan 1, 9 AM
-			const currentTime = new Date('2023-01-01T09:00:00Z');
-
-			task.makeRecurring(repeatInterval, intervalStartTime);
-
-			expect(task.isPastIntervalEndTime(currentTime)).toBe(false);
-		});
-
-		it('should return false if task is not recurring', () => {
-			const currentTime = new Date();
-			task.setDeadline(currentTime);
-			task.setStartTime(new Date());
-			task.setMinRequiredTime(1000);
-			task.setMaxRequiredTime(2000);
-			expect(task.isPastIntervalEndTime(currentTime)).toBe(false);
-		});
-	});
-
-	describe('onPastIntervalEndTime', () => {
-		it('should do nothing if task is not recurring', () => {
-			const currentTime = new Date();
-			const deadline = currentTime;
-			const startTime = currentTime;
-			task.setDeadline(deadline);
-			task.setStartTime(startTime);
-			task.setMinRequiredTime(1000);
-			task.setMaxRequiredTime(2000);
-			task.addStep('Step 1');
-			task.addStep('Step 2');
-			task.completeNextStep();
-
-			task.onPastIntervalEndTime(currentTime);
-
-			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2']);
-			expect(task.getIsComplete()).toBe(false);
-			expect(task.getNextStep()?.text).toEqual('Step 2');
-			expect(task.getDeadline()).toEqual(deadline);
-			expect(task.getStartTime()).toEqual(startTime);
-		});
-
-		it('should reset progress if task is recurring', () => {
-			const repeatInterval = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
-			let currentTime = intervalStartTime;
-
-			task.makeRecurring(repeatInterval, intervalStartTime);
-			task.addStep('Step 1');
-			task.addStep('Step 2');
-			task.completeNextStep();
-			task.skipUntil(new Date(intervalStartTime.getTime() + 1000), intervalStartTime);
-
-			task.onPastIntervalEndTime(currentTime);
-
-			expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2']);
-			expect(task.getProgress()).toBe(0);
-			expect(task.getIsComplete()).toBe(false);
-			expect(task.getNextStep()?.text).toEqual('Step 1');
-			expect(task.getSkippedUntil()).toBeNull();
-		});
-
-		it('should update start time and deadline when past interval end time', () => {
-			// 1 Day
-			const repeatInterval = 24 * 60 * 60 * 1000;
-
-			// Jan 1, 8 AM
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
-
-			// Jan 2, 9 AM (Past interval end time)
-			const currentTime = new Date('2023-01-02T09:00:00Z');
-
-			// Jan 2, 8 AM
-			const expectedNewStartTime = new Date('2023-01-02T08:00:00Z');
-
-			// Jan 3, 8 AM
-			const expectedNewDeadline = new Date('2023-01-03T08:00:00Z');
-
-			// Task repeats every day at 8 AM
-			task.makeRecurring(repeatInterval, intervalStartTime);
-			const step1 = task.addStep('Step 1');
-			task.completeStep(step1.id);
-			task.setComplete(true);
-
-			task.onPastIntervalEndTime(currentTime);
-
-			expect(task.getStartTime()).toEqual(expectedNewStartTime);
-			expect(task.getDeadline()).toEqual(expectedNewDeadline);
-		});
-
-		it('should update start time, deadline, and end time if they are set to most recent possible values', () => {
-			// 1 Day
-			const repeatInterval = 24 * 60 * 60 * 1000;
-
-			// Jan 1, 8 AM
-			const intervalStartTime = new Date('2023-01-01T08:00:00Z');
-
-			// Jan 3, 9 AM (Past interval end time)
-			const currentTime = new Date('2023-01-03T09:00:00Z');
-
-			// Jan 1, 10 AM
-			const deadline = new Date('2023-01-01T10:00:00Z');
-
-			// Jan 1, 2 PM
-			const endTime = new Date('2023-01-01T14:00:00Z');
-
-			// Jan 3, 8 AM
-			const expectedNewStartTime = new Date('2023-01-03T08:00:00Z');
-
-			// Jan 3, 10 AM
-			const expectedNewDeadline = new Date('2023-01-03T10:00:00Z');
-
-			// Jan 3, 2 PM
-			const expectedNewEndTime = new Date('2023-01-03T14:00:00Z');
-
-			// Task repeats every day at 8 AM
-			task.makeRecurring(repeatInterval, intervalStartTime);
-			task.setDeadline(deadline);
-			task.setEndTime(endTime);
-
-			task.onPastIntervalEndTime(currentTime);
-
-			expect(task.getStartTime()).toEqual(expectedNewStartTime);
-			expect(task.getDeadline()).toEqual(expectedNewDeadline);
-			expect(task.getEndTime()).toEqual(expectedNewEndTime);
-		});
-	})
-
-	it('replaceAllSteps should set the steps from an array of step objects', () => {
-		task.replaceAllSteps([
-			{ id: crypto.randomUUID(), text: 'Step 1', status: StepStatus.COMPLETED },
-			{ id: crypto.randomUUID(), text: 'Step 2', status: StepStatus.SKIPPED },
-			{ id: crypto.randomUUID(), text: 'Step 3', status: StepStatus.UNCOMPLETE },
-		]);
-
-		expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2', 'Step 3']);
-		expect(task.getIsComplete()).toBe(false);
-		expect(task.getNextStep()?.text).toEqual('Step 2');
 	});
 
 	describe('getSteps', () => {
@@ -998,7 +1055,7 @@ describe('Task', () => {
 		task.setDeadline(currentTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
-		task.makeRecurring(1000, currentTime);
+		task.makeRecurring(oneHour, currentTime, currentTime);
 
 		const state = task.getState();
 
@@ -1008,11 +1065,12 @@ describe('Task', () => {
 		expect(state.isSkipped).toEqual(task.getIsSkipped());
 		expect(state.skippedUntil).toEqual(task.getSkippedUntil());
 
-		expect(state.startTime).toEqual(task.getStartTime());
-		expect(state.deadline).toEqual(task.getDeadline());
+		expect(state.startTime).toEqual(task.getAnchorStartTime());
+		expect(state.deadline).toEqual(task.getAnchorDeadline());
 		expect(state.minDuration).toEqual(task.getMinRequiredTime());
 		expect(state.maxDuration).toEqual(task.getMaxRequiredTime(currentTime));
-		expect(state.repeatInterval).toEqual(1000);
+		expect(state.recurrenceDuration).toEqual(oneHour);
+		expect(state.progressOccurrenceIndex).toBe(0);
 		expect(state.steps).toEqual([
 			{ id: step1.id, text: 'Step 1', status: StepStatus.COMPLETED },
 			{ id: step2.id, text: 'Step 2', status: StepStatus.SKIPPED },
@@ -1034,7 +1092,7 @@ describe('Task', () => {
 		task.setDeadline(currentTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
-		task.makeRecurring(1000, currentTime);
+		task.makeRecurring(oneHour, currentTime, currentTime);
 		task.skipUntil(new Date(currentTime.getTime() + 5000), currentTime);
 
 		const state = task.getState();
@@ -1049,7 +1107,7 @@ describe('Task', () => {
 		task.setMandatory(true);
 		task.cancelSkip();
 
-		task.restoreState(state);
+		task.restoreState(state, currentTime);
 
 		expect(task.getDescription()).toEqual('Sample Task');
 		expect(task.getIsComplete()).toEqual(false);
@@ -1060,7 +1118,7 @@ describe('Task', () => {
 		expect(task.getStartTime()).toEqual(currentTime);
 		expect(task.getMinRequiredTime()).toEqual(1000);
 		expect(task.getMaxRequiredTime(currentTime)).toEqual(2000);
-		expect(task.getRepeatInterval()).toEqual(1000);
+		expect(task.getRecurrenceDuration()).toEqual(oneHour);
 		expect(getStepTexts(task)).toEqual(['Step 1', 'Step 2', 'Step 3']);
 	});
 

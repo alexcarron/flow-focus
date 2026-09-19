@@ -16,7 +16,8 @@ const DEFAULT_TIMING: TaskTimingOptions = {
 	deadline: null,
 	minDuration: null,
 	maxDuration: null,
-	repeatInterval: null,
+	recurrenceDuration: null,
+	shouldNotSkipMissedOccurrences: false,
 	isMandatory: true,
 };
 

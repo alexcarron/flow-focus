@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import Task from '../model/task/Task';
 import Duration from '../model/time-management/Duration';
+import { formatRecurrenceDuration } from '../model/task/recurrence/RecurrenceDuration';
 import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
 import { formatDate } from '../utilities/dateFormatting';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
@@ -24,13 +25,6 @@ import arrayInputStyles from './inputs/ArrayInput.module.css';
 import styles from './TaskManagerRow.module.css';
 
 export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'timeAvailable' | 'deadline';
-
-function toDurationString(ms: number): string {
-	const duration = Duration.fromMilliseconds(ms);
-	const amount = duration.getAmountOfUnits();
-	const unit = duration.getTimeUnit().name;
-	return amount === 1 ? unit.slice(0, -1) : `${amount} ${unit}`;
-}
 
 function getDurationRange(minMs: number | null, maxMs: number | null): string {
 	if (minMs === null && maxMs === null) return '—';
@@ -298,8 +292,8 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 			</td>
 
 			<td className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
-				{task.getRepeatInterval() !== null
-					? toDurationString(task.getRepeatInterval()!)
+				{task.getRecurrenceDuration() !== null
+					? formatRecurrenceDuration(task.getRecurrenceDuration()!)
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 

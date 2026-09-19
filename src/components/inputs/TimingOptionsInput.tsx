@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
+import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
+import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
 import DatetimeInput from './DatetimeInput';
-import DurationInput from './DurationInput';
+import RecurrenceDurationInput from './RecurrenceDurationInput';
 import DurationRangeInput from './DurationRangeInput';
 import CheckboxInput from './CheckboxInput';
 import MandatoryIcon from '../svg-icons/MandatoryIcon';
@@ -12,10 +14,11 @@ interface Props {
 	onChange: (value: TaskTimingOptions) => void;
 }
 
-const DEFAULT_DURATION = 1000 * 60 * 30;
+const DEFAULT_RECURRENCE_DURATION: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Day };
 
 export default function TimingOptionsInput({ value, onChange }: Props) {
 	const [local, setLocal] = useState<TaskTimingOptions>(value);
+	const [isAdvancedRepeatingOpen, setIsAdvancedRepeatingOpen] = useState(false);
 
 	useEffect(() => { setLocal(value); }, [value]);
 
@@ -55,17 +58,37 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 			/>
 			<div className={styles.repeatToggle}>
 				<CheckboxInput
-					value={local.repeatInterval !== null}
-					onChange={checked => update({ repeatInterval: checked ? DEFAULT_DURATION : null })}
+					value={local.recurrenceDuration !== null}
+					onChange={checked => update({ recurrenceDuration: checked ? DEFAULT_RECURRENCE_DURATION : null })}
 					label="Repeating"
 				/>
 			</div>
-			{local.repeatInterval !== null && (
-				<DurationInput
-					label="Repeat interval"
-					value={local.repeatInterval}
-					onChange={repeatInterval => update({ repeatInterval })}
-				/>
+			{local.recurrenceDuration !== null && (
+				<>
+					<RecurrenceDurationInput
+						label="Repeat every"
+						value={local.recurrenceDuration}
+						onChange={recurrenceDuration => update({ recurrenceDuration })}
+					/>
+					<div className={styles.advancedRepeating}>
+						<button
+							type="button"
+							className={styles.advancedRepeatingToggle}
+							aria-expanded={isAdvancedRepeatingOpen}
+							onClick={() => setIsAdvancedRepeatingOpen(isOpen => !isOpen)}
+						>
+							{isAdvancedRepeatingOpen ? 'Hide advanced' : 'Advanced'}
+						</button>
+						{isAdvancedRepeatingOpen && (
+							<CheckboxInput
+								value={local.shouldNotSkipMissedOccurrences}
+								onChange={shouldNotSkipMissedOccurrences => update({ shouldNotSkipMissedOccurrences })}
+								label="Don't skip missed repeats"
+								description="If a repeat's deadline passes without you completing it, keep showing that overdue repeat until you complete or skip it, instead of moving on to the current one."
+							/>
+						)}
+					</div>
+				</>
 			)}
 			<CheckboxInput
 				value={local.isMandatory}
@@ -79,4 +102,4 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 	);
 }
 
-export { DEFAULT_DURATION };
+export { DEFAULT_RECURRENCE_DURATION };

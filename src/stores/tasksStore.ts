@@ -39,6 +39,7 @@ interface TasksActions {
 	uncompleteStepAndFollowingSteps: (task: Task, stepID: string) => void;
 	skipNextStep: (task: Task) => void;
 	skipTaskUntil: (task: Task, date: Date) => void;
+	skipCurrentOccurrence: (task: Task) => void;
 	cancelSkip: (task: Task) => void;
 	setDescription: (task: Task, description: string) => void;
 	setSteps: (task: Task, stepTexts: string[]) => void;
@@ -97,17 +98,17 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 			task.setDeadline(data.deadline);
 			task.setMinRequiredTime(data.minRequiredTime);
 			task.setMaxRequiredTime(data.maxRequiredTime);
-			task.setRepeatInterval(data.repeatInterval);
-			task.setReccurenceStartTime(data.reccurenceStartTime);
+			task.setRecurrenceDuration(data.recurrenceDuration);
+			task.setShouldNotSkipMissedOccurrences(data.shouldNotSkipMissedOccurrences);
+			task.setCompletedOccurrenceIndex(data.completedOccurrenceIndex);
+			task.setSkippedOccurrenceIndex(data.skippedOccurrenceIndex);
+			task.setProgressOccurrenceIndex(data.progressOccurrenceIndex);
 			task.setMandatory(data.isMandatory);
 			task.setComplete(data.isComplete);
 			task.setSkipped(data.isSkipped);
 			task.setSkippedUntil(data.skippedUntil);
 			task.setLastActionedStep(data.lastActionedStep);
-
-			if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {
-				task.onPastIntervalEndTime(new Date());
-			}
+			task.refreshCurrentOccurrence(new Date());
 		});
 		useTasksStore.setState(state => {
 			state.tasks = [...tasksManager.getTasks()];
@@ -148,6 +149,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			currentTasks.forEach(t => { taskIDToStateBefore[t.id] = t.getState(); });
 
 			action();
+			tasksManager.update(new Date());
 
 			const taskIDToStateAfter: Record<string, TaskState> = {};
 			currentTasks.forEach(t => { taskIDToStateAfter[t.id] = t.getState(); });
@@ -192,6 +194,10 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		skipTaskUntil(task: Task, date: Date) {
 			get().executeWithPatches(() => task.skipUntil(date), [task]);
+		},
+
+		skipCurrentOccurrence(task: Task) {
+			get().executeWithPatches(() => task.skipCurrentOccurrence(), [task]);
 		},
 
 		cancelSkip(task: Task) {
@@ -298,8 +304,9 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				if (timingOptions.deadline !== undefined) task.setDeadline(timingOptions.deadline);
 				if (timingOptions.minDuration !== undefined) task.setMinRequiredTime(timingOptions.minDuration);
 				if (timingOptions.maxDuration !== undefined) task.setMaxRequiredTime(timingOptions.maxDuration);
-				if (timingOptions.repeatInterval !== undefined && timingOptions.repeatInterval !== null) {
-					task.makeRecurring(timingOptions.repeatInterval, timingOptions.startTime ?? new Date());
+				if (timingOptions.shouldNotSkipMissedOccurrences !== undefined) task.setShouldNotSkipMissedOccurrences(timingOptions.shouldNotSkipMissedOccurrences);
+				if (timingOptions.recurrenceDuration !== undefined && timingOptions.recurrenceDuration !== null) {
+					task.makeRecurring(timingOptions.recurrenceDuration, timingOptions.startTime ?? new Date());
 				}
 				if (timingOptions.isMandatory !== undefined) task.setMandatory(timingOptions.isMandatory);
 			}
@@ -325,17 +332,17 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				task.setDeadline(bt.deadline ? new Date(bt.deadline) : null);
 				task.setMinRequiredTime(bt.minRequiredTime);
 				task.setMaxRequiredTime(bt.maxRequiredTime);
-				task.setRepeatInterval(bt.repeatInterval);
-				task.setReccurenceStartTime(bt.reccurenceStartTime ? new Date(bt.reccurenceStartTime) : null);
+				task.setRecurrenceDuration(bt.recurrenceDuration);
+				task.setShouldNotSkipMissedOccurrences(bt.shouldNotSkipMissedOccurrences);
+				task.setCompletedOccurrenceIndex(bt.completedOccurrenceIndex);
+				task.setSkippedOccurrenceIndex(bt.skippedOccurrenceIndex);
+				task.setProgressOccurrenceIndex(bt.progressOccurrenceIndex);
 				task.setMandatory(bt.isMandatory);
 				task.setComplete(bt.isComplete);
 				task.setSkipped(bt.isSkipped);
 				task.setSkippedUntil(bt.skippedUntil ? new Date(bt.skippedUntil) : null);
 				task.setLastActionedStep(bt.lastActionedStep);
-
-				if (task.isRecurring() && task.isPastIntervalEndTime(new Date())) {
-					task.onPastIntervalEndTime(new Date());
-				}
+				task.refreshCurrentOccurrence(new Date());
 
 				await persistTask(task);
 			}
