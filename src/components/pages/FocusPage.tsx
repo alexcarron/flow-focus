@@ -29,7 +29,7 @@ export default function FocusPage() {
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
-			if (event.repeat || !priorityTask) return;
+			if (event.repeat || !priorityTask || !document.hasFocus()) return;
 			const focused = document.activeElement as HTMLElement;
 			if (
 				focused.matches('button, input, select, textarea, a, [role="checkbox"]') ||
