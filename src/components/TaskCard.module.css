@@ -142,13 +142,13 @@
 
 .metaRow {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--space-medium);
 }
 
 .timeLeft {
 	font-weight: var(--font-weight-semibold);
-	max-width: 200px;
 	overflow: hidden;
 	white-space: nowrap;
 }
