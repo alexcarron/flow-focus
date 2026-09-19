@@ -110,7 +110,7 @@
 }
 
 .previousStep {
-	font-size: var(--font-size-small);
+	font-size: var(--font-size-base);
 	color: var(--color-text-faint);
 	text-decoration: line-through;
 	outline: none;
@@ -126,7 +126,7 @@
 }
 
 .upcomingStep {
-	font-size: var(--font-size-small);
+	font-size: var(--font-size-base);
 	color: var(--color-text-subtle);
 	outline: none;
 	cursor: text;
