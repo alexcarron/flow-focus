@@ -27,7 +27,18 @@
 
 .token {
 	font-weight: var(--font-weight-bold);
-	cursor: help;
+	cursor: pointer;
+}
+
+.escapedToken {
+	cursor: text;
+}
+
+@media (hover: hover) {
+	.escapedToken:hover {
+		cursor: pointer;
+		text-decoration: underline;
+	}
 }
 
 .tokenDeadline {
@@ -99,8 +110,10 @@
 	z-index: var(--layer-modal);
 	display: flex;
 	align-items: center;
+	flex-wrap: wrap;
 	gap: var(--space-small);
-	max-width: 20rem;
+	width: max-content;
+	max-width: min(90vw, 32rem);
 	padding: var(--space-extra-small) var(--space-small);
 	background-color: var(--color-surface-inset);
 	border: 1px solid var(--color-border-strong);
@@ -114,20 +127,8 @@
 	white-space: nowrap;
 }
 
-.keepAsTextButton {
+.tooltipInstruction {
 	flex-shrink: 0;
-	background: none;
-	border: 1px solid var(--color-border-strong);
-	border-radius: var(--radius-small);
-	padding: 0 var(--space-extra-small);
 	color: var(--color-text-muted);
-	font-size: var(--font-size-extra-small);
-	cursor: pointer;
-}
-
-@media (hover: hover) {
-	.keepAsTextButton:hover {
-		color: var(--color-text-primary);
-		border-color: var(--color-border-control);
-	}
+	white-space: nowrap;
 }

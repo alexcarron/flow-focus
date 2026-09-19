@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
+import { getTokenBecomeLabel, TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import { useFittingPlaceholder } from '../../hooks/useFittingPlaceholder';
 import styles from './TypedQuickInput.module.css';
 
@@ -7,7 +7,8 @@ interface Props {
 	value: string;
 	onChange: (value: string) => void;
 	tokens: TypedQuickInputToken[];
-	onEscapeToken: (token: TypedQuickInputToken) => void;
+	escapedTokens: TypedQuickInputToken[];
+	onToggleTokenEscape: (field: TypedQuickInputField, matchedText: string, startIndex: number, endIndex: number) => void;
 	demotedRange?: { start: number; end: number } | null;
 	placeholderTiersLongestFirst?: string[];
 	onSubmit?: () => void;
@@ -79,11 +80,13 @@ type HighlightRange = {
 	end: number;
 	className: string;
 	tokenIndex: number | null;
+	escapedTokenIndex: number | null;
 };
 
 function buildHighlightHtml(
 	value: string,
 	tokens: TypedQuickInputToken[],
+	escapedTokens: TypedQuickInputToken[],
 	demotingRange: { start: number; end: number } | null
 ): string {
 	const ranges: HighlightRange[] = tokens.map((token, tokenIndex) => ({
@@ -91,7 +94,18 @@ function buildHighlightHtml(
 		end: token.endIndex,
 		className: `${styles.token} ${fieldToColorClass[token.field]}`,
 		tokenIndex,
+		escapedTokenIndex: null,
 	}));
+
+	for (const [escapedTokenIndex, escapedToken] of escapedTokens.entries()) {
+		ranges.push({
+			start: escapedToken.startIndex,
+			end: escapedToken.endIndex,
+			className: styles.escapedToken,
+			tokenIndex: null,
+			escapedTokenIndex,
+		});
+	}
 
 	if (demotingRange && demotingRange.end > demotingRange.start) {
 		ranges.push({
@@ -99,6 +113,7 @@ function buildHighlightHtml(
 			end: demotingRange.end,
 			className: styles.demoting,
 			tokenIndex: null,
+			escapedTokenIndex: null,
 		});
 	}
 
@@ -110,7 +125,8 @@ function buildHighlightHtml(
 		if (range.start < cursor) continue;
 		html += escapeHtml(value.slice(cursor, range.start));
 		const tokenAttribute = range.tokenIndex !== null ? ` data-token-index="${range.tokenIndex}"` : '';
-		html += `<span class="${range.className}"${tokenAttribute}>${escapeHtml(value.slice(range.start, range.end))}</span>`;
+		const escapedTokenAttribute = range.escapedTokenIndex !== null ? ` data-escaped-token-index="${range.escapedTokenIndex}"` : '';
+		html += `<span class="${range.className}"${tokenAttribute}${escapedTokenAttribute}>${escapeHtml(value.slice(range.start, range.end))}</span>`;
 		cursor = range.end;
 	}
 	html += escapeHtml(value.slice(cursor));
@@ -121,7 +137,8 @@ export default function TypedQuickInput({
 	value,
 	onChange,
 	tokens,
-	onEscapeToken,
+	escapedTokens,
+	onToggleTokenEscape,
 	demotedRange = null,
 	placeholderTiersLongestFirst = [],
 	onSubmit,
@@ -131,13 +148,12 @@ export default function TypedQuickInput({
 }: Props) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const fittingPlaceholder = useFittingPlaceholder(placeholderTiersLongestFirst, editorRef);
-	const [hoveredTokenIndex, setHoveredTokenIndex] = useState<number | null>(null);
+	const [hoveredToken, setHoveredToken] = useState<{ token: TypedQuickInputToken; isEscaped: boolean } | null>(null);
 	const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
 	const [demotingRange, setDemotingRange] = useState<{ start: number; end: number } | null>(null);
 	const hideTooltipTimer = useRef<number | null>(null);
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const isComposingRef = useRef(false);
-	const isTooltipOpenedByTapRef = useRef(false);
 	const onSubmitRef = useRef(onSubmit);
 	onSubmitRef.current = onSubmit;
 	const onShiftEnterRef = useRef(onShiftEnter);
@@ -146,8 +162,8 @@ export default function TypedQuickInput({
 	disabledRef.current = disabled;
 	const tokensRef = useRef(tokens);
 	tokensRef.current = tokens;
-	const onEscapeTokenRef = useRef(onEscapeToken);
-	onEscapeTokenRef.current = onEscapeToken;
+	const onToggleTokenEscapeRef = useRef(onToggleTokenEscape);
+	onToggleTokenEscapeRef.current = onToggleTokenEscape;
 
 	useEffect(() => {
 		if (!demotedRange) return;
@@ -156,8 +172,14 @@ export default function TypedQuickInput({
 		return () => window.clearTimeout(timer);
 	}, [demotedRange]);
 
-	function rewriteHighlightedHtml(editor: HTMLDivElement, nextValue: string, nextTokens: TypedQuickInputToken[], nextDemotingRange: { start: number; end: number } | null) {
-		const nextHtml = buildHighlightHtml(nextValue, nextTokens, nextDemotingRange);
+	function rewriteHighlightedHtml(
+		editor: HTMLDivElement,
+		nextValue: string,
+		nextTokens: TypedQuickInputToken[],
+		nextEscapedTokens: TypedQuickInputToken[],
+		nextDemotingRange: { start: number; end: number } | null
+	) {
+		const nextHtml = buildHighlightHtml(nextValue, nextTokens, nextEscapedTokens, nextDemotingRange);
 		if (editor.innerHTML === nextHtml) return;
 
 		const isFocused = document.activeElement === editor;
@@ -174,8 +196,8 @@ export default function TypedQuickInput({
 		const editor = editorRef.current;
 		if (!editor) return;
 		if (isComposingRef.current) return;
-		rewriteHighlightedHtml(editor, value, tokens, demotingRange);
-	}, [value, tokens, demotingRange]);
+		rewriteHighlightedHtml(editor, value, tokens, escapedTokens, demotingRange);
+	}, [value, tokens, escapedTokens, demotingRange]);
 
 	useEffect(() => {
 		const editor = editorRef.current;
@@ -196,7 +218,12 @@ export default function TypedQuickInput({
 				const tokenStartingAtCaret = tokensRef.current.find(token => token.startIndex === caretOffset);
 				if (tokenStartingAtCaret) {
 					event.preventDefault();
-					onEscapeTokenRef.current(tokenStartingAtCaret);
+					onToggleTokenEscapeRef.current(
+						tokenStartingAtCaret.field,
+						tokenStartingAtCaret.matchedText,
+						tokenStartingAtCaret.startIndex,
+						tokenStartingAtCaret.endIndex
+					);
 				}
 			}
 		}
@@ -208,6 +235,7 @@ export default function TypedQuickInput({
 	function handleInput() {
 		const editor = editorRef.current;
 		if (!editor) return;
+		hideTooltip();
 		onChange(editor.textContent ?? '');
 	}
 
@@ -221,7 +249,7 @@ export default function TypedQuickInput({
 		if (!editor) return;
 		const composedValue = editor.textContent ?? '';
 		if (composedValue !== value) onChange(composedValue);
-		else rewriteHighlightedHtml(editor, value, tokens, demotingRange);
+		else rewriteHighlightedHtml(editor, value, tokens, escapedTokens, demotingRange);
 	}
 
 	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -240,19 +268,31 @@ export default function TypedQuickInput({
 		}
 	}
 
-	function showTooltipForToken(tokenIndex: number, tokenElement: HTMLElement) {
+	function resolveHoveredTokenFromElement(tokenElement: HTMLElement): { token: TypedQuickInputToken; isEscaped: boolean } | null {
+		if (tokenElement.dataset.tokenIndex !== undefined) {
+			const token = tokens[Number(tokenElement.dataset.tokenIndex)];
+			return token ? { token, isEscaped: false } : null;
+		}
+		if (tokenElement.dataset.escapedTokenIndex !== undefined) {
+			const token = escapedTokens[Number(tokenElement.dataset.escapedTokenIndex)];
+			return token ? { token, isEscaped: true } : null;
+		}
+		return null;
+	}
+
+	function showTooltipForToken(hovered: { token: TypedQuickInputToken; isEscaped: boolean }, tokenElement: HTMLElement) {
 		if (hideTooltipTimer.current !== null) {
 			window.clearTimeout(hideTooltipTimer.current);
 			hideTooltipTimer.current = null;
 		}
 		const rect = tokenElement.getBoundingClientRect();
-		setHoveredTokenIndex(tokenIndex);
+		setHoveredToken(hovered);
 		setTooltipPosition({ left: rect.left, top: rect.top });
 	}
 
 	function scheduleHideTooltip() {
 		hideTooltipTimer.current = window.setTimeout(() => {
-			setHoveredTokenIndex(null);
+			setHoveredToken(null);
 			setTooltipPosition(null);
 		}, 120);
 	}
@@ -262,46 +302,50 @@ export default function TypedQuickInput({
 			window.clearTimeout(hideTooltipTimer.current);
 			hideTooltipTimer.current = null;
 		}
-		isTooltipOpenedByTapRef.current = false;
-		setHoveredTokenIndex(null);
+		setHoveredToken(null);
 		setTooltipPosition(null);
 	}
 
 	function findTokenElement(target: EventTarget | null): HTMLElement | null {
 		if (!(target instanceof HTMLElement)) return null;
-		return target.closest<HTMLElement>('[data-token-index]');
+		return target.closest<HTMLElement>('[data-token-index], [data-escaped-token-index]');
 	}
 
 	function handlePointerOver(event: React.PointerEvent<HTMLDivElement>) {
 		if (event.pointerType === 'touch') return;
 		const tokenElement = findTokenElement(event.target);
-		if (!tokenElement) return;
-		const tokenIndex = Number(tokenElement.dataset.tokenIndex);
-		showTooltipForToken(tokenIndex, tokenElement);
+		if (!tokenElement) {
+			scheduleHideTooltip();
+			return;
+		}
+		const hovered = resolveHoveredTokenFromElement(tokenElement);
+		if (!hovered) {
+			scheduleHideTooltip();
+			return;
+		}
+		showTooltipForToken(hovered, tokenElement);
 	}
 
 	function handlePointerLeave(event: React.PointerEvent<HTMLDivElement>) {
-		if (event.pointerType === 'touch' || isTooltipOpenedByTapRef.current) return;
+		if (event.pointerType === 'touch') return;
 		scheduleHideTooltip();
 	}
 
 	function handleEditorClick(event: React.MouseEvent<HTMLDivElement>) {
 		const tokenElement = findTokenElement(event.target);
 		if (!tokenElement) {
-			if (isTooltipOpenedByTapRef.current) hideTooltip();
-			return;
-		}
-		const tokenIndex = Number(tokenElement.dataset.tokenIndex);
-		if (isTooltipOpenedByTapRef.current && tokenIndex === hoveredTokenIndex) {
 			hideTooltip();
 			return;
 		}
-		isTooltipOpenedByTapRef.current = true;
-		showTooltipForToken(tokenIndex, tokenElement);
+		const hovered = resolveHoveredTokenFromElement(tokenElement);
+		if (!hovered) return;
+
+		onToggleTokenEscape(hovered.token.field, hovered.token.matchedText, hovered.token.startIndex, hovered.token.endIndex);
+		hideTooltip();
 	}
 
 	useEffect(() => {
-		if (hoveredTokenIndex === null) return;
+		if (!hoveredToken) return;
 
 		function onPointerDownOutside(event: PointerEvent) {
 			const target = event.target as Node;
@@ -312,9 +356,7 @@ export default function TypedQuickInput({
 		document.addEventListener('pointerdown', onPointerDownOutside);
 		return () => document.removeEventListener('pointerdown', onPointerDownOutside);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [hoveredTokenIndex]);
-
-	const hoveredToken = hoveredTokenIndex !== null ? tokens[hoveredTokenIndex] : null;
+	}, [hoveredToken]);
 
 	return (
 		<div className={styles.wrapper}>
@@ -350,22 +392,16 @@ export default function TypedQuickInput({
 						}
 					}}
 					onPointerLeave={event => {
-						if (event.pointerType === 'touch' || isTooltipOpenedByTapRef.current) return;
+						if (event.pointerType === 'touch') return;
 						scheduleHideTooltip();
 					}}
 				>
-					<span className={styles.tooltipExplanation}>{hoveredToken.explanation}</span>
-					<button
-						type="button"
-						tabIndex={-1}
-						className={`touch-hit-area ${styles.keepAsTextButton}`}
-						onClick={() => {
-							onEscapeToken(hoveredToken);
-							hideTooltip();
-						}}
-					>
-						Keep as text
-					</button>
+					<span className={styles.tooltipExplanation}>{hoveredToken.token.explanation}</span>
+					<span className={styles.tooltipInstruction}>
+						{hoveredToken.isEscaped
+							? `Click to become ${getTokenBecomeLabel(hoveredToken.token)}`
+							: 'Click to keep as text'}
+					</span>
 				</div>
 			)}
 		</div>

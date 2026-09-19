@@ -47,7 +47,7 @@ export default function TaskCreatorPage() {
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morningTime = useSettingsStore(s => s.morningTime);
 
-	const { name, setName, escapeToken, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
+	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
 	});
@@ -86,9 +86,9 @@ export default function TaskCreatorPage() {
 		setError(null);
 	}
 
-	function handleEscapeToken(token: TypedQuickInputToken) {
-		escapeToken(token);
-		setDemotedRange({ start: token.startIndex, end: token.endIndex });
+	function handleToggleTokenEscape(field: TypedQuickInputToken['field'], matchedText: string, startIndex: number, endIndex: number) {
+		toggleTokenEscape(field, matchedText, startIndex, endIndex);
+		setDemotedRange({ start: startIndex, end: endIndex });
 	}
 
 	function handleShiftEnter() {
@@ -103,7 +103,7 @@ export default function TaskCreatorPage() {
 		for (const key of changedKeys) {
 			const token = findTokenForTimingKey(parseResult.tokens, key);
 			if (token) {
-				escapeToken(token);
+				toggleTokenEscape(token.field, token.matchedText, token.startIndex, token.endIndex);
 				setDemotedRange({ start: token.startIndex, end: token.endIndex });
 				break;
 			}
@@ -188,7 +188,8 @@ export default function TaskCreatorPage() {
 					value={name}
 					onChange={handleNameChange}
 					tokens={parseResult.tokens}
-					onEscapeToken={handleEscapeToken}
+					escapedTokens={parseResult.escapedTokens}
+					onToggleTokenEscape={handleToggleTokenEscape}
 					demotedRange={demotedRange}
 					placeholderTiersLongestFirst={['Calculus Homework 3.2 due thursday takes 1-2 hours']}
 					onSubmit={() => handleCreateRef.current()}

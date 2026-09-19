@@ -195,42 +195,44 @@ const impliedDueDateMatcher: Matcher = {
 	colorClass: 'deadline',
 	findMatches(config) {
 		const escapedKeys = new Set(config.escapedTokenLocations.map(serializeEscapedTokenLocation));
-		const candidates = findBareDateCandidates(config).filter(candidate =>
-			!escapedKeys.has(serializeEscapedTokenLocation({
-				field: 'deadline',
-				matchedText: candidate.matchedText,
-				startIndex: candidate.startIndex,
-				endIndex: candidate.endIndex,
-			}))
-		);
+		const isCandidateEscaped = (candidate: BareDateCandidate) => escapedKeys.has(serializeEscapedTokenLocation({
+			field: 'deadline',
+			matchedText: candidate.matchedText,
+			startIndex: candidate.startIndex,
+			endIndex: candidate.endIndex,
+		}));
+
+		const candidates = findBareDateCandidates(config).sort((left, right) => left.startIndex - right.startIndex);
 		if (candidates.length === 0) return [];
 
-		const [winner, ...ignored] = [...candidates].sort((left, right) => left.startIndex - right.startIndex);
+		const winner = candidates.find(candidate => !isCandidateEscaped(candidate));
 
-		const matches: RawMatch[] = [{
-			field: 'deadline',
-			colorClass: 'deadline',
-			startIndex: winner.startIndex,
-			endIndex: winner.endIndex,
-			matchedText: winner.matchedText,
-			explanation: `Due ${formatDateForExplanation(winner.date, config.now)}`,
-			timing: { deadline: winner.date },
-		}];
+		return candidates.map((candidate): RawMatch => {
+			if (candidate === winner) {
+				return {
+					field: 'deadline',
+					colorClass: 'deadline',
+					startIndex: candidate.startIndex,
+					endIndex: candidate.endIndex,
+					matchedText: candidate.matchedText,
+					explanation: `Due ${formatDateForExplanation(candidate.date, config.now)}`,
+					timing: { deadline: candidate.date },
+				};
+			}
 
-		for (const candidate of ignored) {
-			matches.push({
+			return {
 				field: 'ignoredDate',
 				colorClass: 'ignoredDate',
 				startIndex: candidate.startIndex,
 				endIndex: candidate.endIndex,
 				matchedText: candidate.matchedText,
-				explanation: `Ignored, "${winner.matchedText}" is the earlier due date`,
+				explanation: winner
+					? `Ignored, "${winner.matchedText}" is the earlier due date`
+					: 'Ignored, not used as a due date',
 				timing: {},
 				keepInName: true,
-			});
-		}
-
-		return matches;
+			};
+		});
 	},
 };
 

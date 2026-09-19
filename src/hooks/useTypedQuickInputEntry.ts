@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import parseTypedQuickInput from '../model/typed-quick-input/parseTypedQuickInput';
-import { EscapedTokenLocation, toEscapedTokenLocation, TypedQuickInputToken } from '../model/typed-quick-input/TypedQuickInputToken';
+import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
 import updateEscapedTokenLocationsAfterTextChange from '../model/typed-quick-input/updateEscapedTokenLocationsAfterTextChange';
 import Time from '../model/time-management/Time';
 
@@ -24,8 +24,14 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 		setNameState(nextName);
 	}
 
-	function escapeToken(token: TypedQuickInputToken) {
-		setEscapedTokenLocations(previous => [...previous, toEscapedTokenLocation(token)]);
+	function toggleTokenEscape(field: TypedQuickInputField, matchedText: string, startIndex: number, endIndex: number) {
+		const location: EscapedTokenLocation = { field, matchedText, startIndex, endIndex };
+		const key = serializeEscapedTokenLocation(location);
+		setEscapedTokenLocations(previous => {
+			const isAlreadyEscaped = previous.some(existing => serializeEscapedTokenLocation(existing) === key);
+			if (isAlreadyEscaped) return previous.filter(existing => serializeEscapedTokenLocation(existing) !== key);
+			return [...previous, location];
+		});
 	}
 
 	function reset() {
@@ -33,5 +39,5 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 		setEscapedTokenLocations([]);
 	}
 
-	return { name, setName, escapeToken, reset, ...parseResult };
+	return { name, setName, toggleTokenEscape, reset, ...parseResult };
 }

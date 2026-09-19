@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
-import { TypedQuickInputToken } from '../model/typed-quick-input/TypedQuickInputToken';
+import { TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../model/time-management/Time';
 import useTypedQuickInputEntry from '../hooks/useTypedQuickInputEntry';
 import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';
@@ -30,7 +30,7 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	const morningTime = useSettingsStore(s => s.morningTime);
 	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.setShouldShowQuickAddTaskBarOnFocusPage);
 
-	const { name, setName, escapeToken, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
+	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
 	});
@@ -41,9 +41,9 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	const [isStepsSectionVisible, setIsStepsSectionVisible] = useState(false);
 	const stepsInputRef = useRef<ArrayInputHandle>(null);
 
-	function handleEscapeToken(token: TypedQuickInputToken) {
-		escapeToken(token);
-		setDemotedRange({ start: token.startIndex, end: token.endIndex });
+	function handleToggleTokenEscape(field: TypedQuickInputField, matchedText: string, startIndex: number, endIndex: number) {
+		toggleTokenEscape(field, matchedText, startIndex, endIndex);
+		setDemotedRange({ start: startIndex, end: endIndex });
 	}
 
 	function handleShiftEnter() {
@@ -94,7 +94,8 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 					value={name}
 					onChange={setName}
 					tokens={parseResult.tokens}
-					onEscapeToken={handleEscapeToken}
+					escapedTokens={parseResult.escapedTokens}
+					onToggleTokenEscape={handleToggleTokenEscape}
 					demotedRange={demotedRange}
 					placeholderTiersLongestFirst={placeholderTiersLongestFirst}
 					onSubmit={handleCreate}

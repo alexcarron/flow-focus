@@ -67,19 +67,21 @@ export default function parseTypedQuickInput(config: {
 
 	const escapedKeys = new Set(escapedTokenLocations.map(serializeEscapedTokenLocation));
 
+	const isMatchEscaped = (match: RawMatch) => escapedKeys.has(serializeEscapedTokenLocation({
+		field: match.field,
+		matchedText: match.matchedText,
+		startIndex: match.startIndex,
+		endIndex: match.endIndex,
+	}));
+
 	const unprotectedMatches = rawMatches.filter(match =>
 		!protectedRanges.some(range =>
 			rangesOverlap({ start: match.startIndex, end: match.endIndex }, range)
-		) &&
-		!escapedKeys.has(serializeEscapedTokenLocation({
-			field: match.field,
-			matchedText: match.matchedText,
-			startIndex: match.startIndex,
-			endIndex: match.endIndex,
-		}))
+		)
 	);
 
-	const keptMatches = resolveOverlappingMatches(unprotectedMatches);
+	const keptMatches = resolveOverlappingMatches(unprotectedMatches.filter(match => !isMatchEscaped(match)));
+	const keptEscapedMatches = resolveOverlappingMatches(unprotectedMatches.filter(isMatchEscaped));
 
 	const removedIndices = new Set<number>();
 	for (const match of keptMatches) {
@@ -105,21 +107,23 @@ export default function parseTypedQuickInput(config: {
 		if (match.stepsList) steps = match.stepsList;
 	}
 
-	const tokens = keptMatches
-		.map(match => ({
-			field: match.field,
-			matchedText: match.matchedText,
-			startIndex: match.startIndex,
-			endIndex: match.endIndex,
-			explanation: match.explanation,
-			colorClass: match.colorClass,
-		}))
-		.sort((left, right) => left.startIndex - right.startIndex);
+	const matchToToken = (match: RawMatch) => ({
+		field: match.field,
+		matchedText: match.matchedText,
+		startIndex: match.startIndex,
+		endIndex: match.endIndex,
+		explanation: match.explanation,
+		colorClass: match.colorClass,
+	});
+
+	const tokens = keptMatches.map(matchToToken).sort((left, right) => left.startIndex - right.startIndex);
+	const escapedTokens = keptEscapedMatches.map(matchToToken).sort((left, right) => left.startIndex - right.startIndex);
 
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
 		timing,
 		steps,
 		tokens,
+		escapedTokens,
 	};
 }
