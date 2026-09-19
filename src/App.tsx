@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, NavLink } from 'react-router-dom';
+import { Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { useTasksStore } from './stores/tasksStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserAuthorization } from './hooks/useUserAuthorization';
@@ -68,6 +68,7 @@ export default function App() {
 						<Route path="/create-task" element={<TaskCreatorPage />} />
 						<Route path="/quick-to-do" element={<QuickToDoPage />} />
 						<Route path="/settings" element={<SettingsPage />} />
+						<Route path="*" element={<Navigate to="/" replace />} />
 					</Routes>
 				</main>
 			)}

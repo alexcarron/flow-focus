@@ -37,3 +37,6 @@ docs/planning/
 
 # Supabase-related files
 /supabase
+
+# Prototyping
+src/prototyping
