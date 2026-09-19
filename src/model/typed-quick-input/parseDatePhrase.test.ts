@@ -4,6 +4,7 @@ import Time from '../time-management/Time';
 const testNow = new Date(2026, 0, 5, 9, 0, 0);
 const testNightTime = Time.fromString('22:30');
 const testMorningTime = Time.fromString('06:45');
+const WEEKDAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 function nextDateWithJavascriptDay(javascriptDay: number, includeToday: boolean): Date {
 	const result = new Date(testNow);
@@ -23,9 +24,15 @@ describe('parseDatePhrase', () => {
 		expect(tomorrow?.date.getDate()).toBe(6);
 	});
 
-	it('parses a weekday as the next upcoming occurrence including today', () => {
+	it('parses a weekday as the next upcoming occurrence, skipping today even if today is that weekday', () => {
 		const friday = parseDatePhrase({ text: 'friday', now: testNow });
-		expect(friday?.date.getTime()).toBe(nextDateWithJavascriptDay(5, true).getTime());
+		expect(friday?.date.getTime()).toBe(nextDateWithJavascriptDay(5, false).getTime());
+	});
+
+	it('parses a weekday typed on that same weekday as the following week', () => {
+		const sameWeekdayAsToday = testNow.getDay();
+		const parsed = parseDatePhrase({ text: WEEKDAY_NAMES[sameWeekdayAsToday], now: testNow });
+		expect(parsed?.date.getTime()).toBe(nextDateWithJavascriptDay(sameWeekdayAsToday, false).getTime());
 	});
 
 	it('parses "next weekday" as the following week', () => {

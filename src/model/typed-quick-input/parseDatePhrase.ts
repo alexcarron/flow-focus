@@ -151,7 +151,7 @@ function makeParseWeekday(weekdayWordAlternation: string) {
 		if (!match) return null;
 
 		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
-		return { date: nextDateForWeekday(weekday, true, now), matchedLength: match[0].length };
+		return { date: nextDateForWeekday(weekday, false, now), matchedLength: match[0].length };
 	};
 }
 

@@ -42,6 +42,21 @@ export function formatTimeOfDay(date: Date): string {
 	return `${hours}:${minutes.toString().padStart(2, '0')}${amOrPm}`;
 }
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function formatUpcomingWeekday(date: Date, now: Date): string | null {
+	const daysFromToday = Math.round((getStartOfDay(date).getTime() - getStartOfDay(now).getTime()) / MILLISECONDS_PER_DAY);
+	const weekdayAbbreviation = WEEKDAY_ABBREVIATIONS[date.getDay()];
+
+	if (daysFromToday >= 1 && daysFromToday <= 6) {
+		return weekdayAbbreviation;
+	}
+	if (daysFromToday === 7) {
+		return `Next ${weekdayAbbreviation}`;
+	}
+	return null;
+}
+
 export function formatDate(date: Date | null, fallback = ''): string {
 	if (date === null) return fallback;
 
@@ -61,19 +76,15 @@ export function formatDate(date: Date | null, fallback = ''): string {
 	}
 
 	const startOfThisWeek = getStartOfWeek(now);
-	const endOfThisWeek = addDays(startOfThisWeek, 7);
 	const startOfLastWeek = addDays(startOfThisWeek, -7);
-	const startOfNextWeek = endOfThisWeek;
-	const endOfNextWeek = addDays(startOfNextWeek, 7);
 
-	if (isDateWithinRange(date, startOfThisWeek, endOfThisWeek)) {
-		return `${WEEKDAY_ABBREVIATIONS[date.getDay()]} ${formatTimeOfDay(date)}`;
-	}
 	if (isDateWithinRange(date, startOfLastWeek, startOfThisWeek)) {
 		return `Last ${WEEKDAY_ABBREVIATIONS[date.getDay()]} ${formatTimeOfDay(date)}`;
 	}
-	if (isDateWithinRange(date, startOfNextWeek, endOfNextWeek)) {
-		return `Next ${WEEKDAY_ABBREVIATIONS[date.getDay()]} ${formatTimeOfDay(date)}`;
+
+	const upcomingWeekdayText = formatUpcomingWeekday(date, now);
+	if (upcomingWeekdayText !== null) {
+		return `${upcomingWeekdayText} ${formatTimeOfDay(date)}`;
 	}
 
 	if (isSameCalendarYear(date, now)) {
