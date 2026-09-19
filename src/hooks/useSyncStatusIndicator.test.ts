@@ -29,12 +29,15 @@ describe('useSyncStatusIndicator', () => {
 		expect(result.current).toEqual({ state: 'unsynced', tooltipText: 'Changes not yet synced' });
 	});
 
-	it('shows the sync error once a pass has finished and failed', () => {
+	it('shows a generic sync failed message, not the raw error, once a pass has finished and failed', () => {
 		act(() => useSyncStatusStore.getState().reportSyncStatus({ isSyncing: false, lastSyncError: 'network blip', hasUnsyncedChanges: false }));
 
 		const { result } = renderHook(() => useSyncStatusIndicator());
 
-		expect(result.current).toEqual({ state: 'unsynced', tooltipText: 'Sync failed: network blip' });
+		expect(result.current).toEqual({
+			state: 'syncFailed',
+			tooltipText: 'Sync failed. Your changes are saved locally and will sync once this is resolved.',
+		});
 	});
 
 	it('mentions pending changes while offline instead of hiding them', () => {

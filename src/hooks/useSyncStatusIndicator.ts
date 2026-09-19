@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSyncStatusStore } from '../stores/syncStatusStore';
-import { toErrorMessage } from '../utilities/errorMessage';
 
-export type SyncStatusIndicatorState = 'synced' | 'syncing' | 'offline' | 'unsynced';
+export type SyncStatusIndicatorState = 'synced' | 'syncing' | 'offline' | 'unsynced' | 'syncFailed';
 
 interface SyncStatusIndicatorResult {
 	state: SyncStatusIndicatorState;
@@ -45,11 +44,11 @@ export function useSyncStatusIndicator(): SyncStatusIndicatorResult {
 	if (isSyncing) {
 		return { state: 'syncing', tooltipText: 'Syncing…' };
 	}
-	if (hasUnsyncedChanges || lastSyncError) {
-		return {
-			state: 'unsynced',
-			tooltipText: lastSyncError ? `Sync failed: ${toErrorMessage(lastSyncError)}` : 'Changes not yet synced',
-		};
+	if (lastSyncError) {
+		return { state: 'syncFailed', tooltipText: 'Sync failed. Your changes are saved locally and will sync once this is resolved.' };
+	}
+	if (hasUnsyncedChanges) {
+		return { state: 'unsynced', tooltipText: 'Changes not yet synced' };
 	}
 	return { state: 'synced', tooltipText: 'Online and synced changes' };
 }

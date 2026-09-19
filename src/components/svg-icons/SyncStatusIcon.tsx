@@ -3,6 +3,7 @@ import SyncedIcon from './SyncedIcon';
 import SyncingIcon from './SyncingIcon';
 import OfflineIcon from './OfflineIcon';
 import UnsyncedIcon from './UnsyncedIcon';
+import SyncFailedIcon from './SyncFailedIcon';
 import styles from './SyncStatusIcon.module.css';
 
 interface Props {
@@ -15,6 +16,7 @@ const stateToIconComponent: Record<SyncStatusIndicatorState, (props: { className
 	syncing: SyncingIcon,
 	offline: OfflineIcon,
 	unsynced: UnsyncedIcon,
+	syncFailed: SyncFailedIcon,
 };
 
 export default function SyncStatusIcon({ state, className = '' }: Props) {
