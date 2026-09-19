@@ -76,6 +76,10 @@ export default function TaskCard({ task }: Props) {
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag({
 		isStepChecked: stepID => task.isStepComplete(stepID),
 		setStepChecked: (stepID, isChecked) => store.setStepComplete(task, stepID, isChecked),
+		onDoubleTapCheckUpToHere: (stepID, isChecked) => {
+			if (isChecked) store.completeStepAndPrecedingSteps(task, stepID);
+			else store.uncompleteStepAndFollowingSteps(task, stepID);
+		},
 	});
 
 	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStepID, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag({
@@ -432,8 +436,8 @@ export default function TaskCard({ task }: Props) {
 					{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
 					{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => setStepPendingFocusID(store.insertStepBeforeStep(task, stepContextMenu.stepID)) },
 					{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => setStepPendingFocusID(store.insertStepAfterStep(task, stepContextMenu.stepID)) },
-					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.stepID) },
-					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.stepID) },
+					{ label: 'Check all up to here', hintKeys: ['Shift', 'Click'], hintGesture: 'Double tap', onClick: () => store.completeStepAndPrecedingSteps(task, stepContextMenu.stepID) },
+					{ label: 'Uncheck all from here', hintKeys: ['Shift', 'Click'], hintGesture: 'Double tap', onClick: () => store.uncompleteStepAndFollowingSteps(task, stepContextMenu.stepID) },
 					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => setStepPendingDeletionID(stepContextMenu.stepID) },
 				] : []}
 			/>

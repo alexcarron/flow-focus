@@ -48,7 +48,7 @@ export default function ContextMenu({ items, position, onClose }: Props) {
 		<div
 			ref={menuRef}
 			className={styles.menu}
-			style={{ left: displayPosition.x, top: displayPosition.y }}
+			style={{ transform: `translate(${displayPosition.x}px, ${displayPosition.y}px)` }}
 		>
 			{items.map(item => (
 				<button
@@ -59,7 +59,7 @@ export default function ContextMenu({ items, position, onClose }: Props) {
 					}}
 					className={item.isDanger ? `${styles.menuItem} ${styles.menuItemDanger}` : styles.menuItem}
 				>
-					<span>{item.label}</span>
+					<span className={styles.menuItemLabel}>{item.label}</span>
 					{item.hintKeys && <KeyboardHint keys={item.hintKeys} />}
 					{item.hintGesture && <GestureHint text={item.hintGesture} />}
 				</button>

@@ -88,6 +88,10 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
 		isStepChecked: stepID => task.isStepComplete(stepID),
 		setStepChecked: (stepID, isChecked) => store.setStepComplete(task, stepID, isChecked),
+		onDoubleTapCheckUpToHere: (stepID, isChecked) => {
+			if (isChecked) store.completeStepAndPrecedingSteps(task, stepID);
+			else store.uncompleteStepAndFollowingSteps(task, stepID);
+		},
 	});
 
 	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStepID, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag<HTMLTableCellElement>({

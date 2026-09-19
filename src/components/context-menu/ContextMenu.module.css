@@ -1,10 +1,13 @@
 .menu {
 	position: fixed;
+	top: 0;
+	left: 0;
 	z-index: var(--layer-modal);
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-extra-extra-small);
 	min-width: 10rem;
+	max-width: calc(100vw - var(--space-large) * 2);
 	padding: var(--space-extra-small);
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border-strong);
@@ -25,6 +28,11 @@
 	text-align: left;
 	border-radius: var(--radius-small);
 	transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.menuItemLabel {
+	min-width: 0;
+	overflow-wrap: break-word;
 }
 
 @media (hover: hover) {

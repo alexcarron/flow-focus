@@ -1,10 +1,14 @@
 import { useRef } from 'react';
 import { usePressAndHold } from './usePressAndHold';
+import { useIsTouchDevice } from './useIsTouchDevice';
+
+const DOUBLE_TAP_MAX_INTERVAL_MS = 300;
 
 interface UseStepCheckboxDragOptions {
 	itemAttribute?: string;
 	isStepChecked: (stepID: string) => boolean;
 	setStepChecked: (stepID: string, isChecked: boolean) => void;
+	onDoubleTapCheckUpToHere?: (stepID: string, isChecked: boolean) => void;
 }
 
 interface StepCheckboxDragHandlers {
@@ -12,14 +16,25 @@ interface StepCheckboxDragHandlers {
 	onMouseEnter: (event: React.MouseEvent) => void;
 }
 
-export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ itemAttribute = 'data-step', isStepChecked, setStepChecked }: UseStepCheckboxDragOptions) {
+interface CompletedSingleTap {
+	stepID: string;
+	appliedIsChecked: boolean;
+	releasedAtMs: number;
+}
+
+export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTMLDivElement>({ itemAttribute = 'data-step', isStepChecked, setStepChecked, onDoubleTapCheckUpToHere }: UseStepCheckboxDragOptions) {
+	const isTouchDevice = useIsTouchDevice();
 	const checkboxDragTargetStateRef = useRef<boolean | null>(null);
 	const stepIDsAlreadyToggledInDragRef = useRef<Set<string>>(new Set());
+	const singleStepTapInProgressRef = useRef<{ stepID: string; appliedIsChecked: boolean } | null>(null);
+	const lastCompletedSingleTapRef = useRef<CompletedSingleTap | null>(null);
 
 	const isStepCheckedRef = useRef(isStepChecked);
 	isStepCheckedRef.current = isStepChecked;
 	const setStepCheckedRef = useRef(setStepChecked);
 	setStepCheckedRef.current = setStepChecked;
+	const onDoubleTapCheckUpToHereRef = useRef(onDoubleTapCheckUpToHere);
+	onDoubleTapCheckUpToHereRef.current = onDoubleTapCheckUpToHere;
 
 	function applyCheckboxDragToStep(stepID: string) {
 		const dragTargetState = checkboxDragTargetStateRef.current;
@@ -27,19 +42,39 @@ export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTML
 		if (stepIDsAlreadyToggledInDragRef.current.has(stepID)) return;
 		stepIDsAlreadyToggledInDragRef.current.add(stepID);
 		setStepCheckedRef.current(stepID, dragTargetState);
+		singleStepTapInProgressRef.current = null;
 	}
 
 	const { containerRef: stepsContainerRef, getPressHandlers } = usePressAndHold<TContainerElement>({
 		itemAttribute,
 		mouseHoldDelayMs: 0,
 		onHoldStart: stepID => {
+			const lastCompletedSingleTap = lastCompletedSingleTapRef.current;
+			const isDoubleTap = isTouchDevice
+				&& lastCompletedSingleTap !== null
+				&& lastCompletedSingleTap.stepID === stepID
+				&& Date.now() - lastCompletedSingleTap.releasedAtMs <= DOUBLE_TAP_MAX_INTERVAL_MS;
+
+			if (isDoubleTap && onDoubleTapCheckUpToHereRef.current) {
+				lastCompletedSingleTapRef.current = null;
+				checkboxDragTargetStateRef.current = lastCompletedSingleTap.appliedIsChecked;
+				stepIDsAlreadyToggledInDragRef.current = new Set([stepID]);
+				onDoubleTapCheckUpToHereRef.current(stepID, lastCompletedSingleTap.appliedIsChecked);
+				return;
+			}
+
 			const nextIsChecked = !isStepCheckedRef.current(stepID);
 			checkboxDragTargetStateRef.current = nextIsChecked;
 			stepIDsAlreadyToggledInDragRef.current = new Set([stepID]);
 			setStepCheckedRef.current(stepID, nextIsChecked);
+			singleStepTapInProgressRef.current = isTouchDevice ? { stepID, appliedIsChecked: nextIsChecked } : null;
 		},
 		onPointerOverItem: stepID => applyCheckboxDragToStep(stepID),
 		onHoldEnd: () => {
+			if (singleStepTapInProgressRef.current !== null) {
+				lastCompletedSingleTapRef.current = { ...singleStepTapInProgressRef.current, releasedAtMs: Date.now() };
+			}
+			singleStepTapInProgressRef.current = null;
 			checkboxDragTargetStateRef.current = null;
 			stepIDsAlreadyToggledInDragRef.current = new Set();
 		},
