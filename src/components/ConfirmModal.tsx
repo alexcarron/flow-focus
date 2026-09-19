@@ -25,14 +25,15 @@ export default function ConfirmModal({
 		if (!isOpen) return;
 
 		function onKeyDown(event: KeyboardEvent) {
-			if (event.key === 'Delete') {
+			if (event.key === 'Delete' || event.key === 'Enter') {
 				event.preventDefault();
+				event.stopPropagation();
 				onConfirm();
 			}
 		}
 
-		window.addEventListener('keydown', onKeyDown);
-		return () => window.removeEventListener('keydown', onKeyDown);
+		window.addEventListener('keydown', onKeyDown, true);
+		return () => window.removeEventListener('keydown', onKeyDown, true);
 	}, [isOpen, onConfirm]);
 
 	if (!isOpen) return null;
