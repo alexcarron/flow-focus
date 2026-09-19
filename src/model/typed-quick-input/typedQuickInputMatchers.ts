@@ -163,37 +163,19 @@ type BareDateCandidate = {
 	date: Date;
 };
 
-const TRAILING_WHITESPACE_AND_PUNCTUATION_REGEX = /[\s.!?,]*$/;
-
-function getEffectiveEndOfInput(input: string): number {
-	const match = TRAILING_WHITESPACE_AND_PUNCTUATION_REGEX.exec(input);
-	return match ? match.index : input.length;
-}
-
 function findBareDateCandidates(config: FindMatchesConfig): BareDateCandidate[] {
 	const { input, now, nightTime, morningTime } = config;
 	const candidates: BareDateCandidate[] = [];
-	const effectiveEndOfInput = getEffectiveEndOfInput(input);
 	const wordStartRegex = /\S+/g;
 	let wordStart: RegExpExecArray | null;
 	while ((wordStart = wordStartRegex.exec(input)) !== null) {
 		const startIndex = wordStart.index;
 		if (isImmediatelyPrecededByDateTriggerWord(input, startIndex)) continue;
 
-		const fullWordParsed = parseDatePhrase({ text: input.slice(startIndex), now, nightTime, morningTime, restrictToFullWords: true });
-		const abbreviatedParsed = fullWordParsed
-			? null
-			: parseDatePhrase({ text: input.slice(startIndex), now, nightTime, morningTime, restrictToFullWords: false });
-		const parsed = fullWordParsed ?? abbreviatedParsed;
+		const parsed = parseDatePhrase({ text: input.slice(startIndex), now, nightTime, morningTime });
 		if (!parsed) continue;
 
 		const endIndex = startIndex + parsed.matchedLength;
-		const isAbbreviatedMatchNotAtEndOfInput = !fullWordParsed && endIndex < effectiveEndOfInput;
-		if (isAbbreviatedMatchNotAtEndOfInput) {
-			wordStartRegex.lastIndex = endIndex;
-			continue;
-		}
-
 		if (isFollowedByPossessiveSuffix(input, endIndex)) {
 			wordStartRegex.lastIndex = endIndex;
 			continue;

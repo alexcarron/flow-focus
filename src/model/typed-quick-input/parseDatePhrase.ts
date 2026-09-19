@@ -46,14 +46,6 @@ function toAlternation(words: string[]): string {
 const weekdayAlternation = toAlternation(Object.keys(weekdayNameToWeekday));
 const monthAlternation = toAlternation(Object.keys(monthNameToIndex));
 
-const fullWeekdayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const fullMonthNames = [
-	'january', 'february', 'march', 'april', 'may', 'june',
-	'july', 'august', 'september', 'october', 'november', 'december',
-];
-const weekdayAlternationFullWordsOnly = toAlternation(fullWeekdayNames);
-const monthAlternationFullWordsOnly = toAlternation(fullMonthNames);
-
 const CLOCK_TIME_REGEX = /^(?:at\s+)?((?:[01]?\d|2[0-3]):[0-5]\d(?:\s?[ap]m)?|(?:0?[1-9]|1[0-2])\s?[ap]m)\b/i;
 const NAMED_TIME_OF_DAY_REGEX = /^(?:at\s+)?(noon|afternoon|evening|morning|night|midnight)\b/i;
 
@@ -200,20 +192,11 @@ const dateParsers = [
 	makeParseMonthAndDay(monthAlternation),
 ];
 
-const fullWordDateParsers = [
-	parseRelativeDay,
-	parseRelativeDuration,
-	makeParseNextWeekday(weekdayAlternationFullWordsOnly),
-	makeParseWeekday(weekdayAlternationFullWordsOnly),
-	makeParseMonthAndDay(monthAlternationFullWordsOnly),
-];
-
 export default function parseDatePhrase(config: {
 	text: string;
 	now?: Date;
 	nightTime?: Time;
 	morningTime?: Time;
-	restrictToFullWords?: boolean;
 }): ParsedDatePhrase | null {
 	const now = config.now ?? new Date();
 	const nightTime = config.nightTime ?? defaultNightTime;
@@ -222,8 +205,7 @@ export default function parseDatePhrase(config: {
 	const leadingWhitespace = /^\s*/.exec(config.text)?.[0].length ?? 0;
 	const trimmed = config.text.slice(leadingWhitespace);
 
-	const parsers = config.restrictToFullWords ? fullWordDateParsers : dateParsers;
-	for (const parse of parsers) {
+	for (const parse of dateParsers) {
 		const parsed = parse(trimmed, now, nightTime);
 		if (parsed) {
 			if (parsed.timeOfDay) {

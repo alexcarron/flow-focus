@@ -185,16 +185,19 @@ describe('parseTypedQuickInput', () => {
 		expect(result.timing.deadline?.getDay()).toBe(2);
 	});
 
-	it('does not treat an abbreviated weekday in the middle of the input as an implied due date', () => {
-		const result = parseTypedQuickInput({ input: 'Read Chp.7 tue morning before class', now: testNow });
-		expect(result.timing.deadline).toBeUndefined();
-		expect(result.tokens).toHaveLength(0);
+	it('treats an abbreviated weekday in the middle of the input as an implied due date', () => {
+		const result = parseTypedQuickInput({ input: 'Finish chapter 7 tue and chapter 8', now: testNow });
+		expect(result.cleanedName).toBe('Finish chapter 7 and chapter 8');
+		expect(result.timing.deadline?.getDay()).toBe(2);
+		expect(result.tokens).toHaveLength(1);
+		expect(result.tokens[0].field).toBe('deadline');
 	});
 
-	it('does not treat a word that happens to match an abbreviated weekday as an implied due date when not at the end', () => {
+	it('treats a word that happens to match an abbreviated weekday as an implied due date even when not at the end', () => {
 		const result = parseTypedQuickInput({ input: 'I sat on a chair', now: testNow });
-		expect(result.timing.deadline).toBeUndefined();
-		expect(result.tokens).toHaveLength(0);
+		expect(result.timing.deadline?.getDay()).toBe(6);
+		expect(result.tokens).toHaveLength(1);
+		expect(result.tokens[0].field).toBe('deadline');
 	});
 });
 
