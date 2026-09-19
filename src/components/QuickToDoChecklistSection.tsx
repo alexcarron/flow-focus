@@ -275,8 +275,8 @@ export default function QuickToDoChecklistSection() {
 				position={itemContextMenu !== null ? { x: itemContextMenu.x, y: itemContextMenu.y } : null}
 				onClose={() => setItemContextMenu(null)}
 				items={itemContextMenu !== null ? [
-					{ label: 'Move up', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveUp), onClick: () => moveItemUp(itemContextMenu.itemID) },
-					{ label: 'Move down', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveDown), onClick: () => moveItemDown(itemContextMenu.itemID) },
+					{ label: 'Move up', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => moveItemUp(itemContextMenu.itemID) },
+					{ label: 'Move down', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => moveItemDown(itemContextMenu.itemID) },
 					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.indent), onClick: () => indentItem(itemContextMenu.itemID) },
 					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.unindent), onClick: () => unindentItem(itemContextMenu.itemID) },
 					{ label: 'Add item above', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertBefore), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'before')) },

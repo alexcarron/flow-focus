@@ -271,8 +271,8 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 					position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 					onClose={() => setStepContextMenu(null)}
 					items={stepContextMenu !== null ? [
-						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
-						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
+						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
+						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
 						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.stepID); arrayInputRef.current?.focusRow(stepContextMenu.index); } },
 						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.stepID); arrayInputRef.current?.focusRow(stepContextMenu.index + 1); } },
 					] : []}
