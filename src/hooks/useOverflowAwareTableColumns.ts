@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
-export function useOverflowAwareTableColumns<ColumnKey extends string>(hideColumnPriorityOrder: readonly ColumnKey[]) {
+const EMPTY_HIDDEN_COLUMN_KEYS = new Set<string>();
+
+export function useOverflowAwareTableColumns<ColumnKey extends string>(hideColumnPriorityOrder: readonly ColumnKey[], isDisabled: boolean = false) {
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const tableRef = useRef<HTMLTableElement>(null);
 	const [hiddenColumnKeys, setHiddenColumnKeys] = useState<Set<ColumnKey>>(new Set());
@@ -29,6 +31,7 @@ export function useOverflowAwareTableColumns<ColumnKey extends string>(hideColum
 	}, []);
 
 	useLayoutEffect(() => {
+		if (isDisabled) return;
 		const scrollContainer = scrollContainerRef.current;
 		const table = tableRef.current;
 		if (!scrollContainer || !table) return;
@@ -40,9 +43,10 @@ export function useOverflowAwareTableColumns<ColumnKey extends string>(hideColum
 		if (nextColumnKeyToHide !== undefined) {
 			setHiddenColumnKeys(current => new Set(current).add(nextColumnKeyToHide));
 		}
-	}, [tableContentWidth, hiddenColumnKeys, hideColumnPriorityOrder]);
+	}, [tableContentWidth, hiddenColumnKeys, hideColumnPriorityOrder, isDisabled]);
 
 	useLayoutEffect(() => {
+		if (isDisabled) return;
 		const scrollContainer = scrollContainerRef.current;
 		const table = tableRef.current;
 		if (!scrollContainer || !table) return;
@@ -58,7 +62,7 @@ export function useOverflowAwareTableColumns<ColumnKey extends string>(hideColum
 				return next;
 			});
 		}
-	}, [scrollContainerWidth, hideColumnPriorityOrder]);
+	}, [scrollContainerWidth, hideColumnPriorityOrder, isDisabled]);
 
-	return { scrollContainerRef, tableRef, hiddenColumnKeys };
+	return { scrollContainerRef, tableRef, hiddenColumnKeys: isDisabled ? EMPTY_HIDDEN_COLUMN_KEYS as Set<ColumnKey> : hiddenColumnKeys };
 }

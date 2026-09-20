@@ -209,3 +209,69 @@
 .hiddenColumn {
 	display: none;
 }
+
+@media (max-width: 599px) {
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		column-gap: var(--space-small);
+		row-gap: var(--space-medium);
+		padding: var(--space-large);
+		background-color: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-medium);
+		margin-bottom: var(--space-medium);
+	}
+
+	.rowSelected,
+	.rowSelected + .rowSelected,
+	.rowSelected:has(+ .rowSelected),
+	.rowSelected + .rowSelected:has(+ .rowSelected) {
+		border-radius: var(--radius-medium);
+		box-shadow: none;
+		border: var(--border-width-primary-accent-emphasis) solid var(--color-accent-border);
+	}
+
+	.cell,
+	.selectionCell,
+	.checkboxCell,
+	.descriptionCell,
+	.stepsCell,
+	.actionsCell,
+	.iconColumn {
+		padding: 0;
+		width: auto;
+		white-space: normal;
+		text-align: left;
+	}
+
+	.row td:nth-of-type(1) { order: 1; }
+	.row td:nth-of-type(2) { order: 2; }
+	.row td:nth-of-type(3) { order: 3; }
+	.row td:nth-of-type(4) { order: 4; flex: 1 1 auto; min-width: 0; }
+	.row td:nth-of-type(11) { order: 5; align-self: flex-start; }
+	.row td:nth-of-type(5) { order: 6; flex: 1 1 100%; }
+	.row td:nth-of-type(6) { order: 7; flex: 1 1 100%; }
+	.row td:nth-of-type(7) { order: 8; flex: 1 1 100%; }
+	.row td:nth-of-type(8) { order: 9; flex: 1 1 100%; }
+	.row td:nth-of-type(9) { order: 10; flex: 1 1 100%; }
+	.row td:nth-of-type(10) { order: 11; flex: 1 1 100%; }
+
+	[data-mobile-label] {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-extra-extra-small);
+	}
+
+	[data-mobile-label]::before {
+		content: attr(data-mobile-label);
+		font-size: var(--font-size-extra-small);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-secondary);
+	}
+
+	[data-mobile-label][data-mobile-empty="true"] {
+		display: none;
+	}
+}

@@ -84,6 +84,10 @@
 	color: var(--color-accent);
 }
 
+.sortIndicatorIconPrimary {
+	color: var(--color-text-primary);
+}
+
 .emptyMessage {
 	color: var(--color-text-subtle);
 	text-align: center;
@@ -121,4 +125,45 @@
 
 .hiddenColumn {
 	display: none;
+}
+
+.mobileToolbarControls {
+	display: none;
+}
+
+.selectAllLabel {
+	display: flex;
+	align-items: center;
+	gap: var(--space-extra-small);
+	font-size: var(--font-size-small);
+	color: var(--color-text-muted);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+@media (max-width: 599px) {
+	.mobileToolbarControls {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-small);
+	}
+
+	.tableScrollContainer {
+		overflow-x: visible;
+	}
+
+	.table {
+		display: block;
+		width: 100%;
+	}
+
+	.table thead {
+		display: none;
+	}
+
+	.table tbody {
+		display: block;
+		width: 100%;
+	}
 }

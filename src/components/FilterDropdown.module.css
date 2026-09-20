@@ -3,9 +3,24 @@
 	display: inline-block;
 }
 
+.button {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-extra-small);
+}
+
+.prefixIcon {
+	width: 0.9rem;
+	height: 0.9rem;
+	flex-shrink: 0;
+	color: var(--color-text-subtle);
+}
+
 .caret {
-	margin-left: var(--space-extra-small);
-	font-size: var(--font-size-extra-small);
+	width: 0.85rem;
+	height: 0.85rem;
+	flex-shrink: 0;
+	color: var(--color-text-subtle);
 }
 
 .menu {

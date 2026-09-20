@@ -10,11 +10,13 @@ import TimingOptionsPopup from '../TimingOptionsPopup';
 import ConfirmModal from '../ConfirmModal';
 import CheckIcon from '../svg-icons/CheckIcon';
 import MandatoryIcon from '../svg-icons/MandatoryIcon';
+import FilterIcon from '../svg-icons/FilterIcon';
 import SortAscIcon from '../svg-icons/SortAscIcon';
 import SortDescIcon from '../svg-icons/SortDescIcon';
 import SortUnsortedIcon from '../svg-icons/SortUnsortedIcon';
 import { useRowSelectionDrag } from '../../hooks/useRowSelectionDrag';
 import { useOverflowAwareTableColumns } from '../../hooks/useOverflowAwareTableColumns';
+import { useIsNarrowViewport } from '../../hooks/useIsNarrowViewport';
 import { mergeRefs } from '../../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
@@ -23,6 +25,7 @@ enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration
 enum SortDir { Asc, Desc }
 
 const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'duration', 'timeAvailable', 'deadline'];
+const STACKED_CARD_LAYOUT_MAX_WIDTH_PX = 599;
 
 const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = [
 	{
@@ -59,6 +62,24 @@ const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | So
 	[SortBy.Duration]: 'Duration',
 	[SortBy.RecurrenceDuration]: 'Repeat',
 };
+
+const ALL_SORT_LABELS: Record<SortBy, string> = {
+	[SortBy.Priority]: 'Priority',
+	...SORT_LABELS,
+	[SortBy.StartTime]: 'Start',
+	[SortBy.Deadline]: 'Deadline',
+};
+
+const SORT_BY_OPTIONS: { value: SortBy; label: string; description: string }[] = [
+	SortBy.Priority,
+	SortBy.Name,
+	SortBy.Steps,
+	SortBy.TimeAvailable,
+	SortBy.Duration,
+	SortBy.RecurrenceDuration,
+	SortBy.StartTime,
+	SortBy.Deadline,
+].map(sortBy => ({ value: sortBy, label: ALL_SORT_LABELS[sortBy], description: `Sort by ${ALL_SORT_LABELS[sortBy]}` }));
 
 function applySearch(tasks: Task[], searchText: string): Task[] {
 	const normalizedSearchText = searchText.trim().toLowerCase();
@@ -185,7 +206,8 @@ export default function TasksManagerPage() {
 		setRowSelected,
 	});
 
-	const { scrollContainerRef, tableRef, hiddenColumnKeys } = useOverflowAwareTableColumns(HIDE_COLUMN_PRIORITY_ORDER);
+	const isCardLayout = useIsNarrowViewport(STACKED_CARD_LAYOUT_MAX_WIDTH_PX);
+	const { scrollContainerRef, tableRef, hiddenColumnKeys } = useOverflowAwareTableColumns(HIDE_COLUMN_PRIORITY_ORDER, isCardLayout);
 
 	function toggleRowSelected(rowID: string) {
 		setRowSelected(rowID, !selectedRowIDs.has(rowID));
@@ -225,12 +247,23 @@ export default function TasksManagerPage() {
 		}
 	}
 
-	function renderSortIcon(col: SortBy) {
+	function selectSortByField(col: SortBy) {
+		if (col === sortBy) return;
+		setSortBy(col);
+		setSortDir(SortDir.Asc);
+	}
+
+	function toggleSortDir() {
+		setSortDir(d => d === SortDir.Asc ? SortDir.Desc : SortDir.Asc);
+	}
+
+	function renderSortIcon(col: SortBy, isMonochrome: boolean = false) {
 		if (sortBy !== col) return <SortUnsortedIcon className={styles.sortIndicatorIcon} />;
 
-		if (sortDir === SortDir.Asc) return <SortAscIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
+		const activeClassName = isMonochrome ? styles.sortIndicatorIconPrimary : styles.sortIndicatorIconActive;
+		if (sortDir === SortDir.Asc) return <SortAscIcon className={`${styles.sortIndicatorIcon} ${activeClassName}`} />;
 
-		return <SortDescIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
+		return <SortDescIcon className={`${styles.sortIndicatorIcon} ${activeClassName}`} />;
 	}
 
 	const rowIDs = displayedTasks.map((task) => getRowID(task));
@@ -239,7 +272,7 @@ export default function TasksManagerPage() {
 	return (
 		<div className={styles.page}>
 			<div className={styles.toolbar}>
-				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
+				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={setFilter} icon={<FilterIcon />} />
 
 				<TextInput
 					value={searchText}
@@ -247,6 +280,22 @@ export default function TasksManagerPage() {
 					placeholder="Search tasks..."
 					className={`field ${styles.searchInput}`}
 				/>
+
+				<div className={styles.mobileToolbarControls}>
+					<FilterDropdown value={sortBy} options={SORT_BY_OPTIONS} onChange={selectSortByField} icon={<SortUnsortedIcon />} />
+					<button
+						onClick={toggleSortDir}
+						className="button icon outlined"
+						aria-label={sortDir === SortDir.Asc ? 'Sort ascending' : 'Sort descending'}
+						title={sortDir === SortDir.Asc ? 'Sort ascending' : 'Sort descending'}
+					>
+						{renderSortIcon(sortBy, true)}
+					</button>
+					<label className={styles.selectAllLabel}>
+						<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} onToggle={toggleSelectAll} />
+						Select all ({rowIDs.length})
+					</label>
+				</div>
 
 				{selectedRowIDs.size > 0 && (
 					<button

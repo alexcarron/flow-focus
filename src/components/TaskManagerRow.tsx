@@ -188,7 +188,7 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 				)}
 			</td>
 
-			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} className={isCompactRow ? `${styles.stepsCell} ${styles.stepsCellCompact}` : styles.stepsCell}>
+			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} data-mobile-label="Steps" className={isCompactRow ? `${styles.stepsCell} ${styles.stepsCellCompact}` : styles.stepsCell}>
 				<ArrayInput
 					ref={arrayInputRef}
 					value={displaySteps.map(step => step.text)}
@@ -277,13 +277,13 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 				/>
 			</td>
 
-			<td className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+			<td data-mobile-label="Time Available" className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getDeadline()
 					? formatTime(task.getTimeToComplete(now))
 					: '∞'}
 			</td>
 
-			<td className={hiddenColumnKeys.has('duration') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+			<td data-mobile-label="Duration" data-mobile-empty={minMs === null && maxMs === null ? 'true' : 'false'} className={hiddenColumnKeys.has('duration') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{minMs !== null || maxMs !== null
 					? (hiddenColumnKeys.size > 0
 						? formatAbbreviatedDurationRange(minMs, maxMs)
@@ -291,17 +291,17 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={hiddenColumnKeys.has('start') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+			<td data-mobile-label="Start" data-mobile-empty={displayStartTime ? 'false' : 'true'} className={hiddenColumnKeys.has('start') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{displayStartTime ? formatDate(displayStartTime) : <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+			<td data-mobile-label="Repeat" data-mobile-empty={task.getRecurrenceDuration() === null ? 'true' : 'false'} className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getRecurrenceDuration() !== null
 					? formatRecurrenceDuration(task.getRecurrenceDuration()!)
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td className={hiddenColumnKeys.has('deadline') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+			<td data-mobile-label="Deadline" data-mobile-empty={task.getDeadline() ? 'false' : 'true'} className={hiddenColumnKeys.has('deadline') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getDeadline() ? formatDate(task.getDeadline(), '—') : <span className={styles.emptyValue}>—</span>}
 			</td>
 

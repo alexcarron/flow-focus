@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { cloneElement, useEffect, useRef, useState } from 'react';
+import ChevronDownIcon from './svg-icons/ChevronDownIcon';
 import styles from './FilterDropdown.module.css';
 
 interface FilterDropdownOption<Value extends string | number> {
@@ -11,10 +12,11 @@ interface Props<Value extends string | number> {
 	value: Value;
 	options: FilterDropdownOption<Value>[];
 	onChange: (value: Value) => void;
+	icon?: React.ReactElement<{ className?: string }>;
 	className?: string;
 }
 
-export default function FilterDropdown<Value extends string | number>({ value, options, onChange, className = '' }: Props<Value>) {
+export default function FilterDropdown<Value extends string | number>({ value, options, onChange, icon, className = '' }: Props<Value>) {
 	const [isOpen, setIsOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const selectedOption = options.find(option => option.value === value) ?? options[0];
@@ -42,11 +44,12 @@ export default function FilterDropdown<Value extends string | number>({ value, o
 			<button
 				type="button"
 				onClick={() => setIsOpen(isCurrentlyOpen => !isCurrentlyOpen)}
-				className="button outlined"
+				className={`button outlined ${styles.button}`}
 				title={selectedOption.description}
 			>
+				{icon && cloneElement(icon, { className: styles.prefixIcon })}
 				{selectedOption.label}
-				<span className={styles.caret}>▾</span>
+				<ChevronDownIcon className={styles.caret} />
 			</button>
 
 			{isOpen && (
