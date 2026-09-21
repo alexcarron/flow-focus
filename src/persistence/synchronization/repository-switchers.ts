@@ -2,6 +2,7 @@ import { setActiveRepositories } from '../activeRepositories';
 import { localTaskRepository } from '../local/LocalTaskRepository';
 import { localSettingsRepository } from '../local/LocalSettingsRepository';
 import { localQuickToDoChecklistRepository } from '../local/LocalQuickToDoChecklistRepository';
+import { localTagRepository } from '../local/LocalTagRepository';
 import { CachedTaskRepository } from './CachedTaskRepository';
 import { CachedSettingsRepository } from './CachedSettingsRepository';
 import { CachedQuickToDoChecklistRepository } from './CachedQuickToDoChecklistRepository';
@@ -11,6 +12,7 @@ import { createSupabaseDataService } from '../cloud/supabaseDataService';
 import { useTasksStore } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
+import { useTagsStore } from '../../stores/tagsStore';
 import { useSyncStatusStore } from '../../stores/syncStatusStore';
 
 let activeSynchronizer: LocalCloudDataSynchronizer | undefined;
@@ -20,6 +22,7 @@ export async function reloadAllStores(): Promise<void> {
 		useTasksStore.getState().loadTasks(),
 		useSettingsStore.getState().loadSettings(),
 		useQuickToDoChecklistStore.getState().loadQuickToDoChecklist(),
+		useTagsStore.getState().loadTags(),
 	]);
 }
 
@@ -45,6 +48,7 @@ export async function switchRepositoriesToCloud(userID: string, isRepositorySwit
 		taskRepository: new CachedTaskRepository(userID, synchronizer),
 		settingsRepository: new CachedSettingsRepository(userID, synchronizer),
 		quickToDoChecklistRepository: new CachedQuickToDoChecklistRepository(userID, synchronizer),
+		tagRepository: localTagRepository,
 	});
 
 	await reloadAllStores();
@@ -67,6 +71,7 @@ export async function switchRepositoriesToLocal(): Promise<void> {
 		taskRepository: localTaskRepository,
 		settingsRepository: localSettingsRepository,
 		quickToDoChecklistRepository: localQuickToDoChecklistRepository,
+		tagRepository: localTagRepository,
 	});
 
 	closeActiveUserCacheDatabase();

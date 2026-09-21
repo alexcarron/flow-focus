@@ -37,14 +37,17 @@ export default class Task {
 	protected isSkipped: boolean = false;
 	protected skippedUntil: Date | null = null;
 	protected lastActionedStep: {stepID: string, status: StepStatus} | null = null;
+	protected tagIDs: string[] = [];
 
 	constructor(
 		protected tasksManager: TasksManager,
 		description: string,
 		id: string = crypto.randomUUID(),
+		tagIDs: string[] = [],
 	) {
 		this.id = id;
 		this.description = description;
+		this.tagIDs = tagIDs;
 	}
 
 	getDescription(): string {return this.description};
@@ -200,6 +203,17 @@ export default class Task {
 	}
 
 	setLastActionedStep(lastActionedStep: {stepID: string, status: StepStatus} | null): void {this.lastActionedStep = lastActionedStep};
+
+	getTagIDs(): string[] {return [...this.tagIDs]};
+
+	addTagID(tagID: string): void {
+		if (this.tagIDs.includes(tagID)) return;
+		this.tagIDs = [...this.tagIDs, tagID];
+	}
+
+	removeTagID(tagID: string): void {
+		this.tagIDs = this.tagIDs.filter(existingTagID => existingTagID !== tagID);
+	}
 
 	isRecurring(): boolean {return this.recurrenceDuration !== null};
 
@@ -768,7 +782,8 @@ export default class Task {
 			skippedOccurrenceIndex: this.skippedOccurrenceIndex,
 			progressOccurrenceIndex: this.progressOccurrenceIndex,
 			steps: cloneStepsDeep(this.steps),
-			lastActionedStep: this.lastActionedStep
+			lastActionedStep: this.lastActionedStep,
+			tagIDs: [...this.tagIDs],
 		};
 	}
 
@@ -793,6 +808,7 @@ export default class Task {
 		this.setProgressOccurrenceIndex(taskState.progressOccurrenceIndex);
 		this.replaceAllSteps(cloneStepsDeep(taskState.steps));
 		this.setLastActionedStep(taskState.lastActionedStep);
+		this.tagIDs = [...taskState.tagIDs];
 		this.refreshCurrentOccurrence(currentTime);
 	}
 

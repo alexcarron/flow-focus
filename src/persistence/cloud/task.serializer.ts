@@ -36,6 +36,7 @@ export function serializeTask(task: Task): TaskWriteInput {
 		isSkipped: state.isSkipped,
 		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
 		lastActionedStep: state.lastActionedStep,
+		tagIDs: state.tagIDs,
 	};
 }
 
@@ -57,6 +58,7 @@ export function deserializeRow(row: PlainTaskRow): {
 	isSkipped: boolean;
 	skippedUntil: Date | null;
 	lastActionedStep: { stepID: string; status: StepStatus } | null;
+	tagIDs: string[];
 } {
 	return {
 		description: row.description,
@@ -78,6 +80,7 @@ export function deserializeRow(row: PlainTaskRow): {
 		lastActionedStep: row.lastActionedStep
 			? { stepID: row.lastActionedStep.stepID, status: row.lastActionedStep.status as StepStatus }
 			: null,
+		tagIDs: row.tagIDs,
 	};
 }
 
@@ -166,6 +169,7 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		isSkipped: row.is_skipped,
 		skippedUntil: normalizeNullableTimestamp(row.skipped_until),
 		lastActionedStep: row.last_actioned_step,
+		tagIDs: [],
 		updatedAt: normalizeTimestamp(row.updated_at),
 		deletedAt: normalizeNullableTimestamp(row.deleted_at),
 		isSynced: true,

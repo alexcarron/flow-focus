@@ -6,13 +6,14 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV8';
+import { BACKUP_FORMAT } from './versions/backupV9';
 import { BACKUP_FORMAT_V6 } from './versions/backupV6';
 import { BACKUP_FORMAT_V1 } from './versions/backupV1';
 import { getActiveRepositories, setActiveRepositories } from '../../persistence/activeRepositories';
 import { localTaskRepository } from '../../persistence/local/LocalTaskRepository';
 import { localSettingsRepository } from '../../persistence/local/LocalSettingsRepository';
 import { localQuickToDoChecklistRepository } from '../../persistence/local/LocalQuickToDoChecklistRepository';
+import { localTagRepository } from '../../persistence/local/LocalTagRepository';
 import { CachedTaskRepository } from '../../persistence/synchronization/CachedTaskRepository';
 import { CachedSettingsRepository } from '../../persistence/synchronization/CachedSettingsRepository';
 import { CachedQuickToDoChecklistRepository } from '../../persistence/synchronization/CachedQuickToDoChecklistRepository';
@@ -35,6 +36,7 @@ function signInAsCloudUser(): void {
 		taskRepository: new CachedTaskRepository(SIGNED_IN_USER_ID, syncTrigger),
 		settingsRepository: new CachedSettingsRepository(SIGNED_IN_USER_ID, syncTrigger),
 		quickToDoChecklistRepository: new CachedQuickToDoChecklistRepository(SIGNED_IN_USER_ID, syncTrigger),
+		tagRepository: localTagRepository,
 	});
 }
 
@@ -43,6 +45,7 @@ function signOutToLocalRepositories(): void {
 		taskRepository: localTaskRepository,
 		settingsRepository: localSettingsRepository,
 		quickToDoChecklistRepository: localQuickToDoChecklistRepository,
+		tagRepository: localTagRepository,
 	});
 }
 
@@ -82,6 +85,7 @@ describe('readBackupFile', () => {
 			settings: DEFAULT_SETTINGS,
 			tasks: [],
 			quickToDoChecklist: [],
+			tags: [],
 		};
 
 		const parsed = await readBackupFile(makeBackupFile(original));
@@ -189,9 +193,11 @@ describe('applyBackup', () => {
 					isSkipped: false,
 					skippedUntil: null,
 					lastActionedStep: null,
+					tagIDs: [],
 				},
 			],
 			quickToDoChecklist: [{ id: 'item-1', text: 'Restored item', isChecked: false, children: [] }],
+			tags: [],
 		};
 
 		await applyBackup(backupToRestore);
@@ -230,6 +236,7 @@ describe('backup and restore while signed in', () => {
 			isSkipped: false,
 			skippedUntil: null,
 			lastActionedStep: null,
+			tagIDs: [],
 			updatedAt: new Date().toISOString(),
 			deletedAt: null,
 			isSynced: false,
@@ -275,9 +282,11 @@ describe('backup and restore while signed in', () => {
 					isSkipped: false,
 					skippedUntil: null,
 					lastActionedStep: null,
+					tagIDs: [],
 				},
 			],
 			quickToDoChecklist: [{ id: 'item-1', text: 'Restored account item', isChecked: false, children: [] }],
+			tags: [],
 		};
 
 		await applyBackup(backupToRestore);

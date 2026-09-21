@@ -25,6 +25,7 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		isSkipped: false,
 		skippedUntil: null,
 		lastActionedStep: null,
+		tagIDs: [],
 		updatedAt: '2026-03-01T12:00:00.000Z',
 		deletedAt: null,
 		isSynced: false,
@@ -127,6 +128,7 @@ describe('cloudRowToTaskRow', () => {
 			completedOccurrenceIndex: 2,
 			progressOccurrenceIndex: 3,
 			lastActionedStep: { stepID: 'step-1', status: 'Completed' },
+			tagIDs: [],
 			isSynced: true,
 		}));
 	});

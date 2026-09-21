@@ -39,6 +39,12 @@ export interface PlainTaskRow extends DeletableRecordMetadata {
 	isSkipped: boolean;
 	skippedUntil: string | null;
 	lastActionedStep: { stepID: string; status: string } | null;
+	tagIDs: string[];
+}
+
+export interface TagRow extends DeletableRecordMetadata {
+	id: string;
+	name: string;
 }
 
 export interface SettingsRow extends AppSettings, PersistedRecordMetadata {
@@ -65,6 +71,7 @@ export class FlowFocusDB extends Dexie {
 	settings!: Table<SettingsRow, number>;
 	quickToDoChecklist!: Table<QuickToDoChecklistRow, number>;
 	syncStatus!: Table<SyncStatusRow, number>;
+	tags!: Table<TagRow, string>;
 
 	constructor(databaseName: string = DEFAULT_FLOW_FOCUS_DATABASE_NAME) {
 		super(databaseName);
@@ -179,12 +186,27 @@ export class FlowFocusDB extends Dexie {
 				addEmptyChildrenToFlatSteps(row);
 			});
 		});
+		this.version(11).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		}).upgrade(transaction => {
+			return transaction.table('tasks').toCollection().modify(row => {
+				addEmptyTagIDsToTaskRow(row);
+			});
+		});
 	}
 }
 
 function addEmptyChildrenToFlatSteps(row: { steps?: PlainStepRow[] }): void {
 	if (!Array.isArray(row.steps)) return;
 	row.steps = row.steps.map(step => ({ ...step, children: Array.isArray(step.children) ? step.children : [] }));
+}
+
+function addEmptyTagIDsToTaskRow(row: { tagIDs?: string[] }): void {
+	if (!Array.isArray(row.tagIDs)) row.tagIDs = [];
 }
 
 export const db = new FlowFocusDB();

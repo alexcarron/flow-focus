@@ -25,6 +25,7 @@ function makeTaskWriteInput(overrides: Partial<TaskWriteInput> = {}): TaskWriteI
 		isSkipped: false,
 		skippedUntil: null,
 		lastActionedStep: null,
+		tagIDs: [],
 		...overrides,
 	};
 }

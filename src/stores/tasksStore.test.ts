@@ -3,12 +3,14 @@ import RecurrenceUnit from '../model/task/recurrence/RecurrenceUnit';
 import { db } from '../persistence/local/flowfocus.db';
 import StepStatus from '../model/task/step/StepStatus';
 import { useTasksStore, tasksManager } from './tasksStore';
+import { useTagsStore } from './tagsStore';
 
 beforeEach(async () => {
 	await db.delete();
 	await db.open();
 	tasksManager.clearTasks();
 	useTasksStore.setState({ tasks: [], isLoading: true, undoStack: [], redoStack: [] });
+	useTagsStore.setState({ tags: [], isLoading: true });
 });
 
 afterEach(() => {
@@ -191,5 +193,60 @@ describe('a recurring task', () => {
 		const reloadedTask = useTasksStore.getState().tasks[0];
 		expect(reloadedTask.getAnchorStartTime()?.getTime()).toBe(now.getTime());
 		expect(reloadedTask.getStartTime()?.getTime()).toBe(now.getTime() + 3 * oneDayMilliseconds);
+	});
+});
+
+describe('tagging a task', () => {
+	it('creates a new tag the first time it is attached to a task', async () => {
+		const task = await useTasksStore.getState().addTask('Water the plants');
+
+		await useTasksStore.getState().addTagToTask(task, 'Home');
+
+		expect(useTagsStore.getState().tags.map(tag => tag.name)).toEqual(['Home']);
+		expect(useTasksStore.getState().tasks[0].getTagIDs()).toEqual([useTagsStore.getState().tags[0].id]);
+	});
+
+	it('reuses an existing tag with a case-insensitively matching name instead of creating a duplicate', async () => {
+		const taskA = await useTasksStore.getState().addTask('Water the plants');
+		const taskB = await useTasksStore.getState().addTask('Feed the cat');
+		await useTasksStore.getState().addTagToTask(taskA, 'Home');
+
+		await useTasksStore.getState().addTagToTask(taskB, 'home');
+
+		expect(useTagsStore.getState().tags).toHaveLength(1);
+		const tagID = useTagsStore.getState().tags[0].id;
+		expect(useTasksStore.getState().tasks.find(t => t.id === taskA.id)?.getTagIDs()).toEqual([tagID]);
+		expect(useTasksStore.getState().tasks.find(t => t.id === taskB.id)?.getTagIDs()).toEqual([tagID]);
+	});
+
+	it('deletes the tag once removed from its only referencing task', async () => {
+		const task = await useTasksStore.getState().addTask('Water the plants');
+		await useTasksStore.getState().addTagToTask(task, 'Home');
+		const tagID = useTagsStore.getState().tags[0].id;
+
+		await useTasksStore.getState().removeTagFromTask(task, tagID);
+
+		expect(useTagsStore.getState().tags).toEqual([]);
+	});
+
+	it('keeps the tag when it is removed from one task but still referenced by another', async () => {
+		const taskA = await useTasksStore.getState().addTask('Water the plants');
+		const taskB = await useTasksStore.getState().addTask('Feed the cat');
+		await useTasksStore.getState().addTagToTask(taskA, 'Home');
+		const tagID = useTagsStore.getState().tags[0].id;
+		await useTasksStore.getState().addTagToTask(taskB, 'Home');
+
+		await useTasksStore.getState().removeTagFromTask(taskA, tagID);
+
+		expect(useTagsStore.getState().tags.map(tag => tag.id)).toEqual([tagID]);
+	});
+
+	it('deletes a tag that was uniquely referenced by a task that gets deleted', async () => {
+		const task = await useTasksStore.getState().addTask('Water the plants');
+		await useTasksStore.getState().addTagToTask(task, 'Home');
+
+		await useTasksStore.getState().deleteTask(task);
+
+		expect(useTagsStore.getState().tags).toEqual([]);
 	});
 });

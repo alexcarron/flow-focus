@@ -12,6 +12,7 @@ import { serializeTask, deserializeRow } from '../persistence/cloud/task.seriali
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
 import { RunOnceThenAgainIfChanged } from '../utilities/runOnceThenAgainIfChanged';
+import { useTagsStore } from './tagsStore';
 
 enablePatches();
 setAutoFreeze(false);
@@ -65,6 +66,9 @@ interface TasksActions {
 	deleteTask: (task: Task) => Promise<void>;
 	importTasks: (backupTasks: BackupTask[]) => Promise<void>;
 
+	addTagToTask: (task: Task, tagName: string) => Promise<void>;
+	removeTagFromTask: (task: Task, tagID: string) => Promise<void>;
+
 	undo: () => void;
 	redo: () => void;
 }
@@ -86,6 +90,13 @@ async function softDeleteTask(id: string): Promise<void> {
 		await getActiveRepositories().taskRepository.softDelete(id);
 	} catch (err) {
 		console.error('Failed to delete task:', err);
+	}
+}
+
+async function deleteTagIfNoLongerReferenced(tagID: string): Promise<void> {
+	const isStillReferenced = useTasksStore.getState().tasks.some(task => task.getTagIDs().includes(tagID));
+	if (!isStillReferenced) {
+		await useTagsStore.getState().deleteTag(tagID);
 	}
 }
 
@@ -112,6 +123,7 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 			task.setSkipped(data.isSkipped);
 			task.setSkippedUntil(data.skippedUntil);
 			task.setLastActionedStep(data.lastActionedStep);
+			data.tagIDs.forEach(tagID => task.addTagID(tagID));
 			task.refreshCurrentOccurrence(new Date());
 		});
 		useTasksStore.setState(state => {
@@ -320,32 +332,49 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		async deleteTask(task: Task) {
+			const tagIDsToCheck = task.getTagIDs();
 			await softDeleteTask(task.id);
 			tasksManager.deleteTask(task);
 			set(state => { state.tasks = [...tasksManager.getTasks()]; });
+			for (const tagID of tagIDsToCheck) {
+				await deleteTagIfNoLongerReferenced(tagID);
+			}
+		},
+
+		async addTagToTask(task: Task, tagName: string) {
+			const trimmedName = tagName.trim();
+			const existingTag = useTagsStore.getState().tags.find(tag => tag.name.toLowerCase() === trimmedName.toLowerCase());
+			const tag = existingTag ?? await useTagsStore.getState().addTag(trimmedName);
+			get().executeWithPatches(() => task.addTagID(tag.id), [task]);
+		},
+
+		async removeTagFromTask(task: Task, tagID: string) {
+			get().executeWithPatches(() => task.removeTagID(tagID), [task]);
+			await deleteTagIfNoLongerReferenced(tagID);
 		},
 
 		async importTasks(backupTasks: BackupTask[]) {
 			tasksManager.clearTasks();
 			await getActiveRepositories().taskRepository.clear();
-			for (const bt of backupTasks) {
-				const task = tasksManager.addCreatedTask(bt.description);
-				task.replaceAllSteps(cloneStepsDeep(bt.steps as Step[]));
-				task.setStartTime(bt.startTime ? new Date(bt.startTime) : null);
-				task.setEndTime(bt.endTime ? new Date(bt.endTime) : null);
-				task.setDeadline(bt.deadline ? new Date(bt.deadline) : null);
-				task.setMinRequiredTime(bt.minRequiredTime);
-				task.setMaxRequiredTime(bt.maxRequiredTime);
-				task.setRecurrenceDuration(bt.recurrenceDuration);
-				task.setShouldNotSkipMissedOccurrences(bt.shouldNotSkipMissedOccurrences);
-				task.setCompletedOccurrenceIndex(bt.completedOccurrenceIndex);
-				task.setSkippedOccurrenceIndex(bt.skippedOccurrenceIndex);
-				task.setProgressOccurrenceIndex(bt.progressOccurrenceIndex);
-				task.setMandatory(bt.isMandatory);
-				task.setComplete(bt.isComplete);
-				task.setSkipped(bt.isSkipped);
-				task.setSkippedUntil(bt.skippedUntil ? new Date(bt.skippedUntil) : null);
-				task.setLastActionedStep(bt.lastActionedStep);
+			for (const backupTask of backupTasks) {
+				const task = tasksManager.addCreatedTask(backupTask.description);
+				task.replaceAllSteps(cloneStepsDeep(backupTask.steps as Step[]));
+				task.setStartTime(backupTask.startTime ? new Date(backupTask.startTime) : null);
+				task.setEndTime(backupTask.endTime ? new Date(backupTask.endTime) : null);
+				task.setDeadline(backupTask.deadline ? new Date(backupTask.deadline) : null);
+				task.setMinRequiredTime(backupTask.minRequiredTime);
+				task.setMaxRequiredTime(backupTask.maxRequiredTime);
+				task.setRecurrenceDuration(backupTask.recurrenceDuration);
+				task.setShouldNotSkipMissedOccurrences(backupTask.shouldNotSkipMissedOccurrences);
+				task.setCompletedOccurrenceIndex(backupTask.completedOccurrenceIndex);
+				task.setSkippedOccurrenceIndex(backupTask.skippedOccurrenceIndex);
+				task.setProgressOccurrenceIndex(backupTask.progressOccurrenceIndex);
+				task.setMandatory(backupTask.isMandatory);
+				task.setComplete(backupTask.isComplete);
+				task.setSkipped(backupTask.isSkipped);
+				task.setSkippedUntil(backupTask.skippedUntil ? new Date(backupTask.skippedUntil) : null);
+				task.setLastActionedStep(backupTask.lastActionedStep);
+				backupTask.tagIDs.forEach(tagID => task.addTagID(tagID));
 				task.refreshCurrentOccurrence(new Date());
 
 				await persistTask(task);

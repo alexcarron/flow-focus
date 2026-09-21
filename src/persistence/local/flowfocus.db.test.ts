@@ -207,3 +207,54 @@ describe('upgrading a repeat-interval database to recurrence durations', () => {
 		expect(row.isSynced).toBe(true);
 	});
 });
+
+class PreTagsFlowFocusDB extends Dexie {
+	constructor() {
+		super(DB_NAME);
+		this.version(10).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+		});
+	}
+}
+
+describe('upgrading a pre-tags database', () => {
+	it('gives every existing task an empty tagIDs list and creates the tags table', async () => {
+		const legacyDB = new PreTagsFlowFocusDB();
+		await legacyDB.open();
+		await legacyDB.table('tasks').add({
+			id: 'task-1',
+			description: 'Water the plants',
+			steps: [],
+			startTime: null,
+			endTime: null,
+			deadline: null,
+			minRequiredTime: null,
+			maxRequiredTime: null,
+			recurrenceDuration: null,
+			shouldNotSkipMissedOccurrences: false,
+			completedOccurrenceIndex: null,
+			skippedOccurrenceIndex: null,
+			progressOccurrenceIndex: null,
+			isMandatory: false,
+			isComplete: false,
+			isSkipped: false,
+			skippedUntil: null,
+			lastActionedStep: null,
+			updatedAt: '2026-09-01T00:00:00.000Z',
+			deletedAt: null,
+			isSynced: true,
+		});
+		legacyDB.close();
+
+		const upgradedDB = new FlowFocusDB();
+		await upgradedDB.open();
+		const row = await upgradedDB.tasks.get('task-1');
+		expect(row?.tagIDs).toEqual([]);
+		expect(await upgradedDB.tags.toArray()).toEqual([]);
+
+		upgradedDB.close();
+	});
+});
