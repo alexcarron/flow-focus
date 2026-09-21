@@ -64,6 +64,10 @@
 	border: 1px dashed var(--color-border-strong);
 }
 
+.rowHiddenDuringDrag {
+	display: none;
+}
+
 .checkbox {
 	flex-shrink: 0;
 	width: 1rem;

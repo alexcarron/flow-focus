@@ -1,4 +1,4 @@
-import StepStatus from '../../../model/task/StepStatus';
+import StepStatus from '../../../model/task/step/StepStatus';
 import QuickToDoChecklistItem from '../../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { AppSettings } from '../../../model/AppSettings';
 import { isBackupQuickToDoChecklistItem } from '../sharedGuards';

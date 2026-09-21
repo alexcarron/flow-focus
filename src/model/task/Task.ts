@@ -2,8 +2,10 @@ import { immerable } from 'immer';
 import TaskTimingOptions from "./TaskTimingOptions";
 import TasksManager from "../TasksManager";
 import DateRange from "../time-management/DateRange";
-import StepStatus from "./StepStatus";
-import Step from "./Step";
+import StepStatus from "./step/StepStatus";
+import Step from "./step/Step";
+import { createStep, cloneStepsDeep, getStepLeavesInOrder, rollUpStepStatuses, setSubtreeStatus, setSingleStepStatus, areAllStepLeavesCompleted, areAllStepLeavesActioned, uncompleteAllSteps } from "./step/stepTree";
+import { getAncestorIDs, getSubtreeIDsIncludingSelf, findNodeWithParent, mapNode, indentNode, unindentNode, canIndentNode, canUnindentNode, moveNodeAmongSiblings, reparentAndReorderNode, insertSiblingRelativeToNode, appendRootNode, deleteNode } from "../../utilities/tree/orderedTree";
 import TaskState from "./TaskState";
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError, SkipUntilDateInPastError } from "./TaskTimingError";
 import RecurrenceDuration, { addRecurrenceDurations, areRecurrenceDurationsEqual } from "./recurrence/RecurrenceDuration";
@@ -287,9 +289,7 @@ export default class Task {
 	}
 
 	protected resetProgress() {
-		this.steps.forEach((step) => {
-			step.status = StepStatus.UNCOMPLETE;
-		});
+		this.steps = uncompleteAllSteps(this.steps);
 		this.setSkipped(false);
 		this.setSkippedUntil(null);
 		this.setLastActionedStep(null);
@@ -307,16 +307,16 @@ export default class Task {
 		return this.getNextStep() !== null;
 	};
 
-	protected getNumSteps(): number {
-		return this.steps.length;
+	protected getLeafSteps(): Step[] {
+		return getStepLeavesInOrder(this.steps);
 	}
 
 	getFirstNotCompletedStep(): Step | null {
-		return this.steps.find(step => step.status !== StepStatus.COMPLETED) ?? null;
+		return this.getLeafSteps().find(step => step.status !== StepStatus.COMPLETED) ?? null;
 	}
 
 	getFirstUncompleteStep(): Step | null {
-		return this.steps.find(step => step.status === StepStatus.UNCOMPLETE) ?? null;
+		return this.getLeafSteps().find(step => step.status === StepStatus.UNCOMPLETE) ?? null;
 	}
 
 	getNextSkippedStep(): Step | null {
@@ -328,7 +328,7 @@ export default class Task {
 
 		let foundLastActionedStep = false;
 
-		const nextSkippedStep = this.steps.find((step) => {
+		const nextSkippedStep = this.getLeafSteps().find((step) => {
 			if (foundLastActionedStep) {
 				return step.status === StepStatus.SKIPPED && step.id !== lastActionedStepID;
 			}
@@ -363,28 +363,18 @@ export default class Task {
 		}
 	};
 
-	public getStepIndex(stepIDLookingFor: string): number {
-		return this.steps.findIndex(step => step.id === stepIDLookingFor);
+	protected getLeafStepIndex(stepID: string): number {
+		return this.getLeafSteps().findIndex(step => step.id === stepID);
 	}
 
-	getPreviousSteps(): Step[] {
+	getCurrentAndAncestorStepIDs(): Set<string> {
 		const nextStep = this.getNextStep();
-		if (nextStep === null) return [];
-
-		const nextStepIndex = this.getStepIndex(nextStep.id);
-		if (nextStepIndex === -1) return []
-
-		return this.steps.slice(0, nextStepIndex);
+		if (nextStep === null) return new Set();
+		return new Set([nextStep.id, ...getAncestorIDs(this.steps, nextStep.id)]);
 	}
 
-	getUpcomingSteps(): Step[] {
-		const nextStep = this.getNextStep();
-		if (nextStep === null) return [];
-
-		const nextStepIndex = this.getStepIndex(nextStep.id);
-		if (nextStepIndex === -1) return []
-
-		return this.steps.slice(nextStepIndex + 1);
+	getStepDepth(stepID: string): number {
+		return getAncestorIDs(this.steps, stepID).length;
 	}
 
 	removeDeadline(): void {
@@ -396,7 +386,7 @@ export default class Task {
 	}
 
 	isStepComplete(stepID: string) {
-		return this.steps.find(step => step.id === stepID)?.status === StepStatus.COMPLETED
+		return findNodeWithParent(this.steps, stepID)?.node.status === StepStatus.COMPLETED
 	}
 
 	hasTaskStarted(currentTime: Date): boolean {
@@ -414,30 +404,36 @@ export default class Task {
 		const nextStep = this.getNextStep();
 		if (nextStep === null) return;
 
-		nextStep.text = newStepText;
-		nextStep.status = StepStatus.UNCOMPLETE;
+		this.editStepText(nextStep.id, newStepText);
+		this.steps = setSingleStepStatus(this.steps, nextStep.id, StepStatus.UNCOMPLETE);
 	};
 
 	addStep(text: string): Step {
-		const newStep: Step = { id: crypto.randomUUID(), text, status: StepStatus.UNCOMPLETE };
-		this.steps.push(newStep);
+		const newStep = createStep(text);
+		this.steps = appendRootNode(this.steps, newStep);
 		return newStep;
 	};
 
-	insertStep(text: string, index: number): Step {
-		const newStep: Step = { id: crypto.randomUUID(), text, status: StepStatus.UNCOMPLETE };
-		this.steps.splice(index, 0, newStep);
+	createStepLeftOfStep(adjacentStepID: string): Step {
+		const newStep = createStep("");
+		if (findNodeWithParent(this.steps, adjacentStepID) === null) {
+			this.steps = appendRootNode(this.steps, newStep);
+		}
+		else {
+			this.steps = insertSiblingRelativeToNode(this.steps, adjacentStepID, 'before', newStep);
+		}
 		return newStep;
 	}
 
-	createStepLeftOfStep(adjacentStepID: string): Step {
-		const adjacentStepIndex = this.getStepIndex(adjacentStepID);
-		return this.insertStep("", adjacentStepIndex === -1 ? this.steps.length : adjacentStepIndex);
-	}
-
 	createStepRightOfStep(adjacentStepID: string): Step {
-		const adjacentStepIndex = this.getStepIndex(adjacentStepID);
-		return this.insertStep("", adjacentStepIndex === -1 ? this.steps.length : adjacentStepIndex + 1);
+		const newStep = createStep("");
+		if (findNodeWithParent(this.steps, adjacentStepID) === null) {
+			this.steps = appendRootNode(this.steps, newStep);
+		}
+		else {
+			this.steps = insertSiblingRelativeToNode(this.steps, adjacentStepID, 'after', newStep);
+		}
+		return newStep;
 	}
 
 	protected wasLastActionASkip(): boolean {
@@ -445,14 +441,13 @@ export default class Task {
 	}
 
 	protected areAllStepsCompleted(): boolean {
-		return this.steps.every((step) => step.status === StepStatus.COMPLETED);
+		return areAllStepLeavesCompleted(this.steps);
 	}
 
 	completeStep(stepID: string) {
-		const step = this.steps.find(step => step.id === stepID);
-		if (!step) return;
+		if (findNodeWithParent(this.steps, stepID) === null) return;
 
-		step.status = StepStatus.COMPLETED;
+		this.steps = setSubtreeStatus(this.steps, stepID, StepStatus.COMPLETED);
 
 		if (this.areAllStepsCompleted()) {
 			this.complete();
@@ -465,10 +460,9 @@ export default class Task {
 	}
 
 	uncompleteStep(stepID: string) {
-		const step = this.steps.find(step => step.id === stepID);
-		if (!step) return;
+		if (findNodeWithParent(this.steps, stepID) === null) return;
 
-		step.status = StepStatus.UNCOMPLETE;
+		this.steps = setSubtreeStatus(this.steps, stepID, StepStatus.UNCOMPLETE);
 
 		if (this.getIsComplete()) {
 			this.setComplete(false);
@@ -476,24 +470,30 @@ export default class Task {
 	}
 
 	completeStepAndPrecedingSteps(stepID: string) {
-		const stepIndex = this.getStepIndex(stepID);
-		if (stepIndex === -1) return;
+		const leaves = this.getLeafSteps();
+		const subtreeIDs = getSubtreeIDsIncludingSelf(this.steps, stepID);
+		let lastLeafIndexInSubtree = -1;
+		leaves.forEach((leaf, index) => {
+			if (subtreeIDs.has(leaf.id)) lastLeafIndexInSubtree = index;
+		});
+		if (lastLeafIndexInSubtree === -1) return;
 
-		this.steps.slice(0, stepIndex + 1).forEach(stepToComplete => {
-			if (stepToComplete.status !== StepStatus.COMPLETED) {
-				this.completeStep(stepToComplete.id);
-			}
+		leaves.slice(0, lastLeafIndexInSubtree + 1).forEach(leaf => {
+			if (leaf.status !== StepStatus.COMPLETED) this.completeStep(leaf.id);
 		});
 	}
 
 	uncompleteStepAndFollowingSteps(stepID: string) {
-		const stepIndex = this.getStepIndex(stepID);
-		if (stepIndex === -1) return;
+		const leaves = this.getLeafSteps();
+		const subtreeIDs = getSubtreeIDsIncludingSelf(this.steps, stepID);
+		let firstLeafIndexInSubtree = -1;
+		leaves.forEach((leaf, index) => {
+			if (firstLeafIndexInSubtree === -1 && subtreeIDs.has(leaf.id)) firstLeafIndexInSubtree = index;
+		});
+		if (firstLeafIndexInSubtree === -1) return;
 
-		this.steps.slice(stepIndex).forEach(stepToUncomplete => {
-			if (stepToUncomplete.status !== StepStatus.UNCOMPLETE) {
-				this.uncompleteStep(stepToUncomplete.id);
-			}
+		leaves.slice(firstLeafIndexInSubtree).forEach(leaf => {
+			if (leaf.status !== StepStatus.UNCOMPLETE) this.uncompleteStep(leaf.id);
 		});
 	}
 
@@ -510,26 +510,25 @@ export default class Task {
 	}
 
 	completeAllSteps() {
-		this.steps.forEach((step) => {
-			this.completeStep(step.id);
+		this.getLeafSteps().forEach((leaf) => {
+			this.completeStep(leaf.id);
 		});
 
 		this.complete();
 	}
 
 	protected areAllStepsActioned(): boolean {
-		return this.steps.every((step) => step.status !== StepStatus.UNCOMPLETE);
+		return areAllStepLeavesActioned(this.steps);
 	}
 
 	getLastSkippedStep(): Step | null {
-		return [...this.steps].reverse().find(step => step.status === StepStatus.SKIPPED) ?? null;
+		return [...this.getLeafSteps()].reverse().find(step => step.status === StepStatus.SKIPPED) ?? null;
 	}
 
 	skipStep(stepID: string) {
-		const step = this.steps.find(step => step.id === stepID);
-		if (!step) return;
+		if (findNodeWithParent(this.steps, stepID) === null) return;
 
-		step.status = StepStatus.SKIPPED;
+		this.steps = setSingleStepStatus(this.steps, stepID, StepStatus.SKIPPED);
 
 		if (
 			this.areAllStepsActioned() &&
@@ -557,37 +556,52 @@ export default class Task {
 	}
 
 	editStepsText(newStepTexts: string[]): void {
-		const remainingExistingSteps = [...this.steps];
-		const originalStatusesByPosition = this.steps.map(step => step.status);
+		const existingLeaves = this.getLeafSteps();
+		const remainingExistingLeaves = [...existingLeaves];
+		const statusByPosition = existingLeaves.map(leaf => leaf.status);
 
 		this.steps = newStepTexts.map((text, position) => {
-			const matchingExistingStepIndex = remainingExistingSteps.findIndex(step => step.text === text);
+			const matchingLeafIndex = remainingExistingLeaves.findIndex(leaf => leaf.text === text);
 
-			if (matchingExistingStepIndex !== -1) {
-				return remainingExistingSteps.splice(matchingExistingStepIndex, 1)[0];
+			if (matchingLeafIndex !== -1) {
+				const [reusedLeaf] = remainingExistingLeaves.splice(matchingLeafIndex, 1);
+				return { ...reusedLeaf, children: [] };
 			}
 
-			const positionalStatus = originalStatusesByPosition[position] ?? StepStatus.UNCOMPLETE;
-			return { id: crypto.randomUUID(), text, status: positionalStatus };
+			return { id: crypto.randomUUID(), text, status: statusByPosition[position] ?? StepStatus.UNCOMPLETE, children: [] };
 		});
 	}
 
 	editStepText(stepID: string, newText: string) {
-		const step = this.steps.find(step => step.id === stepID);
-		if (!step) return;
-
-		step.text = newText;
+		this.steps = mapNode(this.steps, stepID, step => ({ ...step, text: newText }));
 	}
 
-	reorderSteps(newStepIDOrder: string[]): void {
-		const stepIDToStep = new Map(this.steps.map(step => [step.id, step]));
-		this.steps = newStepIDOrder
-			.map(stepID => stepIDToStep.get(stepID))
-			.filter((step): step is Step => step !== undefined);
+	moveStepAmongSiblings(stepID: string, direction: 'up' | 'down'): void {
+		this.steps = moveNodeAmongSiblings(this.steps, stepID, direction);
+	}
+
+	reparentStep(stepID: string, newParentID: string | null, newIndexAmongSiblings: number): void {
+		this.steps = rollUpStepStatuses(reparentAndReorderNode(this.steps, stepID, newParentID, newIndexAmongSiblings));
+	}
+
+	canIndentStep(stepID: string): boolean {
+		return canIndentNode(this.steps, stepID);
+	}
+
+	indentStep(stepID: string): void {
+		this.steps = rollUpStepStatuses(indentNode(this.steps, stepID));
+	}
+
+	canUnindentStep(stepID: string): boolean {
+		return canUnindentNode(this.steps, stepID);
+	}
+
+	unindentStep(stepID: string): void {
+		this.steps = rollUpStepStatuses(unindentNode(this.steps, stepID));
 	}
 
 	deleteStep(stepID: string): void {
-		this.steps = this.steps.filter(step => step.id !== stepID);
+		this.steps = deleteNode(this.steps, stepID);
 	}
 
 	getTimeUntilDeadline(currentTime: Date): number {
@@ -726,13 +740,14 @@ export default class Task {
 			return 1;
 		}
 
-		if (!this.hasSteps()) {
+		const leaves = this.getLeafSteps();
+		if (leaves.length === 0) {
 			return 0;
 		}
 
-		const completedSteps = this.steps.filter((step) => step.status === StepStatus.COMPLETED).length;
+		const completedLeaves = leaves.filter((leaf) => leaf.status === StepStatus.COMPLETED).length;
 
-		return completedSteps / this.getNumSteps();
+		return completedLeaves / leaves.length;
 	}
 
 	getState(): TaskState {
@@ -752,7 +767,7 @@ export default class Task {
 			completedOccurrenceIndex: this.completedOccurrenceIndex,
 			skippedOccurrenceIndex: this.skippedOccurrenceIndex,
 			progressOccurrenceIndex: this.progressOccurrenceIndex,
-			steps: this.steps.map(step => ({ ...step })),
+			steps: cloneStepsDeep(this.steps),
 			lastActionedStep: this.lastActionedStep
 		};
 	}
@@ -776,7 +791,7 @@ export default class Task {
 		this.setCompletedOccurrenceIndex(taskState.completedOccurrenceIndex);
 		this.setSkippedOccurrenceIndex(taskState.skippedOccurrenceIndex);
 		this.setProgressOccurrenceIndex(taskState.progressOccurrenceIndex);
-		this.replaceAllSteps(taskState.steps.map(step => ({ ...step })));
+		this.replaceAllSteps(cloneStepsDeep(taskState.steps));
 		this.setLastActionedStep(taskState.lastActionedStep);
 		this.refreshCurrentOccurrence(currentTime);
 	}

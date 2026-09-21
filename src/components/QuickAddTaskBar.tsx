@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import { TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../model/time-management/Time';
 import useTypedQuickInputEntry from '../hooks/useTypedQuickInputEntry';
-import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';
+import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
+import Step from '../model/task/step/Step';
+import { createStep, pruneEmptySteps } from '../model/task/step/stepTree';
+import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../utilities/tree/orderedTree';
+import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TypedQuickInput from './inputs/TypedQuickInput';
 import EyeOffIcon from './svg-icons/EyeOffIcon';
 import styles from './QuickAddTaskBar.module.css';
@@ -38,24 +42,26 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
 	const isCreatingTaskRef = useRef(false);
-	const [manualSteps, setManualSteps] = useState<string[]>([]);
+	const [manualSteps, setManualSteps] = useState<Step[]>([]);
 	const [isStepsSectionVisible, setIsStepsSectionVisible] = useState(false);
-	const stepsInputRef = useRef<ArrayInputHandle>(null);
+	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
+	const isTouchDevice = useIsTouchDevice();
 
 	function handleToggleTokenEscape(field: TypedQuickInputField, matchedText: string, startIndex: number, endIndex: number) {
 		toggleTokenEscape(field, matchedText, startIndex, endIndex);
 		setDemotedRange({ start: startIndex, end: endIndex });
 	}
 
-	function handleShiftEnter() {
-		setIsStepsSectionVisible(true);
+	function addStepAndFocus() {
+		const newStep = createStep('');
+		setManualSteps(previous => appendRootNode(previous, newStep));
+		setTimeout(() => stepsEditorRef.current?.focusStep(newStep.id), 0);
 	}
 
-	useEffect(() => {
-		if (!isStepsSectionVisible) return;
-		stepsInputRef.current?.focusRow(manualSteps.length);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isStepsSectionVisible]);
+	function handleShiftEnter() {
+		setIsStepsSectionVisible(true);
+		addStepAndFocus();
+	}
 
 	async function handleCreate() {
 		if (isCreatingTaskRef.current) return;
@@ -69,11 +75,9 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			const timing: TaskTimingOptions = { ...DEFAULT_TIMING, ...parseResult.timing };
 			const task = await addTask(description, timing);
 
-			const combinedSteps = [
-				...(parseResult.steps ?? []),
-				...manualSteps.map(step => step.trim()).filter(step => step !== ''),
-			];
-			if (combinedSteps.length > 0) task.editStepsText(combinedSteps);
+			const typedStepNodes = (parseResult.steps ?? []).map(createStep);
+			const combinedSteps = [...typedStepNodes, ...pruneEmptySteps(manualSteps)];
+			if (combinedSteps.length > 0) task.replaceAllSteps(combinedSteps);
 
 			await useTasksStore.getState().persistChangedTasks([task]);
 			useTasksStore.getState().refreshTasks();
@@ -127,12 +131,32 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			{isStepsSectionVisible && (
 				<div className={styles.stepsSection}>
 					<span className={styles.stepsLabel}>Steps</span>
-					<ArrayInput
-						ref={stepsInputRef}
-						value={manualSteps}
-						onChange={setManualSteps}
-						placeholder="Add a step, or paste a list…"
-					/>
+					{manualSteps.length > 0 && (
+						<StepsTreeEditor
+							ref={stepsEditorRef}
+							steps={manualSteps}
+							isTouchDevice={isTouchDevice}
+							showCheckboxes={false}
+							hasOverallLeftMargin={false}
+							onSetStepText={(stepID, text) => setManualSteps(previous => mapNode(previous, stepID, step => ({ ...step, text })))}
+							onReparentStep={(stepID, newParentID, index) => setManualSteps(previous => reparentAndReorderNode(previous, stepID, newParentID, index))}
+							onIndentStep={stepID => setManualSteps(previous => indentNode(previous, stepID))}
+							onUnindentStep={stepID => setManualSteps(previous => unindentNode(previous, stepID))}
+							onMoveStepUp={stepID => setManualSteps(previous => moveNodeAmongSiblings(previous, stepID, 'up'))}
+							onMoveStepDown={stepID => setManualSteps(previous => moveNodeAmongSiblings(previous, stepID, 'down'))}
+							onInsertStepBefore={stepID => { const newStep = createStep(''); setManualSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'before', newStep)); return newStep.id; }}
+							onInsertStepAfter={stepID => { const newStep = createStep(''); setManualSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'after', newStep)); return newStep.id; }}
+							onRequestDeleteStep={stepID => setManualSteps(previous => deleteNode(previous, stepID))}
+							onBackspaceDeleteEmptyStep={stepID => { setManualSteps(previous => deleteNode(previous, stepID)); return true; }}
+						/>
+					)}
+					<button
+						type="button"
+						onClick={addStepAndFocus}
+						className={`button ${styles.addStepButton}`}
+					>
+						+ Add step
+					</button>
 				</div>
 			)}
 		</div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuickToDoChecklistStore } from '../stores/quickToDoChecklistStore';
-import { useQuickToDoChecklistReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useQuickToDoChecklistReorderDrag';
+import { useNestedListDrag, getDraggingRowOverlayStyle } from '../hooks/useNestedListDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
@@ -51,7 +51,7 @@ export default function QuickToDoChecklistSection() {
 	const isTouchDevice = useIsTouchDevice();
 
 	const {
-		itemsContainerRef: reorderDragContainerRef,
+		containerRef: reorderDragContainerRef,
 		getRowDragHandlers,
 		registerRowElement,
 		registerPlaceholderElement,
@@ -60,8 +60,12 @@ export default function QuickToDoChecklistSection() {
 		displayRows,
 		dragOffsetY,
 		draggingRowRect,
-	} = useQuickToDoChecklistReorderDrag({
+	} = useNestedListDrag({
 		items,
+		rowAttribute: 'data-quick-to-do-checklist-row',
+		dragExcludeSelector: '[data-quick-to-do-checklist-checkbox], button',
+		indentWidthPx: 24,
+		holdDelayMs: 200,
 		onReorder: reparentAndReorderItem,
 	});
 
@@ -98,13 +102,13 @@ export default function QuickToDoChecklistSection() {
 		}
 	}, [itemPendingFocusID, items]);
 
-	const allItemsTextKey = displayRows.map(row => row.kind === 'item' ? `${row.item.id}:${row.item.text}` : '').join(' ');
+	const allItemsTextKey = displayRows.map(row => row.kind === 'item' ? `${row.node.id}:${row.node.text}` : '').join(' ');
 	useEffect(() => {
 		displayRows.forEach(row => {
 			if (row.kind !== 'item') return;
-			const textElement = textElementsByItemIDRef.current.get(row.item.id);
-			if (textElement && textElement.textContent !== row.item.text) {
-				textElement.textContent = row.item.text;
+			const textElement = textElementsByItemIDRef.current.get(row.node.id);
+			if (textElement && textElement.textContent !== row.node.text) {
+				textElement.textContent = row.node.text;
 			}
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,8 +154,9 @@ export default function QuickToDoChecklistSection() {
 
 	function onBackspaceDeleteItem(itemID: string) {
 		const itemRows = displayRows.filter(row => row.kind === 'item');
-		const rowIndex = itemRows.findIndex(row => row.item.id === itemID);
-		const previousItemID = rowIndex > 0 ? itemRows[rowIndex - 1].item.id : null;
+		const rowIndex = itemRows.findIndex(row => row.kind === 'item' && row.node.id === itemID);
+		const previousRow = rowIndex > 0 ? itemRows[rowIndex - 1] : null;
+		const previousItemID = previousRow !== null && previousRow.kind === 'item' ? previousRow.node.id : null;
 		deleteItem(itemID);
 		if (previousItemID) setItemPendingFocusID(previousItemID);
 	}
@@ -184,12 +189,13 @@ export default function QuickToDoChecklistSection() {
 						);
 					}
 
-					const item = row.item;
+					const item = row.node;
 					return (
 						<QuickToDoChecklistItemRow
 							key={item.id}
 							item={item}
 							depth={row.depth}
+							isHiddenDuringDrag={row.isHiddenDuringDrag}
 							isTouchDevice={isTouchDevice}
 							rowDragHandlers={getRowDragHandlers(item.id)}
 							checkboxDragHandlers={getCheckboxDragHandlers(item.id)}

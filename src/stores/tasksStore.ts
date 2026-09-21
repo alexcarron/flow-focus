@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { Patch, produceWithPatches, applyPatches, enablePatches, setAutoFreeze } from 'immer';
 import Task from '../model/task/Task';
+import Step from '../model/task/step/Step';
+import { cloneStepsDeep } from '../model/task/step/stepTree';
 import TaskState from '../model/task/TaskState';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import TasksManager from '../model/TasksManager';
@@ -51,7 +53,9 @@ interface TasksActions {
 	setStepComplete: (task: Task, stepID: string, isComplete: boolean) => void;
 	moveStepUp: (task: Task, stepID: string) => void;
 	moveStepDown: (task: Task, stepID: string) => void;
-	reorderSteps: (task: Task, newStepIDOrder: string[]) => void;
+	reparentStep: (task: Task, stepID: string, newParentID: string | null, newIndexAmongSiblings: number) => void;
+	indentStep: (task: Task, stepID: string) => void;
+	unindentStep: (task: Task, stepID: string) => void;
 	insertStepBeforeStep: (task: Task, stepID: string) => string;
 	insertStepAfterStep: (task: Task, stepID: string) => string;
 	addFirstStep: (task: Task) => string;
@@ -242,23 +246,23 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		moveStepUp(task: Task, stepID: string) {
-			const stepIDOrder = task.getSteps().map(step => step.id);
-			const index = stepIDOrder.indexOf(stepID);
-			if (index <= 0) return;
-			[stepIDOrder[index - 1], stepIDOrder[index]] = [stepIDOrder[index], stepIDOrder[index - 1]];
-			get().executeWithPatches(() => task.reorderSteps(stepIDOrder), [task]);
+			get().executeWithPatches(() => task.moveStepAmongSiblings(stepID, 'up'), [task]);
 		},
 
 		moveStepDown(task: Task, stepID: string) {
-			const stepIDOrder = task.getSteps().map(step => step.id);
-			const index = stepIDOrder.indexOf(stepID);
-			if (index === -1 || index >= stepIDOrder.length - 1) return;
-			[stepIDOrder[index], stepIDOrder[index + 1]] = [stepIDOrder[index + 1], stepIDOrder[index]];
-			get().executeWithPatches(() => task.reorderSteps(stepIDOrder), [task]);
+			get().executeWithPatches(() => task.moveStepAmongSiblings(stepID, 'down'), [task]);
 		},
 
-		reorderSteps(task: Task, newStepIDOrder: string[]) {
-			get().executeWithPatches(() => task.reorderSteps(newStepIDOrder), [task]);
+		reparentStep(task: Task, stepID: string, newParentID: string | null, newIndexAmongSiblings: number) {
+			get().executeWithPatches(() => task.reparentStep(stepID, newParentID, newIndexAmongSiblings), [task]);
+		},
+
+		indentStep(task: Task, stepID: string) {
+			get().executeWithPatches(() => task.indentStep(stepID), [task]);
+		},
+
+		unindentStep(task: Task, stepID: string) {
+			get().executeWithPatches(() => task.unindentStep(stepID), [task]);
 		},
 
 		insertStepBeforeStep(task: Task, stepID: string) {
@@ -326,7 +330,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			await getActiveRepositories().taskRepository.clear();
 			for (const bt of backupTasks) {
 				const task = tasksManager.addCreatedTask(bt.description);
-				task.replaceAllSteps(bt.steps.map(step => ({ ...step })));
+				task.replaceAllSteps(cloneStepsDeep(bt.steps as Step[]));
 				task.setStartTime(bt.startTime ? new Date(bt.startTime) : null);
 				task.setEndTime(bt.endTime ? new Date(bt.endTime) : null);
 				task.setDeadline(bt.deadline ? new Date(bt.deadline) : null);

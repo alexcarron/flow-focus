@@ -6,7 +6,7 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV7';
+import { BACKUP_FORMAT } from './versions/backupV8';
 import { BACKUP_FORMAT_V6 } from './versions/backupV6';
 import { BACKUP_FORMAT_V1 } from './versions/backupV1';
 import { getActiveRepositories, setActiveRepositories } from '../../persistence/activeRepositories';

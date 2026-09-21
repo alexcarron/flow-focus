@@ -158,23 +158,27 @@ function getRowID(task: Task): string {
 
 export default function TasksManagerPage() {
 	const tasks = useTasksStore(selectTasksInTaskManagerOrder);
-	const setSteps = useTasksStore(s => s.setSteps);
 	const setDescription = useTasksStore(s => s.setDescription);
+	const setStepText = useTasksStore(s => s.setStepText);
 	const setStepComplete = useTasksStore(s => s.setStepComplete);
 	const completeStepAndPrecedingSteps = useTasksStore(s => s.completeStepAndPrecedingSteps);
 	const uncompleteStepAndFollowingSteps = useTasksStore(s => s.uncompleteStepAndFollowingSteps);
 	const moveStepUp = useTasksStore(s => s.moveStepUp);
 	const moveStepDown = useTasksStore(s => s.moveStepDown);
-	const reorderSteps = useTasksStore(s => s.reorderSteps);
+	const reparentStep = useTasksStore(s => s.reparentStep);
+	const indentStep = useTasksStore(s => s.indentStep);
+	const unindentStep = useTasksStore(s => s.unindentStep);
 	const insertStepBeforeStep = useTasksStore(s => s.insertStepBeforeStep);
 	const insertStepAfterStep = useTasksStore(s => s.insertStepAfterStep);
+	const addFirstStep = useTasksStore(s => s.addFirstStep);
+	const deleteStep = useTasksStore(s => s.deleteStep);
 	const setComplete = useTasksStore(s => s.setComplete);
 	const setMandatory = useTasksStore(s => s.setMandatory);
 	const cancelSkip = useTasksStore(s => s.cancelSkip);
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
-	const store: TaskManagerRowActions = { setDescription, setSteps, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reorderSteps, insertStepBeforeStep, insertStepAfterStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks };
+	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks };
 
 	const [filter, setFilter] = useState<Filter>(Filter.All);
 	const [searchText, setSearchText] = useState('');

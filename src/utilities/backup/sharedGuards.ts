@@ -1,4 +1,4 @@
-import StepStatus from '../../model/task/StepStatus';
+import StepStatus from '../../model/task/step/StepStatus';
 import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
 
 export function isStepStatus(value: unknown): value is StepStatus {

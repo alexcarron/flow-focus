@@ -5,7 +5,11 @@ import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import { TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../../model/time-management/Time';
 import useTypedQuickInputEntry from '../../hooks/useTypedQuickInputEntry';
-import ArrayInput, { ArrayInputHandle } from '../inputs/ArrayInput';
+import Step from '../../model/task/step/Step';
+import { createStep, pruneEmptySteps } from '../../model/task/step/stepTree';
+import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../../utilities/tree/orderedTree';
+import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
+import StepsTreeEditor, { StepsTreeEditorHandle } from '../StepsTreeEditor';
 import CheckboxInput from '../inputs/CheckboxInput';
 import DatetimeInput from '../inputs/DatetimeInput';
 import TypedQuickInput from '../inputs/TypedQuickInput';
@@ -52,14 +56,15 @@ export default function TaskCreatorPage() {
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
 	});
-	const [steps, setSteps] = useState<string[]>([]);
+	const [steps, setSteps] = useState<Step[]>([]);
 	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmationKey, setConfirmationKey] = useState(0);
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
-	const stepsInputRef = useRef<ArrayInputHandle>(null);
+	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
+	const isTouchDevice = useIsTouchDevice();
 
 	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
 
@@ -92,9 +97,15 @@ export default function TaskCreatorPage() {
 		setDemotedRange({ start: startIndex, end: endIndex });
 	}
 
+	function addStepAndFocus() {
+		const newStep = createStep('');
+		setSteps(previous => appendRootNode(previous, newStep));
+		setTimeout(() => stepsEditorRef.current?.focusStep(newStep.id), 0);
+	}
+
 	function handleShiftEnter() {
 		setShowMoreOptions(true);
-		setTimeout(() => stepsInputRef.current?.focusRow(steps.length), 0);
+		addStepAndFocus();
 	}
 
 	function handleTimingChange(nextTiming: TaskTimingOptions) {
@@ -133,10 +144,8 @@ export default function TaskCreatorPage() {
 		isCreatingTaskRef.current = true;
 		setIsCreatingTask(true);
 		try {
-			const cleanedSteps = [
-				...(parseResult.steps ?? []),
-				...steps.map(step => step.trim()).filter(step => step !== ''),
-			];
+			const typedStepNodes = (parseResult.steps ?? []).map(createStep);
+			const combinedSteps = [...typedStepNodes, ...pruneEmptySteps(steps)];
 
 			let task;
 			try {
@@ -151,7 +160,7 @@ export default function TaskCreatorPage() {
 				}
 				return;
 			}
-			task.editStepsText(cleanedSteps);
+			task.replaceAllSteps(combinedSteps);
 
 			await useTasksStore.getState().persistChangedTasks([task]);
 			useTasksStore.getState().refreshTasks();
@@ -220,12 +229,32 @@ export default function TaskCreatorPage() {
 				<>
 					<div className="field-group">
 						<label className="field-label">Steps</label>
-						<ArrayInput
-							ref={stepsInputRef}
-							value={steps}
-							onChange={setSteps}
-							placeholder="Type a step, or paste a checklist…"
-						/>
+						{steps.length > 0 && (
+							<StepsTreeEditor
+								ref={stepsEditorRef}
+								steps={steps}
+								isTouchDevice={isTouchDevice}
+								showCheckboxes={false}
+								hasOverallLeftMargin={false}
+								onSetStepText={(stepID, text) => setSteps(previous => mapNode(previous, stepID, step => ({ ...step, text })))}
+								onReparentStep={(stepID, newParentID, index) => setSteps(previous => reparentAndReorderNode(previous, stepID, newParentID, index))}
+								onIndentStep={stepID => setSteps(previous => indentNode(previous, stepID))}
+								onUnindentStep={stepID => setSteps(previous => unindentNode(previous, stepID))}
+								onMoveStepUp={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'up'))}
+								onMoveStepDown={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'down'))}
+								onInsertStepBefore={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'before', newStep)); return newStep.id; }}
+								onInsertStepAfter={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'after', newStep)); return newStep.id; }}
+								onRequestDeleteStep={stepID => setSteps(previous => deleteNode(previous, stepID))}
+								onBackspaceDeleteEmptyStep={stepID => { setSteps(previous => deleteNode(previous, stepID)); return true; }}
+							/>
+						)}
+						<button
+							type="button"
+							onClick={addStepAndFocus}
+							className={`button ${styles.addStepButton}`}
+						>
+							+ Add step
+						</button>
 					</div>
 
 					<div className="field-group">

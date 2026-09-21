@@ -55,8 +55,23 @@
 	cursor: grabbing;
 }
 
+.stepRowNoOverallLeftMargin {
+	border-left: none;
+}
+
 .stepRowCurrent {
+	position: relative;
 	border-left-color: var(--color-accent-border);
+}
+
+.stepRowCurrent:has(+ .stepRowCurrent)::after {
+	content: '';
+	position: absolute;
+	left: calc(-1 * var(--border-width-primary-accent-emphasis));
+	bottom: calc(-1 * var(--space-extra-small));
+	width: var(--border-width-primary-accent-emphasis);
+	height: var(--space-extra-small);
+	background-color: var(--color-accent-border);
 }
 
 .stepRowPlaceholder {
@@ -68,6 +83,10 @@
 
 .stepRowPlaceholder > * {
 	visibility: hidden;
+}
+
+.stepRowHiddenDuringDrag {
+	display: none;
 }
 
 .stepRowElevated {
@@ -109,6 +128,14 @@
 	margin-top: 0;
 }
 
+.previousStep,
+.currentStep,
+.upcomingStep {
+	display: inline-block;
+	min-height: 1.5em;
+	min-width: 1px;
+}
+
 .previousStep {
 	font-size: var(--font-size-base);
 	color: var(--color-text-faint);
@@ -130,6 +157,15 @@
 	color: var(--color-text-subtle);
 	outline: none;
 	cursor: text;
+}
+
+.previousStep:empty::before,
+.currentStep:empty::before,
+.upcomingStep:empty::before {
+	content: attr(data-placeholder);
+	color: var(--color-text-subtle);
+	font-style: italic;
+	text-decoration: none;
 }
 
 .meta {

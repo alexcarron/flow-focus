@@ -32,6 +32,11 @@
 	font-size: var(--font-size-extra-small);
 }
 
+.addStepButton {
+	align-self: flex-start;
+	margin-top: var(--space-extra-small);
+}
+
 .bar > :first-child {
 	flex: 1;
 	min-width: 0;

@@ -37,3 +37,8 @@
 	margin-top: var(--space-small);
 	opacity: 0.7;
 }
+
+.addStepButton {
+	align-self: flex-start;
+	margin-top: var(--space-extra-small);
+}

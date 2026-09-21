@@ -8,6 +8,7 @@ import styles from './QuickToDoChecklistSection.module.css';
 interface Props {
 	item: QuickToDoChecklistItem;
 	depth: number;
+	isHiddenDuringDrag: boolean;
 	isTouchDevice: boolean;
 	rowDragHandlers: { onMouseDown: (event: React.MouseEvent) => void };
 	checkboxDragHandlers: { onMouseDown: (event: React.MouseEvent) => void; onMouseEnter: (event: React.MouseEvent) => void };
@@ -30,6 +31,7 @@ interface Props {
 export default function QuickToDoChecklistItemRow({
 	item,
 	depth,
+	isHiddenDuringDrag,
 	isTouchDevice,
 	rowDragHandlers,
 	checkboxDragHandlers,
@@ -54,7 +56,7 @@ export default function QuickToDoChecklistItemRow({
 		<div
 			ref={registerRowElement}
 			data-quick-to-do-checklist-row={item.id}
-			className={styles.row}
+			className={isHiddenDuringDrag ? `${styles.row} ${styles.rowHiddenDuringDrag}` : styles.row}
 			style={{ paddingLeft: `calc(${depth} * var(--space-large))` }}
 			onMouseDown={rowDragHandlers.onMouseDown}
 			onContextMenu={event => {

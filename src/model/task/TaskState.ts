@@ -1,5 +1,5 @@
-import StepStatus from "./StepStatus";
-import Step from "./Step";
+import StepStatus from "./step/StepStatus";
+import Step from "./step/Step";
 import TaskTimingOptions from "./TaskTimingOptions";
 
 type TaskState = {

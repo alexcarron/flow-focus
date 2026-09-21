@@ -79,7 +79,7 @@ describe('upgrading a pre-identity database', () => {
 		expect(typeof row.id).toBe('string');
 		expect(row.id.length).toBeGreaterThan(0);
 		expect(row.description).toBe('Water the plants');
-		expect(row.steps).toEqual([{ id: 'step-1', text: 'Fill watering can', status: 'Uncomplete' }]);
+		expect(row.steps).toEqual([{ id: 'step-1', text: 'Fill watering can', status: 'Uncomplete', children: [] }]);
 		expect(row.deletedAt).toBeNull();
 		expect(row.isSynced).toBe(false);
 		expect(typeof row.updatedAt).toBe('string');

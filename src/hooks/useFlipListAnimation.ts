@@ -4,14 +4,15 @@ export const ROW_REORDER_TRANSITION_MS = 150;
 
 interface UseFlipListAnimationOptions {
 	displayItemIDs: string[];
-	excludeItemID: string | null;
+	excludeItemIDs: Set<string>;
 	transitionMs?: number;
 }
 
-export function useFlipListAnimation({ displayItemIDs, excludeItemID, transitionMs = ROW_REORDER_TRANSITION_MS }: UseFlipListAnimationOptions) {
+export function useFlipListAnimation({ displayItemIDs, excludeItemIDs, transitionMs = ROW_REORDER_TRANSITION_MS }: UseFlipListAnimationOptions) {
 	const rowElementsByIDRef = useRef(new Map<string, HTMLElement>());
 	const previousRowTopByIDRef = useRef(new Map<string, number>());
 	const displayItemIDsKey = displayItemIDs.join(' ');
+	const excludeItemIDsKey = [...excludeItemIDs].join(' ');
 
 	useLayoutEffect(() => {
 		const previousRowTopByID = previousRowTopByIDRef.current;
@@ -26,12 +27,12 @@ export function useFlipListAnimation({ displayItemIDs, excludeItemID, transition
 		}
 
 		for (const id of displayItemIDs) {
+			if (excludeItemIDs.has(id)) continue;
 			const rowElement = rowElementsByIDRef.current.get(id);
 			if (!rowElement) continue;
 			const currentTop = rowElement.getBoundingClientRect().top;
 			nextRowTopByID.set(id, currentTop);
 
-			if (id === excludeItemID) continue;
 			const previousTop = previousRowTopByID.get(id);
 			if (previousTop === undefined || previousTop === currentTop) continue;
 
@@ -47,7 +48,7 @@ export function useFlipListAnimation({ displayItemIDs, excludeItemID, transition
 
 		previousRowTopByIDRef.current = nextRowTopByID;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayItemIDsKey, excludeItemID]);
+	}, [displayItemIDsKey, excludeItemIDsKey]);
 
 	function registerRowElement(id: string, element: HTMLElement | null) {
 		if (element) rowElementsByIDRef.current.set(id, element);

@@ -1,6 +1,6 @@
 import TasksManager from "../TasksManager";
-import StepStatus from "./StepStatus";
-import Step from "./Step";
+import StepStatus from "./step/StepStatus";
+import Step from "./step/Step";
 import Task from "./Task";
 import RecurrenceDuration from "./recurrence/RecurrenceDuration";
 import RecurrenceUnit from "./recurrence/RecurrenceUnit";
@@ -934,13 +934,13 @@ describe('Task', () => {
 		});
 	});
 
-	describe('reorderSteps', () => {
-		it('should reorder steps by id while preserving their status', () => {
+	describe('reparentStep', () => {
+		it('should reorder steps while preserving their status', () => {
 			const step1 = task.addStep('Step 1');
 			const step2 = task.addStep('Step 2');
 			task.completeStep(step1.id);
 
-			task.reorderSteps([step2.id, step1.id]);
+			task.reparentStep(step2.id, null, 0);
 
 			expect(getStepTexts(task)).toEqual(['Step 2', 'Step 1']);
 			expect(task.isStepComplete(step1.id)).toBe(true);
@@ -1072,9 +1072,9 @@ describe('Task', () => {
 		expect(state.recurrenceDuration).toEqual(oneHour);
 		expect(state.progressOccurrenceIndex).toBe(0);
 		expect(state.steps).toEqual([
-			{ id: step1.id, text: 'Step 1', status: StepStatus.COMPLETED },
-			{ id: step2.id, text: 'Step 2', status: StepStatus.SKIPPED },
-			{ id: findStepByText(task, 'Step 3').id, text: 'Step 3', status: StepStatus.UNCOMPLETE },
+			{ id: step1.id, text: 'Step 1', status: StepStatus.COMPLETED, children: [] },
+			{ id: step2.id, text: 'Step 2', status: StepStatus.SKIPPED, children: [] },
+			{ id: findStepByText(task, 'Step 3').id, text: 'Step 3', status: StepStatus.UNCOMPLETE, children: [] },
 		]);
 		expect(state.lastActionedStep).toEqual({
 			stepID: step2.id,

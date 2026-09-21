@@ -1,4 +1,4 @@
-import StepStatus from '../../../model/task/StepStatus';
+import StepStatus from '../../../model/task/step/StepStatus';
 import { AppSettings } from '../../../model/AppSettings';
 import { isStepStatus } from '../sharedGuards';
 

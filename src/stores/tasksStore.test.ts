@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import RecurrenceUnit from '../model/task/recurrence/RecurrenceUnit';
 import { db } from '../persistence/local/flowfocus.db';
-import StepStatus from '../model/task/StepStatus';
+import StepStatus from '../model/task/step/StepStatus';
 import { useTasksStore, tasksManager } from './tasksStore';
 
 beforeEach(async () => {

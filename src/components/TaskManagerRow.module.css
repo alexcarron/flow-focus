@@ -79,6 +79,22 @@
 	padding: var(--space-small) var(--space-medium) 0 0;
 }
 
+.addStepButton {
+	margin-top: var(--space-extra-small);
+	padding: var(--space-extra-extra-small) var(--space-extra-small);
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-muted);
+	background: none;
+	border: none;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.addStepButton:hover {
+		color: var(--color-text);
+	}
+}
+
 .stepsArrayInput {
 	gap: var(--space-extra-extra-small);
 }

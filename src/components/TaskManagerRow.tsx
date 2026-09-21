@@ -4,24 +4,17 @@ import Duration from '../model/time-management/Duration';
 import { formatRecurrenceDuration } from '../model/task/recurrence/RecurrenceDuration';
 import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
 import { formatDate } from '../utilities/dateFormatting';
-import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
-import { useStepReorderDrag, getDraggingRowOverlayStyle } from '../hooks/useStepReorderDrag';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
-import { mergeRefs } from '../utilities/mergeRefs';
-import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift, getShortcutKeyParts } from '../utilities/shortcuts';
+import { SHORTCUTS, getShortcutKeyParts } from '../utilities/shortcuts';
+import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
-import ArrayInput, { ArrayInputHandle } from './inputs/ArrayInput';
 import SelectionCheckbox from './SelectionCheckbox';
-import StepCheckbox from './StepCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
-import ContextMenuButton from './context-menu/ContextMenuButton';
 import CloseIcon from './svg-icons/CloseIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import MandatoryIcon from './svg-icons/MandatoryIcon';
 import TimingIcon from './svg-icons/TimingIcon';
-import checkboxInputStyles from './inputs/CheckboxInput.module.css';
-import arrayInputStyles from './inputs/ArrayInput.module.css';
 import styles from './TaskManagerRow.module.css';
 
 export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'timeAvailable' | 'deadline';
@@ -36,15 +29,19 @@ function getDurationRange(minMs: number | null, maxMs: number | null): string {
 
 export interface TaskManagerRowActions {
 	setDescription: (task: Task, description: string) => void;
-	setSteps: (task: Task, stepTexts: string[]) => void;
+	setStepText: (task: Task, stepID: string, newText: string) => void;
 	setStepComplete: (task: Task, stepID: string, isComplete: boolean) => void;
 	completeStepAndPrecedingSteps: (task: Task, stepID: string) => void;
 	uncompleteStepAndFollowingSteps: (task: Task, stepID: string) => void;
 	moveStepUp: (task: Task, stepID: string) => void;
 	moveStepDown: (task: Task, stepID: string) => void;
-	reorderSteps: (task: Task, newStepIDOrder: string[]) => void;
+	reparentStep: (task: Task, stepID: string, newParentID: string | null, newIndexAmongSiblings: number) => void;
+	indentStep: (task: Task, stepID: string) => void;
+	unindentStep: (task: Task, stepID: string) => void;
 	insertStepBeforeStep: (task: Task, stepID: string) => string;
 	insertStepAfterStep: (task: Task, stepID: string) => string;
+	addFirstStep: (task: Task) => string;
+	deleteStep: (task: Task, stepID: string) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setMandatory: (task: Task, isMandatory: boolean) => void;
 	cancelSkip: (task: Task) => void;
@@ -81,62 +78,12 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 	const skippedUntil = task.getSkippedUntil();
 	const isSkipActive = skippedUntil !== null && skippedUntil > now;
 
-	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; index: number; x: number; y: number } | null>(null);
-	const arrayInputRef = useRef<ArrayInputHandle>(null);
+	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; x: number; y: number } | null>(null);
+	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
 	const isTouchDevice = useIsTouchDevice();
 
-	const { stepsContainerRef: checkboxDragContainerRef, getCheckboxDragHandlers } = useStepCheckboxDrag<HTMLTableCellElement>({
-		isStepChecked: stepID => task.isStepComplete(stepID),
-		setStepChecked: (stepID, isChecked) => store.setStepComplete(task, stepID, isChecked),
-		onDoubleTapCheckUpToHere: (stepID, isChecked) => {
-			if (isChecked) store.completeStepAndPrecedingSteps(task, stepID);
-			else store.uncompleteStepAndFollowingSteps(task, stepID);
-		},
-	});
-
-	const { stepsContainerRef: reorderDragContainerRef, getRowDragHandlers, registerRowElement, draggingStepID, displaySteps, dragOffsetY, draggingRowRect } = useStepReorderDrag<HTMLTableCellElement>({
-		steps,
-		onReorder: newStepIDOrder => store.reorderSteps(task, newStepIDOrder),
-	});
-
-	function onStepToggle(stepID: string, isChecked: boolean, isShiftClick: boolean) {
-		if (isShiftClick) {
-			if (isChecked) store.completeStepAndPrecedingSteps(task, stepID);
-			else store.uncompleteStepAndFollowingSteps(task, stepID);
-		}
-		else {
-			store.setStepComplete(task, stepID, isChecked);
-		}
-	}
-
-	function onStepInsertKeyDown(index: number, e: React.KeyboardEvent) {
-		const step = displaySteps[index];
-		if (!step) return;
-
-		if (matchesShortcutIgnoringShift(e, SHORTCUTS.stepInsert.insertBefore)) {
-			e.preventDefault();
-			store.insertStepBeforeStep(task, step.id);
-			arrayInputRef.current?.focusRow(index);
-		}
-	}
-
-	function onStepReorderKeyDown(index: number, e: React.KeyboardEvent) {
-		const step = displaySteps[index];
-		if (!step) return;
-
-		if (matchesShortcut(e, SHORTCUTS.stepReorder.moveUp)) {
-			if (index === 0) return;
-			e.preventDefault();
-			const cursorPosition = (e.target as HTMLInputElement).selectionStart ?? undefined;
-			store.moveStepUp(task, step.id);
-			arrayInputRef.current?.focusRowAtPosition(index - 1, cursorPosition);
-		} else if (matchesShortcut(e, SHORTCUTS.stepReorder.moveDown)) {
-			if (index === displaySteps.length - 1) return;
-			e.preventDefault();
-			const cursorPosition = (e.target as HTMLInputElement).selectionStart ?? undefined;
-			store.moveStepDown(task, step.id);
-			arrayInputRef.current?.focusRowAtPosition(index + 1, cursorPosition);
-		}
+	function addStepAndFocus(newStepID: string) {
+		stepsEditorRef.current?.focusStep(newStepID);
 	}
 
 	return (
@@ -188,91 +135,51 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 				)}
 			</td>
 
-			<td ref={mergeRefs(checkboxDragContainerRef, reorderDragContainerRef)} data-mobile-label="Steps" className={isCompactRow ? `${styles.stepsCell} ${styles.stepsCellCompact}` : styles.stepsCell}>
-				<ArrayInput
-					ref={arrayInputRef}
-					value={displaySteps.map(step => step.text)}
-					onChange={newStepTexts => store.setSteps(task, newStepTexts)}
-					onItemKeyDown={(index, _, e) => {
-						onStepInsertKeyDown(index, e);
-						onStepReorderKeyDown(index, e);
-					}}
-					getRowProps={index => {
-						const step = displaySteps[index];
-						return {
-							'data-step-row': step.id,
-							ref: rowElement => registerRowElement(step.id, rowElement),
-							className: step.id === draggingStepID ? styles.stepRowPlaceholder : undefined,
-							onMouseDown: getRowDragHandlers(step.id).onMouseDown,
-						};
-					}}
-					onRowContextMenu={(index, _, event) => {
-						const step = displaySteps[index];
-						event.preventDefault();
-						setStepContextMenu({ stepID: step.id, index, x: event.clientX, y: event.clientY });
-					}}
-					renderRowPrefix={index => {
-						const step = displaySteps[index];
-						const isCompleted = task.isStepComplete(step.id);
-						return (
-							<StepCheckbox
-								stepID={step.id}
-								isChecked={isCompleted}
-								onToggle={onStepToggle}
-								dragHandlers={getCheckboxDragHandlers(step.id)}
-								className={isCompleted ? `${checkboxInputStyles.box} ${checkboxInputStyles.boxChecked}` : checkboxInputStyles.box}
-								checkmarkClassName={checkboxInputStyles.checkmark}
-							/>
-						);
-					}}
-					renderRowSuffix={index => {
-						if (!isTouchDevice) return null;
-						const step = displaySteps[index];
-						return (
-							<ContextMenuButton
-								label="Step options"
-								onOpen={(x, y) => setStepContextMenu({ stepID: step.id, index, x, y })}
-							/>
-						);
-					}}
-					placeholder="Add a step…"
-					className={styles.stepsArrayInput}
-				/>
-				{draggingStepID !== null && draggingRowRect !== null && (() => {
-					const draggingStep = displaySteps.find(step => step.id === draggingStepID);
-					if (!draggingStep) return null;
-					const isCompleted = task.isStepComplete(draggingStep.id);
-					return (
-						<div
-							className={`${arrayInputStyles.row} ${styles.stepRowElevated}`}
-							style={getDraggingRowOverlayStyle(draggingRowRect, dragOffsetY)}
-						>
-							<StepCheckbox
-								stepID={draggingStep.id}
-								isChecked={isCompleted}
-								onToggle={() => {}}
-								dragHandlers={{ onMouseDown: () => {}, onMouseEnter: () => {} }}
-								className={isCompleted ? `${checkboxInputStyles.box} ${checkboxInputStyles.boxChecked}` : checkboxInputStyles.box}
-								checkmarkClassName={checkboxInputStyles.checkmark}
-							/>
-							<input
-								type="text"
-								readOnly
-								tabIndex={-1}
-								value={draggingStep.text}
-								className={`field ${arrayInputStyles.input}`}
-							/>
-						</div>
-					);
-				})()}
+			<td data-mobile-label="Steps" className={isCompactRow ? `${styles.stepsCell} ${styles.stepsCellCompact}` : styles.stepsCell}>
+				{steps.length > 0 && (
+					<StepsTreeEditor
+						ref={stepsEditorRef}
+						steps={steps}
+						isTouchDevice={isTouchDevice}
+						showCheckboxes={true}
+						hasOverallLeftMargin={false}
+						getIsStepCompleted={stepID => task.isStepComplete(stepID)}
+						onSetStepCompleted={(stepID, isCompleted) => store.setStepComplete(task, stepID, isCompleted)}
+						onCheckUpToHere={(stepID, isChecked) => {
+							if (isChecked) store.completeStepAndPrecedingSteps(task, stepID);
+							else store.uncompleteStepAndFollowingSteps(task, stepID);
+						}}
+						onSetStepText={(stepID, text) => store.setStepText(task, stepID, text)}
+						onReparentStep={(stepID, newParentID, index) => store.reparentStep(task, stepID, newParentID, index)}
+						onIndentStep={stepID => store.indentStep(task, stepID)}
+						onUnindentStep={stepID => store.unindentStep(task, stepID)}
+						onMoveStepUp={stepID => store.moveStepUp(task, stepID)}
+						onMoveStepDown={stepID => store.moveStepDown(task, stepID)}
+						onInsertStepBefore={stepID => store.insertStepBeforeStep(task, stepID)}
+						onInsertStepAfter={stepID => store.insertStepAfterStep(task, stepID)}
+						onRequestDeleteStep={stepID => store.deleteStep(task, stepID)}
+						onBackspaceDeleteEmptyStep={stepID => { store.deleteStep(task, stepID); return true; }}
+						onStepContextMenu={(stepID, x, y) => setStepContextMenu({ stepID, x, y })}
+					/>
+				)}
+				<button
+					type="button"
+					className={styles.addStepButton}
+					onClick={() => addStepAndFocus(store.addFirstStep(task))}
+				>
+					+ Add step
+				</button>
 				<ContextMenu
 					position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 					onClose={() => setStepContextMenu(null)}
 					items={stepContextMenu !== null ? [
 						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
 						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
-						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => { store.insertStepBeforeStep(task, stepContextMenu.stepID); arrayInputRef.current?.focusRow(stepContextMenu.index); } },
-						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => { store.insertStepAfterStep(task, stepContextMenu.stepID); arrayInputRef.current?.focusRow(stepContextMenu.index + 1); } },
+						{ label: 'Indent', hintKeys: ['Tab'], onClick: () => store.indentStep(task, stepContextMenu.stepID) },
+						{ label: 'Unindent', hintKeys: ['Shift', 'Tab'], onClick: () => store.unindentStep(task, stepContextMenu.stepID) },
+						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => addStepAndFocus(store.insertStepBeforeStep(task, stepContextMenu.stepID)) },
+						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => addStepAndFocus(store.insertStepAfterStep(task, stepContextMenu.stepID)) },
+						{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => store.deleteStep(task, stepContextMenu.stepID) },
 					] : []}
 				/>
 			</td>

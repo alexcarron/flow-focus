@@ -7,7 +7,8 @@ import { isBackupDataV3, migrateV2ToV3 } from './versions/backupV3';
 import { isBackupDataV4, migrateV3ToV4 } from './versions/backupV4';
 import { isBackupDataV5, migrateV4ToV5 } from './versions/backupV5';
 import { isBackupDataV6, migrateV5ToV6 } from './versions/backupV6';
-import { BackupData, BackupTask, BackupStep, BACKUP_FORMAT, isBackupData, migrateV6ToV7, taskToBackupTask } from './versions/backupV7';
+import { isBackupData as isBackupDataV7, migrateV6ToV7 } from './versions/backupV7';
+import { BackupData, BackupTask, BackupStep, BACKUP_FORMAT, isBackupData, migrateV7ToV8, taskToBackupTask } from './versions/backupV8';
 
 export type { BackupData, BackupTask, BackupStep };
 
@@ -48,23 +49,26 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 	if (isBackupData(parsed)) {
 		return parsed;
 	}
+	if (isBackupDataV7(parsed)) {
+		return migrateV7ToV8(parsed);
+	}
 	if (isBackupDataV6(parsed)) {
-		return migrateV6ToV7(parsed);
+		return migrateV7ToV8(migrateV6ToV7(parsed));
 	}
 	if (isBackupDataV5(parsed)) {
-		return migrateV6ToV7(migrateV5ToV6(parsed));
+		return migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(parsed)));
 	}
 	if (isBackupDataV4(parsed)) {
-		return migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(parsed)));
+		return migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(parsed))));
 	}
 	if (isBackupDataV3(parsed)) {
-		return migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(parsed))));
+		return migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(parsed)))));
 	}
 	if (isBackupDataV2(parsed)) {
-		return migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(parsed)))));
+		return migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(parsed))))));
 	}
 	if (isBackupDataV1(parsed)) {
-		return migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(parsed))))));
+		return migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(parsed)))))));
 	}
 	throw new Error('File is not a valid FlowFocus backup.');
 }

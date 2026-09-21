@@ -8,6 +8,7 @@ export interface PlainStepRow {
 	id: string;
 	text: string;
 	status: string;
+	children: PlainStepRow[];
 }
 
 export interface PersistedRecordMetadata {
@@ -168,7 +169,22 @@ export class FlowFocusDB extends Dexie {
 				convertRepeatIntervalTaskRowToRecurrenceDuration(row, migrationTime);
 			});
 		});
+		this.version(10).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+		}).upgrade(transaction => {
+			return transaction.table('tasks').toCollection().modify(row => {
+				addEmptyChildrenToFlatSteps(row);
+			});
+		});
 	}
+}
+
+function addEmptyChildrenToFlatSteps(row: { steps?: PlainStepRow[] }): void {
+	if (!Array.isArray(row.steps)) return;
+	row.steps = row.steps.map(step => ({ ...step, children: Array.isArray(step.children) ? step.children : [] }));
 }
 
 export const db = new FlowFocusDB();

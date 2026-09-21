@@ -1,18 +1,26 @@
 import Task from '../../model/task/Task';
-import Step from '../../model/task/Step';
-import StepStatus from '../../model/task/StepStatus';
+import Step from '../../model/task/step/Step';
+import StepStatus from '../../model/task/step/StepStatus';
 import { TaskWriteInput } from '../TaskRepository';
 import { PlainStepRow, PlainTaskRow } from '../local/flowfocus.db';
 import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
 import RecurrenceUnit, { isRecurrenceUnit } from '../../model/task/recurrence/RecurrenceUnit';
 import { fromCloudTimestamp, fromNullableCloudTimestamp, toCloudTimestamp, toNullableCloudTimestamp } from './cloudTimestamp';
 
+function stepToStepRow(step: Step): PlainStepRow {
+	return { id: step.id, text: step.text, status: step.status, children: step.children.map(stepToStepRow) };
+}
+
+function stepRowToStep(row: PlainStepRow): Step {
+	return { id: row.id, text: row.text, status: row.status as StepStatus, children: (row.children ?? []).map(stepRowToStep) };
+}
+
 export function serializeTask(task: Task): TaskWriteInput {
 	const state = task.getState();
 	return {
 		id: task.id,
 		description: state.description,
-		steps: state.steps.map(step => ({ id: step.id, text: step.text, status: step.status })),
+		steps: state.steps.map(stepToStepRow),
 		startTime: state.startTime ? state.startTime.toISOString() : null,
 		endTime: state.endTime ? state.endTime.toISOString() : null,
 		deadline: state.deadline ? state.deadline.toISOString() : null,
@@ -52,7 +60,7 @@ export function deserializeRow(row: PlainTaskRow): {
 } {
 	return {
 		description: row.description,
-		steps: row.steps.map(step => ({ id: step.id, text: step.text, status: step.status as StepStatus })),
+		steps: row.steps.map(stepRowToStep),
 		startTime: row.startTime ? new Date(row.startTime) : null,
 		endTime: row.endTime ? new Date(row.endTime) : null,
 		deadline: row.deadline ? new Date(row.deadline) : null,
