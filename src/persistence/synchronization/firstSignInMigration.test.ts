@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { db, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, PlainTaskRow, SettingsRow, QuickToDoChecklistRow } from '../local/flowfocus.db';
+import { db, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, PlainTaskRow, SettingsRow, QuickToDoChecklistRow, TagRow } from '../local/flowfocus.db';
 import { doesLocalDataNeedMigrationToCloud, migrateLocalDataToCloud } from './firstSignInMigration';
 import { useSyncStatusStore } from '../../stores/syncStatusStore';
 
@@ -22,11 +22,13 @@ function makeQueryBuilder(result: { data: unknown; error: null }) {
 let cloudTasks: unknown[];
 let cloudSettings: unknown;
 let cloudChecklist: unknown;
+let cloudTags: unknown[];
 
 const fromMock = vi.fn((table: string) => {
 	if (table === 'tasks') return makeQueryBuilder({ data: cloudTasks, error: null });
 	if (table === 'settings') return makeQueryBuilder({ data: cloudSettings, error: null });
 	if (table === 'checklist') return makeQueryBuilder({ data: cloudChecklist, error: null });
+	if (table === 'tags') return makeQueryBuilder({ data: cloudTags, error: null });
 	throw new Error(`Unexpected table: ${table}`);
 });
 
@@ -59,6 +61,27 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		deletedAt: null,
 		isSynced: false,
 		...overrides,
+	};
+}
+
+function makeTagRow(overrides: Partial<TagRow> = {}): TagRow {
+	return {
+		id: 'tag-1',
+		name: 'Work',
+		updatedAt: '2026-03-01T12:00:00.000Z',
+		deletedAt: null,
+		isSynced: false,
+		...overrides,
+	};
+}
+
+function tagRowToCloudRow(row: TagRow) {
+	return {
+		id: row.id,
+		user_id: USER_ID,
+		name: row.name,
+		updated_at: row.updatedAt,
+		deleted_at: row.deletedAt,
 	};
 }
 
@@ -95,16 +118,19 @@ beforeEach(async () => {
 	cloudTasks = [];
 	cloudSettings = null;
 	cloudChecklist = null;
+	cloudTags = [];
 	useSyncStatusStore.getState().reset();
 	await db.tasks.clear();
 	await db.settings.clear();
 	await db.quickToDoChecklist.clear();
+	await db.tags.clear();
 });
 
 afterEach(async () => {
 	await db.tasks.clear();
 	await db.settings.clear();
 	await db.quickToDoChecklist.clear();
+	await db.tags.clear();
 });
 
 describe('doesLocalDataNeedMigrationToCloud', () => {
@@ -124,11 +150,18 @@ describe('doesLocalDataNeedMigrationToCloud', () => {
 	it('returns false when there is no local data at all', async () => {
 		expect(await doesLocalDataNeedMigrationToCloud(USER_ID)).toBe(false);
 	});
+
+	it('returns true when only a local tag exists and the cloud account is empty', async () => {
+		await db.tags.put(makeTagRow());
+
+		expect(await doesLocalDataNeedMigrationToCloud(USER_ID)).toBe(true);
+	});
 });
 
 describe('migrateLocalDataToCloud', () => {
-	it('pushes local tasks/settings/checklist and clears local data once the cloud copy is verified', async () => {
+	it('pushes local tasks/settings/checklist/tags and clears local data once the cloud copy is verified', async () => {
 		const localTask = makeTaskRow();
+		const localTag = makeTagRow();
 		const localSettings: SettingsRow = {
 			id: SETTINGS_ROW_ID,
 			morningTime: '07:00',
@@ -149,18 +182,22 @@ describe('migrateLocalDataToCloud', () => {
 		await db.tasks.put(localTask);
 		await db.settings.put(localSettings);
 		await db.quickToDoChecklist.put(localChecklist);
+		await db.tags.put(localTag);
 
 		cloudTasks = [taskRowToCloudRow(localTask)];
 		cloudSettings = { ...localSettings, morning_time: localSettings.morningTime, night_time: localSettings.nightTime, bedtime: localSettings.bedtime, wake_time: localSettings.wakeTime, should_keep_task_details_after_creating: false, should_show_quick_add_task_bar_on_focus_page: true, updated_at: localSettings.updatedAt };
 		cloudChecklist = { items: [], updated_at: localChecklist.updatedAt };
+		cloudTags = [tagRowToCloudRow(localTag)];
 
 		const didSucceed = await migrateLocalDataToCloud({ userID: USER_ID, shouldKeepLocalData: false });
 
 		expect(didSucceed).toBe(true);
 		expect(rpcMock).toHaveBeenCalledWith('upsert_task_if_newer', expect.objectContaining({ p_id: 'task-1' }));
+		expect(rpcMock).toHaveBeenCalledWith('upsert_tag_if_newer', expect.objectContaining({ p_id: 'tag-1' }));
 		expect(await db.tasks.toArray()).toEqual([]);
 		expect(await db.settings.get(SETTINGS_ROW_ID)).toBeUndefined();
 		expect(await db.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID)).toBeUndefined();
+		expect(await db.tags.toArray()).toEqual([]);
 		expect(useSyncStatusStore.getState().lastSyncError).toBeNull();
 	});
 
@@ -194,6 +231,17 @@ describe('migrateLocalDataToCloud', () => {
 
 		expect(didSucceed).toBe(false);
 		expect(await db.tasks.toArray()).toHaveLength(1);
+		expect(useSyncStatusStore.getState().lastSyncError).toBeTruthy();
+	});
+
+	it('does not clear local tags when the pushed tag cannot be verified in the cloud', async () => {
+		await db.tags.put(makeTagRow());
+		cloudTags = [];
+
+		const didSucceed = await migrateLocalDataToCloud({ userID: USER_ID, shouldKeepLocalData: false });
+
+		expect(didSucceed).toBe(false);
+		expect(await db.tags.toArray()).toHaveLength(1);
 		expect(useSyncStatusStore.getState().lastSyncError).toBeTruthy();
 	});
 });

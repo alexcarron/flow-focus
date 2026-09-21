@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createSupabaseDataService } from './supabaseDataService';
-import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow } from '../local/flowfocus.db';
+import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow, TagRow } from '../local/flowfocus.db';
 
 const USER_ID = 'user-a-uuid';
 
@@ -78,6 +78,80 @@ describe('upsertTask', () => {
 		const service = createSupabaseDataService(USER_ID);
 
 		await expect(service.upsertTask(makeTaskRow())).rejects.toThrow('network down');
+	});
+});
+
+function makeTagRow(overrides: Partial<TagRow> = {}): TagRow {
+	return {
+		id: 'tag-1',
+		name: 'Work',
+		updatedAt: '2026-03-01T12:00:00.000Z',
+		deletedAt: null,
+		isSynced: false,
+		...overrides,
+	};
+}
+
+describe('upsertTag', () => {
+	it('calls the conditional newest-wins RPC with the cloud-shaped, snake_case arguments', async () => {
+		const service = createSupabaseDataService(USER_ID);
+
+		await service.upsertTag(makeTagRow({ name: 'Personal' }));
+
+		expect(rpcMock).toHaveBeenCalledWith('upsert_tag_if_newer', {
+			p_id: 'tag-1',
+			p_user_id: USER_ID,
+			p_name: 'Personal',
+			p_updated_at: '2026-03-01T12:00:00.000Z',
+			p_deleted_at: null,
+		});
+	});
+
+	it('throws when the RPC call returns an error', async () => {
+		rpcMock.mockResolvedValueOnce({ error: new Error('network down') });
+		const service = createSupabaseDataService(USER_ID);
+
+		await expect(service.upsertTag(makeTagRow())).rejects.toThrow('network down');
+	});
+});
+
+describe('pullTags', () => {
+	it('pulls every row for the user when no watermark is given', async () => {
+		const service = createSupabaseDataService(USER_ID);
+
+		await service.pullTags();
+
+		const builder = fromMock.mock.results[0].value;
+		expect(fromMock).toHaveBeenCalledWith('tags');
+		expect(builder.eq).toHaveBeenCalledWith('user_id', USER_ID);
+		expect(builder.gt).not.toHaveBeenCalled();
+	});
+
+	it('windows the pull by updated_at when a watermark is given', async () => {
+		const service = createSupabaseDataService(USER_ID);
+
+		await service.pullTags('2026-03-01T00:00:00.000Z');
+
+		const builder = fromMock.mock.results[0].value;
+		expect(builder.gt).toHaveBeenCalledWith('updated_at', '2026-03-01T00:00:00.000Z');
+	});
+
+	it('maps returned cloud rows back into local tag rows', async () => {
+		queryResult = {
+			data: [{
+				id: 'tag-1',
+				user_id: USER_ID,
+				name: 'Work',
+				updated_at: '2026-03-01T12:00:00.000Z',
+				deleted_at: null,
+			}],
+			error: null,
+		};
+		const service = createSupabaseDataService(USER_ID);
+
+		const rows = await service.pullTags();
+
+		expect(rows).toEqual([makeTagRow({ isSynced: true })]);
 	});
 });
 

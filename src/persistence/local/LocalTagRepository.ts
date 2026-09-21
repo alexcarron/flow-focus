@@ -1,6 +1,7 @@
 import { db } from './flowfocus.db';
 import Tag from '../../model/tag/Tag';
-import { TagRepository, DuplicateTagNameError, EmptyTagNameError } from '../TagRepository';
+import { TagRepository } from '../TagRepository';
+import { validateTagName } from '../../utilities/tagNameValidation';
 
 export class LocalTagRepository implements TagRepository {
 	async getAllTags(): Promise<Tag[]> {
@@ -9,10 +10,7 @@ export class LocalTagRepository implements TagRepository {
 	}
 
 	async addTag(name: string): Promise<Tag> {
-		const trimmedName = name.trim();
-		if (trimmedName === '') throw new EmptyTagNameError();
-
-		await this.assertNameNotTaken(trimmedName);
+		const trimmedName = validateTagName({ name, existingTags: await this.getAllTags() });
 
 		const id = crypto.randomUUID();
 		const now = new Date().toISOString();
@@ -21,10 +19,7 @@ export class LocalTagRepository implements TagRepository {
 	}
 
 	async updateTag(id: string, newName: string): Promise<Tag> {
-		const trimmedName = newName.trim();
-		if (trimmedName === '') throw new EmptyTagNameError();
-
-		await this.assertNameNotTaken(trimmedName, id);
+		const trimmedName = validateTagName({ name: newName, existingTags: await this.getAllTags(), excludingID: id });
 
 		const now = new Date().toISOString();
 		await db.tags.put({ id, name: trimmedName, updatedAt: now, deletedAt: null, isSynced: false });
@@ -41,13 +36,6 @@ export class LocalTagRepository implements TagRepository {
 
 	async clear(): Promise<void> {
 		await db.tags.clear();
-	}
-
-	private async assertNameNotTaken(name: string, excludingID?: string): Promise<void> {
-		const lowerCaseName = name.toLowerCase();
-		const existingTags = await this.getAllTags();
-		const hasCollision = existingTags.some(tag => tag.id !== excludingID && tag.name.toLowerCase() === lowerCaseName);
-		if (hasCollision) throw new DuplicateTagNameError(name);
 	}
 }
 

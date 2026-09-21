@@ -34,15 +34,17 @@ export function closeActiveUserCacheDatabase(): void {
 export async function hasUnsyncedCachedChanges(cacheDB: FlowFocusDB | undefined = activeUserCacheDatabase): Promise<boolean> {
 	if (!cacheDB) return false;
 
-	const [unsyncedTaskCount, settingsRow, checklistRow] = await Promise.all([
+	const [unsyncedTaskCount, settingsRow, checklistRow, unsyncedTagCount] = await Promise.all([
 		cacheDB.tasks.filter(row => !row.isSynced).count(),
 		cacheDB.settings.get(SETTINGS_ROW_ID),
 		cacheDB.quickToDoChecklist.get(QUICK_TO_DO_CHECKLIST_ROW_ID),
+		cacheDB.tags.filter(row => !row.isSynced).count(),
 	]);
 
 	return (
-		unsyncedTaskCount > 0 || 
-		Boolean(settingsRow && !settingsRow.isSynced) || 
-		Boolean(checklistRow && !checklistRow.isSynced)
+		unsyncedTaskCount > 0 ||
+		Boolean(settingsRow && !settingsRow.isSynced) ||
+		Boolean(checklistRow && !checklistRow.isSynced) ||
+		unsyncedTagCount > 0
 	);
 }

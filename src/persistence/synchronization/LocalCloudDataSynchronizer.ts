@@ -1,5 +1,5 @@
 import { Table, UpdateSpec } from 'dexie';
-import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, SYNC_STATUS_ROW_ID } from '../local/flowfocus.db';
+import { FlowFocusDB, PlainTaskRow, TagRow, SyncStatusRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID, SYNC_STATUS_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { hasUnsyncedCachedChanges } from './perUserCache';
 import { toErrorMessage } from '../../utilities/errorMessage';
@@ -20,6 +20,7 @@ export interface LocalCloudDataSynchronizerDependencies {
 	onTasksChanged?: () => void;
 	onSettingsChanged?: () => void;
 	onChecklistChanged?: () => void;
+	onTagsChanged?: () => void;
 	onSyncStatusChange?: (status: SyncStatusSnapshot) => void;
 	isOnline?: () => boolean;
 }
@@ -30,6 +31,7 @@ export class LocalCloudDataSynchronizer {
 	private readonly onTasksChanged: () => void;
 	private readonly onSettingsChanged: () => void;
 	private readonly onChecklistChanged: () => void;
+	private readonly onTagsChanged: () => void;
 	private readonly onSyncStatusChange: (status: SyncStatusSnapshot) => void;
 	private readonly isOnline: () => boolean;
 
@@ -44,6 +46,7 @@ export class LocalCloudDataSynchronizer {
 		this.onTasksChanged = dependencies.onTasksChanged ?? (() => {});
 		this.onSettingsChanged = dependencies.onSettingsChanged ?? (() => {});
 		this.onChecklistChanged = dependencies.onChecklistChanged ?? (() => {});
+		this.onTagsChanged = dependencies.onTagsChanged ?? (() => {});
 		this.onSyncStatusChange = dependencies.onSyncStatusChange ?? (() => {});
 		this.isOnline = dependencies.isOnline ?? (() => navigator.onLine);
 
@@ -120,12 +123,13 @@ export class LocalCloudDataSynchronizer {
 	}
 
 	private async pushPendingChanges(): Promise<string | null> {
-		const [taskPushError, settingsPushError, checklistPushError] = await Promise.all([
+		const [taskPushError, settingsPushError, checklistPushError, tagPushError] = await Promise.all([
 			this.pushNotSyncedTasks(),
 			this.pushSettingsIfNotSynced(),
 			this.pushChecklistIfNotSynced(),
+			this.pushNotSyncedTags(),
 		]);
-		return taskPushError ?? settingsPushError ?? checklistPushError;
+		return taskPushError ?? settingsPushError ?? checklistPushError ?? tagPushError;
 	}
 
 	private async pushNotSyncedTasks(): Promise<string | null> {
@@ -144,6 +148,24 @@ export class LocalCloudDataSynchronizer {
 	private async pushTask(row: PlainTaskRow): Promise<void> {
 		await this.cloudDataService.upsertTask(row);
 		await this.markSyncedIfRowUnchangedSincePush(this.cacheDB.tasks, row.id, row.updatedAt);
+	}
+
+	private async pushNotSyncedTags(): Promise<string | null> {
+		try {
+			const allTags = await this.cacheDB.tags.toArray();
+			const notSyncedTags = allTags.filter(row => !row.isSynced);
+
+			const results = await Promise.allSettled(notSyncedTags.map(row => this.pushTag(row)));
+			const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+			return firstFailure ? toErrorMessage(firstFailure.reason) : null;
+		} catch (error) {
+			return toErrorMessage(error);
+		}
+	}
+
+	private async pushTag(row: TagRow): Promise<void> {
+		await this.cloudDataService.upsertTag(row);
+		await this.markSyncedIfRowUnchangedSincePush(this.cacheDB.tags, row.id, row.updatedAt);
 	}
 
 	private async pushSettingsIfNotSynced(): Promise<string | null> {
@@ -182,12 +204,13 @@ export class LocalCloudDataSynchronizer {
 	}
 
 	private async pullRemoteChanges(): Promise<string | null> {
-		const [tasksError, settingsError, checklistError] = await Promise.all([
+		const [tasksError, settingsError, checklistError, tagsError] = await Promise.all([
 			this.pullTasks(),
 			this.pullSettings(),
 			this.pullChecklist(),
+			this.pullTags(),
 		]);
-		return tasksError ?? settingsError ?? checklistError;
+		return tasksError ?? settingsError ?? checklistError ?? tagsError;
 	}
 
 	private async pullTasks(): Promise<string | null> {
@@ -213,13 +236,55 @@ export class LocalCloudDataSynchronizer {
 				}
 			}
 
-			await this.cacheDB.syncStatus.put({ id: SYNC_STATUS_ROW_ID, timeLastSyncedTasksAt: newestUpdatedAt });
+			await this.putSyncStatus({ timeLastSyncedTasksAt: newestUpdatedAt });
 
 			if (anyTaskChanged) this.onTasksChanged();
 			return null;
 		} catch (error) {
 			return toErrorMessage(error);
 		}
+	}
+
+	private async pullTags(): Promise<string | null> {
+		try {
+			const syncStatusRow = await this.cacheDB.syncStatus.get(SYNC_STATUS_ROW_ID);
+			const sinceUpdatedAt = syncStatusRow?.timeLastSyncedTagsAt ?? undefined;
+
+			const pulledTags = await this.cloudDataService.pullTags(sinceUpdatedAt);
+			if (pulledTags.length === 0) return null;
+
+			let anyTagChanged = false;
+			let newestUpdatedAt = sinceUpdatedAt ?? pulledTags[0].updatedAt;
+
+			for (const pulledTag of pulledTags) {
+				if (Date.parse(pulledTag.updatedAt) > Date.parse(newestUpdatedAt)) {
+					newestUpdatedAt = pulledTag.updatedAt;
+				}
+
+				const localTag = await this.cacheDB.tags.get(pulledTag.id);
+				if (!localTag || Date.parse(pulledTag.updatedAt) > Date.parse(localTag.updatedAt)) {
+					await this.cacheDB.tags.put(pulledTag);
+					anyTagChanged = true;
+				}
+			}
+
+			await this.putSyncStatus({ timeLastSyncedTagsAt: newestUpdatedAt });
+
+			if (anyTagChanged) this.onTagsChanged();
+			return null;
+		} catch (error) {
+			return toErrorMessage(error);
+		}
+	}
+
+	private async putSyncStatus(update: Partial<Pick<SyncStatusRow, 'timeLastSyncedTasksAt' | 'timeLastSyncedTagsAt'>>): Promise<void> {
+		const existingRow = await this.cacheDB.syncStatus.get(SYNC_STATUS_ROW_ID);
+		await this.cacheDB.syncStatus.put({
+			id: SYNC_STATUS_ROW_ID,
+			timeLastSyncedTasksAt: existingRow?.timeLastSyncedTasksAt ?? null,
+			timeLastSyncedTagsAt: existingRow?.timeLastSyncedTagsAt ?? null,
+			...update,
+		});
 	}
 
 	private async pullSettings(): Promise<string | null> {

@@ -1,16 +1,19 @@
 import { requireSupabase } from './supabaseClient';
-import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow } from '../local/flowfocus.db';
+import { PlainTaskRow, QuickToDoChecklistRow, SettingsRow, TagRow } from '../local/flowfocus.db';
 import { CloudTaskRow, cloudRowToTaskRow, taskRowToCloudRow } from './task.serializer';
 import { CloudChecklistRow, cloudRowToQuickToDoChecklistRow, quickToDoChecklistRowToCloudRow } from './quickToDoChecklist.serializer';
 import { CloudSettingsRow, cloudRowToSettingsRow, settingsRowToCloudRow } from './settings.serializer';
+import { CloudTagRow, cloudRowToTagRow, tagRowToCloudRow } from './tag.serializer';
 
 export interface SupabaseDataService {
 	upsertTask(row: PlainTaskRow): Promise<void>;
 	upsertChecklist(row: QuickToDoChecklistRow): Promise<void>;
 	upsertSettings(row: SettingsRow): Promise<void>;
+	upsertTag(row: TagRow): Promise<void>;
 	pullTasks(sinceUpdatedAt?: string): Promise<PlainTaskRow[]>;
 	pullChecklist(localID: number): Promise<QuickToDoChecklistRow | undefined>;
 	pullSettings(localID: number): Promise<SettingsRow | undefined>;
+	pullTags(sinceUpdatedAt?: string): Promise<TagRow[]>;
 	hasAnyTasks(): Promise<boolean>;
 }
 
@@ -72,6 +75,18 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 			if (error) throw error;
 		},
 
+		async upsertTag(row) {
+			const cloudRow = tagRowToCloudRow(row, userID);
+			const { error } = await supabase.rpc('upsert_tag_if_newer', {
+				p_id: cloudRow.id,
+				p_user_id: cloudRow.user_id,
+				p_name: cloudRow.name,
+				p_updated_at: cloudRow.updated_at,
+				p_deleted_at: cloudRow.deleted_at,
+			});
+			if (error) throw error;
+		},
+
 		async pullTasks(sinceUpdatedAt) {
 			const baseQuery = supabase.from('tasks').select('*').eq('user_id', userID);
 			const query = sinceUpdatedAt ? baseQuery.gt('updated_at', sinceUpdatedAt) : baseQuery;
@@ -91,6 +106,15 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 			const { data, error } = await supabase.from('settings').select('*').eq('user_id', userID).maybeSingle();
 			if (error) throw error;
 			return data ? cloudRowToSettingsRow({ cloudRow: data as CloudSettingsRow, id: localID }) : undefined;
+		},
+
+		async pullTags(sinceUpdatedAt) {
+			const baseQuery = supabase.from('tags').select('*').eq('user_id', userID);
+			const query = sinceUpdatedAt ? baseQuery.gt('updated_at', sinceUpdatedAt) : baseQuery;
+
+			const { data, error } = await query;
+			if (error) throw error;
+			return (data as CloudTagRow[]).map(cloudRowToTagRow);
 		},
 
 		async hasAnyTasks() {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
-import { FlowFocusDB, PlainTaskRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
+import { FlowFocusDB, PlainTaskRow, TagRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { LocalCloudDataSynchronizer } from './LocalCloudDataSynchronizer';
 import { DEFAULT_SETTINGS } from '../../model/AppSettings';
@@ -38,10 +38,23 @@ function makeCloudDataService(overrides: Partial<SupabaseDataService> = {}): Sup
 		upsertTask: vi.fn().mockResolvedValue(undefined),
 		upsertChecklist: vi.fn().mockResolvedValue(undefined),
 		upsertSettings: vi.fn().mockResolvedValue(undefined),
+		upsertTag: vi.fn().mockResolvedValue(undefined),
 		pullTasks: vi.fn().mockResolvedValue([]),
 		pullChecklist: vi.fn().mockResolvedValue(undefined),
 		pullSettings: vi.fn().mockResolvedValue(undefined),
+		pullTags: vi.fn().mockResolvedValue([]),
 		hasAnyTasks: vi.fn().mockResolvedValue(false),
+		...overrides,
+	};
+}
+
+function makeTagRow(overrides: Partial<TagRow> = {}): TagRow {
+	return {
+		id: crypto.randomUUID(),
+		name: 'Work',
+		updatedAt: new Date().toISOString(),
+		deletedAt: null,
+		isSynced: false,
 		...overrides,
 	};
 }
@@ -239,6 +252,72 @@ describe('settings and checklist singletons', () => {
 
 		expect(cloudDataService.upsertSettings).toHaveBeenCalledTimes(1);
 		expect((await cacheDB.settings.get(SETTINGS_ROW_ID))?.isSynced).toBe(true);
+	});
+});
+
+describe('pushing and pulling tags', () => {
+	it('marks a tag as synced after a successful push', async () => {
+		const cacheDB = await openTestDatabase();
+		const row = makeTagRow();
+		await cacheDB.tags.put(row);
+
+		const cloudDataService = makeCloudDataService();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });
+		await synchronizer.sync();
+
+		expect(cloudDataService.upsertTag).toHaveBeenCalledTimes(1);
+		expect((await cacheDB.tags.get(row.id))?.isSynced).toBe(true);
+	});
+
+	it('advances the tag watermark independently of the task watermark and uses it on the next pull', async () => {
+		const cacheDB = await openTestDatabase();
+		const olderTag = makeTagRow({ updatedAt: '2026-01-01T00:00:00.000Z', isSynced: true });
+		const newerTag = makeTagRow({ updatedAt: '2026-01-02T00:00:00.000Z', isSynced: true });
+
+		const pullTags = vi.fn().mockResolvedValueOnce([olderTag, newerTag]).mockResolvedValueOnce([]);
+		const cloudDataService = makeCloudDataService({ pullTags });
+
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });
+		await synchronizer.sync();
+
+		const syncStatusRow = await cacheDB.syncStatus.get(1);
+		expect(syncStatusRow?.timeLastSyncedTagsAt).toBe('2026-01-02T00:00:00.000Z');
+		expect(syncStatusRow?.timeLastSyncedTasksAt).toBeNull();
+
+		await synchronizer.sync();
+		expect(pullTags).toHaveBeenNthCalledWith(2, '2026-01-02T00:00:00.000Z');
+	});
+
+	it('fully replaces a local tag when the server version is newer', async () => {
+		const cacheDB = await openTestDatabase();
+		const localTag = makeTagRow({ id: 'shared-id', name: 'old local name', updatedAt: '2026-01-01T00:00:00.000Z', isSynced: true });
+		await cacheDB.tags.put(localTag);
+
+		const serverTag = makeTagRow({ id: 'shared-id', name: 'newer server name', updatedAt: '2026-01-02T00:00:00.000Z', isSynced: true });
+		const cloudDataService = makeCloudDataService({ pullTags: vi.fn().mockResolvedValue([serverTag]) });
+
+		const onTagsChanged = vi.fn();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService, onTagsChanged });
+		await synchronizer.sync();
+
+		expect(await cacheDB.tags.get('shared-id')).toEqual(serverTag);
+		expect(onTagsChanged).toHaveBeenCalledTimes(1);
+	});
+
+	it('keeps a local tag that is newer and unsynced instead of the older server version', async () => {
+		const cacheDB = await openTestDatabase();
+		const localTag = makeTagRow({ id: 'shared-id', name: 'newer local name', updatedAt: '2026-01-02T00:00:00.000Z', isSynced: false });
+		await cacheDB.tags.put(localTag);
+
+		const serverTag = makeTagRow({ id: 'shared-id', name: 'older server name', updatedAt: '2026-01-01T00:00:00.000Z', isSynced: true });
+		const cloudDataService = makeCloudDataService({ pullTags: vi.fn().mockResolvedValue([serverTag]) });
+
+		const onTagsChanged = vi.fn();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService, onTagsChanged });
+		await synchronizer.sync();
+
+		expect(await cacheDB.tags.get('shared-id')).toEqual({ ...localTag, isSynced: true });
+		expect(onTagsChanged).not.toHaveBeenCalled();
 	});
 });
 

@@ -59,6 +59,7 @@ export interface QuickToDoChecklistRow extends PersistedRecordMetadata {
 export interface SyncStatusRow {
 	id: number;
 	timeLastSyncedTasksAt: string | null;
+	timeLastSyncedTagsAt: string | null;
 }
 
 export const DEFAULT_FLOW_FOCUS_DATABASE_NAME = 'FlowFocusDB';

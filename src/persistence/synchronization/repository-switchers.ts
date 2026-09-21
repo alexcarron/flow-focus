@@ -6,6 +6,7 @@ import { localTagRepository } from '../local/LocalTagRepository';
 import { CachedTaskRepository } from './CachedTaskRepository';
 import { CachedSettingsRepository } from './CachedSettingsRepository';
 import { CachedQuickToDoChecklistRepository } from './CachedQuickToDoChecklistRepository';
+import { CachedTagRepository } from './CachedTagRepository';
 import { closeActiveUserCacheDatabase, openUserCacheDatabase } from './perUserCache';
 import { LocalCloudDataSynchronizer } from './LocalCloudDataSynchronizer';
 import { createSupabaseDataService } from '../cloud/supabaseDataService';
@@ -40,6 +41,7 @@ export async function switchRepositoriesToCloud(userID: string, isRepositorySwit
 		onTasksChanged: () => void useTasksStore.getState().loadTasks(),
 		onSettingsChanged: () => void useSettingsStore.getState().loadSettings(),
 		onChecklistChanged: () => void useQuickToDoChecklistStore.getState().loadQuickToDoChecklist(),
+		onTagsChanged: () => void useTagsStore.getState().loadTags(),
 		onSyncStatusChange: status => useSyncStatusStore.getState().reportSyncStatus(status),
 	});
 	activeSynchronizer = synchronizer;
@@ -48,7 +50,7 @@ export async function switchRepositoriesToCloud(userID: string, isRepositorySwit
 		taskRepository: new CachedTaskRepository(userID, synchronizer),
 		settingsRepository: new CachedSettingsRepository(userID, synchronizer),
 		quickToDoChecklistRepository: new CachedQuickToDoChecklistRepository(userID, synchronizer),
-		tagRepository: localTagRepository,
+		tagRepository: new CachedTagRepository(userID, synchronizer),
 	});
 
 	await reloadAllStores();
