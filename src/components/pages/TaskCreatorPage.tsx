@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTasksStore } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useTagsStore } from '../../stores/tagsStore';
+import Tag from '../../model/tag/Tag';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import { TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../../model/time-management/Time';
@@ -14,6 +16,8 @@ import CheckboxInput from '../inputs/CheckboxInput';
 import DatetimeInput from '../inputs/DatetimeInput';
 import TypedQuickInput from '../inputs/TypedQuickInput';
 import TimingOptionsInput from '../inputs/TimingOptionsInput';
+import AddTagPopover from '../AddTagPopover';
+import TagChip from '../TagChip';
 import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
@@ -51,12 +55,16 @@ export default function TaskCreatorPage() {
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morningTime = useSettingsStore(s => s.morningTime);
+	const tags = useTagsStore(s => s.tags);
+	const renameTag = useTagsStore(s => s.renameTag);
 
 	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
 	});
 	const [steps, setSteps] = useState<Step[]>([]);
+	const [alreadyAddedTagIDs, setAlreadyAddedTagIDs] = useState<string[]>([]);
+	const [notYetAddedTagNames, setNotYetAddedTagNames] = useState<string[]>([]);
 	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
@@ -67,6 +75,9 @@ export default function TaskCreatorPage() {
 	const isTouchDevice = useIsTouchDevice();
 
 	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
+	const alreadyAddedTags = alreadyAddedTagIDs
+		.map(tagID => tags.find(tag => tag.id === tagID))
+		.filter((tag): tag is Tag => tag !== undefined);
 
 	const handleCreateRef = useRef(handleCreate);
 	useEffect(() => { handleCreateRef.current = handleCreate; });
@@ -95,6 +106,38 @@ export default function TaskCreatorPage() {
 	function handleToggleTokenEscape(field: TypedQuickInputToken['field'], matchedText: string, startIndex: number, endIndex: number) {
 		toggleTokenEscape(field, matchedText, startIndex, endIndex);
 		setDemotedRange({ start: startIndex, end: endIndex });
+	}
+
+	function selectExistingTag(tagID: string) {
+		setAlreadyAddedTagIDs(previous => [...previous, tagID]);
+	}
+
+	async function createAndAddTag(name: string) {
+		setNotYetAddedTagNames(previous => [...previous, name.trim()]);
+	}
+
+	function removeAlreadyAddedTag(tagID: string) {
+		setAlreadyAddedTagIDs(previous => previous.filter(id => id !== tagID));
+	}
+
+	function removeNotYetAddedTagName(name: string) {
+		setNotYetAddedTagNames(previous => previous.filter(existingName => existingName !== name));
+	}
+
+	function isTagNameAlreadyUsed(name: string, excludingPendingName?: string): boolean {
+		const normalizedName = name.trim().toLowerCase();
+		const matchesExistingTag = tags.some(tag => tag.name.toLowerCase() === normalizedName);
+		const matchesPendingTagName = notYetAddedTagNames.some(existingName => existingName !== excludingPendingName && existingName.toLowerCase() === normalizedName);
+		return matchesExistingTag || matchesPendingTagName;
+	}
+
+	async function renameNotYetAddedTagName(oldName: string, newName: string) {
+		const trimmedNewName = newName.trim();
+		if (trimmedNewName === '') throw new Error('Tag name cannot be empty.');
+		if (trimmedNewName !== oldName && isTagNameAlreadyUsed(trimmedNewName, oldName)) {
+			throw new Error(`A tag named "${trimmedNewName}" already exists.`);
+		}
+		setNotYetAddedTagNames(previous => previous.map(existingName => existingName === oldName ? trimmedNewName : existingName));
 	}
 
 	function addStepAndFocus() {
@@ -150,6 +193,15 @@ export default function TaskCreatorPage() {
 			let task;
 			try {
 				task = await addTask(description, effectiveTiming);
+
+				for (const tagName of notYetAddedTagNames) {
+					const existingTag = useTagsStore.getState().tags.find(tag => tag.name.toLowerCase() === tagName.toLowerCase());
+					const tag = existingTag ?? await useTagsStore.getState().addTag(tagName);
+					task.addTagID(tag.id);
+				}
+				for (const tagID of alreadyAddedTagIDs) {
+					task.addTagID(tagID);
+				}
 			} catch (creationError) {
 				if (creationError instanceof StartTimeAfterEndTimeError) {
 					setError('Start time cannot be after end time.');
@@ -179,6 +231,8 @@ export default function TaskCreatorPage() {
 	function handleReset() {
 		resetTypedQuickInputEntry();
 		setSteps([]);
+		setAlreadyAddedTagIDs([]);
+		setNotYetAddedTagNames([]);
 		setManualTiming(DEFAULT_TIMING);
 		setDemotedRange(null);
 		setError(null);
@@ -206,6 +260,35 @@ export default function TaskCreatorPage() {
 					onShiftEnter={handleShiftEnter}
 					disabled={isCreatingTask}
 				/>
+			</div>
+
+			<div className="field-group">
+				<label className="field-label">Tags</label>
+				<div className={styles.tagsRow}>
+					{alreadyAddedTags.map(tag => (
+						<TagChip
+							key={tag.id}
+							name={tag.name}
+							onRename={newName => renameTag(tag.id, newName)}
+							onRemove={() => removeAlreadyAddedTag(tag.id)}
+						/>
+					))}
+					{notYetAddedTagNames.map(tagName => (
+						<TagChip
+							key={tagName}
+							name={tagName}
+							onRename={newName => renameNotYetAddedTagName(tagName, newName)}
+							onRemove={() => removeNotYetAddedTagName(tagName)}
+						/>
+					))}
+					<AddTagPopover
+						existingTags={tags}
+						alreadyAddedTagIDs={alreadyAddedTagIDs}
+						notYetAddedTagNames={notYetAddedTagNames}
+						onSelectExisting={selectExistingTag}
+						onCreateAndAdd={createAndAddTag}
+					/>
+				</div>
 			</div>
 
 			{!showMoreOptions && (

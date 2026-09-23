@@ -5,8 +5,8 @@ import { hasUnsyncedCachedChanges } from './perUserCache';
 import { toErrorMessage } from '../../utilities/errorMessage';
 import { RunOnceThenAgainIfChanged } from '../../utilities/runOnceThenAgainIfChanged';
 
-const SYNC_INTERVAL_WHEN_VISIBLE_MS = 60_000;
-const SYNC_INTERVAL_WHEN_HIDDEN_MS = 600_000;
+const SYNC_INTERVAL_WHEN_VISIBLE_MS = 60_000; // 1 minute
+const SYNC_INTERVAL_WHEN_HIDDEN_MS = 600_000; // 10 minutes
 
 export interface SyncStatusSnapshot {
 	isSyncing: boolean;

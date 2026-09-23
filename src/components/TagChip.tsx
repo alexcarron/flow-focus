@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import Tag from '../model/tag/Tag';
 import TextInput from './inputs/TextInput';
 import CloseIcon from './svg-icons/CloseIcon';
 import styles from './TagChip.module.css';
 
 interface Props {
-	tag: Tag;
+	name: string;
 	onRename: (newName: string) => Promise<void>;
 	onRemove: () => void;
 }
 
-export default function TagChip({ tag, onRename, onRemove }: Props) {
+export default function TagChip({ name, onRename, onRemove }: Props) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const containerRef = useRef<HTMLSpanElement>(null);
@@ -39,7 +38,7 @@ export default function TagChip({ tag, onRename, onRemove }: Props) {
 		<span ref={containerRef} className={styles.chip}>
 			{isEditing ? (
 				<TextInput
-					value={tag.name}
+					value={name}
 					onCommit={commitRename}
 					className={styles.nameInput}
 					onKeyDown={event => {
@@ -51,10 +50,10 @@ export default function TagChip({ tag, onRename, onRemove }: Props) {
 				/>
 			) : (
 				<button type="button" className={styles.nameButton} onClick={() => setIsEditing(true)} title="Click to rename">
-					{tag.name}
+					{name}
 				</button>
 			)}
-			<button type="button" onClick={onRemove} className={`${styles.removeButton} touch-hit-area`} aria-label={`Remove tag ${tag.name}`} title={`Remove tag ${tag.name}`}>
+			<button type="button" onClick={onRemove} className={`${styles.removeButton} touch-hit-area`} aria-label={`Remove tag ${name}`} title={`Remove tag ${name}`}>
 				<CloseIcon className={styles.removeIcon} />
 			</button>
 			{errorMessage && <span className={styles.errorMessage}>{errorMessage}</span>}

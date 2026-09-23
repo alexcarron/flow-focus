@@ -77,8 +77,8 @@ interface Props {
 
 export default function TaskManagerRow({ rowID, task, now, store, tags, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
 	const steps = task.getSteps();
-	const attachedTagIDs = task.getTagIDs();
-	const attachedTags = attachedTagIDs
+	const alreadyAddedTagIDs = task.getTagIDs();
+	const alreadyAddedTags = alreadyAddedTagIDs
 		.map(tagID => tags.find(tag => tag.id === tagID))
 		.filter((tag): tag is Tag => tag !== undefined);
 	const isCompactRow = steps.length === 0;
@@ -132,13 +132,14 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 						onCommit={newDescription => store.setDescription(task, newDescription)}
 						className={styles.descriptionInput}
 					/>
-					{attachedTags.length === 0 && (
+					{alreadyAddedTags.length === 0 && (
 						<span className={styles.hoverRevealTagButton}>
 							<AddTagPopover
 								existingTags={tags}
-								attachedTagIDs={attachedTagIDs}
+								alreadyAddedTagIDs={alreadyAddedTagIDs}
+								notYetAddedTagNames={[]}
 								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
-								onCreateAndAttach={tagName => store.addTagToTask(task, tagName)}
+								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
 							/>
 						</span>
 					)}
@@ -156,12 +157,12 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 						</button>
 					</div>
 				)}
-				{attachedTags.length > 0 && (
+				{alreadyAddedTags.length > 0 && (
 					<div className={styles.tagsRow}>
-						{attachedTags.map(tag => (
+						{alreadyAddedTags.map(tag => (
 							<TagChip
 								key={tag.id}
-								tag={tag}
+								name={tag.name}
 								onRename={newName => store.renameTag(tag.id, newName)}
 								onRemove={() => store.removeTagFromTask(task, tag.id)}
 							/>
@@ -169,9 +170,10 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 						<span className={styles.hoverRevealTagButton}>
 							<AddTagPopover
 								existingTags={tags}
-								attachedTagIDs={attachedTagIDs}
+								alreadyAddedTagIDs={alreadyAddedTagIDs}
+								notYetAddedTagNames={[]}
 								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
-								onCreateAndAttach={tagName => store.addTagToTask(task, tagName)}
+								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
 							/>
 						</span>
 					</div>

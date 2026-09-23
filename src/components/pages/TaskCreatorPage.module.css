@@ -42,3 +42,10 @@
 	align-self: flex-start;
 	margin-top: var(--space-extra-small);
 }
+
+.tagsRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-extra-small);
+}

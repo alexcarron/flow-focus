@@ -197,7 +197,7 @@ describe('a recurring task', () => {
 });
 
 describe('tagging a task', () => {
-	it('creates a new tag the first time it is attached to a task', async () => {
+	it('creates a new tag the first time it is added to a task', async () => {
 		const task = await useTasksStore.getState().addTask('Water the plants');
 
 		await useTasksStore.getState().addTagToTask(task, 'Home');

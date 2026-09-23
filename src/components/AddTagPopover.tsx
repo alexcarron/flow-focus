@@ -6,9 +6,10 @@ import styles from './AddTagPopover.module.css';
 
 interface Props {
 	existingTags: Tag[];
-	attachedTagIDs: string[];
+	alreadyAddedTagIDs: string[];
+	notYetAddedTagNames: string[];
 	onSelectExisting: (tagID: string) => void;
-	onCreateAndAttach: (name: string) => Promise<void>;
+	onCreateAndAdd: (name: string) => Promise<void>;
 }
 
 const NO_ITEM_HIGHLIGHTED = -1;
@@ -17,7 +18,7 @@ type SuggestionListItem =
 	| { type: 'existingTag'; tag: Tag }
 	| { type: 'createTag'; name: string };
 
-export default function AddTagPopover({ existingTags, attachedTagIDs, onSelectExisting, onCreateAndAttach }: Props) {
+export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYetAddedTagNames, onSelectExisting, onCreateAndAdd }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
 	const [highlightedIndex, setHighlightedIndex] = useState(NO_ITEM_HIGHLIGHTED);
@@ -31,11 +32,13 @@ export default function AddTagPopover({ existingTags, attachedTagIDs, onSelectEx
 
 	const matchingExistingTags = useMemo(() => {
 		return existingTags
-			.filter(tag => !attachedTagIDs.includes(tag.id))
+			.filter(tag => !alreadyAddedTagIDs.includes(tag.id))
 			.filter(tag => tag.name.toLowerCase().includes(normalizedSearchText));
-	}, [existingTags, attachedTagIDs, normalizedSearchText]);
+	}, [existingTags, alreadyAddedTagIDs, normalizedSearchText]);
 
-	const hasExactMatchingTag = matchingExistingTags.some(tag => tag.name.toLowerCase() === normalizedSearchText);
+	const hasExactMatchingExistingTag = matchingExistingTags.some(tag => tag.name.toLowerCase() === normalizedSearchText);
+	const hasExactMatchingPendingTagName = notYetAddedTagNames.some(name => name.trim().toLowerCase() === normalizedSearchText);
+	const hasExactMatchingTag = hasExactMatchingExistingTag || hasExactMatchingPendingTagName;
 	const shouldShowCreateTagRow = trimmedSearchText !== '' && !hasExactMatchingTag;
 
 	const listItems: SuggestionListItem[] = useMemo(() => {
@@ -69,7 +72,7 @@ export default function AddTagPopover({ existingTags, attachedTagIDs, onSelectEx
 
 	async function createTag(name: string) {
 		try {
-			await onCreateAndAttach(name);
+			await onCreateAndAdd(name);
 			closePopover();
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -97,8 +100,13 @@ export default function AddTagPopover({ existingTags, attachedTagIDs, onSelectEx
 
 		const matchingExistingTag = existingTags.find(tag => tag.name.toLowerCase() === normalizedSearchText);
 		if (matchingExistingTag) {
-			if (!attachedTagIDs.includes(matchingExistingTag.id)) selectTag(matchingExistingTag.id);
+			if (!alreadyAddedTagIDs.includes(matchingExistingTag.id)) selectTag(matchingExistingTag.id);
 			else closePopover();
+			return;
+		}
+
+		if (hasExactMatchingPendingTagName) {
+			setErrorMessage(`A tag named "${trimmedSearchText}" already exists.`);
 			return;
 		}
 
