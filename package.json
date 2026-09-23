@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port 5174",
     "build": "tsc && vite build && node scripts/copy-index-to-404-html.js",
-    "test": "vitest"
+    "test": "vitest",
+    "test:rls": "node supabase/scripts/run-rls-tests-against-local-stack.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.17.0",
