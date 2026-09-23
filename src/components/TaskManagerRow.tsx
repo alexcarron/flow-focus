@@ -81,13 +81,13 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 	const alreadyAddedTags = alreadyAddedTagIDs
 		.map(tagID => tags.find(tag => tag.id === tagID))
 		.filter((tag): tag is Tag => tag !== undefined);
-	const isCompactRow = steps.length === 0;
 	const minMs = task.getMinRequiredTime() ?? null;
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
 	const startTime = task.getStartTime();
 	const displayStartTime = startTime && startTime > now ? startTime : null;
 	const skippedUntil = task.getSkippedUntil();
 	const isSkipActive = skippedUntil !== null && skippedUntil > now;
+	const isCompactRow = steps.length === 0 && alreadyAddedTags.length === 0 && !isSkipActive;
 
 	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; x: number; y: number } | null>(null);
 	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
@@ -99,7 +99,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 
 	return (
 		<tr className={isSelected ? `${styles.row} ${styles.rowSelected}` : styles.row}>
-			<td className={`${styles.selectionCell} ${styles.iconColumn}`}>
+			<td className={isCompactRow ? `${styles.selectionCell} ${styles.iconColumn} ${styles.iconColumnCompact}` : `${styles.selectionCell} ${styles.iconColumn}`}>
 				<SelectionCheckbox
 					isSelected={isSelected}
 					rowID={rowID}
@@ -109,14 +109,14 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 				/>
 			</td>
 
-			<td className={`${styles.checkboxCell} ${styles.iconColumn}`}>
+			<td className={isCompactRow ? `${styles.checkboxCell} ${styles.iconColumn} ${styles.iconColumnCompact}` : `${styles.checkboxCell} ${styles.iconColumn}`}>
 				<CheckboxInput
 					value={task.getIsComplete()}
 					onChange={v => store.setComplete(task, v)}
 				/>
 			</td>
 
-			<td className={`${styles.checkboxCell} ${styles.iconColumn}`}>
+			<td className={isCompactRow ? `${styles.checkboxCell} ${styles.iconColumn} ${styles.iconColumnCompact}` : `${styles.checkboxCell} ${styles.iconColumn}`}>
 				<CheckboxInput
 					value={task.getIsMandatory()}
 					onChange={v => store.setMandatory(task, v)}
@@ -140,6 +140,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 								notYetAddedTagNames={[]}
 								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
 								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
+								isCompact
 							/>
 						</span>
 					)}
@@ -174,6 +175,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 								notYetAddedTagNames={[]}
 								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
 								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
+								isCompact
 							/>
 						</span>
 					</div>
@@ -207,13 +209,15 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 						onStepContextMenu={(stepID, x, y) => setStepContextMenu({ stepID, x, y })}
 					/>
 				)}
-				<button
-					type="button"
-					className={styles.addStepButton}
-					onClick={() => addStepAndFocus(store.addFirstStep(task))}
-				>
-					+ Add step
-				</button>
+				{steps.length === 0 && (
+					<button
+						type="button"
+						className={`button small ${styles.addStepButton}`}
+						onClick={() => addStepAndFocus(store.addFirstStep(task))}
+					>
+						+ Add step
+					</button>
+				)}
 				<ContextMenu
 					position={stepContextMenu !== null ? { x: stepContextMenu.x, y: stepContextMenu.y } : null}
 					onClose={() => setStepContextMenu(null)}

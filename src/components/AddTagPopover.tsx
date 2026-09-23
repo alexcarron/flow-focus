@@ -10,6 +10,7 @@ interface Props {
 	notYetAddedTagNames: string[];
 	onSelectExisting: (tagID: string) => void;
 	onCreateAndAdd: (name: string) => Promise<void>;
+	isCompact?: boolean;
 }
 
 const NO_ITEM_HIGHLIGHTED = -1;
@@ -18,7 +19,7 @@ type SuggestionListItem =
 	| { type: 'existingTag'; tag: Tag }
 	| { type: 'createTag'; name: string };
 
-export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYetAddedTagNames, onSelectExisting, onCreateAndAdd }: Props) {
+export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYetAddedTagNames, onSelectExisting, onCreateAndAdd, isCompact = false }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
 	const [highlightedIndex, setHighlightedIndex] = useState(NO_ITEM_HIGHLIGHTED);
@@ -138,11 +139,11 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 			<button
 				type="button"
 				onClick={() => isOpen ? closePopover() : openPopover()}
-				className={`${styles.triggerButton} touch-hit-area`}
+				className={isCompact ? `${styles.triggerButton} ${styles.triggerButtonCompact} touch-hit-area` : `${styles.triggerButton} touch-hit-area`}
 				aria-label="Add tag"
 				title="Add tag"
 			>
-				<PlusIcon className={styles.triggerIcon} />
+				<PlusIcon className={isCompact ? `${styles.triggerIcon} ${styles.triggerIconCompact}` : styles.triggerIcon} />
 			</button>
 
 			{isOpen && (

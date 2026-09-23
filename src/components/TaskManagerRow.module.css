@@ -76,23 +76,12 @@
 }
 
 .stepsCellCompact {
-	padding: var(--space-small) var(--space-medium) 0 0;
+	padding: 0 var(--space-medium) 0 0;
+	vertical-align: middle;
 }
 
 .addStepButton {
-	margin-top: var(--space-extra-small);
-	padding: var(--space-extra-extra-small) var(--space-extra-small);
-	font-size: var(--font-size-extra-small);
-	color: var(--color-text-muted);
-	background: none;
-	border: none;
-	cursor: pointer;
-}
-
-@media (hover: hover) {
-	.addStepButton:hover {
-		color: var(--color-text);
-	}
+	height: 1.75rem;
 }
 
 .stepsArrayInput {
@@ -155,6 +144,10 @@
 	padding-right: var(--space-small);
 	text-align: center;
 	white-space: nowrap;
+}
+
+.iconColumnCompact {
+	vertical-align: middle;
 }
 
 .actionsCell {
@@ -242,6 +235,7 @@
 }
 
 .hoverRevealTagButton {
+	display: inline-flex;
 	visibility: hidden;
 }
 
@@ -297,10 +291,19 @@
 		text-align: left;
 	}
 
+	.row td:nth-of-type(1),
+	.row td:nth-of-type(2),
+	.row td:nth-of-type(3) {
+		align-self: flex-start;
+		display: flex;
+		align-items: flex-end;
+		height: 1.5em;
+	}
+
 	.row td:nth-of-type(1) { order: 1; }
 	.row td:nth-of-type(2) { order: 2; }
 	.row td:nth-of-type(3) { order: 3; }
-	.row td:nth-of-type(4) { order: 4; flex: 1 1 auto; min-width: 0; }
+	.row td:nth-of-type(4) { order: 4; flex: 1 1 auto; min-width: 0; align-self: flex-start; }
 	.row td:nth-of-type(11) { order: 5; align-self: flex-start; }
 	.row td:nth-of-type(5) { order: 6; flex: 1 1 100%; }
 	.row td:nth-of-type(6) { order: 7; flex: 1 1 100%; }
