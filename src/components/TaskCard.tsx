@@ -287,6 +287,8 @@ export default function TaskCard({ task }: Props) {
 					{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => addStepAndFocus(store.insertStepAfterStep(task, stepContextMenu.stepID)) },
 					{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
 					{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
+					{ label: 'Indent', hintKeys: ['Tab'], hintGesture: 'Swipe right', onClick: () => store.indentStep(task, stepContextMenu.stepID) },
+					{ label: 'Unindent', hintKeys: ['Shift', 'Tab'], hintGesture: 'Swipe left', onClick: () => store.unindentStep(task, stepContextMenu.stepID) },
 					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => { setStepPendingDeletionID(stepContextMenu.stepID); setStepIDToFocusAfterDeletion(null); } },
 				] : []}
 			/>

@@ -11,6 +11,9 @@ interface Props {
 	isHiddenDuringDrag: boolean;
 	isTouchDevice: boolean;
 	rowDragHandlers: { onMouseDown: (event: React.MouseEvent) => void };
+	rowSwipeHandlers: { onTouchStart: (event: React.TouchEvent) => void };
+	isSwiping: boolean;
+	swipeOffsetX: number;
 	checkboxDragHandlers: { onMouseDown: (event: React.MouseEvent) => void; onMouseEnter: (event: React.MouseEvent) => void };
 	registerRowElement: (element: HTMLElement | null) => void;
 	registerTextElement: (element: HTMLSpanElement | null) => void;
@@ -34,6 +37,9 @@ export default function QuickToDoChecklistItemRow({
 	isHiddenDuringDrag,
 	isTouchDevice,
 	rowDragHandlers,
+	rowSwipeHandlers,
+	isSwiping,
+	swipeOffsetX,
 	checkboxDragHandlers,
 	registerRowElement,
 	registerTextElement,
@@ -57,8 +63,13 @@ export default function QuickToDoChecklistItemRow({
 			ref={registerRowElement}
 			data-quick-to-do-checklist-row={item.id}
 			className={isHiddenDuringDrag ? `${styles.row} ${styles.rowHiddenDuringDrag}` : styles.row}
-			style={{ paddingLeft: `calc(${depth} * var(--space-large))` }}
+			style={{
+				paddingLeft: `calc(${depth} * var(--space-large))`,
+				transform: isSwiping ? `translateX(${swipeOffsetX}px)` : undefined,
+				transition: isSwiping ? 'none' : 'transform var(--transition-fast)',
+			}}
 			onMouseDown={rowDragHandlers.onMouseDown}
+			onTouchStart={rowSwipeHandlers.onTouchStart}
 			onContextMenu={event => {
 				event.preventDefault();
 				onContextMenu(event.clientX, event.clientY);

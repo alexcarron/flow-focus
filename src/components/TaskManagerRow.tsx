@@ -225,8 +225,8 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 					items={stepContextMenu !== null ? [
 						{ label: 'Move step up', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => store.moveStepUp(task, stepContextMenu.stepID) },
 						{ label: 'Move step down', hintKeys: getShortcutKeyParts(SHORTCUTS.stepReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => store.moveStepDown(task, stepContextMenu.stepID) },
-						{ label: 'Indent', hintKeys: ['Tab'], onClick: () => store.indentStep(task, stepContextMenu.stepID) },
-						{ label: 'Unindent', hintKeys: ['Shift', 'Tab'], onClick: () => store.unindentStep(task, stepContextMenu.stepID) },
+						{ label: 'Indent', hintKeys: ['Tab'], hintGesture: 'Swipe right', onClick: () => store.indentStep(task, stepContextMenu.stepID) },
+						{ label: 'Unindent', hintKeys: ['Shift', 'Tab'], hintGesture: 'Swipe left', onClick: () => store.unindentStep(task, stepContextMenu.stepID) },
 						{ label: 'Add step above', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertBefore), onClick: () => addStepAndFocus(store.insertStepBeforeStep(task, stepContextMenu.stepID)) },
 						{ label: 'Add step below', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertAfter), onClick: () => addStepAndFocus(store.insertStepAfterStep(task, stepContextMenu.stepID)) },
 						{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => store.deleteStep(task, stepContextMenu.stepID) },

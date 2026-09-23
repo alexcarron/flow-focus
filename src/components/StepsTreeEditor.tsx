@@ -3,6 +3,7 @@ import Step from '../model/task/step/Step';
 import { flattenForDisplay, findNodeWithParent } from '../utilities/tree/orderedTree';
 import { useNestedListDrag, getDraggingRowOverlayStyle } from '../hooks/useNestedListDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
+import { useStepSwipeIndent } from '../hooks/useStepSwipeIndent';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
 import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
@@ -109,6 +110,20 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 		onDoubleTapCheckUpToHere: onCheckUpToHere,
 	});
 
+	const { getSwipeHandlers, swipingItemID: swipingStepID, swipeOffsetX } = useStepSwipeIndent({
+		isEnabled: isTouchDevice,
+		onIndent: stepID => {
+			commitFocusedStepTextIfChanged();
+			onIndentStep(stepID);
+			setStepPendingFocusID(stepID);
+		},
+		onUnindent: stepID => {
+			commitFocusedStepTextIfChanged();
+			onUnindentStep(stepID);
+			setStepPendingFocusID(stepID);
+		},
+	});
+
 	const insertStepOnEnterRef = useCommitOnEnter<HTMLDivElement>({
 		targetSelector: '[data-step-row] [contenteditable]',
 		onEnter: stepSpanElement => {
@@ -188,8 +203,13 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 							isCurrentStep ? styles.stepRowCurrent : '',
 							row.isHiddenDuringDrag ? styles.stepRowHiddenDuringDrag : '',
 						].filter(Boolean).join(' ')}
-						style={{ paddingLeft: getStepRowPaddingLeft(row.depth, hasOverallLeftMargin) }}
+						style={{
+							paddingLeft: getStepRowPaddingLeft(row.depth, hasOverallLeftMargin),
+							transform: swipingStepID === step.id ? `translateX(${swipeOffsetX}px)` : undefined,
+							transition: swipingStepID === step.id ? 'none' : 'transform var(--transition-fast)',
+						}}
 						onMouseDown={getRowDragHandlers(step.id).onMouseDown}
+						onTouchStart={getSwipeHandlers(step.id).onTouchStart}
 						onClick={event => {
 							const clickedElement = event.target as HTMLElement;
 							if (clickedElement.closest('[data-step]')) return;

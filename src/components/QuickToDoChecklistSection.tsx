@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuickToDoChecklistStore } from '../stores/quickToDoChecklistStore';
 import { useNestedListDrag, getDraggingRowOverlayStyle } from '../hooks/useNestedListDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
+import { useStepSwipeIndent } from '../hooks/useStepSwipeIndent';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { findItemWithParent, hasAnyCheckedItem } from '../model/quickToDoChecklist/quickToDoChecklistTree';
@@ -73,6 +74,12 @@ export default function QuickToDoChecklistSection() {
 		itemAttribute: 'data-quick-to-do-checklist-checkbox',
 		isStepChecked: itemID => findItemWithParent(items, itemID)?.item.isChecked ?? false,
 		setStepChecked: (itemID, isChecked) => setItemChecked(itemID, isChecked),
+	});
+
+	const { getSwipeHandlers, swipingItemID: swipingChecklistItemID, swipeOffsetX } = useStepSwipeIndent({
+		isEnabled: isTouchDevice,
+		onIndent: itemID => indentItem(itemID),
+		onUnindent: itemID => unindentItem(itemID),
 	});
 
 	useEffect(() => {
@@ -198,6 +205,9 @@ export default function QuickToDoChecklistSection() {
 							isHiddenDuringDrag={row.isHiddenDuringDrag}
 							isTouchDevice={isTouchDevice}
 							rowDragHandlers={getRowDragHandlers(item.id)}
+							rowSwipeHandlers={getSwipeHandlers(item.id)}
+							isSwiping={swipingChecklistItemID === item.id}
+							swipeOffsetX={swipeOffsetX}
 							checkboxDragHandlers={getCheckboxDragHandlers(item.id)}
 							registerRowElement={element => registerRowElement(item.id, element)}
 							registerTextElement={element => {
@@ -283,8 +293,8 @@ export default function QuickToDoChecklistSection() {
 				items={itemContextMenu !== null ? [
 					{ label: 'Move up', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => moveItemUp(itemContextMenu.itemID) },
 					{ label: 'Move down', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => moveItemDown(itemContextMenu.itemID) },
-					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.indent), onClick: () => indentItem(itemContextMenu.itemID) },
-					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.unindent), onClick: () => unindentItem(itemContextMenu.itemID) },
+					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.indent), hintGesture: 'Swipe right', onClick: () => indentItem(itemContextMenu.itemID) },
+					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.unindent), hintGesture: 'Swipe left', onClick: () => unindentItem(itemContextMenu.itemID) },
 					{ label: 'Add item above', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertBefore), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'before')) },
 					{ label: 'Add item below', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertAfter), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'after')) },
 					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => deleteItem(itemContextMenu.itemID) },
