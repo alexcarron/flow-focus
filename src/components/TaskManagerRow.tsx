@@ -85,6 +85,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
 	const startTime = task.getStartTime();
 	const displayStartTime = startTime && startTime > now ? startTime : null;
+	const endTime = task.getEndTime();
 	const skippedUntil = task.getSkippedUntil();
 	const isSkipActive = skippedUntil !== null && skippedUntil > now;
 	const isCompactRow = steps.length === 0 && alreadyAddedTags.length === 0 && !isSkipActive;
@@ -233,7 +234,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 				/>
 			</td>
 
-			<td data-mobile-label="Time Available" className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+			<td data-mobile-label="Time Left to Complete" data-mobile-empty={task.getIsComplete() ? 'true' : 'false'} className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getDeadline()
 					? formatTime(task.getTimeToComplete(now))
 					: '∞'}
@@ -249,6 +250,10 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 
 			<td data-mobile-label="Start" data-mobile-empty={displayStartTime ? 'false' : 'true'} className={hiddenColumnKeys.has('start') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{displayStartTime ? formatDate(displayStartTime) : <span className={styles.emptyValue}>—</span>}
+			</td>
+
+			<td data-mobile-label="End" data-mobile-empty={endTime ? 'false' : 'true'} className={`${styles.cell} ${styles.endCell}`}>
+				{endTime ? formatDate(endTime) : <span className={styles.emptyValue}>—</span>}
 			</td>
 
 			<td data-mobile-label="Repeat" data-mobile-empty={task.getRecurrenceDuration() === null ? 'true' : 'false'} className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>

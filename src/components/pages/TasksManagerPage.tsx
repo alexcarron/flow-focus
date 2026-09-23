@@ -62,7 +62,7 @@ const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = 
 const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | SortBy.StartTime>, string> = {
 	[SortBy.Name]: 'Name',
 	[SortBy.Steps]: 'Steps',
-	[SortBy.TimeAvailable]: 'Time Available',
+	[SortBy.TimeAvailable]: 'Time Left to Complete',
 	[SortBy.Duration]: 'Duration',
 	[SortBy.RecurrenceDuration]: 'Repeat',
 };
