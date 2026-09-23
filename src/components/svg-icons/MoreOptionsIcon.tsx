@@ -7,13 +7,16 @@ export default function MoreOptionsIcon({ className = '' }: Props) {
 		<svg
 			className={className}
 			viewBox="0 0 24 24"
-			fill="currentColor"
-			stroke="none"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={2}
+			strokeLinecap="round"
+			strokeLinejoin="round"
 			aria-hidden="true"
 		>
-			<circle cx="5" cy="12" r="2" />
-			<circle cx="12" cy="12" r="2" />
-			<circle cx="19" cy="12" r="2" />
+			<circle cx="5" cy="12" r="1" />
+			<circle cx="12" cy="12" r="1" />
+			<circle cx="19" cy="12" r="1" />
 		</svg>
 	);
 }

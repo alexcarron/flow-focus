@@ -1,10 +1,15 @@
-.button {
+button.button {
 	flex-shrink: 0;
-	width: 1.5rem;
+	width: 1.8rem;
 	height: 1.5rem;
 	padding: var(--space-extra-extra-small);
 	background-color: transparent;
 	color: var(--color-text-muted);
+}
+
+button.button:active {
+	background-color: transparent;
+	color: var(--color-text-primary);
 }
 
 .icon {
