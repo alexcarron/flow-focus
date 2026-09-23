@@ -116,12 +116,15 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 	function onKeyDown(event: React.KeyboardEvent) {
 		if (event.key === 'ArrowDown') {
 			event.preventDefault();
+			event.stopPropagation();
 			setHighlightedIndex(current => Math.min(current + 1, listItems.length - 1));
 		} else if (event.key === 'ArrowUp') {
 			event.preventDefault();
+			event.stopPropagation();
 			setHighlightedIndex(current => Math.max(current - 1, NO_ITEM_HIGHLIGHTED));
 		} else if (event.key === 'Enter') {
 			event.preventDefault();
+			event.stopPropagation();
 			if (highlightedIndex !== NO_ITEM_HIGHLIGHTED && listItems[highlightedIndex]) {
 				activateListItem(listItems[highlightedIndex]);
 			} else {
@@ -131,7 +134,7 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 	}
 
 	return (
-		<div ref={containerRef} className={styles.container}>
+		<div ref={containerRef} className={styles.container} data-popover-open={isOpen}>
 			<button
 				type="button"
 				onClick={() => isOpen ? closePopover() : openPopover()}

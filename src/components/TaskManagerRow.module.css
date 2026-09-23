@@ -257,6 +257,10 @@
 	}
 }
 
+.hoverRevealTagButton:has([data-popover-open="true"]) {
+	visibility: visible;
+}
+
 @media (max-width: 599px) {
 	.row {
 		display: flex;

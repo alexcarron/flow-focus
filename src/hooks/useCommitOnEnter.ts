@@ -37,6 +37,7 @@ export function useCommitOnEnter<TContainerElement extends HTMLElement = HTMLEle
 			const targetElement = findTargetElement(event.target, container!, targetSelector);
 			if (!targetElement) return;
 			event.preventDefault();
+			event.stopPropagation();
 			commit(targetElement);
 		}
 

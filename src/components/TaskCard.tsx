@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Task from '../model/task/Task';
+import Tag from '../model/tag/Tag';
 import { useTasksStore } from '../stores/tasksStore';
+import { useTagsStore } from '../stores/tagsStore';
 import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
@@ -13,6 +15,8 @@ import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';
 import ConfirmModal from './ConfirmModal';
+import TagChip from './TagChip';
+import AddTagPopover from './AddTagPopover';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import styles from './TaskCard.module.css';
@@ -45,6 +49,8 @@ function getTimeString(ms: number): string {
 
 export default function TaskCard({ task }: Props) {
 	const store = useTasksStore();
+	const tags = useTagsStore(s => s.tags);
+	const renameTag = useTagsStore(s => s.renameTag);
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [isSkipOpen, setIsSkipOpen] = useState(false);
 	const [isTimingOpen, setIsTimingOpen] = useState(false);
@@ -84,6 +90,10 @@ export default function TaskCard({ task }: Props) {
 	const isSkipActive = skippedUntil !== null && skippedUntil > currentTime;
 	const steps = task.getSteps();
 	const currentAndAncestorStepIDs = task.getCurrentAndAncestorStepIDs();
+	const alreadyAddedTagIDs = task.getTagIDs();
+	const alreadyAddedTags = alreadyAddedTagIDs
+		.map(tagID => tags.find(tag => tag.id === tagID))
+		.filter((tag): tag is Tag => tag !== undefined);
 
 	function onDescriptionBlur(event: React.FocusEvent<HTMLHeadingElement>) {
 		const newDesc = event.currentTarget.textContent ?? '';
@@ -126,17 +136,53 @@ export default function TaskCard({ task }: Props) {
 				/>
 			</div>
 
-			<h2
-				ref={descRef}
-				data-task-description
-				contentEditable
-				suppressContentEditableWarning
-				spellCheck={false}
-				onBlur={onDescriptionBlur}
-				onPaste={onPlainTextPaste}
-				onKeyDown={onPlainTextKeyDown}
-				className={styles.description}
-			/>
+			<div className={styles.heading}>
+				<div className={styles.nameRow}>
+					<h2
+						ref={descRef}
+						data-task-description
+						contentEditable
+						suppressContentEditableWarning
+						spellCheck={false}
+						onBlur={onDescriptionBlur}
+						onPaste={onPlainTextPaste}
+						onKeyDown={onPlainTextKeyDown}
+						className={styles.description}
+					/>
+					{alreadyAddedTags.length === 0 && (
+						<span className={styles.hoverRevealTagButton}>
+							<AddTagPopover
+								existingTags={tags}
+								alreadyAddedTagIDs={alreadyAddedTagIDs}
+								notYetAddedTagNames={[]}
+								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
+								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
+							/>
+						</span>
+					)}
+				</div>
+				{alreadyAddedTags.length > 0 && (
+					<div className={styles.tagsRow}>
+						{alreadyAddedTags.map(tag => (
+							<TagChip
+								key={tag.id}
+								name={tag.name}
+								onRename={newName => renameTag(tag.id, newName)}
+								onRemove={() => store.removeTagFromTask(task, tag.id)}
+							/>
+						))}
+						<span className={styles.hoverRevealTagButton}>
+							<AddTagPopover
+								existingTags={tags}
+								alreadyAddedTagIDs={alreadyAddedTagIDs}
+								notYetAddedTagNames={[]}
+								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
+								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
+							/>
+						</span>
+					</div>
+				)}
+			</div>
 
 			{steps.length > 0 && (
 				<StepsTreeEditor

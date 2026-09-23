@@ -26,12 +26,52 @@
 	transition: width var(--transition-medium);
 }
 
+.heading {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-extra-small);
+}
+
 .description {
 	font-size: var(--font-size-extra-extra-large);
 	font-weight: var(--font-weight-bold);
 	color: var(--color-text-primary);
 	outline: none;
 	cursor: text;
+}
+
+.nameRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-small);
+}
+
+.tagsRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-extra-small);
+}
+
+.hoverRevealTagButton {
+	visibility: hidden;
+}
+
+@media (hover: hover) {
+	.heading:hover .hoverRevealTagButton {
+		visibility: visible;
+	}
+}
+
+.hoverRevealTagButton:has([data-popover-open="true"]) {
+	visibility: visible;
+}
+
+@media (pointer: coarse) {
+	.hoverRevealTagButton {
+		visibility: visible;
+	}
 }
 
 .steps {
