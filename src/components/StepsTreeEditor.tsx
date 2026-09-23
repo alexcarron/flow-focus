@@ -46,14 +46,38 @@ interface Props {
 	onStepContextMenu?: (stepID: string, x: number, y: number) => void;
 }
 
-function focusStepTextAtEnd(element: HTMLElement) {
+type CaretPosition = 'start' | 'end';
+
+interface PendingFocus {
+	stepID: string;
+	caretPosition: CaretPosition;
+}
+
+function focusStepText(element: HTMLElement, caretPosition: CaretPosition) {
 	element.focus();
 	const range = document.createRange();
 	range.selectNodeContents(element);
-	range.collapse(false);
+	range.collapse(caretPosition === 'start');
 	const selection = window.getSelection();
 	selection?.removeAllRanges();
 	selection?.addRange(range);
+}
+
+function getSelectionOffsetsWithinElement(element: HTMLElement): { start: number; end: number } | null {
+	const selection = window.getSelection();
+	if (!selection || selection.rangeCount === 0) return null;
+	const range = selection.getRangeAt(0);
+	if (!element.contains(range.startContainer) || !element.contains(range.endContainer)) return null;
+
+	const startRange = range.cloneRange();
+	startRange.selectNodeContents(element);
+	startRange.setEnd(range.startContainer, range.startOffset);
+
+	const endRange = range.cloneRange();
+	endRange.selectNodeContents(element);
+	endRange.setEnd(range.endContainer, range.endOffset);
+
+	return { start: startRange.toString().length, end: endRange.toString().length };
 }
 
 const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsTreeEditor(props, ref) {
@@ -79,7 +103,7 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 		onStepContextMenu,
 	} = props;
 
-	const [stepPendingFocusID, setStepPendingFocusID] = useState<string | null>(null);
+	const [stepPendingFocus, setStepPendingFocus] = useState<PendingFocus | null>(null);
 	const stepSpanElementsByStepIDRef = useRef<Map<string, HTMLSpanElement>>(new Map());
 	const { onKeyDown: onPlainTextKeyDown, onPaste: onPlainTextPaste } = usePlainTextContentEditable();
 
@@ -115,12 +139,12 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 		onIndent: stepID => {
 			commitFocusedStepTextIfChanged();
 			onIndentStep(stepID);
-			setStepPendingFocusID(stepID);
+			setStepPendingFocus({ stepID, caretPosition: 'end' });
 		},
 		onUnindent: stepID => {
 			commitFocusedStepTextIfChanged();
 			onUnindentStep(stepID);
-			setStepPendingFocusID(stepID);
+			setStepPendingFocus({ stepID, caretPosition: 'end' });
 		},
 	});
 
@@ -131,9 +155,21 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 			if (stepID === null) return;
 			const step = findNodeWithParent(steps, stepID)?.node;
 			if (!step) return;
-			const typedText = stepSpanElement.textContent ?? '';
-			if (typedText !== step.text) onSetStepText(step.id, typedText);
-			setStepPendingFocusID(onInsertStepAfter(step.id));
+
+			const fullText = stepSpanElement.textContent ?? '';
+			const selectionOffsets = getSelectionOffsetsWithinElement(stepSpanElement);
+			const splitStart = selectionOffsets?.start ?? fullText.length;
+			const splitEnd = selectionOffsets?.end ?? fullText.length;
+			const textBeforeCursor = fullText.slice(0, splitStart);
+			const textAfterCursor = fullText.slice(splitEnd);
+
+			if (textBeforeCursor !== step.text) {
+				stepSpanElement.textContent = textBeforeCursor;
+				onSetStepText(step.id, textBeforeCursor);
+			}
+			const newStepID = onInsertStepAfter(step.id);
+			if (textAfterCursor !== '') onSetStepText(newStepID, textAfterCursor);
+			setStepPendingFocus({ stepID: newStepID, caretPosition: 'start' });
 		},
 	});
 
@@ -153,16 +189,16 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 	}
 
 	useEffect(() => {
-		if (stepPendingFocusID === null) return;
-		const stepSpanElement = stepSpanElementsByStepIDRef.current.get(stepPendingFocusID);
+		if (stepPendingFocus === null) return;
+		const stepSpanElement = stepSpanElementsByStepIDRef.current.get(stepPendingFocus.stepID);
 		if (stepSpanElement) {
-			focusStepTextAtEnd(stepSpanElement);
-			setStepPendingFocusID(null);
+			focusStepText(stepSpanElement, stepPendingFocus.caretPosition);
+			setStepPendingFocus(null);
 		}
-	}, [stepPendingFocusID, allStepsKey]);
+	}, [stepPendingFocus, allStepsKey]);
 
 	useImperativeHandle(ref, () => ({
-		focusStep: stepID => setStepPendingFocusID(stepID),
+		focusStep: stepID => setStepPendingFocus({ stepID, caretPosition: 'end' }),
 	}));
 
 	function onStepCheckboxChange(stepID: string, isChecked: boolean, isShiftClick: boolean) {
@@ -215,7 +251,7 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 							if (clickedElement.closest('[data-step]')) return;
 							if (clickedElement.closest('[contenteditable]')) return;
 							const stepSpanElement = stepSpanElementsByStepIDRef.current.get(step.id);
-							if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
+							if (stepSpanElement) focusStepText(stepSpanElement, 'end');
 						}}
 						onContextMenu={event => {
 							if (!onStepContextMenu) return;
@@ -253,7 +289,7 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 									if (typedText !== step.text) onSetStepText(step.id, typedText);
 									if (event.shiftKey) onUnindentStep(step.id);
 									else onIndentStep(step.id);
-									setStepPendingFocusID(step.id);
+									setStepPendingFocus({ stepID: step.id, caretPosition: 'end' });
 								}
 								else if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {
 									event.preventDefault();
@@ -273,7 +309,7 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 									if (previousRow && previousRow.kind === 'item') {
 										event.preventDefault();
 										const stepSpanElement = stepSpanElementsByStepIDRef.current.get(previousRow.node.id);
-										if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
+										if (stepSpanElement) focusStepText(stepSpanElement, 'end');
 									}
 								}
 								else if (matchesShortcut(event, SHORTCUTS.stepNavigate.toNextStep)) {
@@ -282,14 +318,14 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 									if (followingRow && followingRow.kind === 'item') {
 										event.preventDefault();
 										const stepSpanElement = stepSpanElementsByStepIDRef.current.get(followingRow.node.id);
-										if (stepSpanElement) focusStepTextAtEnd(stepSpanElement);
+										if (stepSpanElement) focusStepText(stepSpanElement, 'end');
 									}
 								}
 								else if (matchesShortcutIgnoringShift(event, SHORTCUTS.stepInsert.insertBefore)) {
 									event.preventDefault();
 									const typedText = event.currentTarget.textContent ?? '';
 									if (typedText !== step.text) onSetStepText(step.id, typedText);
-									setStepPendingFocusID(onInsertStepBefore(step.id));
+									setStepPendingFocus({ stepID: onInsertStepBefore(step.id), caretPosition: 'end' });
 								}
 								else if (event.key === 'Backspace' && (event.currentTarget.textContent ?? '') === '') {
 									event.preventDefault();
@@ -297,7 +333,7 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 									const previousRow = itemRows[itemRows.findIndex(candidate => candidate.kind === 'item' && candidate.node.id === step.id) - 1];
 									const previousStepID = previousRow && previousRow.kind === 'item' ? previousRow.node.id : null;
 									const wasStepDeletedImmediately = onBackspaceDeleteEmptyStep(step.id, previousStepID);
-									if (wasStepDeletedImmediately && previousStepID) setStepPendingFocusID(previousStepID);
+									if (wasStepDeletedImmediately && previousStepID) setStepPendingFocus({ stepID: previousStepID, caretPosition: 'end' });
 								}
 								else if (event.key === 'Enter') {
 									event.preventDefault();
