@@ -6,7 +6,7 @@ import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepSwipeIndent } from '../hooks/useStepSwipeIndent';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
-import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
+import { SHORTCUTS, matchesAnyShortcut, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
 import { mergeRefs } from '../utilities/mergeRefs';
 import StepCheckbox from './StepCheckbox';
 import ContextMenuButton from './context-menu/ContextMenuButton';
@@ -283,12 +283,18 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 							onPaste={onPlainTextPaste}
 							onKeyDown={event => {
 								onPlainTextKeyDown(event);
-								if (event.key === 'Tab') {
+								if (matchesAnyShortcut(event, SHORTCUTS.stepsIndent.unindent)) {
 									event.preventDefault();
 									const typedText = event.currentTarget.textContent ?? '';
 									if (typedText !== step.text) onSetStepText(step.id, typedText);
-									if (event.shiftKey) onUnindentStep(step.id);
-									else onIndentStep(step.id);
+									onUnindentStep(step.id);
+									setStepPendingFocus({ stepID: step.id, caretPosition: 'end' });
+								}
+								else if (matchesAnyShortcut(event, SHORTCUTS.stepsIndent.indent)) {
+									event.preventDefault();
+									const typedText = event.currentTarget.textContent ?? '';
+									if (typedText !== step.text) onSetStepText(step.id, typedText);
+									onIndentStep(step.id);
 									setStepPendingFocus({ stepID: step.id, caretPosition: 'end' });
 								}
 								else if (matchesShortcut(event, SHORTCUTS.stepReorder.moveUp)) {

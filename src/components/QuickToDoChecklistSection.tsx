@@ -293,8 +293,8 @@ export default function QuickToDoChecklistSection() {
 				items={itemContextMenu !== null ? [
 					{ label: 'Move up', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveUp), hintGesture: 'Hold & drag', onClick: () => moveItemUp(itemContextMenu.itemID) },
 					{ label: 'Move down', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistReorder.moveDown), hintGesture: 'Hold & drag', onClick: () => moveItemDown(itemContextMenu.itemID) },
-					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.indent), hintGesture: 'Swipe right', onClick: () => indentItem(itemContextMenu.itemID) },
-					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.unindent), hintGesture: 'Swipe left', onClick: () => unindentItem(itemContextMenu.itemID) },
+					{ label: 'Indent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.indent[0]), hintGesture: 'Swipe right', onClick: () => indentItem(itemContextMenu.itemID) },
+					{ label: 'Unindent', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistIndent.unindent[0]), hintGesture: 'Swipe left', onClick: () => unindentItem(itemContextMenu.itemID) },
 					{ label: 'Add item above', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertBefore), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'before')) },
 					{ label: 'Add item below', hintKeys: getShortcutKeyParts(SHORTCUTS.quickToDoChecklistInsert.insertAfter), onClick: () => setItemPendingFocusID(insertItemBeforeOrAfter(itemContextMenu.itemID, 'after')) },
 					{ label: 'Delete', isDanger: true, hintKeys: ['Delete'], onClick: () => deleteItem(itemContextMenu.itemID) },

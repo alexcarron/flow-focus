@@ -1,5 +1,5 @@
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
-import { SHORTCUTS, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
+import { SHORTCUTS, matchesAnyShortcut, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
 import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
 import ContextMenuButton from './context-menu/ContextMenuButton';
@@ -126,11 +126,11 @@ export default function QuickToDoChecklistItemRow({
 						event.preventDefault();
 						onInsertBefore(event.currentTarget.textContent ?? '');
 					}
-					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistIndent.unindent)) {
+					else if (matchesAnyShortcut(event, SHORTCUTS.quickToDoChecklistIndent.unindent)) {
 						event.preventDefault();
 						onUnindent();
 					}
-					else if (matchesShortcut(event, SHORTCUTS.quickToDoChecklistIndent.indent)) {
+					else if (matchesAnyShortcut(event, SHORTCUTS.quickToDoChecklistIndent.indent)) {
 						event.preventDefault();
 						onIndent();
 					}

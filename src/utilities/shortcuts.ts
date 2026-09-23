@@ -50,14 +50,18 @@ export const SHORTCUTS = {
 		insertBefore: { key: 'enter', ctrl: true },
 	},
 	quickToDoChecklistIndent: {
-		indent: { key: 'tab' },
-		unindent: { key: 'tab', shift: true },
+		indent: [{ key: 'tab' }, { key: ']', ctrl: true }],
+		unindent: [{ key: 'tab', shift: true }, { key: '[', ctrl: true }],
 	},
 	quickToDoChecklistReorder: {
 		moveUp: { key: 'arrowup', alt: true },
 		moveDown: { key: 'arrowdown', alt: true },
 	},
-} as const satisfies Record<string, Record<string, ShortcutDef>>;
+	stepsIndent: {
+		indent: [{ key: 'tab' }, { key: ']', ctrl: true }],
+		unindent: [{ key: 'tab', shift: true }, { key: '[', ctrl: true }],
+	},
+} as const satisfies Record<string, Record<string, ShortcutDef | readonly ShortcutDef[]>>;
 
 type KeyboardLike = {
 	key: string;
@@ -73,6 +77,10 @@ export function matchesShortcut(event: KeyboardLike, def: ShortcutDef): boolean 
 		!!event.ctrlKey === !!def.ctrl &&
 		!!event.shiftKey === !!def.shift
 	);
+}
+
+export function matchesAnyShortcut(event: KeyboardLike, defs: readonly ShortcutDef[]): boolean {
+	return defs.some(def => matchesShortcut(event, def));
 }
 
 export function matchesShortcutIgnoringShift(event: KeyboardLike, def: ShortcutDef): boolean {
