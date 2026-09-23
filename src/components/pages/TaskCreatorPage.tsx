@@ -87,6 +87,7 @@ export default function TaskCreatorPage() {
 	const [steps, setSteps] = useState<Step[]>([]);
 	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
+	const [areStepsRevealed, setAreStepsRevealed] = useState(false);
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmationKey, setConfirmationKey] = useState(0);
@@ -135,7 +136,7 @@ export default function TaskCreatorPage() {
 	}
 
 	function handleShiftEnter() {
-		setShowMoreOptions(true);
+		setAreStepsRevealed(true);
 		addStepAndFocus();
 	}
 
@@ -223,6 +224,7 @@ export default function TaskCreatorPage() {
 		setManualTiming(DEFAULT_TIMING);
 		setDemotedRange(null);
 		setError(null);
+		setAreStepsRevealed(false);
 	}
 
 	return (
@@ -251,6 +253,31 @@ export default function TaskCreatorPage() {
 					notYetAddedTagNames={notYetAddedTagNames}
 				/>
 			</div>
+
+			{(areStepsRevealed || showMoreOptions) && (
+				<div className="field-group">
+					<label className="field-label">Steps</label>
+					{steps.length > 0 && (
+						<StepsTreeEditor
+							ref={stepsEditorRef}
+							steps={steps}
+							isTouchDevice={isTouchDevice}
+							showCheckboxes={false}
+							hasOverallLeftMargin={false}
+							onSetStepText={(stepID, text) => setSteps(previous => mapNode(previous, stepID, step => ({ ...step, text })))}
+							onReparentStep={(stepID, newParentID, index) => setSteps(previous => reparentAndReorderNode(previous, stepID, newParentID, index))}
+							onIndentStep={stepID => setSteps(previous => indentNode(previous, stepID))}
+							onUnindentStep={stepID => setSteps(previous => unindentNode(previous, stepID))}
+							onMoveStepUp={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'up'))}
+							onMoveStepDown={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'down'))}
+							onInsertStepBefore={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'before', newStep)); return newStep.id; }}
+							onInsertStepAfter={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'after', newStep)); return newStep.id; }}
+							onRequestDeleteStep={stepID => setSteps(previous => deleteNode(previous, stepID))}
+							onBackspaceDeleteEmptyStep={stepID => { setSteps(previous => deleteNode(previous, stepID)); return true; }}
+						/>
+					)}
+				</div>
+			)}
 
 			<div className="field-group">
 				<label className="field-label">Tags</label>
@@ -300,35 +327,13 @@ export default function TaskCreatorPage() {
 
 			{showMoreOptions && (
 				<>
-					<div className="field-group">
-						<label className="field-label">Steps</label>
-						{steps.length > 0 && (
-							<StepsTreeEditor
-								ref={stepsEditorRef}
-								steps={steps}
-								isTouchDevice={isTouchDevice}
-								showCheckboxes={false}
-								hasOverallLeftMargin={false}
-								onSetStepText={(stepID, text) => setSteps(previous => mapNode(previous, stepID, step => ({ ...step, text })))}
-								onReparentStep={(stepID, newParentID, index) => setSteps(previous => reparentAndReorderNode(previous, stepID, newParentID, index))}
-								onIndentStep={stepID => setSteps(previous => indentNode(previous, stepID))}
-								onUnindentStep={stepID => setSteps(previous => unindentNode(previous, stepID))}
-								onMoveStepUp={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'up'))}
-								onMoveStepDown={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'down'))}
-								onInsertStepBefore={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'before', newStep)); return newStep.id; }}
-								onInsertStepAfter={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'after', newStep)); return newStep.id; }}
-								onRequestDeleteStep={stepID => setSteps(previous => deleteNode(previous, stepID))}
-								onBackspaceDeleteEmptyStep={stepID => { setSteps(previous => deleteNode(previous, stepID)); return true; }}
-							/>
-						)}
-						<button
-							type="button"
-							onClick={addStepAndFocus}
-							className={`button ${styles.addStepButton}`}
-						>
-							+ Add step
-						</button>
-					</div>
+					<button
+						type="button"
+						onClick={addStepAndFocus}
+						className={`button ${styles.addStepButton}`}
+					>
+						+ Add step
+					</button>
 
 					<div className="field-group">
 						<label className="section-label">Timing</label>
