@@ -1,0 +1,93 @@
+.container {
+	position: relative;
+	flex: 1 1 auto;
+	min-width: 3rem;
+}
+
+.measurerRow {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: var(--space-extra-small);
+	visibility: hidden;
+	pointer-events: none;
+	white-space: nowrap;
+}
+
+.visibleRow {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: var(--space-extra-small);
+	overflow: hidden;
+}
+
+.toggleChip {
+	flex: 0 0 auto;
+	padding: var(--space-extra-small) var(--space-small);
+	background: none;
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-full);
+	color: var(--color-text-muted);
+	font-size: var(--font-size-extra-small);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.toggleChip:hover {
+		color: var(--color-text);
+	}
+}
+
+.toggleChipSelected {
+	background-color: var(--color-accent-selected-background);
+	border-color: var(--color-accent-border);
+	color: var(--color-text);
+	border-width: 2px;
+}
+
+.dropdownContainer {
+	position: relative;
+	display: inline-flex;
+}
+
+.dropdownButton {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-extra-extra-small);
+}
+
+.dropdownButtonIcon {
+	width: 0.85rem;
+	height: 0.85rem;
+}
+
+.dropdownButtonCaret {
+	width: 0.7rem;
+	height: 0.7rem;
+}
+
+.dropdownMenu {
+	position: absolute;
+	top: calc(100% + var(--space-extra-extra-small));
+	left: 0;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	max-height: 16rem;
+	overflow-y: auto;
+	width: 12rem;
+	margin: 0;
+	padding: var(--space-extra-small);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-medium);
+	box-shadow: var(--shadow-card);
+	list-style: none;
+}
+
+.dropdownCheckbox {
+	padding: var(--space-extra-small);
+}

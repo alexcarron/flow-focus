@@ -226,6 +226,37 @@
 	display: none;
 }
 
+.tagsRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-extra-small);
+	margin-top: var(--space-extra-small);
+}
+
+.nameRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--space-extra-small);
+}
+
+.hoverRevealTagButton {
+	visibility: hidden;
+}
+
+@media (hover: hover) {
+	.row:hover .hoverRevealTagButton {
+		visibility: visible;
+	}
+}
+
+@media (pointer: coarse) {
+	.hoverRevealTagButton {
+		visibility: visible;
+	}
+}
+
 @media (max-width: 599px) {
 	.row {
 		display: flex;

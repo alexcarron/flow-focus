@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { useTasksStore } from './stores/tasksStore';
 import { useSettingsStore } from './stores/settingsStore';
+import { useTagsStore } from './stores/tagsStore';
 import { useUserAuthorization } from './hooks/useUserAuthorization';
 import { useRepositorySwitcher } from './hooks/useRepositorySwitcher';
 import FocusPage from './components/pages/FocusPage';
@@ -20,9 +21,10 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 }
 
 export default function App() {
-	const areTasksLoading = useTasksStore(s => s.isLoading);
-	const loadTasks = useTasksStore(s => s.loadTasks);
-	const loadSettings = useSettingsStore(s => s.loadSettings);
+	const areTasksLoading = useTasksStore(state => state.isLoading);
+	const loadTasks = useTasksStore(state => state.loadTasks);
+	const loadSettings = useSettingsStore(state => state.loadSettings);
+	const loadTags = useTagsStore(state => state.loadTags);
 	const { user, isLoading: isUserAuthorizationLoading } = useUserAuthorization();
 	const isAppDataSettling = areTasksLoading || isUserAuthorizationLoading;
 	const isTouchDevice = useIsTouchDevice();
@@ -30,7 +32,8 @@ export default function App() {
 	useEffect(() => {
 		loadTasks();
 		loadSettings();
-	}, [loadTasks, loadSettings]);
+		loadTags();
+	}, [loadTasks, loadSettings, loadTags]);
 
 	const { isMigrationConfirmationRequired, confirmMigration, declineMigration } = useRepositorySwitcher(user, isUserAuthorizationLoading);
 

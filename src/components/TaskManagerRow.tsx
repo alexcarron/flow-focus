@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import Task from '../model/task/Task';
+import Tag from '../model/tag/Tag';
 import Duration from '../model/time-management/Duration';
 import { formatRecurrenceDuration } from '../model/task/recurrence/RecurrenceDuration';
 import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
@@ -11,6 +12,8 @@ import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
 import SelectionCheckbox from './SelectionCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
+import TagChip from './TagChip';
+import AddTagPopover from './AddTagPopover';
 import CloseIcon from './svg-icons/CloseIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import MandatoryIcon from './svg-icons/MandatoryIcon';
@@ -48,6 +51,9 @@ export interface TaskManagerRowActions {
 	deleteTask: (task: Task) => Promise<void>;
 	refreshTasks: () => void;
 	persistChangedTasks: (tasks: Task[]) => Promise<void>;
+	addTagToTask: (task: Task, tagName: string) => Promise<void>;
+	removeTagFromTask: (task: Task, tagID: string) => Promise<void>;
+	renameTag: (tagID: string, newName: string) => Promise<void>;
 }
 
 interface RowSelectionDragHandlers {
@@ -60,6 +66,7 @@ interface Props {
 	task: Task;
 	now: Date;
 	store: TaskManagerRowActions;
+	tags: Tag[];
 	isSelected: boolean;
 	selectionDragHandlers: RowSelectionDragHandlers;
 	hiddenColumnKeys: Set<HidableColumnKey>;
@@ -68,8 +75,12 @@ interface Props {
 	onRequestDelete: () => void;
 }
 
-export default function TaskManagerRow({ rowID, task, now, store, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
+export default function TaskManagerRow({ rowID, task, now, store, tags, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
 	const steps = task.getSteps();
+	const attachedTagIDs = task.getTagIDs();
+	const attachedTags = attachedTagIDs
+		.map(tagID => tags.find(tag => tag.id === tagID))
+		.filter((tag): tag is Tag => tag !== undefined);
 	const isCompactRow = steps.length === 0;
 	const minMs = task.getMinRequiredTime() ?? null;
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
@@ -115,11 +126,23 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 			</td>
 
 			<td className={styles.descriptionCell}>
-				<TextInput
-					value={task.getDescription()}
-					onCommit={newDescription => store.setDescription(task, newDescription)}
-					className={styles.descriptionInput}
-				/>
+				<div className={styles.nameRow}>
+					<TextInput
+						value={task.getDescription()}
+						onCommit={newDescription => store.setDescription(task, newDescription)}
+						className={styles.descriptionInput}
+					/>
+					{attachedTags.length === 0 && (
+						<span className={styles.hoverRevealTagButton}>
+							<AddTagPopover
+								existingTags={tags}
+								attachedTagIDs={attachedTagIDs}
+								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
+								onCreateAndAttach={tagName => store.addTagToTask(task, tagName)}
+							/>
+						</span>
+					)}
+				</div>
 				{isSkipActive && (
 					<div className={styles.skippedBadge}>
 						Skipped until {formatDate(skippedUntil)}
@@ -131,6 +154,26 @@ export default function TaskManagerRow({ rowID, task, now, store, isSelected, se
 						>
 							<CloseIcon className={styles.cancelSkipIcon} />
 						</button>
+					</div>
+				)}
+				{attachedTags.length > 0 && (
+					<div className={styles.tagsRow}>
+						{attachedTags.map(tag => (
+							<TagChip
+								key={tag.id}
+								tag={tag}
+								onRename={newName => store.renameTag(tag.id, newName)}
+								onRemove={() => store.removeTagFromTask(task, tag.id)}
+							/>
+						))}
+						<span className={styles.hoverRevealTagButton}>
+							<AddTagPopover
+								existingTags={tags}
+								attachedTagIDs={attachedTagIDs}
+								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
+								onCreateAndAttach={tagName => store.addTagToTask(task, tagName)}
+							/>
+						</span>
 					</div>
 				)}
 			</td>

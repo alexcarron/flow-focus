@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTasksStore, selectTasksInTaskManagerOrder } from '../../stores/tasksStore';
+import { useTagsStore } from '../../stores/tagsStore';
 import Task from '../../model/task/Task';
 import { getApproximateMillisecondsOfRecurrenceDuration } from '../../model/task/recurrence/RecurrenceDuration';
+import filterTasksByTags from '../../utilities/filterTasksByTags';
+import sortTagsByUsageCount from '../../utilities/sortTagsByUsageCount';
 import FilterDropdown from '../FilterDropdown';
 import TextInput from '../inputs/TextInput';
 import SelectionCheckbox from '../SelectionCheckbox';
 import TaskManagerRow, { TaskManagerRowActions, HidableColumnKey } from '../TaskManagerRow';
+import TagFilterControl from '../TagFilterControl';
 import TimingOptionsPopup from '../TimingOptionsPopup';
 import ConfirmModal from '../ConfirmModal';
 import CheckIcon from '../svg-icons/CheckIcon';
@@ -178,7 +182,12 @@ export default function TasksManagerPage() {
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
-	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks };
+	const addTagToTask = useTasksStore(s => s.addTagToTask);
+	const removeTagFromTask = useTasksStore(s => s.removeTagFromTask);
+	const tags = useTagsStore(s => s.tags);
+	const renameTag = useTagsStore(s => s.renameTag);
+	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
+	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
 
 	const [filter, setFilter] = useState<Filter>(Filter.All);
 	const [searchText, setSearchText] = useState('');
@@ -188,13 +197,33 @@ export default function TasksManagerPage() {
 	const [taskPendingDeletion, setTaskPendingDeletion] = useState<Task | null>(null);
 	const [isDeleteSelectedConfirmOpen, setIsDeleteSelectedConfirmOpen] = useState(false);
 	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
+	const [selectedTagIDs, setSelectedTagIDs] = useState<string[]>([]);
+	const [isUntaggedSelected, setIsUntaggedSelected] = useState(false);
+
+	function toggleSelectedTagID(tagID: string) {
+		setSelectedTagIDs(current => current.includes(tagID) ? current.filter(id => id !== tagID) : [...current, tagID]);
+		setIsUntaggedSelected(false);
+	}
+
+	function toggleIsUntaggedSelected() {
+		setIsUntaggedSelected(current => !current);
+		setSelectedTagIDs([]);
+	}
 
 	const now = new Date();
-	const displayedTasks = applySearch(applyFilter(applySort(tasks, sortBy, sortDir), filter), searchText);
+	const displayedTasks = filterTasksByTags({
+		tasks: applySearch(applyFilter(applySort(tasks, sortBy, sortDir), filter), searchText),
+		selectedTagIDs,
+		isUntaggedSelected,
+	});
 
 	useEffect(() => {
 		setSelectedRowIDs(new Set());
-	}, [filter, searchText]);
+	}, [filter, searchText, selectedTagIDs, isUntaggedSelected]);
+
+	useEffect(() => {
+		setSelectedTagIDs(current => current.filter(tagID => tags.some(tag => tag.id === tagID)));
+	}, [tags]);
 
 	function setRowSelected(rowID: string, isSelected: boolean) {
 		setSelectedRowIDs(current => {
@@ -283,6 +312,14 @@ export default function TasksManagerPage() {
 					onChange={setSearchText}
 					placeholder="Search tasks..."
 					className={`field ${styles.searchInput}`}
+				/>
+
+				<TagFilterControl
+					tags={tags}
+					selectedTagIDs={selectedTagIDs}
+					isUntaggedSelected={isUntaggedSelected}
+					onToggleTag={toggleSelectedTagID}
+					onToggleUntagged={toggleIsUntaggedSelected}
 				/>
 
 				<div className={styles.mobileToolbarControls}>
@@ -381,6 +418,7 @@ export default function TasksManagerPage() {
 									task={task}
 									now={now}
 									store={store}
+									tags={tagsSortedByUsageCount}
 									isSelected={selectedRowIDs.has(rowID)}
 									selectionDragHandlers={getRowSelectionDragHandlers(rowID)}
 									hiddenColumnKeys={hiddenColumnKeys}

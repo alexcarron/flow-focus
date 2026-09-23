@@ -1,0 +1,74 @@
+.chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-extra-extra-small);
+	padding-left: var(--space-small);
+	padding-right: var(--space-extra-small);
+	padding-top: 0;
+	padding-bottom: 0;
+	background-color: var(--color-accent-selected-background);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-full);
+	font-size: var(--font-size-extra-small);
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+@media (hover: hover) {
+	.chip:hover {
+		border-color: var(--color-text-secondary);
+	}
+}
+
+.nameButton {
+	padding: 0;
+	background: none;
+	border: none;
+	color: var(--color-text-secondary);
+	font-size: inherit;
+	cursor: pointer;
+}
+
+.nameInput {
+	min-width: 3ch;
+	color: var(--color-text-secondary);
+}
+
+.removeButton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: none;
+	border: none;
+	color: var(--color-text-subtle);
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.removeButton:hover {
+		color: var(--color-text-secondary);
+	}
+}
+
+.removeIcon {
+	width: 0.7rem;
+	height: 0.7rem;
+}
+
+.errorMessage {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 1;
+	margin-top: var(--space-small);
+	padding: var(--space-extra-extra-small) var(--space-extra-small);
+	background-color: var(--color-danger-surface);
+	border: 1px solid var(--color-danger);
+	border-radius: var(--radius-small);
+	color: var(--color-danger-text);
+	white-space: normal;
+	width: max-content;
+	max-width: 16rem;
+}
