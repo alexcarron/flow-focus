@@ -1,3 +1,4 @@
+import Tag from '../tag/Tag';
 import TaskTimingOptions from '../task/TaskTimingOptions';
 import RecurrenceDuration, { formatRecurrenceDuration } from '../task/recurrence/RecurrenceDuration';
 import RecurrenceUnit from '../task/recurrence/RecurrenceUnit';
@@ -7,6 +8,7 @@ import Weekday from '../time-management/Weekday';
 import parseDatePhrase, { nextDateForWeekday } from './parseDatePhrase';
 import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
 import { stepsMatcher } from './stepsMatcher';
+import { tagMatcher } from './tagMatcher';
 import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputField } from './TypedQuickInputToken';
 
 export type RawMatch = {
@@ -18,6 +20,7 @@ export type RawMatch = {
 	explanation: string;
 	timing: Partial<TaskTimingOptions>;
 	stepsList?: string[];
+	tagMatch?: { existingTagID: string | null; newTagName: string | null };
 	keepInName?: boolean;
 };
 
@@ -27,6 +30,7 @@ export type FindMatchesConfig = {
 	nightTime: Time;
 	morningTime: Time;
 	escapedTokenLocations: EscapedTokenLocation[];
+	existingTags: Tag[];
 };
 
 export type Matcher = {
@@ -513,5 +517,6 @@ export const typedQuickInputMatchers: Matcher[] = [
 	durationMatcher,
 	mandatoryMatcher,
 	stepsMatcher,
+	tagMatcher,
 	impliedDueDateMatcher,
 ];

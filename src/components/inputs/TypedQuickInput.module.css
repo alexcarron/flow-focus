@@ -83,6 +83,12 @@
 	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-steps) 15%, transparent);
 }
 
+.tokenTag {
+	color: var(--color-typed-quick-input-tag);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-tag) 15%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-tag) 15%, transparent);
+}
+
 .tokenIgnoredDate {
 	color: var(--color-text-muted);
 	text-decoration: line-through;

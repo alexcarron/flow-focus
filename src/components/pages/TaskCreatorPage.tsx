@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTasksStore } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useTagsStore } from '../../stores/tagsStore';
@@ -7,6 +7,8 @@ import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import { TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../../model/time-management/Time';
 import useTypedQuickInputEntry from '../../hooks/useTypedQuickInputEntry';
+import useTaskTagSelection from '../../hooks/useTaskTagSelection';
+import sortTagsByUsageCount from '../../utilities/sortTagsByUsageCount';
 import Step from '../../model/task/step/Step';
 import { createStep, pruneEmptySteps } from '../../model/task/step/stepTree';
 import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../../utilities/tree/orderedTree';
@@ -51,20 +53,38 @@ function findTokenForTimingKey(tokens: TypedQuickInputToken[], key: keyof TaskTi
 
 export default function TaskCreatorPage() {
 	const addTask = useTasksStore(s => s.addTask);
+	const tasks = useTasksStore(s => s.tasks);
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morningTime = useSettingsStore(s => s.morningTime);
 	const tags = useTagsStore(s => s.tags);
 	const renameTag = useTagsStore(s => s.renameTag);
+	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
 
 	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
+		existingTags: tags,
+	});
+	const {
+		alreadyAddedTagIDs,
+		notYetAddedTagNames,
+		selectExistingTag,
+		createAndAddTag,
+		removeAlreadyAddedTag,
+		removeNotYetAddedTagName,
+		renameNotYetAddedTagName,
+		reset: resetTagSelection,
+	} = useTaskTagSelection({
+		existingTags: tags,
+		parsedTags: parseResult.tags,
+		onStripRangeFromName: (startIndex, endIndex) => {
+			const effectiveEndIndex = name[endIndex] === ' ' ? endIndex + 1 : endIndex;
+			setName(name.slice(0, startIndex) + name.slice(effectiveEndIndex));
+		},
 	});
 	const [steps, setSteps] = useState<Step[]>([]);
-	const [alreadyAddedTagIDs, setAlreadyAddedTagIDs] = useState<string[]>([]);
-	const [notYetAddedTagNames, setNotYetAddedTagNames] = useState<string[]>([]);
 	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
@@ -106,38 +126,6 @@ export default function TaskCreatorPage() {
 	function handleToggleTokenEscape(field: TypedQuickInputToken['field'], matchedText: string, startIndex: number, endIndex: number) {
 		toggleTokenEscape(field, matchedText, startIndex, endIndex);
 		setDemotedRange({ start: startIndex, end: endIndex });
-	}
-
-	function selectExistingTag(tagID: string) {
-		setAlreadyAddedTagIDs(previous => [...previous, tagID]);
-	}
-
-	async function createAndAddTag(name: string) {
-		setNotYetAddedTagNames(previous => [...previous, name.trim()]);
-	}
-
-	function removeAlreadyAddedTag(tagID: string) {
-		setAlreadyAddedTagIDs(previous => previous.filter(id => id !== tagID));
-	}
-
-	function removeNotYetAddedTagName(name: string) {
-		setNotYetAddedTagNames(previous => previous.filter(existingName => existingName !== name));
-	}
-
-	function isTagNameAlreadyUsed(name: string, excludingPendingName?: string): boolean {
-		const normalizedName = name.trim().toLowerCase();
-		const matchesExistingTag = tags.some(tag => tag.name.toLowerCase() === normalizedName);
-		const matchesPendingTagName = notYetAddedTagNames.some(existingName => existingName !== excludingPendingName && existingName.toLowerCase() === normalizedName);
-		return matchesExistingTag || matchesPendingTagName;
-	}
-
-	async function renameNotYetAddedTagName(oldName: string, newName: string) {
-		const trimmedNewName = newName.trim();
-		if (trimmedNewName === '') throw new Error('Tag name cannot be empty.');
-		if (trimmedNewName !== oldName && isTagNameAlreadyUsed(trimmedNewName, oldName)) {
-			throw new Error(`A tag named "${trimmedNewName}" already exists.`);
-		}
-		setNotYetAddedTagNames(previous => previous.map(existingName => existingName === oldName ? trimmedNewName : existingName));
 	}
 
 	function addStepAndFocus() {
@@ -231,8 +219,7 @@ export default function TaskCreatorPage() {
 	function handleReset() {
 		resetTypedQuickInputEntry();
 		setSteps([]);
-		setAlreadyAddedTagIDs([]);
-		setNotYetAddedTagNames([]);
+		resetTagSelection();
 		setManualTiming(DEFAULT_TIMING);
 		setDemotedRange(null);
 		setError(null);
@@ -259,6 +246,9 @@ export default function TaskCreatorPage() {
 					onSubmit={() => handleCreateRef.current()}
 					onShiftEnter={handleShiftEnter}
 					disabled={isCreatingTask}
+					existingTagsSortedByUsage={tagsSortedByUsageCount}
+					alreadyAddedTagIDs={alreadyAddedTagIDs}
+					notYetAddedTagNames={notYetAddedTagNames}
 				/>
 			</div>
 

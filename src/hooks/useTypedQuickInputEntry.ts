@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
+import Tag from '../model/tag/Tag';
 import parseTypedQuickInput from '../model/typed-quick-input/parseTypedQuickInput';
 import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
 import updateEscapedTokenLocationsAfterTextChange from '../model/typed-quick-input/updateEscapedTokenLocationsAfterTextChange';
 import Time from '../model/time-management/Time';
 
-export default function useTypedQuickInputEntry(config: { nightTime: Time; morningTime: Time }) {
+export default function useTypedQuickInputEntry(config: { nightTime: Time; morningTime: Time; existingTags: Tag[] }) {
 	const [name, setNameState] = useState('');
 	const [escapedTokenLocations, setEscapedTokenLocations] = useState<EscapedTokenLocation[]>([]);
 
@@ -15,8 +16,9 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 			nightTime: config.nightTime,
 			morningTime: config.morningTime,
 			escapedTokenLocations,
+			existingTags: config.existingTags,
 		}),
-		[name, config.nightTime, config.morningTime, escapedTokenLocations]
+		[name, config.nightTime, config.morningTime, escapedTokenLocations, config.existingTags]
 	);
 
 	function setName(nextName: string) {

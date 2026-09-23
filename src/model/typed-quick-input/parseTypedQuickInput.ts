@@ -1,8 +1,9 @@
 import { DEFAULT_SETTINGS } from '../AppSettings';
+import Tag from '../tag/Tag';
 import TaskTimingOptions from '../task/TaskTimingOptions';
 import Time from '../time-management/Time';
 import { RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
-import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputParseResult } from './TypedQuickInputToken';
+import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputParseResult, TypedQuickInputTagMatch } from './TypedQuickInputToken';
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
@@ -52,14 +53,16 @@ export default function parseTypedQuickInput(config: {
 	nightTime?: Time;
 	morningTime?: Time;
 	escapedTokenLocations?: EscapedTokenLocation[];
+	existingTags?: Tag[];
 }): TypedQuickInputParseResult {
 	const input = config.input;
 	const now = config.now ?? new Date();
 	const nightTime = config.nightTime ?? defaultNightTime;
 	const morningTime = config.morningTime ?? defaultMorningTime;
 	const escapedTokenLocations = config.escapedTokenLocations ?? [];
+	const existingTags = config.existingTags ?? [];
 
-	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({ input, now, nightTime, morningTime, escapedTokenLocations }));
+	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({ input, now, nightTime, morningTime, escapedTokenLocations, existingTags }));
 
 	const quoteSpans = findQuoteSpans(input);
 
@@ -75,6 +78,7 @@ export default function parseTypedQuickInput(config: {
 	}));
 
 	const unprotectedMatches = rawMatches.filter(match =>
+		match.field === 'tag' ||
 		!protectedRanges.some(range =>
 			rangesOverlap({ start: match.startIndex, end: match.endIndex }, range)
 		)
@@ -119,10 +123,21 @@ export default function parseTypedQuickInput(config: {
 	const tokens = keptMatches.map(matchToToken).sort((left, right) => left.startIndex - right.startIndex);
 	const escapedTokens = keptEscapedMatches.map(matchToToken).sort((left, right) => left.startIndex - right.startIndex);
 
+	const tags: TypedQuickInputTagMatch[] = keptMatches
+		.filter(match => match.tagMatch)
+		.map(match => ({
+			startIndex: match.startIndex,
+			endIndex: match.endIndex,
+			existingTagID: match.tagMatch!.existingTagID,
+			newTagName: match.tagMatch!.newTagName,
+		}))
+		.sort((left, right) => left.startIndex - right.startIndex);
+
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
 		timing,
 		steps,
+		tags,
 		tokens,
 		escapedTokens,
 	};

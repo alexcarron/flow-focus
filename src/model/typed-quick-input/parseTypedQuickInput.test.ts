@@ -249,3 +249,40 @@ describe('escapedTokenLocations', () => {
 		expect(withSecondSat.tokens[0].startIndex).toBe(0);
 	});
 });
+
+describe('tags', () => {
+	const existingTags = [{ id: 'tag-1', name: 'Urgent' }];
+
+	it('resolves a typed tag that matches an existing tag case-insensitively', () => {
+		const result = parseTypedQuickInput({ input: 'Buy milk #urgent', now: testNow, existingTags });
+		expect(result.cleanedName).toBe('Buy milk');
+		expect(result.tags).toEqual([{ startIndex: 9, endIndex: 16, existingTagID: 'tag-1', newTagName: null }]);
+		expect(result.tokens[0].field).toBe('tag');
+	});
+
+	it('treats a typed tag with no existing match as a new tag name', () => {
+		const result = parseTypedQuickInput({ input: 'Buy milk #groceries', now: testNow, existingTags });
+		expect(result.tags).toEqual([{ startIndex: 9, endIndex: 19, existingTagID: null, newTagName: 'groceries' }]);
+	});
+
+	it('resolves every tag in a comma-separated list sharing one #', () => {
+		const result = parseTypedQuickInput({ input: 'Buy milk #urgent,groceries', now: testNow, existingTags });
+		expect(result.cleanedName).toBe('Buy milk');
+		expect(result.tags.map(tag => tag.existingTagID ?? tag.newTagName)).toEqual(['tag-1', 'groceries']);
+	});
+
+	it('resolves a quoted multi-word tag inside a comma-list without the quotes protecting it from being matched', () => {
+		const result = parseTypedQuickInput({ input: 'Buy milk #"Work Project",urgent', now: testNow, existingTags });
+		expect(result.cleanedName).toBe('Buy milk');
+		expect(result.tags.map(tag => tag.existingTagID ?? tag.newTagName)).toEqual(['Work Project', 'tag-1']);
+	});
+
+	it('excludes an escaped tag mention from the resolved tags and keeps it as literal text', () => {
+		const first = parseTypedQuickInput({ input: 'Buy milk #urgent', now: testNow, existingTags });
+		const escapedTokenLocations = [toEscapedTokenLocation(first.tokens[0])];
+
+		const result = parseTypedQuickInput({ input: 'Buy milk #urgent', now: testNow, existingTags, escapedTokenLocations });
+		expect(result.tags).toEqual([]);
+		expect(result.cleanedName).toBe('Buy milk #urgent');
+	});
+});

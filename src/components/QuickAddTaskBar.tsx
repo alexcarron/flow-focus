@@ -1,10 +1,13 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useTagsStore } from '../stores/tagsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import { TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../model/time-management/Time';
 import useTypedQuickInputEntry from '../hooks/useTypedQuickInputEntry';
+import useTaskTagSelection from '../hooks/useTaskTagSelection';
+import sortTagsByUsageCount from '../utilities/sortTagsByUsageCount';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import Step from '../model/task/step/Step';
 import { createStep, pruneEmptySteps } from '../model/task/step/stepTree';
@@ -31,13 +34,29 @@ interface Props {
 
 export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props) {
 	const addTask = useTasksStore(s => s.addTask);
+	const tasks = useTasksStore(s => s.tasks);
 	const nightTime = useSettingsStore(s => s.nightTime);
 	const morningTime = useSettingsStore(s => s.morningTime);
 	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.setShouldShowQuickAddTaskBarOnFocusPage);
+	const tags = useTagsStore(s => s.tags);
+	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
 
 	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
+		existingTags: tags,
+	});
+	const {
+		alreadyAddedTagIDs,
+		notYetAddedTagNames,
+		reset: resetTagSelection,
+	} = useTaskTagSelection({
+		existingTags: tags,
+		parsedTags: parseResult.tags,
+		onStripRangeFromName: (startIndex, endIndex) => {
+			const effectiveEndIndex = name[endIndex] === ' ' ? endIndex + 1 : endIndex;
+			setName(name.slice(0, startIndex) + name.slice(effectiveEndIndex));
+		},
 	});
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -75,6 +94,15 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			const timing: TaskTimingOptions = { ...DEFAULT_TIMING, ...parseResult.timing };
 			const task = await addTask(description, timing);
 
+			for (const tagName of notYetAddedTagNames) {
+				const existingTag = useTagsStore.getState().tags.find(tag => tag.name.toLowerCase() === tagName.toLowerCase());
+				const tag = existingTag ?? await useTagsStore.getState().addTag(tagName);
+				task.addTagID(tag.id);
+			}
+			for (const tagID of alreadyAddedTagIDs) {
+				task.addTagID(tagID);
+			}
+
 			const typedStepNodes = (parseResult.steps ?? []).map(createStep);
 			const combinedSteps = [...typedStepNodes, ...pruneEmptySteps(manualSteps)];
 			if (combinedSteps.length > 0) task.replaceAllSteps(combinedSteps);
@@ -83,6 +111,7 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			useTasksStore.getState().refreshTasks();
 
 			resetTypedQuickInputEntry();
+			resetTagSelection();
 			setDemotedRange(null);
 			setManualSteps([]);
 			setIsStepsSectionVisible(false);
@@ -107,6 +136,9 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 					onShiftEnter={handleShiftEnter}
 					editorClassName={styles.editor}
 					disabled={isCreatingTask}
+					existingTagsSortedByUsage={tagsSortedByUsageCount}
+					alreadyAddedTagIDs={alreadyAddedTagIDs}
+					notYetAddedTagNames={notYetAddedTagNames}
 				/>
 				<button
 					type="button"
