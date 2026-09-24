@@ -7,11 +7,6 @@
 	gap: var(--space-extra-large);
 }
 
-.errorMessage {
-	color: var(--color-danger-text);
-	font-size: var(--font-size-small);
-}
-
 .confirmationMessage {
 	color: var(--color-text-secondary);
 	font-size: var(--font-size-small);

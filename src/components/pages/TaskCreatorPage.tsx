@@ -20,6 +20,7 @@ import TypedQuickInput from '../inputs/TypedQuickInput';
 import TimingOptionsInput from '../inputs/TimingOptionsInput';
 import AddTagPopover from '../AddTagPopover';
 import TagChip from '../TagChip';
+import ErrorMessage from '../errors/ErrorMessage';
 import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
@@ -231,9 +232,7 @@ export default function TaskCreatorPage() {
 		<div className={styles.page}>
 			<h1>Create Task</h1>
 
-			{error && (
-				<p className={styles.errorMessage}>{error}</p>
-			)}
+			<ErrorMessage message={error} />
 
 			<div className="field-group">
 				<label className="field-label">Task name *</label>

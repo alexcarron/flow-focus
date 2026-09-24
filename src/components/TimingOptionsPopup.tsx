@@ -4,6 +4,7 @@ import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
 import { useTasksStore } from '../stores/tasksStore';
 import TimingOptionsInput from './inputs/TimingOptionsInput';
+import ErrorMessage from './errors/ErrorMessage';
 
 interface Props {
 	task: Task | null;
@@ -52,7 +53,7 @@ export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
 			<div className="modal">
 				<h2 className="modal-title">Timing Options</h2>
 				<TimingOptionsInput value={options} onChange={setOptions} />
-				{error && <p className="modal-error">{error}</p>}
+				<ErrorMessage message={error} />
 				<div className="modal-actions">
 					<button onClick={onClose} className="button">
 						Cancel

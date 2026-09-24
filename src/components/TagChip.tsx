@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
 import TextInput from './inputs/TextInput';
 import CloseIcon from './svg-icons/CloseIcon';
+import ErrorPopover from './errors/ErrorPopover';
 import styles from './TagChip.module.css';
 
 interface Props {
@@ -30,7 +32,11 @@ export default function TagChip({ name, onRename, onRemove }: Props) {
 			setIsEditing(false);
 			setErrorMessage(null);
 		} catch (error) {
-			setErrorMessage(error instanceof Error ? error.message : String(error));
+			if (error instanceof DuplicateTagNameError || error instanceof EmptyTagNameError) {
+				setErrorMessage(error.message);
+			} else {
+				setErrorMessage('Failed to rename tag.');
+			}
 		}
 	}
 
@@ -39,6 +45,7 @@ export default function TagChip({ name, onRename, onRemove }: Props) {
 			{isEditing ? (
 				<TextInput
 					value={name}
+					onChange={() => setErrorMessage(null)}
 					onCommit={commitRename}
 					className={styles.nameInput}
 					onKeyDown={event => {
@@ -56,7 +63,7 @@ export default function TagChip({ name, onRename, onRemove }: Props) {
 			<button type="button" onClick={onRemove} className={`${styles.removeButton} touch-hit-area`} aria-label={`Remove tag ${name}`} title={`Remove tag ${name}`}>
 				<CloseIcon className={styles.removeIcon} />
 			</button>
-			{errorMessage && <span className={styles.errorMessage}>{errorMessage}</span>}
+			<ErrorPopover message={errorMessage} />
 		</span>
 	);
 }

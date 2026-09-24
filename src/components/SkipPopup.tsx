@@ -3,6 +3,7 @@ import Task from '../model/task/Task';
 import { SkipUntilDateInPastError } from '../model/task/TaskTimingError';
 import { useTasksStore } from '../stores/tasksStore';
 import DatetimeInput from './inputs/DatetimeInput';
+import ErrorMessage from './errors/ErrorMessage';
 
 interface Props {
 	task: Task;
@@ -77,7 +78,7 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 						defaultTimeOfDay="morning"
 					/>
 				</div>
-				{errorMessage && <p className="modal-error">{errorMessage}</p>}
+				<ErrorMessage message={errorMessage} />
 				<div className="modal-actions">
 					{canSkipCurrentOccurrence && (
 						<button onClick={handleSkipCurrentOccurrence} className="button">

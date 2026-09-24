@@ -35,7 +35,3 @@
 	}
 }
 
-.errorMessage {
-	font-size: var(--font-size-extra-small);
-	color: var(--color-danger);
-}

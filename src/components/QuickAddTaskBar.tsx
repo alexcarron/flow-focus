@@ -12,8 +12,11 @@ import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import Step from '../model/task/step/Step';
 import { createStep, pruneEmptySteps } from '../model/task/step/stepTree';
 import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../utilities/tree/orderedTree';
+import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
+import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TypedQuickInput from './inputs/TypedQuickInput';
+import ErrorMessage from './errors/ErrorMessage';
 import EyeOffIcon from './svg-icons/EyeOffIcon';
 import styles from './QuickAddTaskBar.module.css';
 
@@ -60,6 +63,7 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	});
 	const [demotedRange, setDemotedRange] = useState<{ start: number; end: number } | null>(null);
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const isCreatingTaskRef = useRef(false);
 	const [manualSteps, setManualSteps] = useState<Step[]>([]);
 	const [isStepsSectionVisible, setIsStepsSectionVisible] = useState(false);
@@ -80,6 +84,11 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	function handleShiftEnter() {
 		setIsStepsSectionVisible(true);
 		addStepAndFocus();
+	}
+
+	function handleNameChange(newName: string) {
+		setErrorMessage(null);
+		setName(newName);
 	}
 
 	async function handleCreate() {
@@ -110,11 +119,22 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			await useTasksStore.getState().persistChangedTasks([task]);
 			useTasksStore.getState().refreshTasks();
 
+			setErrorMessage(null);
 			resetTypedQuickInputEntry();
 			resetTagSelection();
 			setDemotedRange(null);
 			setManualSteps([]);
 			setIsStepsSectionVisible(false);
+		} catch (creationError) {
+			if (creationError instanceof StartTimeAfterEndTimeError) {
+				setErrorMessage('Start time cannot be after end time.');
+			} else if (creationError instanceof StartTimeAfterDeadlineError) {
+				setErrorMessage('Start time cannot be after the deadline.');
+			} else if (creationError instanceof DuplicateTagNameError || creationError instanceof EmptyTagNameError) {
+				setErrorMessage(creationError.message);
+			} else {
+				setErrorMessage('Failed to create task.');
+			}
 		} finally {
 			isCreatingTaskRef.current = false;
 			setIsCreatingTask(false);
@@ -126,7 +146,7 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			<div className={styles.bar}>
 				<TypedQuickInput
 					value={name}
-					onChange={setName}
+					onChange={handleNameChange}
 					tokens={parseResult.tokens}
 					escapedTokens={parseResult.escapedTokens}
 					onToggleTokenEscape={handleToggleTokenEscape}
@@ -159,6 +179,8 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 					<EyeOffIcon className={styles.hideIcon} />
 				</button>
 			</div>
+
+			<ErrorMessage message={errorMessage} />
 
 			{isStepsSectionVisible && (
 				<div className={styles.stepsSection}>

@@ -8,6 +8,7 @@ import { useTasksStore } from '../stores/tasksStore';
 import GoogleIcon from './svg-icons/GoogleIcon';
 import SyncStatusIcon from './svg-icons/SyncStatusIcon';
 import SignOutConfirmationModal from './SignOutConfirmationModal';
+import ErrorMessage from './errors/ErrorMessage';
 import styles from './UserProfileControls.module.css';
 
 export default function UserProfileControls() {
@@ -33,8 +34,8 @@ export default function UserProfileControls() {
 		setErrorMessage(null);
 		try {
 			await signInWithGoogle();
-		} catch (err) {
-			setErrorMessage(err instanceof Error ? err.message : 'Failed to sign in.');
+		} catch {
+			setErrorMessage('Failed to sign in.');
 		}
 	}
 
@@ -42,8 +43,8 @@ export default function UserProfileControls() {
 		setErrorMessage(null);
 		try {
 			await signOut();
-		} catch (err) {
-			setErrorMessage(err instanceof Error ? err.message : 'Failed to sign out.');
+		} catch {
+			setErrorMessage('Failed to sign out.');
 		}
 	}
 
@@ -51,9 +52,9 @@ export default function UserProfileControls() {
 		setErrorMessage(null);
 		try {
 			await confirmSignOut();
-		} 
-		catch (err) {
-			setErrorMessage(err instanceof Error ? err.message : 'Failed to sign out.');
+		}
+		catch {
+			setErrorMessage('Failed to sign out.');
 		}
 	}
 
@@ -65,8 +66,8 @@ export default function UserProfileControls() {
 		}
 		try {
 			await updateDisplayName(newDisplayName);
-		} catch (err) {
-			setErrorMessage(err instanceof Error ? err.message : 'Failed to update display name.');
+		} catch {
+			setErrorMessage('Failed to update display name.');
 			if (displayNameRef.current) displayNameRef.current.textContent = displayName;
 		}
 	}
@@ -80,7 +81,7 @@ export default function UserProfileControls() {
 					<GoogleIcon className={styles.googleIcon} />
 					Sign in with Google
 				</button>
-				{errorMessage && <span className={styles.errorMessage}>{errorMessage}</span>}
+				<ErrorMessage message={errorMessage} />
 			</div>
 		);
 	}
@@ -105,7 +106,7 @@ export default function UserProfileControls() {
 			<button onClick={onSignOutClick} className="button small">
 				Sign out
 			</button>
-			{errorMessage && <span className={styles.errorMessage}>{errorMessage}</span>}
+			<ErrorMessage message={errorMessage} />
 			<SignOutConfirmationModal
 				isOpen={isSignOutConfirmationRequired}
 				onConfirm={onConfirmSignOutClick}

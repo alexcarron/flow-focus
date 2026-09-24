@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Tag from '../model/tag/Tag';
 import { useOutsideClickAndEscape } from '../hooks/useOutsideClickAndEscape';
+import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
 import PlusIcon from './svg-icons/PlusIcon';
+import ErrorMessage from './errors/ErrorMessage';
 import styles from './AddTagPopover.module.css';
 
 interface Props {
@@ -76,7 +78,11 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 			await onCreateAndAdd(name);
 			closePopover();
 		} catch (error) {
-			setErrorMessage(error instanceof Error ? error.message : String(error));
+			if (error instanceof DuplicateTagNameError || error instanceof EmptyTagNameError) {
+				setErrorMessage(error.message);
+			} else {
+				setErrorMessage('Failed to create tag.');
+			}
 		}
 	}
 
@@ -162,7 +168,7 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 						className={`field ${styles.searchInput}`}
 					/>
 
-					{errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
+					<ErrorMessage message={errorMessage} />
 
 					<ul className={styles.suggestionList} role="listbox">
 						{listItems.map((item, index) => (
