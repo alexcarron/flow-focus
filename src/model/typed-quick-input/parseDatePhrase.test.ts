@@ -15,6 +15,15 @@ function nextDateWithJavascriptDay(javascriptDay: number, includeToday: boolean)
 	return result;
 }
 
+function lastDateWithJavascriptDay(javascriptDay: number): Date {
+	const result = new Date(testNow);
+	result.setHours(0, 0, 0, 0);
+	let daysSince = (result.getDay() - javascriptDay + 7) % 7;
+	if (daysSince === 0) daysSince = 7;
+	result.setDate(result.getDate() - daysSince);
+	return result;
+}
+
 describe('parseDatePhrase', () => {
 	it('parses today and tomorrow', () => {
 		const today = parseDatePhrase({ text: 'today', now: testNow });
@@ -40,6 +49,24 @@ describe('parseDatePhrase', () => {
 		const expected = new Date(plain);
 		expected.setDate(expected.getDate() + 7);
 		expect(parseDatePhrase({ text: 'next friday', now: testNow })?.date.getTime()).toBe(expected.getTime());
+	});
+
+	it('parses "last weekday" as the most recent past occurrence, skipping today even if today is that weekday', () => {
+		const testNowWeekday = testNow.getDay();
+		expect(parseDatePhrase({ text: 'last friday', now: testNow })?.date.getTime()).toBe(lastDateWithJavascriptDay(5).getTime());
+		expect(parseDatePhrase({ text: `last ${WEEKDAY_NAMES[testNowWeekday]}`, now: testNow })?.date.getTime())
+			.toBe(lastDateWithJavascriptDay(testNowWeekday).getTime());
+	});
+
+	it.each(['past', 'previous', 'prior'])('parses "%s weekday" as a synonym for "last weekday"', (synonym) => {
+		expect(parseDatePhrase({ text: `${synonym} friday`, now: testNow })?.date.getTime()).toBe(lastDateWithJavascriptDay(5).getTime());
+	});
+
+	it('parses "last weekday at <time>"', () => {
+		const lastFriday = parseDatePhrase({ text: 'last friday', now: testNow });
+		const parsed = parseDatePhrase({ text: 'last friday at 1:00pm', now: testNow });
+		expect(parsed?.date.getTime()).toBe(lastFriday?.date.getTime());
+		expect(parsed?.timeOfDay).toEqual({ hour: 13, minute: 0 });
 	});
 
 	it('parses a month, day, ordinal, and explicit year', () => {

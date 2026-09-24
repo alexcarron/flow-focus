@@ -209,6 +209,12 @@ describe('parseTypedQuickInput', () => {
 		expect(result.tokens[0].field).toBe('deadline');
 	});
 
+	it('treats "last weekday" as an implied due date in the past', () => {
+		const result = parseTypedQuickInput({ input: 'Follow up on the call from last friday', now: testNow });
+		expect(result.timing.deadline?.getDay()).toBe(5);
+		expect(result.timing.deadline?.getTime()).toBeLessThan(testNow.getTime());
+	});
+
 	it('treats a word that happens to match an abbreviated weekday as an implied due date even when not at the end', () => {
 		const result = parseTypedQuickInput({ input: 'I sat on a chair', now: testNow });
 		expect(result.timing.deadline?.getDay()).toBe(6);

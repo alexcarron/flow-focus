@@ -12,6 +12,8 @@ export type ParsedDatePhrase = {
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
 
+export const PAST_WEEKDAY_TRIGGER_WORDS = ['last', 'past', 'previous', 'prior'];
+
 const weekdayNameToWeekday: Record<string, Weekday> = {
 	monday: Weekday.MONDAY, mon: Weekday.MONDAY,
 	tuesday: Weekday.TUESDAY, tues: Weekday.TUESDAY, tue: Weekday.TUESDAY,
@@ -45,6 +47,7 @@ function toAlternation(words: string[]): string {
 
 const weekdayAlternation = toAlternation(Object.keys(weekdayNameToWeekday));
 const monthAlternation = toAlternation(Object.keys(monthNameToIndex));
+const pastWeekdayTriggerAlternation = toAlternation(PAST_WEEKDAY_TRIGGER_WORDS);
 
 const CLOCK_TIME_REGEX = /^(?:at\s+)?((?:[01]?\d|2[0-3]):[0-5]\d(?:\s?[ap]m)?|(?:0?[1-9]|1[0-2])\s?[ap]m)\b/i;
 const NAMED_TIME_OF_DAY_REGEX = /^(?:at\s+)?(noon|afternoon|evening|morning|night|midnight)\b/i;
@@ -145,6 +148,27 @@ function makeParseNextWeekday(weekdayWordAlternation: string) {
 	};
 }
 
+export function lastDateForWeekday(weekday: Weekday, now: Date): Date {
+	const targetJavascriptDay = weekdayToJavascriptDay(weekday);
+	const today = atStartOfDay(now);
+	let daysSinceTarget = (today.getDay() - targetJavascriptDay + 7) % 7;
+	if (daysSinceTarget === 0) {
+		daysSinceTarget = 7;
+	}
+	today.setDate(today.getDate() - daysSinceTarget);
+	return today;
+}
+
+function makeParseLastWeekday(weekdayWordAlternation: string) {
+	return function parseLastWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
+		const match = new RegExp(`^(?:${pastWeekdayTriggerAlternation})\\s+(${weekdayWordAlternation})`, 'i').exec(text);
+		if (!match) return null;
+
+		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
+		return { date: lastDateForWeekday(weekday, now), matchedLength: match[0].length };
+	};
+}
+
 function makeParseWeekday(weekdayWordAlternation: string) {
 	return function parseWeekday(text: string, now: Date, _nightTime: Time): ParsedDatePhrase | null {
 		const match = new RegExp(`^(${weekdayWordAlternation})`, 'i').exec(text);
@@ -188,6 +212,7 @@ const dateParsers = [
 	parseRelativeDay,
 	parseRelativeDuration,
 	makeParseNextWeekday(weekdayAlternation),
+	makeParseLastWeekday(weekdayAlternation),
 	makeParseWeekday(weekdayAlternation),
 	makeParseMonthAndDay(monthAlternation),
 ];
