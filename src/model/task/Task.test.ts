@@ -964,20 +964,20 @@ describe('Task', () => {
 		});
 
 		it('getTimeToComplete should return negative if the deadline is in the past', () => {
-			const currentTime = new Date();
+			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
 			task.setDeadline(new Date(currentTime.getTime() - 1));
-			expect(task.getTimeToComplete(new Date())).toEqual(-1);
+			expect(task.getTimeToComplete(currentTime)).toEqual(-1);
 		});
 
 		it('getTimeToComplete should return the number of milliseconds left if the deadline is in the future', () => {
-			const currentTime = new Date();
+			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
 			const deadline = new Date(currentTime.getTime() + 1000);
 			task.setDeadline(deadline);
 			expect(task.getTimeToComplete(currentTime)).toBe(1000);
 		});
 
 		it('getTimeToComplete should return the number of milliseconds between the deadline and start time if the start time is in the future', () => {
-			const currentTime = new Date();
+			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
 			const startTime = new Date(currentTime.getTime() + 1000);
 			const deadline = new Date(currentTime.getTime() + 2000);
 			task.setStartTime(startTime);
