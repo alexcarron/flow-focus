@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 import { useCommitOnEnter } from '../../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../../hooks/usePlainTextContentEditable';
 import { mergeRefs } from '../../utilities/mergeRefs';
@@ -13,14 +13,14 @@ interface Props {
 }
 
 export default function TextInput({ value, onChange, onCommit, placeholder, className = '', onKeyDown }: Props) {
-	const ref = useRef<HTMLSpanElement>(null);
+	const spanElementRef = useRef<HTMLSpanElement>(null);
 	const isComposing = useRef(false);
 
-	useEffect(() => {
-		const el = ref.current;
-		if (!el) return;
-		if (el.textContent !== value) {
-			el.textContent = value;
+	useLayoutEffect(() => {
+		const spanElement = spanElementRef.current;
+		if (!spanElement) return;
+		if (spanElement.textContent !== value) {
+			spanElement.textContent = value;
 		}
 	}, [value]);
 
@@ -33,7 +33,7 @@ export default function TextInput({ value, onChange, onCommit, placeholder, clas
 
 	return (
 		<span
-			ref={mergeRefs(ref, commitOnEnterRef)}
+			ref={mergeRefs(spanElementRef, commitOnEnterRef)}
 			contentEditable
 			suppressContentEditableWarning
 			spellCheck={false}

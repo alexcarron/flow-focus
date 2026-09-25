@@ -1,4 +1,5 @@
-import { cloneElement, useEffect, useRef, useState } from 'react';
+import { cloneElement, useRef, useState } from 'react';
+import { useOutsideClickAndEscape } from '../hooks/useOutsideClickAndEscape';
 import ChevronDownIcon from './svg-icons/ChevronDownIcon';
 import styles from './FilterDropdown.module.css';
 
@@ -21,18 +22,7 @@ export default function FilterDropdown<Value extends string | number>({ value, o
 	const containerRef = useRef<HTMLDivElement>(null);
 	const selectedOption = options.find(option => option.value === value) ?? options[0];
 
-	useEffect(() => {
-		if (!isOpen) return;
-
-		function closeIfClickedOutside(e: MouseEvent) {
-			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-				setIsOpen(false);
-			}
-		}
-
-		window.addEventListener('mousedown', closeIfClickedOutside);
-		return () => window.removeEventListener('mousedown', closeIfClickedOutside);
-	}, [isOpen]);
+	useOutsideClickAndEscape(containerRef, isOpen, () => setIsOpen(false));
 
 	function selectOption(option: FilterDropdownOption<Value>) {
 		onChange(option.value);

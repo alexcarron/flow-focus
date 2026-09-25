@@ -105,9 +105,8 @@ export function useNestedListDrag<TNode extends OrderedTreeNode<TNode>, TContain
 	const [insertionListIndex, setInsertionListIndex] = useState<number | null>(null);
 	const [draggingRowRect, setDraggingRowRect] = useState<DOMRect | null>(null);
 	const [draggingSubtreeHeight, setDraggingSubtreeHeight] = useState(0);
+	const [draggingItemStartDepth, setDraggingItemStartDepth] = useState(0);
 	const dragStartClientRef = useRef({ x: 0, y: 0 });
-	const draggingItemStartDepthRef = useRef(0);
-	const projectionRef = useRef<DropProjection | null>(null);
 	const rowElementsByItemIDRef = useRef(new Map<string, HTMLElement>());
 
 	const fullFlattened = flattenForDisplay(items);
@@ -115,9 +114,8 @@ export function useNestedListDrag<TNode extends OrderedTreeNode<TNode>, TContain
 	const visibleFlattened = fullFlattened.filter(flattened => !draggedSubtreeIDs.has(flattened.node.id));
 
 	const projection = draggingItemID !== null && insertionListIndex !== null
-		? computeDropProjection(visibleFlattened, insertionListIndex, draggingItemStartDepthRef.current + Math.round(dragOffsetX / indentWidthPx))
+		? computeDropProjection(visibleFlattened, insertionListIndex, draggingItemStartDepth + Math.round(dragOffsetX / indentWidthPx))
 		: null;
-	projectionRef.current = projection;
 
 	const displayRows = buildDisplayRowsKeepingDraggedSubtreeMounted({
 		fullFlattened,
@@ -151,7 +149,7 @@ export function useNestedListDrag<TNode extends OrderedTreeNode<TNode>, TContain
 			setDragOffsetY(0);
 
 			const flattened = fullFlattened.find(candidate => candidate.node.id === itemID);
-			draggingItemStartDepthRef.current = flattened?.depth ?? 0;
+			setDraggingItemStartDepth(flattened?.depth ?? 0);
 			const visibleItemsBefore = fullFlattened
 				.slice(0, fullFlattened.findIndex(candidate => candidate.node.id === itemID))
 				.filter(candidate => !getSubtreeIDsIncludingSelf(items, itemID).has(candidate.node.id))
@@ -188,9 +186,8 @@ export function useNestedListDrag<TNode extends OrderedTreeNode<TNode>, TContain
 		onHoldEnd: () => {
 			document.body.style.userSelect = '';
 			document.body.style.cursor = '';
-			const finalProjection = projectionRef.current;
-			if (draggingItemID !== null && finalProjection !== null) {
-				onReorder(draggingItemID, finalProjection.parentID, finalProjection.index);
+			if (draggingItemID !== null && projection !== null) {
+				onReorder(draggingItemID, projection.parentID, projection.index);
 			}
 			setDraggingItemID(null);
 			setInsertionListIndex(null);
@@ -217,7 +214,7 @@ export function useNestedListDrag<TNode extends OrderedTreeNode<TNode>, TContain
 		registerRowElement: registerRowElementAndTrack,
 		registerPlaceholderElement: (element: HTMLElement | null) => registerRowElement(PLACEHOLDER_ROW_ID, element),
 		draggingItemID,
-		draggingItemDepth: projection?.depth ?? draggingItemStartDepthRef.current,
+		draggingItemDepth: projection?.depth ?? draggingItemStartDepth,
 		displayRows,
 		dragOffsetY,
 		draggingRowRect,

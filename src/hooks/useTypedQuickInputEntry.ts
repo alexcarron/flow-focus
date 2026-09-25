@@ -9,16 +9,19 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 	const [name, setNameState] = useState('');
 	const [escapedTokenLocations, setEscapedTokenLocations] = useState<EscapedTokenLocation[]>([]);
 
+	const nightTimeText = config.nightTime.toString();
+	const morningTimeText = config.morningTime.toString();
+
 	const parseResult = useMemo(
 		() => parseTypedQuickInput({
 			input: name,
 			now: new Date(),
-			nightTime: config.nightTime,
-			morningTime: config.morningTime,
+			nightTime: Time.fromString(nightTimeText),
+			morningTime: Time.fromString(morningTimeText),
 			escapedTokenLocations,
 			existingTags: config.existingTags,
 		}),
-		[name, config.nightTime, config.morningTime, escapedTokenLocations, config.existingTags]
+		[name, nightTimeText, morningTimeText, escapedTokenLocations, config.existingTags]
 	);
 
 	function setName(nextName: string) {

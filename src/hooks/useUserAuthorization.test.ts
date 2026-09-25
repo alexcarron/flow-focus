@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useUserAuthorization } from './useUserAuthorization';
+import { UserAuthorizationProvider } from '../user-authorization/UserAuthorizationContext';
 import type { Session, User } from '@supabase/supabase-js';
 
 const getSessionMock = vi.fn<() => Promise<Session | null>>();
@@ -47,7 +48,7 @@ describe('useUserAuthorization', () => {
 		const user = makeUser();
 		getSessionMock.mockResolvedValue(makeSession(user));
 
-		const { result } = renderHook(() => useUserAuthorization());
+		const { result } = renderHook(() => useUserAuthorization(), { wrapper: UserAuthorizationProvider });
 
 		expect(result.current.isLoading).toBe(true);
 
@@ -59,7 +60,7 @@ describe('useUserAuthorization', () => {
 	it('starts signed out with no session on mount', async () => {
 		getSessionMock.mockResolvedValue(null);
 
-		const { result } = renderHook(() => useUserAuthorization());
+		const { result } = renderHook(() => useUserAuthorization(), { wrapper: UserAuthorizationProvider });
 
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -69,7 +70,7 @@ describe('useUserAuthorization', () => {
 
 	it('updates state when a live auth event fires', async () => {
 		getSessionMock.mockResolvedValue(null);
-		const { result } = renderHook(() => useUserAuthorization());
+		const { result } = renderHook(() => useUserAuthorization(), { wrapper: UserAuthorizationProvider });
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		const user = makeUser();
@@ -83,7 +84,7 @@ describe('useUserAuthorization', () => {
 	it('clears user and profile on sign out', async () => {
 		const user = makeUser();
 		getSessionMock.mockResolvedValue(makeSession(user));
-		const { result } = renderHook(() => useUserAuthorization());
+		const { result } = renderHook(() => useUserAuthorization(), { wrapper: UserAuthorizationProvider });
 		await waitFor(() => expect(result.current.user).toEqual(user));
 
 		await act(async () => {
@@ -97,7 +98,7 @@ describe('useUserAuthorization', () => {
 
 	it('unsubscribes from auth state changes on unmount', async () => {
 		getSessionMock.mockResolvedValue(null);
-		const { unmount } = renderHook(() => useUserAuthorization());
+		const { unmount } = renderHook(() => useUserAuthorization(), { wrapper: UserAuthorizationProvider });
 		await waitFor(() => expect(onAuthStateChangeMock).toHaveBeenCalled());
 
 		unmount();
@@ -107,7 +108,7 @@ describe('useUserAuthorization', () => {
 
 	it('rejects updating the display name while signed out', async () => {
 		getSessionMock.mockResolvedValue(null);
-		const { result } = renderHook(() => useUserAuthorization());
+		const { result } = renderHook(() => useUserAuthorization(), { wrapper: UserAuthorizationProvider });
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		await expect(result.current.updateDisplayName('New Name')).rejects.toThrow(

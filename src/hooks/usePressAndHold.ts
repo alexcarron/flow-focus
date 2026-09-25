@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRefToLatestValue } from './useRefToLatestValue';
 
 const DEFAULT_TOUCH_HOLD_DELAY_MS = 250;
 const DEFAULT_MOVEMENT_TOLERANCE_FOR_HOLD_PX = 6;
@@ -50,14 +51,10 @@ export function usePressAndHold<TContainerElement extends HTMLElement = HTMLDivE
 	const isTouchInProgressRef = useRef(false);
 	const touchStartClientRef = useRef({ x: 0, y: 0 });
 
-	const onHoldStartRef = useRef(onHoldStart);
-	onHoldStartRef.current = onHoldStart;
-	const onPointerOverItemRef = useRef(onPointerOverItem);
-	onPointerOverItemRef.current = onPointerOverItem;
-	const onHoldMoveRef = useRef(onHoldMove);
-	onHoldMoveRef.current = onHoldMove;
-	const onHoldEndRef = useRef(onHoldEnd);
-	onHoldEndRef.current = onHoldEnd;
+	const onHoldStartRef = useRefToLatestValue(onHoldStart);
+	const onPointerOverItemRef = useRefToLatestValue(onPointerOverItem);
+	const onHoldMoveRef = useRefToLatestValue(onHoldMove);
+	const onHoldEndRef = useRefToLatestValue(onHoldEnd);
 
 	function armHold(itemKey: string, startClientX: number, startClientY: number) {
 		isHoldActiveRef.current = true;

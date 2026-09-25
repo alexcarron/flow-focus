@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
 import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
@@ -17,15 +17,10 @@ interface Props {
 const DEFAULT_RECURRENCE_DURATION: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Day };
 
 export default function TimingOptionsInput({ value, onChange }: Props) {
-	const [local, setLocal] = useState<TaskTimingOptions>(value);
 	const [isAdvancedRepeatingOpen, setIsAdvancedRepeatingOpen] = useState(false);
 
-	useEffect(() => { setLocal(value); }, [value]);
-
 	function update(patch: Partial<TaskTimingOptions>) {
-		const next = { ...local, ...patch };
-		setLocal(next);
-		onChange(next);
+		onChange({ ...value, ...patch });
 	}
 
 	return (
@@ -33,41 +28,41 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 			<DatetimeInput
 				label="Start time"
 				description="When this task will begin to appear. It will stay hidden until then. Leave blank if you can start this task right now."
-				value={local.startTime}
+				value={value.startTime}
 				onChange={startTime => update({ startTime })}
 				defaultTimeOfDay="morning"
 			/>
 			<DatetimeInput
 				label="End time"
 				description="When this task will no longer be shown, even if you haven't completed it yet. Leave blank if this task can always be attempted."
-				value={local.endTime}
+				value={value.endTime}
 				onChange={endTime => update({ endTime })}
 				defaultTimeOfDay="night"
 			/>
 			<DatetimeInput
 				label="Deadline"
 				description="When you want to complete this task. Leave blank if it does not matter when this task is done."
-				value={local.deadline}
+				value={value.deadline}
 				onChange={deadline => update({ deadline })}
 				defaultTimeOfDay="night"
 			/>
 			<DurationRangeInput
-				minDuration={local.minDuration}
-				maxDuration={local.maxDuration}
+				minDuration={value.minDuration}
+				maxDuration={value.maxDuration}
 				onChange={({ minDuration, maxDuration }) => update({ minDuration, maxDuration })}
 			/>
 			<div className={styles.repeatToggle}>
 				<CheckboxInput
-					value={local.recurrenceDuration !== null}
+					value={value.recurrenceDuration !== null}
 					onChange={checked => update({ recurrenceDuration: checked ? DEFAULT_RECURRENCE_DURATION : null })}
 					label="Repeating"
 				/>
 			</div>
-			{local.recurrenceDuration !== null && (
+			{value.recurrenceDuration !== null && (
 				<>
 					<RecurrenceDurationInput
 						label="Repeat every"
-						value={local.recurrenceDuration}
+						value={value.recurrenceDuration}
 						onChange={recurrenceDuration => update({ recurrenceDuration })}
 					/>
 					<div className={styles.advancedRepeating}>
@@ -81,7 +76,7 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 						</button>
 						{isAdvancedRepeatingOpen && (
 							<CheckboxInput
-								value={local.shouldNotSkipMissedOccurrences}
+								value={value.shouldNotSkipMissedOccurrences}
 								onChange={shouldNotSkipMissedOccurrences => update({ shouldNotSkipMissedOccurrences })}
 								label="Don't skip missed repeats"
 								description="If a repeat's deadline passes without you completing it, keep showing that overdue repeat until you complete or skip it, instead of moving on to the current one."
@@ -91,7 +86,7 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 				</>
 			)}
 			<CheckboxInput
-				value={local.isMandatory}
+				value={value.isMandatory}
 				onChange={isMandatory => update({ isMandatory })}
 				label="Mandatory"
 				description="Whether this task should jump ahead of other optional tasks that are due sooner."

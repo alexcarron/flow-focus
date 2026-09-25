@@ -199,7 +199,7 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 
 	useImperativeHandle(ref, () => ({
 		focusStep: stepID => setStepPendingFocus({ stepID, caretPosition: 'end' }),
-	}));
+	}), []);
 
 	function onStepCheckboxChange(stepID: string, isChecked: boolean, isShiftClick: boolean) {
 		if (isShiftClick) onCheckUpToHere?.(stepID, isChecked);

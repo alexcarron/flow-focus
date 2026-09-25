@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Task from '../model/task/Task';
 import Tag from '../model/tag/Tag';
 import { useTasksStore } from '../stores/tasksStore';
@@ -73,7 +73,7 @@ export default function TaskCard({ task }: Props) {
 
 	const commitDescriptionOnEnterRef = useCommitOnEnter<HTMLDivElement>({ targetSelector: '[data-task-description]' });
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const el = descRef.current;
 		if (el && el.textContent !== task.getDescription()) {
 			el.textContent = task.getDescription();

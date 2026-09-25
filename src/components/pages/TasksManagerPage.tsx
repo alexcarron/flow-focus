@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTasksStore, selectTasksInTaskManagerOrder } from '../../stores/tasksStore';
 import { useTagsStore } from '../../stores/tagsStore';
 import Task from '../../model/task/Task';
@@ -200,30 +200,40 @@ export default function TasksManagerPage() {
 	const [selectedTagIDs, setSelectedTagIDs] = useState<string[]>([]);
 	const [isUntaggedSelected, setIsUntaggedSelected] = useState(false);
 
+	const selectedExistingTagIDs = selectedTagIDs.filter(tagID => tags.some(tag => tag.id === tagID));
+
+	function clearSelectedRows() {
+		setSelectedRowIDs(new Set());
+	}
+
+	function changeFilter(nextFilter: Filter) {
+		setFilter(nextFilter);
+		clearSelectedRows();
+	}
+
+	function changeSearchText(nextSearchText: string) {
+		setSearchText(nextSearchText);
+		clearSelectedRows();
+	}
+
 	function toggleSelectedTagID(tagID: string) {
 		setSelectedTagIDs(current => current.includes(tagID) ? current.filter(id => id !== tagID) : [...current, tagID]);
 		setIsUntaggedSelected(false);
+		clearSelectedRows();
 	}
 
 	function toggleIsUntaggedSelected() {
 		setIsUntaggedSelected(current => !current);
 		setSelectedTagIDs([]);
+		clearSelectedRows();
 	}
 
 	const now = new Date();
 	const displayedTasks = filterTasksByTags({
 		tasks: applySearch(applyFilter(applySort(tasks, sortBy, sortDir), filter), searchText),
-		selectedTagIDs,
+		selectedTagIDs: selectedExistingTagIDs,
 		isUntaggedSelected,
 	});
-
-	useEffect(() => {
-		setSelectedRowIDs(new Set());
-	}, [filter, searchText, selectedTagIDs, isUntaggedSelected]);
-
-	useEffect(() => {
-		setSelectedTagIDs(current => current.filter(tagID => tags.some(tag => tag.id === tagID)));
-	}, [tags]);
 
 	function setRowSelected(rowID: string, isSelected: boolean) {
 		setSelectedRowIDs(current => {
@@ -305,18 +315,18 @@ export default function TasksManagerPage() {
 	return (
 		<div className={styles.page}>
 			<div className={styles.toolbar}>
-				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={setFilter} icon={<FilterIcon />} />
+				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={changeFilter} icon={<FilterIcon />} />
 
 				<TextInput
 					value={searchText}
-					onChange={setSearchText}
+					onChange={changeSearchText}
 					placeholder="Search tasks..."
 					className={`field ${styles.searchInput}`}
 				/>
 
 				<TagFilterControl
 					tags={tags}
-					selectedTagIDs={selectedTagIDs}
+					selectedTagIDs={selectedExistingTagIDs}
 					isUntaggedSelected={isUntaggedSelected}
 					onToggleTag={toggleSelectedTagID}
 					onToggleUntagged={toggleIsUntaggedSelected}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRefToLatestValue } from './useRefToLatestValue';
 
 const SWIPE_TRIGGER_DISTANCE_PX = 56;
 const SWIPE_DIRECTION_LOCK_TOLERANCE_PX = 10;
@@ -22,10 +23,8 @@ export function useStepSwipeIndent({ isEnabled, onIndent, onUnindent }: UseStepS
 	const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
 	const isHorizontalSwipeRef = useRef<boolean | null>(null);
 
-	const onIndentRef = useRef(onIndent);
-	onIndentRef.current = onIndent;
-	const onUnindentRef = useRef(onUnindent);
-	onUnindentRef.current = onUnindent;
+	const onIndentRef = useRefToLatestValue(onIndent);
+	const onUnindentRef = useRefToLatestValue(onUnindent);
 
 	function endSwipe() {
 		setSwipingItemID(null);

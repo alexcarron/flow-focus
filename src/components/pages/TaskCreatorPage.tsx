@@ -13,6 +13,7 @@ import Step from '../../model/task/step/Step';
 import { createStep, pruneEmptySteps } from '../../model/task/step/stepTree';
 import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../../utilities/tree/orderedTree';
 import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
+import { useRefToLatestValue } from '../../hooks/useRefToLatestValue';
 import StepsTreeEditor, { StepsTreeEditorHandle } from '../StepsTreeEditor';
 import CheckboxInput from '../inputs/CheckboxInput';
 import DatetimeInput from '../inputs/DatetimeInput';
@@ -24,6 +25,8 @@ import ErrorMessage from '../errors/ErrorMessage';
 import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
+
+const TASK_NAME_PLACEHOLDER_TIERS_LONGEST_FIRST = ['Calculus Homework 3.2 due thursday takes 1-2 hours'];
 
 const DEFAULT_TIMING: TaskTimingOptions = {
 	startTime: null,
@@ -101,8 +104,7 @@ export default function TaskCreatorPage() {
 		.map(tagID => tags.find(tag => tag.id === tagID))
 		.filter((tag): tag is Tag => tag !== undefined);
 
-	const handleCreateRef = useRef(handleCreate);
-	useEffect(() => { handleCreateRef.current = handleCreate; });
+	const handleCreateRef = useRefToLatestValue(handleCreate);
 
 	const isCreatingTaskRef = useRef(false);
 
@@ -243,7 +245,7 @@ export default function TaskCreatorPage() {
 					escapedTokens={parseResult.escapedTokens}
 					onToggleTokenEscape={handleToggleTokenEscape}
 					demotedRange={demotedRange}
-					placeholderTiersLongestFirst={['Calculus Homework 3.2 due thursday takes 1-2 hours']}
+					placeholderTiersLongestFirst={TASK_NAME_PLACEHOLDER_TIERS_LONGEST_FIRST}
 					onSubmit={() => handleCreateRef.current()}
 					onShiftEnter={handleShiftEnter}
 					disabled={isCreatingTask}

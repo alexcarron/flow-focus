@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import CheckboxInput from './inputs/CheckboxInput';
 import { useSyncStatusStore } from '../stores/syncStatusStore';
 
@@ -10,11 +10,13 @@ interface Props {
 
 export default function MigrateLocalDataToCloudConfirmationModal({ isOpen, onConfirm, onDecline }: Props) {
 	const [shouldKeepLocalData, setShouldKeepLocalData] = useState(false);
+	const [wasOpenOnPreviousRender, setWasOpenOnPreviousRender] = useState(isOpen);
 	const lastSyncError = useSyncStatusStore(s => s.lastSyncError);
 
-	useEffect(() => {
+	if (isOpen !== wasOpenOnPreviousRender) {
+		setWasOpenOnPreviousRender(isOpen);
 		if (isOpen) setShouldKeepLocalData(false);
-	}, [isOpen]);
+	}
 
 	if (!isOpen) return null;
 

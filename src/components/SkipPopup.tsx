@@ -14,6 +14,7 @@ interface Props {
 export default function SkipPopup({ task, isOpen, onClose }: Props) {
 	const [skipUntilDate, setSkipUntilDate] = useState<Date | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [wasOpenOnPreviousRender, setWasOpenOnPreviousRender] = useState(isOpen);
 	const skipTaskUntil = useTasksStore(s => s.skipTaskUntil);
 	const skipCurrentOccurrence = useTasksStore(s => s.skipCurrentOccurrence);
 	const datetimeInputContainerRef = useRef<HTMLDivElement>(null);
@@ -40,9 +41,10 @@ export default function SkipPopup({ task, isOpen, onClose }: Props) {
 		onClose();
 	}
 
-	useEffect(() => {
+	if (isOpen !== wasOpenOnPreviousRender) {
+		setWasOpenOnPreviousRender(isOpen);
 		if (isOpen) setErrorMessage(null);
-	}, [isOpen]);
+	}
 
 	useEffect(() => {
 		if (!isOpen) return;

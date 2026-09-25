@@ -2,6 +2,7 @@ import { ComponentType, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { UserAuthorizationProvider } from './user-authorization/UserAuthorizationContext';
 import './index.css';
 import { startRecurringTaskTick, useTasksStore } from './stores/tasksStore';
 import { enableMapSet } from 'immer';
@@ -50,7 +51,9 @@ if (isPrototypingRouteRequested) {
 	root.render(
 		<StrictMode>
 			<BrowserRouter basename={import.meta.env.DEV ? '/' : '/flow-focus'}>
-				<App />
+				<UserAuthorizationProvider>
+					<App />
+				</UserAuthorizationProvider>
 			</BrowserRouter>
 		</StrictMode>
 	);

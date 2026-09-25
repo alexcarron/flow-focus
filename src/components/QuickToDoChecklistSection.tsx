@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuickToDoChecklistStore } from '../stores/quickToDoChecklistStore';
 import { useNestedListDrag, getDraggingRowOverlayStyle } from '../hooks/useNestedListDrag';
 import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
@@ -110,7 +110,7 @@ export default function QuickToDoChecklistSection() {
 	}, [itemPendingFocusID, items]);
 
 	const allItemsTextKey = displayRows.map(row => row.kind === 'item' ? `${row.node.id}:${row.node.text}` : '').join(' ');
-	useEffect(() => {
+	useLayoutEffect(() => {
 		displayRows.forEach(row => {
 			if (row.kind !== 'item') return;
 			const textElement = textElementsByItemIDRef.current.get(row.node.id);

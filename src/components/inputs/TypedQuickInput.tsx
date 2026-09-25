@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Tag from '../../model/tag/Tag';
 import { getTokenBecomeLabel, TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import findActiveTagEntryAtCaret, { ActiveTagEntry } from '../../model/typed-quick-input/findActiveTagEntryAtCaret';
 import { useFittingPlaceholder } from '../../hooks/useFittingPlaceholder';
 import { usePlainTextContentEditable } from '../../hooks/usePlainTextContentEditable';
+import { useRefToLatestValue } from '../../hooks/useRefToLatestValue';
 import InlineTagSuggestionPopover from '../InlineTagSuggestionPopover';
 import styles from './TypedQuickInput.module.css';
 
@@ -23,6 +24,11 @@ interface Props {
 	alreadyAddedTagIDs?: string[];
 	notYetAddedTagNames?: string[];
 }
+
+const NO_PLACEHOLDER_TIERS: string[] = [];
+const NO_TAGS: Tag[] = [];
+const NO_TAG_IDS: string[] = [];
+const NO_TAG_NAMES: string[] = [];
 
 const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	deadline: styles.tokenDeadline,
@@ -160,14 +166,14 @@ export default function TypedQuickInput({
 	escapedTokens,
 	onToggleTokenEscape,
 	demotedRange = null,
-	placeholderTiersLongestFirst = [],
+	placeholderTiersLongestFirst = NO_PLACEHOLDER_TIERS,
 	onSubmit,
 	onShiftEnter,
 	editorClassName = '',
 	disabled = false,
-	existingTagsSortedByUsage = [],
-	alreadyAddedTagIDs = [],
-	notYetAddedTagNames = [],
+	existingTagsSortedByUsage = NO_TAGS,
+	alreadyAddedTagIDs = NO_TAG_IDS,
+	notYetAddedTagNames = NO_TAG_NAMES,
 }: Props) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const fittingPlaceholder = useFittingPlaceholder(placeholderTiersLongestFirst, editorRef);
@@ -182,16 +188,11 @@ export default function TypedQuickInput({
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const isComposingRef = useRef(false);
 	const pendingCaretOffsetRef = useRef<number | null>(null);
-	const onSubmitRef = useRef(onSubmit);
-	onSubmitRef.current = onSubmit;
-	const onShiftEnterRef = useRef(onShiftEnter);
-	onShiftEnterRef.current = onShiftEnter;
-	const disabledRef = useRef(disabled);
-	disabledRef.current = disabled;
-	const tokensRef = useRef(tokens);
-	tokensRef.current = tokens;
-	const onToggleTokenEscapeRef = useRef(onToggleTokenEscape);
-	onToggleTokenEscapeRef.current = onToggleTokenEscape;
+	const onSubmitRef = useRefToLatestValue(onSubmit);
+	const onShiftEnterRef = useRefToLatestValue(onShiftEnter);
+	const disabledRef = useRefToLatestValue(disabled);
+	const tokensRef = useRefToLatestValue(tokens);
+	const onToggleTokenEscapeRef = useRefToLatestValue(onToggleTokenEscape);
 
 	const normalizedNotYetAddedTagNames = useMemo(
 		() => new Set(notYetAddedTagNames.map(name => name.toLowerCase())),
@@ -226,8 +227,7 @@ export default function TypedQuickInput({
 		}
 	}
 
-	const updateActiveTagEntryRef = useRef(updateActiveTagEntry);
-	updateActiveTagEntryRef.current = updateActiveTagEntry;
+	const updateActiveTagEntryRef = useRefToLatestValue(updateActiveTagEntry);
 
 	function confirmTagSuggestion(tag: Tag) {
 		if (!activeTagEntry) return;
@@ -278,7 +278,7 @@ export default function TypedQuickInput({
 		}
 	}
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const editor = editorRef.current;
 		if (!editor) return;
 		if (isComposingRef.current) return;

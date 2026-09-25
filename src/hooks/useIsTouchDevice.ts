@@ -1,24 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 const COARSE_POINTER_MEDIA_QUERY = '(pointer: coarse)';
 
+function isMatchMediaSupported(): boolean {
+	return typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+}
+
 export function isTouchDevice(): boolean {
-	if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+	if (!isMatchMediaSupported()) return false;
 	return window.matchMedia(COARSE_POINTER_MEDIA_QUERY).matches;
 }
 
+function subscribeToPointerCapabilityChanges(onPointerCapabilityChange: () => void): () => void {
+	if (!isMatchMediaSupported()) return () => {};
+	const mediaQueryList = window.matchMedia(COARSE_POINTER_MEDIA_QUERY);
+	mediaQueryList.addEventListener('change', onPointerCapabilityChange);
+	return () => mediaQueryList.removeEventListener('change', onPointerCapabilityChange);
+}
+
 export function useIsTouchDevice(): boolean {
-	const [isTouch, setIsTouch] = useState(isTouchDevice);
-
-	useEffect(() => {
-		if (typeof window.matchMedia !== 'function') return;
-		const mediaQueryList = window.matchMedia(COARSE_POINTER_MEDIA_QUERY);
-		function onPointerCapabilityChange(event: MediaQueryListEvent) {
-			setIsTouch(event.matches);
-		}
-		mediaQueryList.addEventListener('change', onPointerCapabilityChange);
-		return () => mediaQueryList.removeEventListener('change', onPointerCapabilityChange);
-	}, []);
-
-	return isTouch;
+	return useSyncExternalStore(subscribeToPointerCapabilityChanges, isTouchDevice);
 }

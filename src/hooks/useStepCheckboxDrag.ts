@@ -29,19 +29,12 @@ export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTML
 	const singleStepTapInProgressRef = useRef<{ stepID: string; appliedIsChecked: boolean } | null>(null);
 	const lastCompletedSingleTapRef = useRef<CompletedSingleTap | null>(null);
 
-	const isStepCheckedRef = useRef(isStepChecked);
-	isStepCheckedRef.current = isStepChecked;
-	const setStepCheckedRef = useRef(setStepChecked);
-	setStepCheckedRef.current = setStepChecked;
-	const onDoubleTapCheckUpToHereRef = useRef(onDoubleTapCheckUpToHere);
-	onDoubleTapCheckUpToHereRef.current = onDoubleTapCheckUpToHere;
-
 	function applyCheckboxDragToStep(stepID: string) {
 		const dragTargetState = checkboxDragTargetStateRef.current;
 		if (dragTargetState === null) return;
 		if (stepIDsAlreadyToggledInDragRef.current.has(stepID)) return;
 		stepIDsAlreadyToggledInDragRef.current.add(stepID);
-		setStepCheckedRef.current(stepID, dragTargetState);
+		setStepChecked(stepID, dragTargetState);
 		singleStepTapInProgressRef.current = null;
 	}
 
@@ -55,18 +48,18 @@ export function useStepCheckboxDrag<TContainerElement extends HTMLElement = HTML
 				&& lastCompletedSingleTap.stepID === stepID
 				&& Date.now() - lastCompletedSingleTap.releasedAtMs <= DOUBLE_TAP_MAX_INTERVAL_MS;
 
-			if (isDoubleTap && onDoubleTapCheckUpToHereRef.current) {
+			if (isDoubleTap && onDoubleTapCheckUpToHere) {
 				lastCompletedSingleTapRef.current = null;
 				checkboxDragTargetStateRef.current = lastCompletedSingleTap.appliedIsChecked;
 				stepIDsAlreadyToggledInDragRef.current = new Set([stepID]);
-				onDoubleTapCheckUpToHereRef.current(stepID, lastCompletedSingleTap.appliedIsChecked);
+				onDoubleTapCheckUpToHere(stepID, lastCompletedSingleTap.appliedIsChecked);
 				return;
 			}
 
-			const nextIsChecked = !isStepCheckedRef.current(stepID);
+			const nextIsChecked = !isStepChecked(stepID);
 			checkboxDragTargetStateRef.current = nextIsChecked;
 			stepIDsAlreadyToggledInDragRef.current = new Set([stepID]);
-			setStepCheckedRef.current(stepID, nextIsChecked);
+			setStepChecked(stepID, nextIsChecked);
 			singleStepTapInProgressRef.current = isTouchDevice ? { stepID, appliedIsChecked: nextIsChecked } : null;
 		},
 		onPointerOverItem: stepID => applyCheckboxDragToStep(stepID),

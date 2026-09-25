@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 
 function adjustWidth(el: HTMLElement): void {
 	const computedStyle = getComputedStyle(el);
@@ -45,7 +45,7 @@ function adjustWidth(el: HTMLElement): void {
 export function useShrinkToFit<T extends HTMLElement>() {
 	const ref = useRef<T>(null);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const el = ref.current;
 		if (!el) return;
 

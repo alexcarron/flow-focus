@@ -1,4 +1,5 @@
 import { RefCallback, useCallback, useRef } from 'react';
+import { useRefToLatestValue } from './useRefToLatestValue';
 
 const LINE_INSERTING_INPUT_TYPES = new Set(['insertParagraph', 'insertLineBreak']);
 
@@ -18,8 +19,7 @@ function findTargetElement(eventTarget: EventTarget | null, container: HTMLEleme
 }
 
 export function useCommitOnEnter<TContainerElement extends HTMLElement = HTMLElement>({ targetSelector, onEnter }: UseCommitOnEnterOptions = {}): RefCallback<TContainerElement> {
-	const onEnterRef = useRef(onEnter);
-	onEnterRef.current = onEnter;
+	const onEnterRef = useRefToLatestValue(onEnter);
 	const detachFromPreviousContainerRef = useRef<(() => void) | null>(null);
 
 	return useCallback((container: TContainerElement | null) => {

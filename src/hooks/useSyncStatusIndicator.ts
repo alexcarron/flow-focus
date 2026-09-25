@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useSyncStatusStore } from '../stores/syncStatusStore';
 
 export type SyncStatusIndicatorState = 'synced' | 'syncing' | 'offline' | 'unsynced' | 'syncFailed';
@@ -8,25 +8,21 @@ interface SyncStatusIndicatorResult {
 	tooltipText: string;
 }
 
+function subscribeToOnlineStatusChanges(onOnlineStatusChange: () => void): () => void {
+	window.addEventListener('online', onOnlineStatusChange);
+	window.addEventListener('offline', onOnlineStatusChange);
+	return () => {
+		window.removeEventListener('online', onOnlineStatusChange);
+		window.removeEventListener('offline', onOnlineStatusChange);
+	};
+}
+
+function getIsOnline(): boolean {
+	return navigator.onLine;
+}
+
 function useIsOnline(): boolean {
-	const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-	useEffect(() => {
-		function handleOnline() {
-			setIsOnline(true);
-		}
-		function handleOffline() {
-			setIsOnline(false);
-		}
-		window.addEventListener('online', handleOnline);
-		window.addEventListener('offline', handleOffline);
-		return () => {
-			window.removeEventListener('online', handleOnline);
-			window.removeEventListener('offline', handleOffline);
-		};
-	}, []);
-
-	return isOnline;
+	return useSyncExternalStore(subscribeToOnlineStatusChanges, getIsOnline);
 }
 
 export function useSyncStatusIndicator(): SyncStatusIndicatorResult {

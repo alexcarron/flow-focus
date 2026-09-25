@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const REQUIRED_CONFIRMATION_PHRASE = 'delete my changes';
 
@@ -10,11 +10,13 @@ interface Props {
 
 export default function SignOutConfirmationModal({ isOpen, onConfirm, onClose }: Props) {
 	const [typedPhrase, setTypedPhrase] = useState('');
+	const [wasOpenOnPreviousRender, setWasOpenOnPreviousRender] = useState(isOpen);
 	const isPhraseConfirmed = typedPhrase.trim().toLowerCase() === REQUIRED_CONFIRMATION_PHRASE;
 
-	useEffect(() => {
+	if (isOpen !== wasOpenOnPreviousRender) {
+		setWasOpenOnPreviousRender(isOpen);
 		if (isOpen) setTypedPhrase('');
-	}, [isOpen]);
+	}
 
 	if (!isOpen) return null;
 

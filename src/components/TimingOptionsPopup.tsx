@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Task from '../model/task/Task';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
@@ -14,15 +14,19 @@ interface Props {
 
 export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
 	const setTimingOptions = useTasksStore(s => s.setTimingOptions);
-	const [options, setOptions] = useState<TaskTimingOptions | null>(null);
+	const [options, setOptions] = useState<TaskTimingOptions | null>(() => task && isOpen ? task.getTaskTimingOptions() : null);
 	const [error, setError] = useState<string | null>(null);
+	const [taskOnPreviousRender, setTaskOnPreviousRender] = useState(task);
+	const [wasOpenOnPreviousRender, setWasOpenOnPreviousRender] = useState(isOpen);
 
-	useEffect(() => {
+	if (task !== taskOnPreviousRender || isOpen !== wasOpenOnPreviousRender) {
+		setTaskOnPreviousRender(task);
+		setWasOpenOnPreviousRender(isOpen);
 		if (task && isOpen) {
 			setOptions(task.getTaskTimingOptions());
 			setError(null);
 		}
-	}, [task, isOpen]);
+	}
 
 	if (!isOpen || !task || !options) return null;
 

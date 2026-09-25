@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import styles from './DurationInput.module.css';
 
@@ -39,18 +39,19 @@ const shortcuts = SHORTCUTS.duration;
 
 export default function DurationInput({ value, onChange, label, className = '', forcedUnitMs }: Props) {
 	const [unitMs, setUnitMs] = useState<number>(() => forcedUnitMs ?? detectUnit(value));
+	const [forcedUnitMsOnPreviousRender, setForcedUnitMsOnPreviousRender] = useState(forcedUnitMs);
+	const [valueOnPreviousRender, setValueOnPreviousRender] = useState(value);
 
-	useEffect(() => {
-		if (forcedUnitMs !== undefined) {
-			setUnitMs(forcedUnitMs);
-		}
-	}, [forcedUnitMs]);
+	if (forcedUnitMs !== forcedUnitMsOnPreviousRender) {
+		setForcedUnitMsOnPreviousRender(forcedUnitMs);
+		if (forcedUnitMs !== undefined) setUnitMs(forcedUnitMs);
+	}
 
-	useEffect(() => {
-		if (forcedUnitMs === undefined && value !== null && value !== 0 && value % unitMs !== 0) {
-			setUnitMs(detectUnit(value));
-		}
-	}, [value]);
+	if (value !== valueOnPreviousRender) {
+		setValueOnPreviousRender(value);
+		const isValueNotWholeAmountOfCurrentUnit = value !== null && value !== 0 && value % unitMs !== 0;
+		if (forcedUnitMs === undefined && isValueNotWholeAmountOfCurrentUnit) setUnitMs(detectUnit(value));
+	}
 
 	const amount = value !== null ? value / unitMs : 0;
 
