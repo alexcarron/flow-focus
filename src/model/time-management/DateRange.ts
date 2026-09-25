@@ -18,10 +18,6 @@ export default class DateRange {
 		return this.endDate.getTime() - this.startDate.getTime();
 	}
 
-	private getDaysLong(): number {
-		return Math.floor(this.getDuration() / (1000 * 60 * 60 * 24));
-	}
-
 	private areDatesReversed(): boolean {
 		return this.startDate.getTime() > this.endDate.getTime();
 	}
@@ -38,40 +34,27 @@ export default class DateRange {
 		}
 
 		let excludedTime = 0;
-		let nonCrossoverStartDate = this.startDate;
-		let nonCrossoverEndDate = this.endDate;
 
-		if (timeWindow.isInWindow(this.startDate)) {
-			const startDateHour = this.startDate.getHours();
-			const startDateMinutes = this.startDate.getMinutes();
+		const firstWindowInstanceStart = new Date(this.startDate);
+		firstWindowInstanceStart.setHours(timeWindow.getStartTime().getHour(), timeWindow.getStartTime().getMinute(), 0, 0);
+		firstWindowInstanceStart.setDate(firstWindowInstanceStart.getDate() - 1);
 
-			const crossoverTimeWindow = new TimeWindow(
-				`${startDateHour}:${startDateMinutes}`,
-				timeWindow.getEndTime().toString(),
-			)
+		const dayInMilliseconds = 24 * 60 * 60 * 1000;
 
-			excludedTime += crossoverTimeWindow.getDuration();
-			nonCrossoverStartDate = new Date(this.startDate.getTime() + crossoverTimeWindow.getDuration());
+		for (
+			let windowInstanceStart = firstWindowInstanceStart;
+			windowInstanceStart.getTime() < this.endDate.getTime();
+			windowInstanceStart = new Date(windowInstanceStart.getTime() + dayInMilliseconds)
+		) {
+			const windowInstanceEnd = new Date(windowInstanceStart.getTime() + timeWindow.getDuration());
+
+			const overlapStart = Math.max(windowInstanceStart.getTime(), this.startDate.getTime());
+			const overlapEnd = Math.min(windowInstanceEnd.getTime(), this.endDate.getTime());
+
+			if (overlapEnd > overlapStart) {
+				excludedTime += overlapEnd - overlapStart;
+			}
 		}
-
-		if (timeWindow.isInWindow(this.endDate)) {
-			const endDateHour = this.endDate.getHours();
-			const endDateMinutes = this.endDate.getMinutes();
-
-			const crossoverTimeWindow = new TimeWindow(
-				timeWindow.getStartTime().toString(),
-				`${endDateHour}:${endDateMinutes}`,
-			)
-
-			excludedTime += crossoverTimeWindow.getDuration();
-			nonCrossoverEndDate = new Date(this.endDate.getTime() - crossoverTimeWindow.getDuration());
-		}
-
-		try {
-			const nonCrossoverDays = new DateRange(nonCrossoverStartDate, nonCrossoverEndDate).getDaysLong();
-			excludedTime += nonCrossoverDays * timeWindow.getDuration();
-		}
-		catch {}
 
 		return this.getDuration() - excludedTime;
 	}
