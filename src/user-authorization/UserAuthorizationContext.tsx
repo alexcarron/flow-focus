@@ -135,8 +135,8 @@ export function UserAuthorizationProvider({ children }: { children: ReactNode })
 	);
 
 	return (
-		<UserAuthorizationContext.Provider value={userAuthorization}>
+		<UserAuthorizationContext value={userAuthorization}>
 			{children}
-		</UserAuthorizationContext.Provider>
+		</UserAuthorizationContext>
 	);
 }

@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { SyncStatusIndicatorState } from '../../hooks/useSyncStatusIndicator';
 import SyncedIcon from './SyncedIcon';
 import SyncingIcon from './SyncingIcon';

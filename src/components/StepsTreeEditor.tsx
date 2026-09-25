@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, useImperativeHandle, Ref } from 'react';
 import Step from '../model/task/step/Step';
 import { flattenForDisplay, findNodeWithParent } from '../utilities/tree/orderedTree';
 import { useNestedListDrag, getDraggingRowOverlayStyle } from '../hooks/useNestedListDrag';
@@ -25,6 +25,7 @@ export interface StepsTreeEditorHandle {
 }
 
 interface Props {
+	ref?: Ref<StepsTreeEditorHandle>;
 	steps: Step[];
 	isTouchDevice: boolean;
 	showCheckboxes: boolean;
@@ -80,8 +81,9 @@ function getSelectionOffsetsWithinElement(element: HTMLElement): { start: number
 	return { start: startRange.toString().length, end: endRange.toString().length };
 }
 
-const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsTreeEditor(props, ref) {
+function StepsTreeEditor(props: Props) {
 	const {
+		ref,
 		steps,
 		isTouchDevice,
 		showCheckboxes,
@@ -231,7 +233,9 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 				return (
 					<div
 						key={step.id}
-						ref={rowElement => registerRowElement(step.id, rowElement)}
+						ref={rowElement => {
+							registerRowElement(step.id, rowElement);
+						}}
 						data-step-row={step.id}
 						className={[
 							styles.stepRow,
@@ -271,7 +275,9 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 						)}
 
 						<span
-							ref={stepSpanElement => registerStepSpanElementAndSyncText(step, stepSpanElement)}
+							ref={stepSpanElement => {
+								registerStepSpanElementAndSyncText(step, stepSpanElement);
+							}}
 							contentEditable
 							suppressContentEditableWarning
 							spellCheck={false}
@@ -408,6 +414,6 @@ const StepsTreeEditor = forwardRef<StepsTreeEditorHandle, Props>(function StepsT
 			})()}
 		</div>
 	);
-});
+}
 
 export default StepsTreeEditor;

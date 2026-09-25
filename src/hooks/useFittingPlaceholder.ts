@@ -30,7 +30,7 @@ function pickLongestFittingTier(tiersLongestFirst: string[], availableWidth: num
 
 export function useFittingPlaceholder(
 	tiersLongestFirst: string[],
-	elementRef: RefObject<HTMLElement>
+	elementRef: RefObject<HTMLElement | null>
 ): string {
 	const [fittingPlaceholder, setFittingPlaceholder] = useState(tiersLongestFirst[0] ?? '');
 

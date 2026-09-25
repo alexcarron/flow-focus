@@ -1,25 +1,24 @@
-import { useEffect } from 'react';
-import { useRefToLatestValue } from './useRefToLatestValue';
+import { useEffect, useEffectEvent } from 'react';
 
 export function useOutsideClickAndEscape(
-	ref: React.RefObject<HTMLElement>,
+	ref: React.RefObject<HTMLElement | null>,
 	isActive: boolean,
 	onOutsideAction: () => void,
 ): void {
-	const onOutsideActionRef = useRefToLatestValue(onOutsideAction);
+	const onOutsideActionWithLatestCallback = useEffectEvent(onOutsideAction);
 
 	useEffect(() => {
 		if (!isActive) return;
 
 		function onMouseDown(event: MouseEvent) {
 			if (ref.current && !ref.current.contains(event.target as Node)) {
-				onOutsideActionRef.current();
+				onOutsideActionWithLatestCallback();
 			}
 		}
 
 		function onKeyDown(event: KeyboardEvent) {
 			if (event.key === 'Escape') {
-				onOutsideActionRef.current();
+				onOutsideActionWithLatestCallback();
 			}
 		}
 
@@ -29,5 +28,5 @@ export function useOutsideClickAndEscape(
 			document.removeEventListener('mousedown', onMouseDown);
 			document.removeEventListener('keydown', onKeyDown);
 		};
-	}, [isActive, onOutsideActionRef, ref]);
+	}, [isActive, ref]);
 }

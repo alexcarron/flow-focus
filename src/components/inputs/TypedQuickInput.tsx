@@ -1,10 +1,9 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Tag from '../../model/tag/Tag';
 import { getTokenBecomeLabel, TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import findActiveTagEntryAtCaret, { ActiveTagEntry } from '../../model/typed-quick-input/findActiveTagEntryAtCaret';
 import { useFittingPlaceholder } from '../../hooks/useFittingPlaceholder';
 import { usePlainTextContentEditable } from '../../hooks/usePlainTextContentEditable';
-import { useRefToLatestValue } from '../../hooks/useRefToLatestValue';
 import InlineTagSuggestionPopover from '../InlineTagSuggestionPopover';
 import styles from './TypedQuickInput.module.css';
 
@@ -188,11 +187,6 @@ export default function TypedQuickInput({
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const isComposingRef = useRef(false);
 	const pendingCaretOffsetRef = useRef<number | null>(null);
-	const onSubmitRef = useRefToLatestValue(onSubmit);
-	const onShiftEnterRef = useRefToLatestValue(onShiftEnter);
-	const disabledRef = useRefToLatestValue(disabled);
-	const tokensRef = useRefToLatestValue(tokens);
-	const onToggleTokenEscapeRef = useRefToLatestValue(onToggleTokenEscape);
 
 	const normalizedNotYetAddedTagNames = useMemo(
 		() => new Set(notYetAddedTagNames.map(name => name.toLowerCase())),
@@ -227,7 +221,10 @@ export default function TypedQuickInput({
 		}
 	}
 
-	const updateActiveTagEntryRef = useRefToLatestValue(updateActiveTagEntry);
+	const onEditorSelectionChange = useEffectEvent(() => {
+		if (document.activeElement !== editorRef.current) return;
+		updateActiveTagEntry();
+	});
 
 	function confirmTagSuggestion(tag: Tag) {
 		if (!activeTagEntry) return;
@@ -244,8 +241,7 @@ export default function TypedQuickInput({
 
 	useEffect(() => {
 		function onSelectionChange() {
-			if (document.activeElement !== editorRef.current) return;
-			updateActiveTagEntryRef.current();
+			onEditorSelectionChange();
 		}
 		document.addEventListener('selectionchange', onSelectionChange);
 		return () => document.removeEventListener('selectionchange', onSelectionChange);
@@ -291,33 +287,38 @@ export default function TypedQuickInput({
 		}
 	}, [value, tokens, escapedTokens, demotingRange]);
 
+	const onEditorBeforeInput = useEffectEvent((event: InputEvent) => {
+		const editor = editorRef.current;
+		if (disabled) return;
+		if (event.inputType === 'insertLineBreak') {
+			event.preventDefault();
+			onShiftEnter?.();
+		}
+		else if (event.inputType === 'insertParagraph') {
+			event.preventDefault();
+			onSubmit?.();
+		}
+		else if (event.inputType === 'insertText' && event.data === '\\' && editor) {
+			const caretOffset = getCaretCharacterOffset(editor);
+			const tokenStartingAtCaret = tokens.find(token => token.startIndex === caretOffset);
+			if (tokenStartingAtCaret) {
+				event.preventDefault();
+				onToggleTokenEscape(
+					tokenStartingAtCaret.field,
+					tokenStartingAtCaret.matchedText,
+					tokenStartingAtCaret.startIndex,
+					tokenStartingAtCaret.endIndex
+				);
+			}
+		}
+	});
+
 	useEffect(() => {
 		const editor = editorRef.current;
 		if (!editor) return;
 
 		function onBeforeInput(event: InputEvent) {
-			if (disabledRef.current) return;
-			if (event.inputType === 'insertLineBreak') {
-				event.preventDefault();
-				onShiftEnterRef.current?.();
-			}
-			else if (event.inputType === 'insertParagraph') {
-				event.preventDefault();
-				onSubmitRef.current?.();
-			}
-			else if (event.inputType === 'insertText' && event.data === '\\' && editor) {
-				const caretOffset = getCaretCharacterOffset(editor);
-				const tokenStartingAtCaret = tokensRef.current.find(token => token.startIndex === caretOffset);
-				if (tokenStartingAtCaret) {
-					event.preventDefault();
-					onToggleTokenEscapeRef.current(
-						tokenStartingAtCaret.field,
-						tokenStartingAtCaret.matchedText,
-						tokenStartingAtCaret.startIndex,
-						tokenStartingAtCaret.endIndex
-					);
-				}
-			}
+			onEditorBeforeInput(event);
 		}
 
 		editor.addEventListener('beforeinput', onBeforeInput as EventListener);
@@ -364,7 +365,7 @@ export default function TypedQuickInput({
 				setTagHighlightedIndex(current => Math.max(current - 1, 0));
 				return;
 			}
-			if (event.key === 'Enter' && !event.shiftKey) {
+			if ((event.key === 'Enter' && !event.shiftKey) || event.key === 'Tab') {
 				event.preventDefault();
 				event.stopPropagation();
 				confirmTagSuggestion(tagSuggestions[tagHighlightedIndex]);

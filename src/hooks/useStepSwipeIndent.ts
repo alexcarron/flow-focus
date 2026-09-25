@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { useRefToLatestValue } from './useRefToLatestValue';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 const SWIPE_TRIGGER_DISTANCE_PX = 56;
 const SWIPE_DIRECTION_LOCK_TOLERANCE_PX = 10;
@@ -23,8 +22,8 @@ export function useStepSwipeIndent({ isEnabled, onIndent, onUnindent }: UseStepS
 	const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
 	const isHorizontalSwipeRef = useRef<boolean | null>(null);
 
-	const onIndentRef = useRefToLatestValue(onIndent);
-	const onUnindentRef = useRefToLatestValue(onUnindent);
+	const onIndentWithLatestCallback = useEffectEvent(onIndent);
+	const onUnindentWithLatestCallback = useEffectEvent(onUnindent);
 
 	function endSwipe() {
 		setSwipingItemID(null);
@@ -67,8 +66,8 @@ export function useStepSwipeIndent({ isEnabled, onIndent, onUnindent }: UseStepS
 			if (swipedItemID === null) return;
 			if (!wasHorizontalSwipe) return;
 			if (elapsedMs > SWIPE_MAX_DURATION_MS) return;
-			if (finalOffsetX >= SWIPE_TRIGGER_DISTANCE_PX) onIndentRef.current(swipedItemID);
-			else if (finalOffsetX <= -SWIPE_TRIGGER_DISTANCE_PX) onUnindentRef.current(swipedItemID);
+			if (finalOffsetX >= SWIPE_TRIGGER_DISTANCE_PX) onIndentWithLatestCallback(swipedItemID);
+			else if (finalOffsetX <= -SWIPE_TRIGGER_DISTANCE_PX) onUnindentWithLatestCallback(swipedItemID);
 		}
 
 		window.addEventListener('touchmove', onTouchMove, { passive: false });
