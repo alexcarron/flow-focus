@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useTasksStore, selectPriorityTask } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useHasInteractedSinceRegainingFocus } from '../../hooks/useHasInteractedSinceRegainingFocus';
 import TaskCard from '../TaskCard';
 import QuickAddTaskBar from '../QuickAddTaskBar';
 import QuickToDoChecklistSection from '../QuickToDoChecklistSection';
@@ -26,10 +27,11 @@ export default function FocusPage() {
 	const priorityTask = useTasksStore(selectPriorityTask);
 	const completeNextStep = useTasksStore(s => s.completeNextStep);
 	const shouldShowQuickAddTaskBar = useSettingsStore(s => s.shouldShowQuickAddTaskBarOnFocusPage);
+	const hasInteractedSinceRegainingFocus = useHasInteractedSinceRegainingFocus();
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
-			if (event.repeat || !priorityTask || !document.hasFocus()) return;
+			if (event.repeat || !priorityTask || !document.hasFocus() || !hasInteractedSinceRegainingFocus) return;
 			const focused = document.activeElement as HTMLElement;
 			if (
 				focused.matches('button, input, select, textarea, a, [role="checkbox"]') ||
@@ -45,7 +47,7 @@ export default function FocusPage() {
 		}
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
-	}, [priorityTask, completeNextStep]);
+	}, [priorityTask, completeNextStep, hasInteractedSinceRegainingFocus]);
 
 	return (
 		<div className={styles.page}>
