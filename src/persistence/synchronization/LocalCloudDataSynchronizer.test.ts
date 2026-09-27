@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
 import { FlowFocusDB, PlainTaskRow, TagRow, SETTINGS_ROW_ID, QUICK_TO_DO_CHECKLIST_ROW_ID } from '../local/flowfocus.db';
 import { SupabaseDataService } from '../cloud/supabaseDataService';
-import { LocalCloudDataSynchronizer } from './LocalCloudDataSynchronizer';
+import { LocalCloudDataSynchronizer, DONT_SYNC_AFTER_SUCCESSFUL_SYNC_WINDOW_MS, SYNC_INTERVAL_WHEN_ACTIVE_MS, SYNC_INTERVAL_WHEN_NOT_ACTIVE_MS } from './LocalCloudDataSynchronizer';
 import { DEFAULT_SETTINGS } from '../../model/AppSettings';
 
 function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
@@ -79,7 +79,17 @@ afterEach(async () => {
 	}
 	openDatabases = [];
 	setVisibilityState('visible');
+	vi.restoreAllMocks();
 });
+
+function moveClockPastReturnSyncSkipWindow(): void {
+	const timeAfterSkipWindow = Date.now() + DONT_SYNC_AFTER_SUCCESSFUL_SYNC_WINDOW_MS;
+	vi.spyOn(Date, 'now').mockReturnValue(timeAfterSkipWindow);
+}
+
+function setIsDocumentFocused(isDocumentFocused: boolean): void {
+	vi.spyOn(document, 'hasFocus').mockReturnValue(isDocumentFocused);
+}
 
 describe('push then pull ordering', () => {
 	it('pushes pending changes before pulling remote changes', async () => {
@@ -354,6 +364,7 @@ describe('triggers', () => {
 
 		synchronizer.start();
 		await vi.waitFor(() => expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(1));
+		moveClockPastReturnSyncSkipWindow();
 
 		setVisibilityState('hidden');
 		document.dispatchEvent(new Event('visibilitychange'));
@@ -363,6 +374,81 @@ describe('triggers', () => {
 		setVisibilityState('visible');
 		document.dispatchEvent(new Event('visibilitychange'));
 		await vi.waitFor(() => expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(2));
+
+		synchronizer.stop();
+	});
+
+	it('runs a sync pass when the window regains focus', async () => {
+		const cacheDB = await openTestDatabase();
+		const cloudDataService = makeCloudDataService();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });
+		setIsDocumentFocused(true);
+
+		synchronizer.start();
+		await vi.waitFor(() => expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(1));
+		moveClockPastReturnSyncSkipWindow();
+
+		setIsDocumentFocused(false);
+		window.dispatchEvent(new Event('blur'));
+		setIsDocumentFocused(true);
+		window.dispatchEvent(new Event('focus'));
+
+		await vi.waitFor(() => expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(2));
+		synchronizer.stop();
+	});
+
+	it('skips a return sync within the skip window after a successful sync', async () => {
+		const cacheDB = await openTestDatabase();
+		const cloudDataService = makeCloudDataService();
+		const onSyncStatusChange = vi.fn();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService, onSyncStatusChange });
+		setIsDocumentFocused(true);
+
+		synchronizer.start();
+		await vi.waitFor(() => expect(onSyncStatusChange).toHaveBeenLastCalledWith(expect.objectContaining({ isSyncing: false, lastSyncError: null })));
+
+		setIsDocumentFocused(false);
+		window.dispatchEvent(new Event('blur'));
+		setIsDocumentFocused(true);
+		window.dispatchEvent(new Event('focus'));
+
+		await new Promise(resolve => setTimeout(resolve, 0));
+		expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(1);
+		synchronizer.stop();
+	});
+
+	it('does not skip a return sync after a failed sync', async () => {
+		const cacheDB = await openTestDatabase();
+		const cloudDataService = makeCloudDataService({ pullTasks: vi.fn().mockRejectedValue(new Error('network down')) });
+		const onSyncStatusChange = vi.fn();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService, onSyncStatusChange });
+		setIsDocumentFocused(true);
+
+		synchronizer.start();
+		await vi.waitFor(() => expect(onSyncStatusChange).toHaveBeenLastCalledWith(expect.objectContaining({ isSyncing: false, lastSyncError: 'network down' })));
+
+		setIsDocumentFocused(false);
+		window.dispatchEvent(new Event('blur'));
+		setIsDocumentFocused(true);
+		window.dispatchEvent(new Event('focus'));
+
+		await vi.waitFor(() => expect(cloudDataService.pullTasks).toHaveBeenCalledTimes(2));
+		synchronizer.stop();
+	});
+
+	it('ticks at the active rate while active and the not-active rate while unfocused', async () => {
+		const cacheDB = await openTestDatabase();
+		const cloudDataService = makeCloudDataService();
+		const synchronizer = new LocalCloudDataSynchronizer({ cacheDB, cloudDataService });
+		const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+		setIsDocumentFocused(true);
+
+		synchronizer.start();
+		expect(setIntervalSpy).toHaveBeenLastCalledWith(expect.any(Function), SYNC_INTERVAL_WHEN_ACTIVE_MS);
+
+		setIsDocumentFocused(false);
+		window.dispatchEvent(new Event('blur'));
+		expect(setIntervalSpy).toHaveBeenLastCalledWith(expect.any(Function), SYNC_INTERVAL_WHEN_NOT_ACTIVE_MS);
 
 		synchronizer.stop();
 	});

@@ -4,9 +4,16 @@ import { SupabaseDataService } from '../cloud/supabaseDataService';
 import { hasUnsyncedCachedChanges } from './perUserCache';
 import { toErrorMessage } from '../../utilities/errorMessage';
 import { RunOnceThenAgainIfChanged } from '../../utilities/runOnceThenAgainIfChanged';
+import { AppActivityState, AppActivityStateChange, AppActivityStateTracker } from './AppActivityStateTracker';
 
-const SYNC_INTERVAL_WHEN_VISIBLE_MS = 60_000; // 1 minute
-const SYNC_INTERVAL_WHEN_HIDDEN_MS = 600_000; // 10 minutes
+export const SYNC_INTERVAL_WHEN_ACTIVE_MS = 60_000;
+export const SYNC_INTERVAL_WHEN_NOT_ACTIVE_MS = 600_000;
+export const DONT_SYNC_AFTER_SUCCESSFUL_SYNC_WINDOW_MS = 30_000;
+
+function getSyncIntervalFromActivityState(appActivityState: AppActivityState): number {
+	if (appActivityState === 'active') return SYNC_INTERVAL_WHEN_ACTIVE_MS;
+	return SYNC_INTERVAL_WHEN_NOT_ACTIVE_MS;
+}
 
 export interface SyncStatusSnapshot {
 	isSyncing: boolean;
@@ -39,6 +46,8 @@ export class LocalCloudDataSynchronizer {
 	private readonly syncRunner = new RunOnceThenAgainIfChanged();
 	private hasUnsyncedChanges = false;
 	private syncTickIntervalID: ReturnType<typeof setInterval> | undefined;
+	private timeLastSuccessfulSyncEndedAt: number | undefined;
+	private readonly appActivityStateTracker: AppActivityStateTracker;
 
 	constructor(dependencies: LocalCloudDataSynchronizerDependencies) {
 		this.cacheDB = dependencies.cacheDB;
@@ -51,14 +60,17 @@ export class LocalCloudDataSynchronizer {
 		this.isOnline = dependencies.isOnline ?? (() => navigator.onLine);
 
 		this.handleOnline = this.handleOnline.bind(this);
-		this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+		this.appActivityStateTracker = new AppActivityStateTracker({
+			onAppActivityStateChange: appActivityStateChange => this.handleAppActivityStateChange(appActivityStateChange),
+			onUserReturnToApp: () => this.handleUserReturnToApp(),
+		});
 	}
 
 	start(): void {
 		if (this.started) return;
 		this.started = true;
 		window.addEventListener('online', this.handleOnline);
-		document.addEventListener('visibilitychange', this.handleVisibilityChange);
+		this.appActivityStateTracker.start();
 		this.startSyncTick();
 		void this.sync();
 	}
@@ -67,7 +79,7 @@ export class LocalCloudDataSynchronizer {
 		if (!this.started) return;
 		this.started = false;
 		window.removeEventListener('online', this.handleOnline);
-		document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+		this.appActivityStateTracker.stop();
 		this.stopSyncTick();
 	}
 
@@ -83,16 +95,31 @@ export class LocalCloudDataSynchronizer {
 		void this.sync();
 	}
 
-	private handleVisibilityChange(): void {
+	private handleAppActivityStateChange({ fromAppActivityState, toAppActivityState }: AppActivityStateChange): void {
+		const hasSyncIntervalChanged = getSyncIntervalFromActivityState(fromAppActivityState) !== getSyncIntervalFromActivityState(toAppActivityState);
+		if (hasSyncIntervalChanged) 
+			this.startSyncTick();
+	}
+
+	private handleUserReturnToApp(): void {
 		this.startSyncTick();
-		if (document.visibilityState === 'visible') void this.sync();
+		void this.syncOnUserReturn();
+	}
+
+	private syncOnUserReturn(): Promise<void> {		
+		const hasRecentlySynced = 
+			this.timeLastSuccessfulSyncEndedAt !== undefined
+			&& (Date.now() - this.timeLastSuccessfulSyncEndedAt) < DONT_SYNC_AFTER_SUCCESSFUL_SYNC_WINDOW_MS;
+
+		if (hasRecentlySynced) 
+			return Promise.resolve();
+		
+		return this.sync();
 	}
 
 	private startSyncTick(): void {
 		this.stopSyncTick();
-		const intervalMs = document.visibilityState === 'visible'
-			? SYNC_INTERVAL_WHEN_VISIBLE_MS
-			: SYNC_INTERVAL_WHEN_HIDDEN_MS;
+		const intervalMs = getSyncIntervalFromActivityState(this.appActivityStateTracker.getAppActivityState());
 		this.syncTickIntervalID = setInterval(() => void this.sync(), intervalMs);
 	}
 
@@ -119,6 +146,7 @@ export class LocalCloudDataSynchronizer {
 			lastSyncError = toErrorMessage(error);
 		}
 
+		if (lastSyncError === null) this.timeLastSuccessfulSyncEndedAt = Date.now();
 		this.reportStatus({ isSyncing: false, lastSyncError, hasUnsyncedChanges: this.hasUnsyncedChanges });
 	}
 
