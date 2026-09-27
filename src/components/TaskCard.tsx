@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import Task from '../model/task/Task';
 import Tag from '../model/tag/Tag';
 import { useTasksStore } from '../stores/tasksStore';
@@ -62,7 +62,15 @@ export default function TaskCard({ task }: Props) {
 	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
-	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
+	const stepsEditorHandleRef = useRef<StepsTreeEditorHandle | null>(null);
+	const stepIDPendingFocusOnMountRef = useRef<string | null>(null);
+	const setStepsEditorHandle = useCallback((handle: StepsTreeEditorHandle | null) => {
+		stepsEditorHandleRef.current = handle;
+		if (handle && stepIDPendingFocusOnMountRef.current !== null) {
+			handle.focusStep(stepIDPendingFocusOnMountRef.current);
+			stepIDPendingFocusOnMountRef.current = null;
+		}
+	}, []);
 	const isTouchDevice = useIsTouchDevice();
 	const { onKeyDown: onPlainTextKeyDown, onPaste: onPlainTextPaste } = usePlainTextContentEditable();
 
@@ -107,7 +115,12 @@ export default function TaskCard({ task }: Props) {
 	}
 
 	function addStepAndFocus(newStepID: string) {
-		stepsEditorRef.current?.focusStep(newStepID);
+		if (stepsEditorHandleRef.current) {
+			stepsEditorHandleRef.current.focusStep(newStepID);
+		}
+		else {
+			stepIDPendingFocusOnMountRef.current = newStepID;
+		}
 	}
 
 	const stepPendingDeletion = stepPendingDeletionID === null ? null : findNodeWithParent(steps, stepPendingDeletionID)?.node ?? null;
@@ -186,7 +199,7 @@ export default function TaskCard({ task }: Props) {
 
 			{steps.length > 0 && (
 				<StepsTreeEditor
-					ref={stepsEditorRef}
+					ref={setStepsEditorHandle}
 					steps={steps}
 					isTouchDevice={isTouchDevice}
 					showCheckboxes={true}
@@ -313,7 +326,7 @@ export default function TaskCard({ task }: Props) {
 				onConfirm={() => {
 					if (stepPendingDeletionID !== null) {
 						store.deleteStep(task, stepPendingDeletionID);
-						if (stepIDToFocusAfterDeletion !== null) stepsEditorRef.current?.focusStep(stepIDToFocusAfterDeletion);
+						if (stepIDToFocusAfterDeletion !== null) stepsEditorHandleRef.current?.focusStep(stepIDToFocusAfterDeletion);
 					}
 					setStepPendingDeletionID(null);
 					setStepIDToFocusAfterDeletion(null);
