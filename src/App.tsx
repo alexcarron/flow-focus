@@ -14,6 +14,7 @@ import UserProfileControls from './components/UserProfileControls';
 import UndoRedoButtons from './components/UndoRedoButtons';
 import { useIsTouchDevice } from './hooks/useIsTouchDevice';
 import MigrateLocalDataToCloudConfirmationModal from './components/MigrateLocalDataToCloudConfirmationModal';
+import Toast from './components/Toast';
 import styles from './App.module.css';
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -81,6 +82,8 @@ export default function App() {
 				onConfirm={confirmMigration}
 				onDecline={declineMigration}
 			/>
+
+			<Toast />
 		</div>
 	);
 }

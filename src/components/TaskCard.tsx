@@ -7,6 +7,7 @@ import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
+import { useCopyTaskAsMarkdown } from '../hooks/useCopyTaskAsMarkdown';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import { findNodeWithParent } from '../utilities/tree/orderedTree';
 import { formatDate } from '../utilities/dateFormatting';
@@ -14,6 +15,8 @@ import { SHORTCUTS, matchesShortcut, getShortcutKeyParts } from '../utilities/sh
 import SkipPopup from './SkipPopup';
 import TimingOptionsPopup from './TimingOptionsPopup';
 import ContextMenu from './context-menu/ContextMenu';
+import ContextMenuButton from './context-menu/ContextMenuButton';
+import { isNativeContextMenuTarget } from './context-menu/isNativeContextMenuTarget';
 import ConfirmModal from './ConfirmModal';
 import TagChip from './TagChip';
 import AddTagPopover from './AddTagPopover';
@@ -72,6 +75,7 @@ export default function TaskCard({ task }: Props) {
 		}
 	}, []);
 	const isTouchDevice = useIsTouchDevice();
+	const copyTaskAsMarkdown = useCopyTaskAsMarkdown();
 	const { onKeyDown: onPlainTextKeyDown, onPaste: onPlainTextPaste } = usePlainTextContentEditable();
 
 	useEffect(() => {
@@ -130,10 +134,10 @@ export default function TaskCard({ task }: Props) {
 			ref={commitDescriptionOnEnterRef}
 			className={styles.card}
 			onContextMenu={event => {
-				if (steps.length === 0) {
-					event.preventDefault();
-					setCardContextMenu({ x: event.clientX, y: event.clientY });
-				}
+				const wasAlreadyHandledByStep = event.defaultPrevented;
+				if (wasAlreadyHandledByStep || isNativeContextMenuTarget(event.target)) return;
+				event.preventDefault();
+				setCardContextMenu({ x: event.clientX, y: event.clientY });
 			}}
 			onKeyDown={event => {
 				if (steps.length === 0 && matchesShortcut(event, SHORTCUTS.stepInsert.insertFirst)) {
@@ -150,28 +154,37 @@ export default function TaskCard({ task }: Props) {
 			</div>
 
 			<div className={styles.heading}>
-				<div className={styles.nameRow}>
-					<h2
-						ref={descRef}
-						data-task-description
-						contentEditable
-						suppressContentEditableWarning
-						spellCheck={false}
-						onBlur={onDescriptionBlur}
-						onPaste={onPlainTextPaste}
-						onKeyDown={onPlainTextKeyDown}
-						className={styles.description}
-					/>
-					{alreadyAddedTags.length === 0 && (
-						<span className={styles.hoverRevealTagButton}>
-							<AddTagPopover
-								existingTags={tags}
-								alreadyAddedTagIDs={alreadyAddedTagIDs}
-								notYetAddedTagNames={[]}
-								onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
-								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
-							/>
-						</span>
+				<div className={styles.nameRowWithMoreOptionsButton}>
+					<div className={styles.nameRow}>
+						<h2
+							ref={descRef}
+							data-task-description
+							contentEditable
+							suppressContentEditableWarning
+							spellCheck={false}
+							onBlur={onDescriptionBlur}
+							onPaste={onPlainTextPaste}
+							onKeyDown={onPlainTextKeyDown}
+							className={styles.description}
+						/>
+						{alreadyAddedTags.length === 0 && (
+							<span className={styles.hoverRevealTagButton}>
+								<AddTagPopover
+									existingTags={tags}
+									alreadyAddedTagIDs={alreadyAddedTagIDs}
+									notYetAddedTagNames={[]}
+									onSelectExisting={tagID => store.addTagToTask(task, tags.find(existingTag => existingTag.id === tagID)!.name)}
+									onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
+								/>
+							</span>
+						)}
+					</div>
+					{isTouchDevice && (
+						<ContextMenuButton
+							label="Task options"
+							className={styles.moreOptionsButton}
+							onOpen={(x, y) => setCardContextMenu({ x, y })}
+						/>
 					)}
 				</div>
 				{alreadyAddedTags.length > 0 && (
@@ -310,7 +323,8 @@ export default function TaskCard({ task }: Props) {
 				position={cardContextMenu}
 				onClose={() => setCardContextMenu(null)}
 				items={[
-					{ label: 'Add a step', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertFirst), onClick: () => addStepAndFocus(store.addFirstStep(task)) },
+					{ label: 'Copy task as Markdown', onClick: () => copyTaskAsMarkdown(task) },
+					...(steps.length === 0 ? [{ label: 'Add a step', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertFirst), onClick: () => addStepAndFocus(store.addFirstStep(task)) }] : []),
 				]}
 			/>
 

@@ -6,12 +6,15 @@ import { formatRecurrenceDuration } from '../model/task/recurrence/RecurrenceDur
 import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
 import { formatDate } from '../utilities/dateFormatting';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
+import { useCopyTaskAsMarkdown } from '../hooks/useCopyTaskAsMarkdown';
 import { SHORTCUTS, getShortcutKeyParts } from '../utilities/shortcuts';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
 import SelectionCheckbox from './SelectionCheckbox';
 import ContextMenu from './context-menu/ContextMenu';
+import ContextMenuButton from './context-menu/ContextMenuButton';
+import { isNativeContextMenuTarget } from './context-menu/isNativeContextMenuTarget';
 import TagChip from './TagChip';
 import AddTagPopover from './AddTagPopover';
 import CloseIcon from './svg-icons/CloseIcon';
@@ -91,15 +94,25 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 	const isCompactRow = steps.length === 0 && alreadyAddedTags.length === 0 && !isSkipActive;
 
 	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; x: number; y: number } | null>(null);
+	const [rowContextMenuPosition, setRowContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
 	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
 	const isTouchDevice = useIsTouchDevice();
+	const copyTaskAsMarkdown = useCopyTaskAsMarkdown();
 
 	function addStepAndFocus(newStepID: string) {
 		stepsEditorRef.current?.focusStep(newStepID);
 	}
 
 	return (
-		<tr className={isSelected ? `${styles.row} ${styles.rowSelected}` : styles.row}>
+		<tr
+			className={isSelected ? `${styles.row} ${styles.rowSelected}` : styles.row}
+			onContextMenu={event => {
+				const wasAlreadyHandledByStep = event.defaultPrevented;
+				if (wasAlreadyHandledByStep || isNativeContextMenuTarget(event.target)) return;
+				event.preventDefault();
+				setRowContextMenuPosition({ x: event.clientX, y: event.clientY });
+			}}
+		>
 			<td className={isCompactRow ? `${styles.selectionCell} ${styles.iconColumn} ${styles.iconColumnCompact}` : `${styles.selectionCell} ${styles.iconColumn}`}>
 				<SelectionCheckbox
 					isSelected={isSelected}
@@ -284,7 +297,21 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 					>
 						<DeleteIcon className={styles.rowActionIcon} />
 					</button>
+					{isTouchDevice && (
+						<ContextMenuButton
+							label="Task options"
+							className={styles.rowActionButton}
+							onOpen={(x, y) => setRowContextMenuPosition({ x, y })}
+						/>
+					)}
 				</div>
+				<ContextMenu
+					position={rowContextMenuPosition}
+					onClose={() => setRowContextMenuPosition(null)}
+					items={[
+						{ label: 'Copy task as Markdown', onClick: () => copyTaskAsMarkdown(task) },
+					]}
+				/>
 			</td>
 		</tr>
 	);

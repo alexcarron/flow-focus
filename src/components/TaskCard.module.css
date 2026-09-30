@@ -40,6 +40,21 @@
 	cursor: text;
 }
 
+.nameRowWithMoreOptionsButton {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-small);
+}
+
+.nameRowWithMoreOptionsButton > .nameRow {
+	flex: 1;
+	min-width: 0;
+}
+
+.moreOptionsButton {
+	margin-top: var(--space-extra-extra-small);
+}
+
 .nameRow {
 	display: flex;
 	flex-wrap: wrap;

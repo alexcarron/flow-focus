@@ -1,4 +1,5 @@
 const WEEKDAY_ABBREVIATIONS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function getStartOfDay(date: Date): Date {
 	const startOfDay = new Date(date);
@@ -40,6 +41,13 @@ export function formatTimeOfDay(date: Date): string {
 		return `${hours}${amOrPm}`;
 	}
 	return `${hours}:${minutes.toString().padStart(2, '0')}${amOrPm}`;
+}
+
+export function formatAbsoluteDateAndTime(date: Date): string {
+	const hoursOnTwelveHourClock = date.getHours() % 12 || 12;
+	const amOrPm = date.getHours() >= 12 ? 'PM' : 'AM';
+	const paddedMinutes = date.getMinutes().toString().padStart(2, '0');
+	return `${MONTH_ABBREVIATIONS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${hoursOnTwelveHourClock}:${paddedMinutes} ${amOrPm}`;
 }
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
