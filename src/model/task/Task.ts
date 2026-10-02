@@ -128,6 +128,13 @@ export default class Task {
 
 	setMaxRequiredTime(maxRequriedTime: number | null): void {this.maxRequiredTime = maxRequriedTime};
 
+	getAssumedMaxRequiredTime(): number {
+		if (this.maxRequiredTime === null) {
+			return this.getMinRequiredTime();
+		}
+		return this.maxRequiredTime;
+	}
+
 	getRecurrenceDuration(): RecurrenceDuration | null {return this.recurrenceDuration};
 
 	setRecurrenceDuration(recurrenceDuration: RecurrenceDuration | null): void {this.recurrenceDuration = recurrenceDuration};
@@ -717,7 +724,7 @@ export default class Task {
 	}
 
 	getMinSlackTime(currentTime: Date): number {
-		return this.getTimeToComplete(currentTime) - this.getMaxRequiredTime(currentTime);
+		return this.getTimeToComplete(currentTime) - this.getAssumedMaxRequiredTime();
 	}
 
 	getMaxSlackTime(currentTime: Date): number {
@@ -733,7 +740,7 @@ export default class Task {
 			return false;
 		}
 
-		return this.getTimeToComplete(currentTime) <= this.getMaxRequiredTime(currentTime)
+		return this.getTimeToComplete(currentTime) <= this.getAssumedMaxRequiredTime()
 	}
 
 	protected complete(): void {

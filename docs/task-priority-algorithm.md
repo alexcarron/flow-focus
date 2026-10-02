@@ -31,7 +31,9 @@ The sleep window is assumed to be 8 hours by default from midnight to 8am. Each 
 
 How long the task could take to complete at most.
 
-If the user did not set a maximum task duration, it is assumed to be the available time to complete or infinite if there is no deadline as to not underestimate the task duration.
+If the user did not set a maximum task duration, it is assumed to be the minimum task duration (which is 0 seconds when that is not set either). Tasks with no durations therefore compete on their deadlines instead of being treated as maximally urgent.
+
+This assumed value is what slack time, urgency, and the mandatory over optional criterion use. It is separate from the maximum duration shown in the UI.
 
 ### Minimum Possible Task Duration (aka Best-Case Task Duration)
 
@@ -47,7 +49,7 @@ Calculated by the avaiable time minus the maximum task duration for the task.
 
 A task with no deadline is considered to have infinite slack time.
 
-If the user did not set a maximum task duration, the slack time is calculated as 0 since the maximum task duration defaults to the entire available time to complete.
+If the user did not set a maximum task duration, the slack time is the available time minus the minimum task duration.
 
 ### Urgent Task 
 

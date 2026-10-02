@@ -1020,6 +1020,31 @@ describe('Task', () => {
 		});
 	});
 
+	describe('getAssumedMaxRequiredTime', () => {
+		it('should return 0 if neither duration is set', () => {
+			expect(task.getAssumedMaxRequiredTime()).toEqual(0);
+		});
+
+		it('should return the minimum duration if only the minimum is set', () => {
+			task.setMinRequiredTime(5000);
+			expect(task.getAssumedMaxRequiredTime()).toEqual(5000);
+		});
+
+		it('should return the maximum duration if it is set', () => {
+			task.setMinRequiredTime(5000);
+			task.setMaxRequiredTime(9000);
+			expect(task.getAssumedMaxRequiredTime()).toEqual(9000);
+		});
+
+		it('should leave a task with a deadline and no durations with slack equal to its available time and not urgent', () => {
+			const currentTime = new Date();
+			task.setDeadline(new Date(currentTime.getTime() + 1000));
+
+			expect(task.getMinSlackTime(currentTime)).toEqual(task.getTimeToComplete(currentTime));
+			expect(task.isUrgent(currentTime)).toBe(false);
+		});
+	});
+
 	describe('getProgress', () => {
 		it('getProgress should return 0 if there are no steps', () => {
 			expect(task.getProgress()).toEqual(0);

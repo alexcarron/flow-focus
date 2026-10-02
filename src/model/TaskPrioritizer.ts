@@ -204,7 +204,7 @@ export default class TaskPrioritizer {
 				mandatoryTask.getDeadline() !== null &&
 				optionalTask.getDeadline()! < mandatoryTask.getDeadline()!
 			) {
-					totalOptionalTasksDuration += optionalTask.getMaxRequiredTime(currentTime);
+					totalOptionalTasksDuration += optionalTask.getAssumedMaxRequiredTime();
 			}
 		}
 
