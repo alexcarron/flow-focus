@@ -168,6 +168,17 @@ export default function QuickToDoChecklistSection() {
 		if (previousItemID) setItemPendingFocusID(previousItemID);
 	}
 
+	function focusItemNextToItem(itemID: string, offset: -1 | 1): boolean {
+		const itemRows = displayRows.filter(row => row.kind === 'item');
+		const rowIndex = itemRows.findIndex(row => row.kind === 'item' && row.node.id === itemID);
+		const neighboringRow = itemRows[rowIndex + offset];
+		if (!neighboringRow || neighboringRow.kind !== 'item') return false;
+		const neighboringTextElement = textElementsByItemIDRef.current.get(neighboringRow.node.id);
+		if (!neighboringTextElement) return false;
+		focusElementAtEnd(neighboringTextElement);
+		return true;
+	}
+
 	const draggingItem = draggingItemID !== null ? findItemWithParent(items, draggingItemID)?.item ?? null : null;
 
 	return (
@@ -235,6 +246,8 @@ export default function QuickToDoChecklistSection() {
 							onUnindent={() => unindentItem(item.id)}
 							onMoveUp={() => moveItemUp(item.id)}
 							onMoveDown={() => moveItemDown(item.id)}
+							onFocusPreviousItem={() => focusItemNextToItem(item.id, -1)}
+							onFocusNextItem={() => focusItemNextToItem(item.id, 1)}
 							onDelete={() => deleteItem(item.id)}
 							onBackspaceDelete={() => onBackspaceDeleteItem(item.id)}
 							onContextMenu={(x, y) => setItemContextMenu({ itemID: item.id, x, y })}

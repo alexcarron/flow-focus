@@ -315,7 +315,7 @@ function StepsTreeEditor(props: Props) {
 									if (typedText !== step.text) onSetStepText(step.id, typedText);
 									onMoveStepDown(step.id);
 								}
-								else if (matchesShortcut(event, SHORTCUTS.stepNavigate.toPreviousStep)) {
+								else if (matchesShortcut(event, SHORTCUTS.listItemNavigate.toPreviousListItem)) {
 									const itemRows = displayRows.filter(candidate => candidate.kind === 'item');
 									const previousRow = itemRows[itemRows.findIndex(candidate => candidate.kind === 'item' && candidate.node.id === step.id) - 1];
 									if (previousRow && previousRow.kind === 'item') {
@@ -324,7 +324,7 @@ function StepsTreeEditor(props: Props) {
 										if (stepSpanElement) focusStepText(stepSpanElement, 'end');
 									}
 								}
-								else if (matchesShortcut(event, SHORTCUTS.stepNavigate.toNextStep)) {
+								else if (matchesShortcut(event, SHORTCUTS.listItemNavigate.toNextListItem)) {
 									const itemRows = displayRows.filter(candidate => candidate.kind === 'item');
 									const followingRow = itemRows[itemRows.findIndex(candidate => candidate.kind === 'item' && candidate.node.id === step.id) + 1];
 									if (followingRow && followingRow.kind === 'item') {

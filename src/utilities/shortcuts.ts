@@ -36,9 +36,9 @@ export const SHORTCUTS = {
 		moveUp: { key: 'arrowup', alt: true },
 		moveDown: { key: 'arrowdown', alt: true },
 	},
-	stepNavigate: {
-		toPreviousStep: { key: 'arrowup' },
-		toNextStep: { key: 'arrowdown' },
+	listItemNavigate: {
+		toPreviousListItem: { key: 'arrowup' },
+		toNextListItem: { key: 'arrowdown' },
 	},
 	stepInsert: {
 		insertAfter: { key: 'enter' },

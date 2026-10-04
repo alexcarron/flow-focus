@@ -26,6 +26,8 @@ interface Props {
 	onUnindent: () => void;
 	onMoveUp: () => void;
 	onMoveDown: () => void;
+	onFocusPreviousItem: () => boolean;
+	onFocusNextItem: () => boolean;
 	onDelete: () => void;
 	onBackspaceDelete: () => void;
 	onContextMenu: (x: number, y: number) => void;
@@ -52,6 +54,8 @@ export default function QuickToDoChecklistItemRow({
 	onUnindent,
 	onMoveUp,
 	onMoveDown,
+	onFocusPreviousItem,
+	onFocusNextItem,
 	onDelete,
 	onBackspaceDelete,
 	onContextMenu,
@@ -142,7 +146,13 @@ export default function QuickToDoChecklistItemRow({
 						event.preventDefault();
 						onMoveDown();
 					}
-					else if (event.key === 'Delete') {
+									else if (matchesShortcut(event, SHORTCUTS.listItemNavigate.toPreviousListItem)) {
+							if (onFocusPreviousItem()) event.preventDefault();
+						}
+						else if (matchesShortcut(event, SHORTCUTS.listItemNavigate.toNextListItem)) {
+							if (onFocusNextItem()) event.preventDefault();
+						}
+						else if (event.key === 'Delete') {
 						event.preventDefault();
 						event.stopPropagation();
 						event.currentTarget.blur();
