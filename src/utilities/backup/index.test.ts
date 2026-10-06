@@ -6,7 +6,8 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV9';
+import { BACKUP_FORMAT } from './versions/backupV10';
+import { BACKUP_FORMAT as BACKUP_FORMAT_V9 } from './versions/backupV9';
 import { BACKUP_FORMAT_V6 } from './versions/backupV6';
 import { BACKUP_FORMAT_V1 } from './versions/backupV1';
 import { getActiveRepositories, setActiveRepositories } from '../../persistence/activeRepositories';
@@ -161,6 +162,43 @@ describe('readBackupFile', () => {
 		expect(migrated.tasks[0]).not.toHaveProperty('repeatInterval');
 	});
 
+	it('gives every task in a v9 backup the backup\'s export time as its createdAt', async () => {
+		const v9Backup = {
+			format: BACKUP_FORMAT_V9,
+			exportedAt: '2026-08-15T10:00:00.000Z',
+			settings: DEFAULT_SETTINGS,
+			tasks: [
+				{
+					description: 'Water the plants',
+					steps: [],
+					startTime: null,
+					endTime: null,
+					deadline: null,
+					minRequiredTime: null,
+					maxRequiredTime: null,
+					recurrenceDuration: null,
+					shouldNotSkipMissedOccurrences: false,
+					completedOccurrenceIndex: null,
+					skippedOccurrenceIndex: null,
+					progressOccurrenceIndex: null,
+					isMandatory: false,
+					isComplete: false,
+					isSkipped: false,
+					skippedUntil: null,
+					lastActionedStep: null,
+					tagIDs: [],
+				},
+			],
+			quickToDoChecklist: [],
+			tags: [],
+		};
+
+		const migrated = await readBackupFile(makeBackupFile(v9Backup));
+
+		expect(migrated.format).toBe(BACKUP_FORMAT);
+		expect(migrated.tasks[0].createdAt).toBe('2026-08-15T10:00:00.000Z');
+	});
+
 	it('rejects a file that is not a recognized backup', async () => {
 		await expect(readBackupFile(makeBackupFile({ not: 'a backup' }))).rejects.toThrow();
 	});
@@ -194,6 +232,7 @@ describe('applyBackup', () => {
 					skippedUntil: null,
 					lastActionedStep: null,
 					tagIDs: [],
+					createdAt: '2026-02-01T09:00:00.000Z',
 				},
 			],
 			quickToDoChecklist: [{ id: 'item-1', text: 'Restored item', isChecked: false, children: [] }],
@@ -210,6 +249,7 @@ describe('applyBackup', () => {
 		const tasks = useTasksStore.getState().tasks;
 		expect(tasks).toHaveLength(1);
 		expect(tasks[0].getDescription()).toBe('Restored task');
+		expect(tasks[0].createdAt.toISOString()).toBe('2026-02-01T09:00:00.000Z');
 		expect(useSettingsStore.getState().bedtime).toBe('02:00');
 		expect(useQuickToDoChecklistStore.getState().items[0].text).toBe('Restored item');
 	});
@@ -237,6 +277,7 @@ describe('backup and restore while signed in', () => {
 			skippedUntil: null,
 			lastActionedStep: null,
 			tagIDs: [],
+			createdAt: '2026-02-01T09:00:00.000Z',
 			updatedAt: new Date().toISOString(),
 			deletedAt: null,
 			isSynced: false,
@@ -283,6 +324,7 @@ describe('backup and restore while signed in', () => {
 					skippedUntil: null,
 					lastActionedStep: null,
 					tagIDs: [],
+					createdAt: '2026-02-01T09:00:00.000Z',
 				},
 			],
 			quickToDoChecklist: [{ id: 'item-1', text: 'Restored account item', isChecked: false, children: [] }],

@@ -25,7 +25,7 @@ import { mergeRefs } from '../../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
-enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartTime, Deadline }
+enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartTime, Deadline, DateAdded }
 enum SortDir { Asc, Desc }
 
 const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'duration', 'timeAvailable', 'deadline'];
@@ -59,7 +59,7 @@ const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = 
 	},
 ];
 
-const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | SortBy.StartTime>, string> = {
+const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | SortBy.StartTime | SortBy.DateAdded>, string> = {
 	[SortBy.Name]: 'Name',
 	[SortBy.Steps]: 'Steps',
 	[SortBy.TimeAvailable]: 'Time Left to Complete',
@@ -72,6 +72,7 @@ const ALL_SORT_LABELS: Record<SortBy, string> = {
 	...SORT_LABELS,
 	[SortBy.StartTime]: 'Start',
 	[SortBy.Deadline]: 'Deadline',
+	[SortBy.DateAdded]: 'Date Added',
 };
 
 const SORT_BY_OPTIONS: { value: SortBy; label: string; description: string }[] = [
@@ -83,7 +84,13 @@ const SORT_BY_OPTIONS: { value: SortBy; label: string; description: string }[] =
 	SortBy.RecurrenceDuration,
 	SortBy.StartTime,
 	SortBy.Deadline,
+	SortBy.DateAdded,
 ].map(sortBy => ({ value: sortBy, label: ALL_SORT_LABELS[sortBy], description: `Sort by ${ALL_SORT_LABELS[sortBy]}` }));
+
+function getDefaultSortDirOfSortBy(sortBy: SortBy): SortDir {
+	if (sortBy === SortBy.DateAdded) return SortDir.Desc;
+	return SortDir.Asc;
+}
 
 function applySearch(tasks: Task[], searchText: string): Task[] {
 	const normalizedSearchText = searchText.trim().toLowerCase();
@@ -151,6 +158,8 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 			if (deadlineB === null) return -1;
 			return deadlineA.getTime() - deadlineB.getTime();
 		});
+	else if (sortBy === SortBy.DateAdded)
+		sorted.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
 	if (dir === SortDir.Desc) sorted.reverse();
 	return sorted;
@@ -286,14 +295,14 @@ export default function TasksManagerPage() {
 			setSortDir(d => d === SortDir.Asc ? SortDir.Desc : SortDir.Asc);
 		} else {
 			setSortBy(col);
-			setSortDir(SortDir.Asc);
+			setSortDir(getDefaultSortDirOfSortBy(col));
 		}
 	}
 
 	function selectSortByField(col: SortBy) {
 		if (col === sortBy) return;
 		setSortBy(col);
-		setSortDir(SortDir.Asc);
+		setSortDir(getDefaultSortDirOfSortBy(col));
 	}
 
 	function toggleSortDir() {

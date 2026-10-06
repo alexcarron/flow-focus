@@ -24,12 +24,13 @@ export default class TasksManager {
 		this.tasks.push(task);
 	}
 
-	protected createNewTask(taskDescription: string, taskID?: string): Task {
-		return new Task(this, taskDescription, taskID);
+	protected createNewTask(taskDescription: string, { taskID, createdAt }: { taskID?: string; createdAt?: Date } = {}): Task {
+		const noInitialTagIDs: string[] = [];
+		return new Task(this, taskDescription, taskID, noInitialTagIDs, createdAt);
 	}
 
-	public addCreatedTask(taskDescription: string, taskID?: string): Task {
-		const task = this.createNewTask(taskDescription, taskID);
+	public addCreatedTask(taskDescription: string, { taskID, createdAt }: { taskID?: string; createdAt?: Date } = {}): Task {
+		const task = this.createNewTask(taskDescription, { taskID, createdAt });
 		this.addTask(task);
 		return task;
 	}

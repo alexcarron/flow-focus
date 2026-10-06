@@ -57,6 +57,7 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		skippedUntil: null,
 		lastActionedStep: null,
 		tagIDs: [],
+		createdAt: '2026-02-01T09:00:00.000Z',
 		updatedAt: '2026-03-01T12:00:00.000Z',
 		deletedAt: null,
 		isSynced: false,
@@ -106,6 +107,7 @@ function taskRowToCloudRow(row: PlainTaskRow) {
 		is_complete: row.isComplete,
 		is_skipped: row.isSkipped,
 		last_actioned_step: row.lastActionedStep,
+		created_at: row.createdAt,
 		updated_at: row.updatedAt,
 		deleted_at: row.deletedAt,
 	};

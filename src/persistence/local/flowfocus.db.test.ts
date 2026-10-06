@@ -258,3 +258,57 @@ describe('upgrading a pre-tags database', () => {
 		upgradedDB.close();
 	});
 });
+
+class PreCreatedAtFlowFocusDB extends Dexie {
+	constructor() {
+		super(DB_NAME);
+		this.version(11).stores({
+			tasks: 'id, deadline, isComplete, isSkipped, isMandatory, startTime, endTime, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		});
+	}
+}
+
+describe('upgrading a database whose tasks have no createdAt', () => {
+	it('backfills each task\'s createdAt from its updatedAt without marking it unsynced', async () => {
+		const legacyDB = new PreCreatedAtFlowFocusDB();
+		await legacyDB.open();
+		await legacyDB.table('tasks').add({
+			id: 'task-1',
+			description: 'Water the plants',
+			steps: [],
+			startTime: null,
+			endTime: null,
+			deadline: null,
+			minRequiredTime: null,
+			maxRequiredTime: null,
+			recurrenceDuration: null,
+			shouldNotSkipMissedOccurrences: false,
+			completedOccurrenceIndex: null,
+			skippedOccurrenceIndex: null,
+			progressOccurrenceIndex: null,
+			isMandatory: false,
+			isComplete: false,
+			isSkipped: false,
+			skippedUntil: null,
+			lastActionedStep: null,
+			tagIDs: [],
+			updatedAt: '2026-09-01T00:00:00.000Z',
+			deletedAt: null,
+			isSynced: true,
+		});
+		legacyDB.close();
+
+		const upgradedDB = new FlowFocusDB();
+		await upgradedDB.open();
+		const row = await upgradedDB.tasks.get('task-1');
+		expect(row?.createdAt).toBe('2026-09-01T00:00:00.000Z');
+		expect(row?.updatedAt).toBe('2026-09-01T00:00:00.000Z');
+		expect(row?.isSynced).toBe(true);
+
+		upgradedDB.close();
+	});
+});

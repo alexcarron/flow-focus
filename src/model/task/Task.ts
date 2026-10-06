@@ -18,6 +18,7 @@ export default class Task {
 	static [immerable] = true;
 
 	readonly id: string;
+	readonly createdAt: Date;
 
 	protected description: string;
 	protected steps: Step[] = [];
@@ -44,10 +45,12 @@ export default class Task {
 		description: string,
 		id: string = crypto.randomUUID(),
 		tagIDs: string[] = [],
+		createdAt: Date = new Date(),
 	) {
 		this.id = id;
 		this.description = description;
 		this.tagIDs = tagIDs;
+		this.createdAt = createdAt;
 	}
 
 	getDescription(): string {return this.description};

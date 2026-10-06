@@ -26,6 +26,7 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		skippedUntil: null,
 		lastActionedStep: null,
 		tagIDs: [],
+		createdAt: '2026-02-01T09:00:00.000Z',
 		updatedAt: new Date().toISOString(),
 		deletedAt: null,
 		isSynced: false,

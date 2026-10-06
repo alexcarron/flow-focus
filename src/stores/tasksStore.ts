@@ -106,7 +106,10 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 		tasksManager.clearTasks();
 		rows.forEach(row => {
 			const data = deserializeRow(row);
-			const task = tasksManager.addCreatedTask(data.description, row.id);
+			const task = tasksManager.addCreatedTask(data.description, {
+				taskID: row.id,
+				createdAt: data.createdAt,
+			});
 			task.replaceAllSteps(data.steps);
 			task.setStartTime(data.startTime);
 			task.setEndTime(data.endTime);
@@ -357,7 +360,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			tasksManager.clearTasks();
 			await getActiveRepositories().taskRepository.clear();
 			for (const backupTask of backupTasks) {
-				const task = tasksManager.addCreatedTask(backupTask.description);
+				const task = tasksManager.addCreatedTask(backupTask.description, { createdAt: new Date(backupTask.createdAt) });
 				task.replaceAllSteps(cloneStepsDeep(backupTask.steps as Step[]));
 				task.setStartTime(backupTask.startTime ? new Date(backupTask.startTime) : null);
 				task.setEndTime(backupTask.endTime ? new Date(backupTask.endTime) : null);
