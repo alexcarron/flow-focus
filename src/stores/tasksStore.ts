@@ -12,6 +12,7 @@ import { serializeTask, deserializeRow } from '../persistence/cloud/task.seriali
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
 import { RunOnceThenAgainIfChanged } from '../utilities/runOnceThenAgainIfChanged';
+import { PastedListItem } from '../utilities/parsePastedTextIntoNestedListItems';
 import { useTagsStore } from './tagsStore';
 
 enablePatches();
@@ -59,6 +60,7 @@ interface TasksActions {
 	unindentStep: (task: Task, stepID: string) => void;
 	insertStepBeforeStep: (task: Task, stepID: string) => string;
 	insertStepAfterStep: (task: Task, stepID: string) => string;
+	insertStepsFromPastedListItems: (task: Task, stepID: string, pastedListItems: PastedListItem[]) => string[];
 	addFirstStep: (task: Task) => string;
 	deleteStep: (task: Task, stepID: string) => void;
 
@@ -294,6 +296,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				newStepID = task.createStepRightOfStep(stepID).id;
 			}, [task]);
 			return newStepID;
+		},
+
+		insertStepsFromPastedListItems(task: Task, stepID: string, pastedListItems: PastedListItem[]) {
+			let newStepIDs: string[] = [];
+			get().executeWithPatches(() => {
+				newStepIDs = task.insertStepsFromPastedListItems(stepID, pastedListItems);
+			}, [task]);
+			return newStepIDs;
 		},
 
 		addFirstStep(task: Task) {

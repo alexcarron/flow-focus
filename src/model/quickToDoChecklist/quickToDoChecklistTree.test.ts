@@ -1,11 +1,13 @@
 import QuickToDoChecklistItem from './QuickToDoChecklistItem';
 import {
 	appendTopLevelItem,
+	appendTopLevelItemsFromPastedListItems,
 	deleteItem,
 	editItemText,
 	findItemWithParent,
 	flattenForDisplay,
 	indentItem,
+	insertItemsFromPastedListItems,
 	insertSiblingRelativeToItem,
 	isDescendant,
 	moveItemAmongSiblings,
@@ -13,6 +15,7 @@ import {
 	reparentAndReorderItem,
 	toggleItemChecked,
 } from './quickToDoChecklistTree';
+import parsePastedTextIntoNestedListItems from '../../utilities/parsePastedTextIntoNestedListItems';
 
 function makeItem(id: string, children: QuickToDoChecklistItem[] = []): QuickToDoChecklistItem {
 	return { id, text: id, isChecked: false, children };
@@ -49,6 +52,47 @@ describe('quickToDoChecklistTree', () => {
 			const tree = [makeItem('a', [makeItem('a1')])];
 			const { tree: newTree, newItem } = insertSiblingRelativeToItem(tree, 'a1', 'after', '');
 			expect(ids(newTree[0].children)).toEqual(['a1', newItem.id]);
+		});
+	});
+
+	describe('insertItemsFromPastedListItems', () => {
+		const pastedListItems = parsePastedTextIntoNestedListItems('- [x] Pack\n  - [x] Clothes\n  - [ ] Charger\n- [ ] Leave');
+
+		it('inserts pasted items, nesting and checked state included, right after the item', () => {
+			const tree = [makeItem('a'), makeItem('b')];
+			const { tree: newTree, newItemIDs } = insertItemsFromPastedListItems(tree, 'a', pastedListItems);
+			expect(newTree.map(item => item.text)).toEqual(['a', 'Pack', 'Leave', 'b']);
+			expect(newTree[1].isChecked).toBe(true);
+			expect(newTree[1].children.map(item => [item.text, item.isChecked])).toEqual([['Clothes', true], ['Charger', false]]);
+			expect(newItemIDs).toEqual([newTree[1].id, newTree[1].children[0].id, newTree[1].children[1].id, newTree[2].id]);
+		});
+
+		it('inserts pasted items at the same depth as a nested item', () => {
+			const tree = [makeItem('a', [makeItem('a1')])];
+			const { tree: newTree } = insertItemsFromPastedListItems(tree, 'a1', pastedListItems);
+			expect(newTree[0].children.map(item => item.text)).toEqual(['a1', 'Pack', 'Leave']);
+		});
+
+		it('replaces a blank item with no children', () => {
+			const tree = [makeItem('a'), { ...makeItem('blank'), text: '  ' }, makeItem('b')];
+			const { tree: newTree } = insertItemsFromPastedListItems(tree, 'blank', pastedListItems);
+			expect(newTree.map(item => item.text)).toEqual(['a', 'Pack', 'Leave', 'b']);
+		});
+
+		it('keeps a blank item that has children and inserts after it', () => {
+			const tree = [{ ...makeItem('blank', [makeItem('child')]), text: '' }];
+			const { tree: newTree } = insertItemsFromPastedListItems(tree, 'blank', pastedListItems);
+			expect(newTree.map(item => item.text)).toEqual(['', 'Pack', 'Leave']);
+		});
+	});
+
+	describe('appendTopLevelItemsFromPastedListItems', () => {
+		it('adds pasted items, nesting included, to the end of the top-level list', () => {
+			const tree = [makeItem('a')];
+			const { tree: newTree, newItemIDs } = appendTopLevelItemsFromPastedListItems(tree, parsePastedTextIntoNestedListItems('- Pack\n  - Clothes'));
+			expect(newTree.map(item => item.text)).toEqual(['a', 'Pack']);
+			expect(newTree[1].children.map(item => item.text)).toEqual(['Clothes']);
+			expect(newItemIDs).toEqual([newTree[1].id, newTree[1].children[0].id]);
 		});
 	});
 

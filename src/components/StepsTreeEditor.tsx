@@ -6,6 +6,7 @@ import { useStepCheckboxDrag } from '../hooks/useStepCheckboxDrag';
 import { useStepSwipeIndent } from '../hooks/useStepSwipeIndent';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
+import parsePastedTextIntoNestedListItems, { PastedListItem, isSingleListItemWithoutChildren } from '../utilities/parsePastedTextIntoNestedListItems';
 import { SHORTCUTS, matchesAnyShortcut, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
 import { mergeRefs } from '../utilities/mergeRefs';
 import StepCheckbox from './StepCheckbox';
@@ -42,6 +43,7 @@ interface Props {
 	onMoveStepDown: (stepID: string) => void;
 	onInsertStepBefore: (stepID: string) => string;
 	onInsertStepAfter: (stepID: string) => string;
+	onPasteListItems: (stepID: string, pastedListItems: PastedListItem[]) => string[];
 	onRequestDeleteStep: (stepID: string) => void;
 	onBackspaceDeleteEmptyStep: (stepID: string, previousStepID: string | null) => boolean;
 	onStepContextMenu?: (stepID: string, x: number, y: number) => void;
@@ -100,6 +102,7 @@ function StepsTreeEditor(props: Props) {
 		onMoveStepDown,
 		onInsertStepBefore,
 		onInsertStepAfter,
+		onPasteListItems,
 		onRequestDeleteStep,
 		onBackspaceDeleteEmptyStep,
 		onStepContextMenu,
@@ -107,7 +110,7 @@ function StepsTreeEditor(props: Props) {
 
 	const [stepPendingFocus, setStepPendingFocus] = useState<PendingFocus | null>(null);
 	const stepSpanElementsByStepIDRef = useRef<Map<string, HTMLSpanElement>>(new Map());
-	const { onKeyDown: onPlainTextKeyDown, onPaste: onPlainTextPaste } = usePlainTextContentEditable();
+	const { onKeyDown: onPlainTextKeyDown } = usePlainTextContentEditable();
 
 	function commitFocusedStepTextIfChanged() {
 		const focusedStepSpanEntry = [...stepSpanElementsByStepIDRef.current.entries()]
@@ -203,6 +206,22 @@ function StepsTreeEditor(props: Props) {
 		focusStep: stepID => setStepPendingFocus({ stepID, caretPosition: 'end' }),
 	}), []);
 
+	function onStepPaste(step: Step, event: React.ClipboardEvent<HTMLSpanElement>) {
+		event.preventDefault();
+		const pastedListItems = parsePastedTextIntoNestedListItems(event.clipboardData.getData('text/plain'));
+		if (pastedListItems.length === 0) return;
+		if (isSingleListItemWithoutChildren(pastedListItems)) {
+			document.execCommand('insertText', false, pastedListItems[0].text);
+			return;
+		}
+
+		const typedText = event.currentTarget.textContent ?? '';
+		if (typedText !== step.text) onSetStepText(step.id, typedText);
+		const newStepIDs = onPasteListItems(step.id, pastedListItems);
+		const lastNewStepID = newStepIDs[newStepIDs.length - 1];
+		if (lastNewStepID) setStepPendingFocus({ stepID: lastNewStepID, caretPosition: 'end' });
+	}
+
 	function onStepCheckboxChange(stepID: string, isChecked: boolean, isShiftClick: boolean) {
 		if (isShiftClick) onCheckUpToHere?.(stepID, isChecked);
 		else onSetStepCompleted?.(stepID, isChecked);
@@ -286,7 +305,7 @@ function StepsTreeEditor(props: Props) {
 								const newText = event.currentTarget.textContent ?? '';
 								if (newText !== step.text) onSetStepText(step.id, newText);
 							}}
-							onPaste={onPlainTextPaste}
+							onPaste={event => onStepPaste(step, event)}
 							onKeyDown={event => {
 								onPlainTextKeyDown(event);
 								if (matchesAnyShortcut(event, SHORTCUTS.stepsIndent.unindent)) {

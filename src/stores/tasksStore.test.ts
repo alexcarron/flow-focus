@@ -4,6 +4,7 @@ import { db } from '../persistence/local/flowfocus.db';
 import StepStatus from '../model/task/step/StepStatus';
 import { useTasksStore, tasksManager } from './tasksStore';
 import { useTagsStore } from './tagsStore';
+import parsePastedTextIntoNestedListItems from '../utilities/parsePastedTextIntoNestedListItems';
 
 beforeEach(async () => {
 	await db.delete();
@@ -248,5 +249,44 @@ describe('tagging a task', () => {
 		await useTasksStore.getState().deleteTask(task);
 
 		expect(useTagsStore.getState().tags).toEqual([]);
+	});
+});
+
+describe('pasting a markdown checklist into a step', () => {
+	const pastedChecklist = '- [x] Pack\n  - [x] Clothes\n  - [ ] Charger\n- [x] Leave';
+
+	it('inserts nested steps right after the step, keeping checked items completed', async () => {
+		const task = await useTasksStore.getState().addTask('Go on a trip');
+		useTasksStore.getState().setSteps(task, ['Book hotel', 'Arrive']);
+		const bookHotelStepID = task.getSteps()[0].id;
+
+		useTasksStore.getState().insertStepsFromPastedListItems(task, bookHotelStepID, parsePastedTextIntoNestedListItems(pastedChecklist));
+		await reload();
+
+		const steps = useTasksStore.getState().tasks[0].getSteps();
+		expect(steps.map(step => step.text)).toEqual(['Book hotel', 'Pack', 'Leave', 'Arrive']);
+		expect(steps[1].children.map(step => [step.text, step.status])).toEqual([['Clothes', StepStatus.COMPLETED], ['Charger', StepStatus.UNCOMPLETE]]);
+		expect(steps[1].status).toBe(StepStatus.UNCOMPLETE);
+		expect(steps[2].status).toBe(StepStatus.COMPLETED);
+	});
+
+	it('replaces a blank step and leaves the task open even when every step ends up completed', async () => {
+		const task = await useTasksStore.getState().addTask('Go on a trip');
+		const blankStepID = useTasksStore.getState().addFirstStep(task);
+
+		useTasksStore.getState().insertStepsFromPastedListItems(task, blankStepID, parsePastedTextIntoNestedListItems('- [x] Pack\n- [x] Leave'));
+
+		expect(task.getSteps().map(step => step.text)).toEqual(['Pack', 'Leave']);
+		expect(task.getIsComplete()).toBe(false);
+	});
+
+	it('is undone in one step', async () => {
+		const task = await useTasksStore.getState().addTask('Go on a trip');
+		useTasksStore.getState().setSteps(task, ['Book hotel']);
+
+		useTasksStore.getState().insertStepsFromPastedListItems(task, task.getSteps()[0].id, parsePastedTextIntoNestedListItems(pastedChecklist));
+		useTasksStore.getState().undo();
+
+		expect(task.getSteps().map(step => step.text)).toEqual(['Book hotel']);
 	});
 });

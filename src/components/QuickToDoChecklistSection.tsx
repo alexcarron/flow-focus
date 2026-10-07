@@ -6,7 +6,7 @@ import { useStepSwipeIndent } from '../hooks/useStepSwipeIndent';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { findItemWithParent, hasAnyCheckedItem } from '../model/quickToDoChecklist/quickToDoChecklistTree';
-import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
+import parsePastedTextIntoNestedListItems, { isSingleListItemWithoutChildren } from '../utilities/parsePastedTextIntoNestedListItems';
 import { mergeRefs } from '../utilities/mergeRefs';
 import { SHORTCUTS, getShortcutKeyParts } from '../utilities/shortcuts';
 import QuickToDoChecklistItemRow from './QuickToDoChecklistItemRow';
@@ -35,7 +35,8 @@ export default function QuickToDoChecklistSection() {
 	const setItemChecked = useQuickToDoChecklistStore(s => s.setItemChecked);
 	const checkItemAndPrecedingItems = useQuickToDoChecklistStore(s => s.checkItemAndPrecedingItems);
 	const uncheckItemAndFollowingItems = useQuickToDoChecklistStore(s => s.uncheckItemAndFollowingItems);
-	const insertItemsFromPastedLines = useQuickToDoChecklistStore(s => s.insertItemsFromPastedLines);
+	const addTopLevelItemsFromPastedListItems = useQuickToDoChecklistStore(s => s.addTopLevelItemsFromPastedListItems);
+	const insertItemsFromPastedListItems = useQuickToDoChecklistStore(s => s.insertItemsFromPastedListItems);
 	const deleteItem = useQuickToDoChecklistStore(s => s.deleteItem);
 	const deleteCheckedItems = useQuickToDoChecklistStore(s => s.deleteCheckedItems);
 	const indentItem = useQuickToDoChecklistStore(s => s.indentItem);
@@ -132,18 +133,18 @@ export default function QuickToDoChecklistSection() {
 	function onAddItemInputPaste(event: React.ClipboardEvent<HTMLInputElement>) {
 		event.preventDefault();
 		const pastedText = event.clipboardData.getData('text');
-		const lines = parsePastedTextIntoListItems(pastedText);
-		if (lines.length === 0) return;
+		const pastedListItems = parsePastedTextIntoNestedListItems(pastedText);
+		if (pastedListItems.length === 0) return;
 
-		if (lines.length === 1) {
+		if (isSingleListItemWithoutChildren(pastedListItems)) {
 			const input = event.currentTarget;
 			const selectionStart = input.selectionStart ?? newItemText.length;
 			const selectionEnd = input.selectionEnd ?? newItemText.length;
-			setNewItemText(newItemText.slice(0, selectionStart) + lines[0] + newItemText.slice(selectionEnd));
+			setNewItemText(newItemText.slice(0, selectionStart) + pastedListItems[0].text + newItemText.slice(selectionEnd));
 			return;
 		}
 
-		const newItemIDs = lines.map(line => addTopLevelItem(line));
+		const newItemIDs = addTopLevelItemsFromPastedListItems(pastedListItems);
 		setNewItemText('');
 		const lastNewItemID = newItemIDs[newItemIDs.length - 1];
 		if (lastNewItemID) setItemPendingFocusID(lastNewItemID);
@@ -237,8 +238,9 @@ export default function QuickToDoChecklistSection() {
 								if (typedText !== item.text) editItemText(item.id, typedText);
 								setItemPendingFocusID(insertItemBeforeOrAfter(item.id, 'after'));
 							}}
-							onPasteLines={lines => {
-								const newItemIDs = insertItemsFromPastedLines(item.id, lines);
+							onPasteListItems={(typedText, pastedListItems) => {
+								if (typedText !== item.text) editItemText(item.id, typedText);
+								const newItemIDs = insertItemsFromPastedListItems(item.id, pastedListItems);
 								const lastNewItemID = newItemIDs[newItemIDs.length - 1];
 								if (lastNewItemID) setItemPendingFocusID(lastNewItemID);
 							}}

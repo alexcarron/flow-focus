@@ -4,8 +4,9 @@ import TasksManager from "../TasksManager";
 import DateRange from "../time-management/DateRange";
 import StepStatus from "./step/StepStatus";
 import Step from "./step/Step";
-import { createStep, cloneStepsDeep, getStepLeavesInOrder, rollUpStepStatuses, setSubtreeStatus, setSingleStepStatus, areAllStepLeavesCompleted, areAllStepLeavesActioned, uncompleteAllSteps } from "./step/stepTree";
-import { getAncestorIDs, getSubtreeIDsIncludingSelf, findNodeWithParent, mapNode, indentNode, unindentNode, canIndentNode, canUnindentNode, moveNodeAmongSiblings, reparentAndReorderNode, insertSiblingRelativeToNode, appendRootNode, deleteNode } from "../../utilities/tree/orderedTree";
+import { createStep, cloneStepsDeep, getStepLeavesInOrder, rollUpStepStatuses, setSubtreeStatus, setSingleStepStatus, areAllStepLeavesCompleted, areAllStepLeavesActioned, uncompleteAllSteps, convertPastedListItemsIntoSteps, insertStepsAfterStepReplacingItIfBlank } from "./step/stepTree";
+import { getAncestorIDs, getSubtreeIDsIncludingSelf, findNodeWithParent, mapNode, indentNode, unindentNode, canIndentNode, canUnindentNode, moveNodeAmongSiblings, reparentAndReorderNode, insertSiblingRelativeToNode, appendRootNode, deleteNode, getNodeIDsInDepthFirstOrder } from "../../utilities/tree/orderedTree";
+import { PastedListItem } from "../../utilities/parsePastedTextIntoNestedListItems";
 import TaskState from "./TaskState";
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError, SkipUntilDateInPastError } from "./TaskTimingError";
 import RecurrenceDuration, { addRecurrenceDurations, areRecurrenceDurationsEqual } from "./recurrence/RecurrenceDuration";
@@ -458,6 +459,12 @@ export default class Task {
 			this.steps = insertSiblingRelativeToNode(this.steps, adjacentStepID, 'after', newStep);
 		}
 		return newStep;
+	}
+
+	insertStepsFromPastedListItems(stepID: string, pastedListItems: PastedListItem[]): string[] {
+		const newSteps = convertPastedListItemsIntoSteps(pastedListItems);
+		this.steps = insertStepsAfterStepReplacingItIfBlank(this.steps, stepID, newSteps);
+		return getNodeIDsInDepthFirstOrder(newSteps);
 	}
 
 	protected wasLastActionASkip(): boolean {

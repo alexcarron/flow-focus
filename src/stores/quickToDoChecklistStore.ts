@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import * as quickToDoChecklistTree from '../model/quickToDoChecklist/quickToDoChecklistTree';
 import { getActiveRepositories } from '../persistence/activeRepositories';
+import { PastedListItem } from '../utilities/parsePastedTextIntoNestedListItems';
 
 interface QuickToDoChecklistState {
 	items: QuickToDoChecklistItem[];
@@ -11,13 +12,14 @@ interface QuickToDoChecklistState {
 interface QuickToDoChecklistActions {
 	loadQuickToDoChecklist: () => Promise<void>;
 	addTopLevelItem: (text: string) => string;
+	addTopLevelItemsFromPastedListItems: (pastedListItems: PastedListItem[]) => string[];
 	insertItemBeforeOrAfter: (itemID: string, position: 'before' | 'after') => string;
 	editItemText: (itemID: string, text: string) => void;
 	toggleItemChecked: (itemID: string) => void;
 	setItemChecked: (itemID: string, isChecked: boolean) => void;
 	checkItemAndPrecedingItems: (itemID: string) => void;
 	uncheckItemAndFollowingItems: (itemID: string) => void;
-	insertItemsFromPastedLines: (itemID: string, lines: string[]) => string[];
+	insertItemsFromPastedListItems: (itemID: string, pastedListItems: PastedListItem[]) => string[];
 	deleteItem: (itemID: string) => void;
 	deleteCheckedItems: () => void;
 	indentItem: (itemID: string) => void;
@@ -46,6 +48,13 @@ export const useQuickToDoChecklistStore = create<QuickToDoChecklistState & Quick
 		set({ items: tree });
 		persistQuickToDoChecklist(tree);
 		return newItem.id;
+	},
+
+	addTopLevelItemsFromPastedListItems(pastedListItems) {
+		const { tree, newItemIDs } = quickToDoChecklistTree.appendTopLevelItemsFromPastedListItems(get().items, pastedListItems);
+		set({ items: tree });
+		persistQuickToDoChecklist(tree);
+		return newItemIDs;
 	},
 
 	insertItemBeforeOrAfter(itemID, position) {
@@ -101,31 +110,11 @@ export const useQuickToDoChecklistStore = create<QuickToDoChecklistState & Quick
 		persistQuickToDoChecklist(tree);
 	},
 
-	insertItemsFromPastedLines(itemID, lines) {
-		if (lines.length === 0) return [];
-
-		const items = get().items;
-		const current = quickToDoChecklistTree.findItemWithParent(items, itemID)?.item;
-		if (!current) return [];
-
-		if (current.text.trim() === '') {
-			const [firstLine, ...remainingLines] = lines;
-			let tree = quickToDoChecklistTree.editItemText(items, itemID, firstLine);
-			let newItems: QuickToDoChecklistItem[] = [];
-			if (remainingLines.length > 0) {
-				const result = quickToDoChecklistTree.insertSiblingsAfterItem(tree, itemID, remainingLines);
-				tree = result.tree;
-				newItems = result.newItems;
-			}
-			set({ items: tree });
-			persistQuickToDoChecklist(tree);
-			return newItems.map(item => item.id);
-		}
-
-		const { tree, newItems } = quickToDoChecklistTree.insertSiblingsAfterItem(items, itemID, lines);
+	insertItemsFromPastedListItems(itemID, pastedListItems) {
+		const { tree, newItemIDs } = quickToDoChecklistTree.insertItemsFromPastedListItems(get().items, itemID, pastedListItems);
 		set({ items: tree });
 		persistQuickToDoChecklist(tree);
-		return newItems.map(item => item.id);
+		return newItemIDs;
 	},
 
 	deleteItem(itemID) {

@@ -1,7 +1,7 @@
 import QuickToDoChecklistItem from '../model/quickToDoChecklist/QuickToDoChecklistItem';
 import { SHORTCUTS, matchesAnyShortcut, matchesShortcut, matchesShortcutIgnoringShift } from '../utilities/shortcuts';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
-import parsePastedTextIntoListItems from '../utilities/parsePastedTextIntoListItems';
+import parsePastedTextIntoNestedListItems, { PastedListItem, isSingleListItemWithoutChildren } from '../utilities/parsePastedTextIntoNestedListItems';
 import ContextMenuButton from './context-menu/ContextMenuButton';
 import styles from './QuickToDoChecklistSection.module.css';
 
@@ -21,7 +21,7 @@ interface Props {
 	onTextBlur: (text: string) => void;
 	onInsertBefore: (typedText: string) => void;
 	onInsertAfter: (typedText: string) => void;
-	onPasteLines: (lines: string[]) => void;
+	onPasteListItems: (typedText: string, pastedListItems: PastedListItem[]) => void;
 	onIndent: () => void;
 	onUnindent: () => void;
 	onMoveUp: () => void;
@@ -49,7 +49,7 @@ export default function QuickToDoChecklistItemRow({
 	onTextBlur,
 	onInsertBefore,
 	onInsertAfter,
-	onPasteLines,
+	onPasteListItems,
 	onIndent,
 	onUnindent,
 	onMoveUp,
@@ -116,13 +116,13 @@ export default function QuickToDoChecklistItemRow({
 				onPaste={event => {
 					event.preventDefault();
 					const pastedText = event.clipboardData.getData('text');
-					const lines = parsePastedTextIntoListItems(pastedText);
-					if (lines.length === 0) return;
-					if (lines.length === 1) {
-						document.execCommand('insertText', false, lines[0]);
+					const pastedListItems = parsePastedTextIntoNestedListItems(pastedText);
+					if (pastedListItems.length === 0) return;
+					if (isSingleListItemWithoutChildren(pastedListItems)) {
+						document.execCommand('insertText', false, pastedListItems[0].text);
 						return;
 					}
-					onPasteLines(lines);
+					onPasteListItems(event.currentTarget.textContent ?? '', pastedListItems);
 				}}
 				onKeyDown={event => {
 					onPlainTextKeyDown(event);

@@ -127,12 +127,15 @@
 	display: none;
 }
 
-.mobileToolbarControls {
-	display: none;
+.sortAndSelectAllControls {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-small);
 }
 
 .selectAllLabel {
-	display: flex;
+	display: none;
 	align-items: center;
 	gap: var(--space-extra-small);
 	font-size: var(--font-size-small);
@@ -142,11 +145,8 @@
 }
 
 @media (max-width: 599px) {
-	.mobileToolbarControls {
+	.selectAllLabel {
 		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--space-small);
 	}
 
 	.tableScrollContainer {

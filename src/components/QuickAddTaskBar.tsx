@@ -10,8 +10,8 @@ import useTaskTagSelection from '../hooks/useTaskTagSelection';
 import sortTagsByUsageCount from '../utilities/sortTagsByUsageCount';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import Step from '../model/task/step/Step';
-import { createStep, pruneEmptySteps } from '../model/task/step/stepTree';
-import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../utilities/tree/orderedTree';
+import { createStep, pruneEmptySteps, convertPastedListItemsIntoSteps, insertStepsAfterStepReplacingItIfBlank } from '../model/task/step/stepTree';
+import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode, getNodeIDsInDepthFirstOrder } from '../utilities/tree/orderedTree';
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
 import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
@@ -200,6 +200,11 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 							onMoveStepDown={stepID => setManualSteps(previous => moveNodeAmongSiblings(previous, stepID, 'down'))}
 							onInsertStepBefore={stepID => { const newStep = createStep(''); setManualSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'before', newStep)); return newStep.id; }}
 							onInsertStepAfter={stepID => { const newStep = createStep(''); setManualSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'after', newStep)); return newStep.id; }}
+							onPasteListItems={(stepID, pastedListItems) => {
+								const newSteps = convertPastedListItemsIntoSteps(pastedListItems);
+								setManualSteps(previous => insertStepsAfterStepReplacingItIfBlank(previous, stepID, newSteps));
+								return getNodeIDsInDepthFirstOrder(newSteps);
+							}}
 							onRequestDeleteStep={stepID => setManualSteps(previous => deleteNode(previous, stepID))}
 							onBackspaceDeleteEmptyStep={stepID => { setManualSteps(previous => deleteNode(previous, stepID)); return true; }}
 						/>

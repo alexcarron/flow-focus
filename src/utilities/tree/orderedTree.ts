@@ -149,6 +149,25 @@ export function insertSiblingsAfterNode<TNode extends OrderedTreeNode<TNode>>(tr
 	return recurse(tree);
 }
 
+function replaceNodeWithNodes<TNode extends OrderedTreeNode<TNode>>(tree: TNode[], nodeID: string, replacementNodes: TNode[]): TNode[] {
+	return tree.flatMap(node => {
+		if (node.id === nodeID) return replacementNodes;
+		return [cloneWithChildren(node, replaceNodeWithNodes(node.children, nodeID, replacementNodes))];
+	});
+}
+
+export function insertNodesAfterNodeReplacingItIfBlank<TNode extends OrderedTreeNode<TNode> & { text: string }>(tree: TNode[], nodeID: string, newNodes: TNode[]): TNode[] {
+	const node = findNodeWithParent(tree, nodeID)?.node;
+	if (node === undefined) return [...tree, ...newNodes];
+	const isNodeBlank = node.text.trim() === '' && node.children.length === 0;
+	if (isNodeBlank) return replaceNodeWithNodes(tree, nodeID, newNodes);
+	return insertSiblingsAfterNode(tree, nodeID, newNodes);
+}
+
+export function getNodeIDsInDepthFirstOrder<TNode extends OrderedTreeNode<TNode>>(tree: TNode[]): string[] {
+	return flattenForDisplay(tree).map(flattened => flattened.node.id);
+}
+
 export function indentNode<TNode extends OrderedTreeNode<TNode>>(tree: TNode[], nodeID: string): TNode[] {
 	function recurse(nodes: TNode[]): { nodes: TNode[]; didIndent: boolean } {
 		const index = nodes.findIndex(node => node.id === nodeID);

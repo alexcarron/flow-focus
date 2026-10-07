@@ -10,8 +10,8 @@ import useTypedQuickInputEntry from '../../hooks/useTypedQuickInputEntry';
 import useTaskTagSelection from '../../hooks/useTaskTagSelection';
 import sortTagsByUsageCount from '../../utilities/sortTagsByUsageCount';
 import Step from '../../model/task/step/Step';
-import { createStep, pruneEmptySteps } from '../../model/task/step/stepTree';
-import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode } from '../../utilities/tree/orderedTree';
+import { createStep, pruneEmptySteps, convertPastedListItemsIntoSteps, insertStepsAfterStepReplacingItIfBlank } from '../../model/task/step/stepTree';
+import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode, getNodeIDsInDepthFirstOrder } from '../../utilities/tree/orderedTree';
 import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
 import { useRefToLatestValue } from '../../hooks/useRefToLatestValue';
 import StepsTreeEditor, { StepsTreeEditorHandle } from '../StepsTreeEditor';
@@ -273,6 +273,11 @@ export default function TaskCreatorPage() {
 							onMoveStepDown={stepID => setSteps(previous => moveNodeAmongSiblings(previous, stepID, 'down'))}
 							onInsertStepBefore={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'before', newStep)); return newStep.id; }}
 							onInsertStepAfter={stepID => { const newStep = createStep(''); setSteps(previous => insertSiblingRelativeToNode(previous, stepID, 'after', newStep)); return newStep.id; }}
+							onPasteListItems={(stepID, pastedListItems) => {
+								const newSteps = convertPastedListItemsIntoSteps(pastedListItems);
+								setSteps(previous => insertStepsAfterStepReplacingItIfBlank(previous, stepID, newSteps));
+								return getNodeIDsInDepthFirstOrder(newSteps);
+							}}
 							onRequestDeleteStep={stepID => setSteps(previous => deleteNode(previous, stepID))}
 							onBackspaceDeleteEmptyStep={stepID => { setSteps(previous => deleteNode(previous, stepID)); return true; }}
 						/>

@@ -232,6 +232,7 @@ export default function TaskCard({ task }: Props) {
 					onMoveStepDown={stepID => store.moveStepDown(task, stepID)}
 					onInsertStepBefore={stepID => store.insertStepBeforeStep(task, stepID)}
 					onInsertStepAfter={stepID => store.insertStepAfterStep(task, stepID)}
+					onPasteListItems={(stepID, pastedListItems) => store.insertStepsFromPastedListItems(task, stepID, pastedListItems)}
 					onRequestDeleteStep={stepID => { setStepPendingDeletionID(stepID); setStepIDToFocusAfterDeletion(null); }}
 					onBackspaceDeleteEmptyStep={(stepID, previousStepID) => {
 						setStepPendingDeletionID(stepID);

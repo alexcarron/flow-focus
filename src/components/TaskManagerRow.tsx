@@ -8,6 +8,7 @@ import { formatDate } from '../utilities/dateFormatting';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { useCopyTaskAsMarkdown } from '../hooks/useCopyTaskAsMarkdown';
 import { SHORTCUTS, getShortcutKeyParts } from '../utilities/shortcuts';
+import { PastedListItem } from '../utilities/parsePastedTextIntoNestedListItems';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TextInput from './inputs/TextInput';
 import CheckboxInput from './inputs/CheckboxInput';
@@ -46,6 +47,7 @@ export interface TaskManagerRowActions {
 	unindentStep: (task: Task, stepID: string) => void;
 	insertStepBeforeStep: (task: Task, stepID: string) => string;
 	insertStepAfterStep: (task: Task, stepID: string) => string;
+	insertStepsFromPastedListItems: (task: Task, stepID: string, pastedListItems: PastedListItem[]) => string[];
 	addFirstStep: (task: Task) => string;
 	deleteStep: (task: Task, stepID: string) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
@@ -218,6 +220,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 						onMoveStepDown={stepID => store.moveStepDown(task, stepID)}
 						onInsertStepBefore={stepID => store.insertStepBeforeStep(task, stepID)}
 						onInsertStepAfter={stepID => store.insertStepAfterStep(task, stepID)}
+						onPasteListItems={(stepID, pastedListItems) => store.insertStepsFromPastedListItems(task, stepID, pastedListItems)}
 						onRequestDeleteStep={stepID => store.deleteStep(task, stepID)}
 						onBackspaceDeleteEmptyStep={stepID => { store.deleteStep(task, stepID); return true; }}
 						onStepContextMenu={(stepID, x, y) => setStepContextMenu({ stepID, x, y })}

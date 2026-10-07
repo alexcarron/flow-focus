@@ -8,13 +8,15 @@ import {
 	getSubtreeIDsIncludingSelf as getTreeSubtreeIDsIncludingSelf,
 	indentNode,
 	insertSiblingRelativeToNode,
-	insertSiblingsAfterNode,
+	getNodeIDsInDepthFirstOrder,
+	insertNodesAfterNodeReplacingItIfBlank,
 	isDescendant as isTreeDescendant,
 	mapNode,
 	moveNodeAmongSiblings,
 	reparentAndReorderNode,
 	unindentNode,
 } from '../../utilities/tree/orderedTree';
+import { PastedListItem } from '../../utilities/parsePastedTextIntoNestedListItems';
 
 export interface FlattenedQuickToDoChecklistItem {
 	item: QuickToDoChecklistItem;
@@ -94,9 +96,22 @@ export function insertSiblingRelativeToItem(tree: QuickToDoChecklistItem[], item
 	return { tree: insertSiblingRelativeToNode(tree, itemID, position, newItem), newItem };
 }
 
-export function insertSiblingsAfterItem(tree: QuickToDoChecklistItem[], itemID: string, texts: string[]): { tree: QuickToDoChecklistItem[]; newItems: QuickToDoChecklistItem[] } {
-	const newItems = texts.map(createQuickToDoChecklistItem);
-	return { tree: insertSiblingsAfterNode(tree, itemID, newItems), newItems };
+function convertPastedListItemsIntoQuickToDoChecklistItems(pastedListItems: PastedListItem[]): QuickToDoChecklistItem[] {
+	return pastedListItems.map(pastedListItem => ({
+		...createQuickToDoChecklistItem(pastedListItem.text),
+		isChecked: pastedListItem.isChecked,
+		children: convertPastedListItemsIntoQuickToDoChecklistItems(pastedListItem.children),
+	}));
+}
+
+export function insertItemsFromPastedListItems(tree: QuickToDoChecklistItem[], itemID: string, pastedListItems: PastedListItem[]): { tree: QuickToDoChecklistItem[]; newItemIDs: string[] } {
+	const newItems = convertPastedListItemsIntoQuickToDoChecklistItems(pastedListItems);
+	return { tree: insertNodesAfterNodeReplacingItIfBlank(tree, itemID, newItems), newItemIDs: getNodeIDsInDepthFirstOrder(newItems) };
+}
+
+export function appendTopLevelItemsFromPastedListItems(tree: QuickToDoChecklistItem[], pastedListItems: PastedListItem[]): { tree: QuickToDoChecklistItem[]; newItemIDs: string[] } {
+	const newItems = convertPastedListItemsIntoQuickToDoChecklistItems(pastedListItems);
+	return { tree: [...tree, ...newItems], newItemIDs: getNodeIDsInDepthFirstOrder(newItems) };
 }
 
 export function indentItem(tree: QuickToDoChecklistItem[], itemID: string): QuickToDoChecklistItem[] {

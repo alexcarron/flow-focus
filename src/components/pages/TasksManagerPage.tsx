@@ -183,6 +183,7 @@ export default function TasksManagerPage() {
 	const unindentStep = useTasksStore(s => s.unindentStep);
 	const insertStepBeforeStep = useTasksStore(s => s.insertStepBeforeStep);
 	const insertStepAfterStep = useTasksStore(s => s.insertStepAfterStep);
+	const insertStepsFromPastedListItems = useTasksStore(s => s.insertStepsFromPastedListItems);
 	const addFirstStep = useTasksStore(s => s.addFirstStep);
 	const deleteStep = useTasksStore(s => s.deleteStep);
 	const setComplete = useTasksStore(s => s.setComplete);
@@ -196,7 +197,7 @@ export default function TasksManagerPage() {
 	const tags = useTagsStore(s => s.tags);
 	const renameTag = useTagsStore(s => s.renameTag);
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
-	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
+	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
 
 	const [filter, setFilter] = useState<Filter>(Filter.All);
 	const [searchText, setSearchText] = useState('');
@@ -341,7 +342,7 @@ export default function TasksManagerPage() {
 					onToggleUntagged={toggleIsUntaggedSelected}
 				/>
 
-				<div className={styles.mobileToolbarControls}>
+				<div className={styles.sortAndSelectAllControls}>
 					<FilterDropdown value={sortBy} options={SORT_BY_OPTIONS} onChange={selectSortByField} icon={<SortUnsortedIcon />} />
 					<button
 						onClick={toggleSortDir}

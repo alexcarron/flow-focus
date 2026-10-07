@@ -1,9 +1,22 @@
 import Step from './Step';
 import StepStatus from './StepStatus';
-import { getLeavesInDepthFirstOrder, mapEveryNode, mapNode } from '../../../utilities/tree/orderedTree';
+import { getLeavesInDepthFirstOrder, insertNodesAfterNodeReplacingItIfBlank, mapEveryNode, mapNode } from '../../../utilities/tree/orderedTree';
+import { PastedListItem } from '../../../utilities/parsePastedTextIntoNestedListItems';
 
 export function createStep(text: string): Step {
 	return { id: crypto.randomUUID(), text, status: StepStatus.UNCOMPLETE, children: [] };
+}
+
+export function convertPastedListItemsIntoSteps(pastedListItems: PastedListItem[]): Step[] {
+	return pastedListItems.map(pastedListItem => ({
+		...createStep(pastedListItem.text),
+		status: pastedListItem.isChecked ? StepStatus.COMPLETED : StepStatus.UNCOMPLETE,
+		children: convertPastedListItemsIntoSteps(pastedListItem.children),
+	}));
+}
+
+export function insertStepsAfterStepReplacingItIfBlank(tree: Step[], stepID: string, newSteps: Step[]): Step[] {
+	return rollUpStepStatuses(insertNodesAfterNodeReplacingItIfBlank(tree, stepID, newSteps));
 }
 
 export function cloneStepsDeep(tree: Step[]): Step[] {
