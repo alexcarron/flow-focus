@@ -8,6 +8,7 @@ import TaskState from '../model/task/TaskState';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
+import { calculateRemainingTasksSummary, RemainingTasksSummary } from '../model/task/calculateRemainingTasksSummary';
 import { serializeTask, deserializeRow } from '../persistence/cloud/task.serializer';
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
@@ -452,6 +453,14 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 export const selectPriorityTask = (state: TasksState): Task | null => {
 	const prioritizer = new TaskPrioritizer(tasksManager);
 	return prioritizer.getPriorityTask(new Date());
+};
+
+export const selectRemainingTasksSummary = (): RemainingTasksSummary => {
+	const currrentTime = new Date();
+	const prioritizer = new TaskPrioritizer(tasksManager);
+	return calculateRemainingTasksSummary(
+		prioritizer.getFocusableTasksInPriorityOrder(currrentTime)
+	);
 };
 
 export const selectTasksInPriorityOrder = (state: TasksState): Task[] => {

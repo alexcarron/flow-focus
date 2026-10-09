@@ -5,6 +5,7 @@ import { useHasInteractedSinceRegainingFocus } from '../../hooks/useHasInteracte
 import TaskCard from '../TaskCard';
 import QuickAddTaskBar from '../QuickAddTaskBar';
 import QuickToDoChecklistSection from '../QuickToDoChecklistSection';
+import RemainingTasksSummary from '../RemainingTasksSummary';
 import styles from './FocusPage.module.css';
 
 const PRIORITY_TASK_PLACEHOLDER_TIERS_LONGEST_FIRST = [
@@ -25,8 +26,9 @@ const NO_TASKS_LEFT_PLACEHOLDER_TIERS_LONGEST_FIRST = [
 
 export default function FocusPage() {
 	const priorityTask = useTasksStore(selectPriorityTask);
-	const completeNextStep = useTasksStore(s => s.completeNextStep);
-	const shouldShowQuickAddTaskBar = useSettingsStore(s => s.shouldShowQuickAddTaskBarOnFocusPage);
+	const completeNextStep = useTasksStore(state => state.completeNextStep);
+	const shouldShowQuickAddTaskBar = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
+	const shouldShowRemainingTasksSummary = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
 	const hasInteractedSinceRegainingFocus = useHasInteractedSinceRegainingFocus();
 
 	useEffect(() => {
@@ -61,7 +63,10 @@ export default function FocusPage() {
 				/>
 			)}
 			{priorityTask ? (
-				<TaskCard task={priorityTask} />
+				<>
+					<TaskCard task={priorityTask} />
+					{shouldShowRemainingTasksSummary && <RemainingTasksSummary />}
+				</>
 			) : (
 				<div className={styles.emptyState}>
 					{!shouldShowQuickAddTaskBar && (

@@ -16,6 +16,7 @@ interface SettingsActions {
 	setWakeTime: (value: string) => Promise<void>;
 	setShouldKeepTaskDetailsAfterCreating: (value: boolean) => Promise<void>;
 	setShouldShowQuickAddTaskBarOnFocusPage: (value: boolean) => Promise<void>;
+	setShouldShowRemainingTasksSummaryOnFocusPage: (value: boolean) => Promise<void>;
 	importSettings: (settings: AppSettings) => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ function pickSettings(state: SettingsState): AppSettings {
 		wakeTime: state.wakeTime,
 		shouldKeepTaskDetailsAfterCreating: state.shouldKeepTaskDetailsAfterCreating,
 		shouldShowQuickAddTaskBarOnFocusPage: state.shouldShowQuickAddTaskBarOnFocusPage,
+		shouldShowRemainingTasksSummaryOnFocusPage: state.shouldShowRemainingTasksSummaryOnFocusPage,
 	};
 }
 
@@ -84,7 +86,13 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 		await persistSettings({ ...pickSettings(get()), shouldShowQuickAddTaskBarOnFocusPage: value });
 	},
 
-	async importSettings(settings: AppSettings) {
+	async setShouldShowRemainingTasksSummaryOnFocusPage(value: boolean) {
+		set({ shouldShowRemainingTasksSummaryOnFocusPage: value });
+		await persistSettings({ ...pickSettings(get()), shouldShowRemainingTasksSummaryOnFocusPage: value });
+	},
+
+	async importSettings(importedSettings: AppSettings) {
+		const settings = { ...DEFAULT_SETTINGS, ...importedSettings };
 		set({ ...settings });
 		await persistSettings(settings);
 		applySleepWindow(settings);

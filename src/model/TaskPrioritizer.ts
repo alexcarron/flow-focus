@@ -14,16 +14,13 @@ export default class TaskPrioritizer {
 	}
 
 	public getPriorityTask(currentTime: Date): Task | null {
-		let prioritizedTasks = this.getTasksInPriorityOrder(this.getTasks(), currentTime);
+		return this.getFocusableTasksInPriorityOrder(currentTime)[0] ?? null;
+	}
 
-		prioritizedTasks = prioritizedTasks.filter(task => task.isActive(currentTime));
-		prioritizedTasks = this.filterOutNonUrgentSkippedTasks(prioritizedTasks, currentTime);
-
-		if (prioritizedTasks.length === 0) {
-				return null;
-		}
-
-		return prioritizedTasks[0];
+	public getFocusableTasksInPriorityOrder(currentTime: Date): Task[] {
+		const prioritizedTasks = this.getTasksInPriorityOrder(this.getTasks(), currentTime);
+		const activeTasks = prioritizedTasks.filter(task => task.isActive(currentTime));
+		return this.filterOutNonUrgentSkippedTasks(activeTasks, currentTime);
 	}
 
 	private logPrioritizedTask(task1: Task, task2: Task, priorityNumber: number, reason: string) {

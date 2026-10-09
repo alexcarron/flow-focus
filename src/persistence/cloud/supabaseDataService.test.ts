@@ -181,6 +181,7 @@ describe('upsertSettings', () => {
 			wakeTime: '08:00',
 			shouldKeepTaskDetailsAfterCreating: false,
 			shouldShowQuickAddTaskBarOnFocusPage: true,
+			shouldShowRemainingTasksSummaryOnFocusPage: true,
 			updatedAt: '2026-03-01T12:00:00.000Z',
 			isSynced: false,
 		};
@@ -196,6 +197,7 @@ describe('upsertSettings', () => {
 			p_wake_time: '08:00',
 			p_should_keep_task_details_after_creating: false,
 			p_should_show_quick_add_task_bar_on_focus_page: true,
+			p_should_show_remaining_tasks_summary_on_focus_page: true,
 			p_updated_at: '2026-03-01T12:00:00.000Z',
 		});
 	});
@@ -283,6 +285,7 @@ describe('pullChecklist and pullSettings', () => {
 				wake_time: '08:00',
 				should_keep_task_details_after_creating: false,
 				should_show_quick_add_task_bar_on_focus_page: true,
+				should_show_remaining_tasks_summary_on_focus_page: true,
 				updated_at: '2026-03-01T12:00:00.000Z',
 			},
 			error: null,
@@ -297,6 +300,7 @@ describe('pullChecklist and pullSettings', () => {
 			wakeTime: '08:00',
 			shouldKeepTaskDetailsAfterCreating: false,
 			shouldShowQuickAddTaskBarOnFocusPage: true,
+			shouldShowRemainingTasksSummaryOnFocusPage: true,
 			updatedAt: '2026-03-01T12:00:00.000Z',
 			isSynced: true,
 		});

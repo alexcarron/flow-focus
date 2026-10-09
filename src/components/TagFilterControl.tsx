@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import Tag from '../model/tag/Tag';
 import { useOutsideClickAndEscape } from '../hooks/useOutsideClickAndEscape';
 import CheckboxInput from './inputs/CheckboxInput';
-import FilterIcon from './svg-icons/FilterIcon';
+import TagIcon from './svg-icons/TagIcon';
 import ChevronDownIcon from './svg-icons/ChevronDownIcon';
 import styles from './TagFilterControl.module.css';
 
@@ -84,7 +84,7 @@ export default function TagFilterControl({ tags, selectedTagIDs, isUntaggedSelec
 						onClick={() => setIsDropdownOpen(current => !current)}
 						className={`button outlined ${styles.dropdownButton}`}
 					>
-						<FilterIcon className={styles.dropdownButtonIcon} />
+						<TagIcon className={styles.dropdownButtonIcon} />
 						Tags{selectedCount > 0 ? ` (${selectedCount})` : ''}
 						<ChevronDownIcon className={styles.dropdownButtonCaret} />
 					</button>

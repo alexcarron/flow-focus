@@ -7,20 +7,22 @@ import CheckboxInput from '../inputs/CheckboxInput';
 import styles from './SettingsPage.module.css';
 
 export default function SettingsPage() {
-	const morningTime = useSettingsStore(s => s.morningTime);
-	const nightTime = useSettingsStore(s => s.nightTime);
-	const bedtime = useSettingsStore(s => s.bedtime);
-	const wakeTime = useSettingsStore(s => s.wakeTime);
-	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.shouldKeepTaskDetailsAfterCreating);
-	const shouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.shouldShowQuickAddTaskBarOnFocusPage);
-	const setMorningTime = useSettingsStore(s => s.setMorningTime);
-	const setNightTime = useSettingsStore(s => s.setNightTime);
-	const setBedtime = useSettingsStore(s => s.setBedtime);
-	const setWakeTime = useSettingsStore(s => s.setWakeTime);
-	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(s => s.setShouldKeepTaskDetailsAfterCreating);
-	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.setShouldShowQuickAddTaskBarOnFocusPage);
+	const morningTime = useSettingsStore(state => state.morningTime);
+	const nightTime = useSettingsStore(state => state.nightTime);
+	const bedtime = useSettingsStore(state => state.bedtime);
+	const wakeTime = useSettingsStore(state => state.wakeTime);
+	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(state => state.shouldKeepTaskDetailsAfterCreating);
+	const shouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
+	const shouldShowRemainingTasksSummaryOnFocusPage = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
+	const setMorningTime = useSettingsStore(state => state.setMorningTime);
+	const setNightTime = useSettingsStore(state => state.setNightTime);
+	const setBedtime = useSettingsStore(state => state.setBedtime);
+	const setWakeTime = useSettingsStore(state => state.setWakeTime);
+	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(state => state.setShouldKeepTaskDetailsAfterCreating);
+	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(state => state.setShouldShowQuickAddTaskBarOnFocusPage);
+	const setShouldShowRemainingTasksSummaryOnFocusPage = useSettingsStore(state => state.setShouldShowRemainingTasksSummaryOnFocusPage);
 
-	const tasks = useTasksStore(s => s.tasks);
+	const tasks = useTasksStore(state => state.tasks);
 	const [backupStatus, setBackupStatus] = useState<string | null>(null);
 	const [pendingImportData, setPendingImportData] = useState<BackupData | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +144,12 @@ export default function SettingsPage() {
 					value={shouldShowQuickAddTaskBarOnFocusPage}
 					onChange={setShouldShowQuickAddTaskBarOnFocusPage}
 					label="Show quick-add task bar above the focused task"
+				/>
+
+				<CheckboxInput
+					value={shouldShowRemainingTasksSummaryOnFocusPage}
+					onChange={setShouldShowRemainingTasksSummaryOnFocusPage}
+					label="Show number of remaining tasks and time to complete them on focus page"
 				/>
 			</section>
 

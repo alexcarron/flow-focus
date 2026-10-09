@@ -172,6 +172,7 @@ describe('migrateLocalDataToCloud', () => {
 			wakeTime: '08:00',
 			shouldKeepTaskDetailsAfterCreating: false,
 			shouldShowQuickAddTaskBarOnFocusPage: true,
+			shouldShowRemainingTasksSummaryOnFocusPage: true,
 			updatedAt: '2026-03-01T12:00:00.000Z',
 			isSynced: false,
 		};
@@ -187,7 +188,17 @@ describe('migrateLocalDataToCloud', () => {
 		await db.tags.put(localTag);
 
 		cloudTasks = [taskRowToCloudRow(localTask)];
-		cloudSettings = { ...localSettings, morning_time: localSettings.morningTime, night_time: localSettings.nightTime, bedtime: localSettings.bedtime, wake_time: localSettings.wakeTime, should_keep_task_details_after_creating: false, should_show_quick_add_task_bar_on_focus_page: true, updated_at: localSettings.updatedAt };
+		cloudSettings = { 
+			...localSettings, 
+			morning_time: localSettings.morningTime, 
+			night_time: localSettings.nightTime, 
+			bedtime: localSettings.bedtime, 
+			wake_time: localSettings.wakeTime, 
+			should_keep_task_details_after_creating: false, 
+			should_show_quick_add_task_bar_on_focus_page: true,
+			should_show_remaining_tasks_summary_on_focus_page: true, 
+			updated_at: localSettings.updatedAt
+		};
 		cloudChecklist = { items: [], updated_at: localChecklist.updatedAt };
 		cloudTags = [tagRowToCloudRow(localTag)];
 

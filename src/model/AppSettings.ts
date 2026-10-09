@@ -7,10 +7,9 @@ export interface AppSettings {
 	bedtime: string;
 	/** End of the daily sleep window, subtracted from time-to-complete calculations. */
 	wakeTime: string;
-	/** Whether the Create Task form keeps its field values after creating a task instead of clearing them. */
 	shouldKeepTaskDetailsAfterCreating: boolean;
-	/** Whether the quick-add task bar shows above the focused task on the Focus page. */
 	shouldShowQuickAddTaskBarOnFocusPage: boolean;
+	shouldShowRemainingTasksSummaryOnFocusPage: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -20,4 +19,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	wakeTime: '08:00',
 	shouldKeepTaskDetailsAfterCreating: false,
 	shouldShowQuickAddTaskBarOnFocusPage: true,
+	shouldShowRemainingTasksSummaryOnFocusPage: true,
 };

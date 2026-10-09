@@ -12,6 +12,17 @@ const TIME_UNIT_NAME_TO_ABBREVIATIONS: Record<TimeUnitName, { singular: string; 
 	[TimeUnitName.Years]: { singular: 'year', plural: 'yrs' },
 };
 
+const TIME_UNIT_NAME_TO_READABLE_LABELS: Record<TimeUnitName, { singular: string; plural: string }> = {
+	[TimeUnitName.Milliseconds]: { singular: 'ms', plural: 'ms' },
+	[TimeUnitName.Seconds]: { singular: 'sec', plural: 'sec' },
+	[TimeUnitName.Minutes]: { singular: 'min', plural: 'min' },
+	[TimeUnitName.Hours]: { singular: 'hour', plural: 'hours' },
+	[TimeUnitName.Days]: { singular: 'day', plural: 'days' },
+	[TimeUnitName.Weeks]: { singular: 'week', plural: 'weeks' },
+	[TimeUnitName.Months]: { singular: 'month', plural: 'months' },
+	[TimeUnitName.Years]: { singular: 'year', plural: 'years' },
+};
+
 export function formatTime(ms: number): string {
 	const isNegative = ms < 0;
 	let abs = Math.abs(ms);
@@ -67,4 +78,33 @@ export function formatAbbreviatedDurationRange(minMs: number | null, maxMs: numb
 	}
 
 	return `${formatAbbreviatedDuration(minMs ?? 0)}-${formatAbbreviatedDuration(maxMs ?? 0)}`;
+}
+
+function getReadableUnitLabel(amountOfUnits: number, unitName: TimeUnitName): string {
+	const readableLabels = TIME_UNIT_NAME_TO_READABLE_LABELS[unitName];
+	return amountOfUnits === 1 ? readableLabels.singular : readableLabels.plural;
+}
+
+export function formatReadableDuration(milliseconds: number): string {
+	const duration = Duration.fromMilliseconds(milliseconds);
+	const amountOfUnits = duration.getAmountOfUnits();
+	const unitName = duration.getTimeUnit().name;
+	return `${amountOfUnits} ${getReadableUnitLabel(amountOfUnits, unitName)}`;
+}
+
+export function formatReadableDurationRange({ minimumMilliseconds, maximumMilliseconds }: { minimumMilliseconds: number; maximumMilliseconds: number }): string {
+	const minimumDuration = Duration.fromMilliseconds(minimumMilliseconds);
+	const maximumDuration = Duration.fromMilliseconds(maximumMilliseconds);
+	const minimumAmount = minimumDuration.getAmountOfUnits();
+	const maximumAmount = maximumDuration.getAmountOfUnits();
+	const maximumUnitName = maximumDuration.getTimeUnit().name;
+	const isSameUnit = minimumDuration.getTimeUnit().name === maximumUnitName;
+
+	if (isSameUnit && minimumAmount === maximumAmount)
+		return formatReadableDuration(maximumMilliseconds);
+
+	if (isSameUnit)
+		return `${minimumAmount}-${maximumAmount} ${getReadableUnitLabel(maximumAmount, maximumUnitName)}`;
+
+	return `${formatReadableDuration(minimumMilliseconds)} - ${formatReadableDuration(maximumMilliseconds)}`;
 }

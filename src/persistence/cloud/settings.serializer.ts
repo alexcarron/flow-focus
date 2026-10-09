@@ -9,6 +9,7 @@ export interface CloudSettingsRow {
 	wake_time: string;
 	should_keep_task_details_after_creating: boolean;
 	should_show_quick_add_task_bar_on_focus_page: boolean;
+	should_show_remaining_tasks_summary_on_focus_page: boolean;
 	updated_at: string;
 }
 
@@ -21,6 +22,7 @@ export function settingsRowToCloudRow(row: SettingsRow, userID: string): CloudSe
 		wake_time: row.wakeTime,
 		should_keep_task_details_after_creating: row.shouldKeepTaskDetailsAfterCreating,
 		should_show_quick_add_task_bar_on_focus_page: row.shouldShowQuickAddTaskBarOnFocusPage,
+		should_show_remaining_tasks_summary_on_focus_page: row.shouldShowRemainingTasksSummaryOnFocusPage,
 		updated_at: toCloudTimestamp(fromCloudTimestamp(row.updatedAt)),
 	};
 }
@@ -34,6 +36,7 @@ export function cloudRowToSettingsRow({ cloudRow, id }: { cloudRow: CloudSetting
 		wakeTime: cloudRow.wake_time,
 		shouldKeepTaskDetailsAfterCreating: cloudRow.should_keep_task_details_after_creating,
 		shouldShowQuickAddTaskBarOnFocusPage: cloudRow.should_show_quick_add_task_bar_on_focus_page,
+		shouldShowRemainingTasksSummaryOnFocusPage: cloudRow.should_show_remaining_tasks_summary_on_focus_page,
 		updatedAt: toCloudTimestamp(fromCloudTimestamp(cloudRow.updated_at)),
 		isSynced: true,
 	};
