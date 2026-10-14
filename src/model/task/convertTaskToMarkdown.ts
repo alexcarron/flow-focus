@@ -4,7 +4,7 @@ import StepStatus from './step/StepStatus';
 import Tag from '../tag/Tag';
 import { formatRecurrenceDuration } from './recurrence/RecurrenceDuration';
 import { formatAbsoluteDateAndTime } from '../../utilities/dateFormatting';
-import { formatAbbreviatedDuration, formatAbbreviatedDurationRange } from '../../utilities/timeFormatters';
+import { formatReadableDuration, formatReadableDurationRange } from '../../utilities/timeFormatters';
 
 const STEP_INDENTATION_PER_DEPTH = '  ';
 
@@ -19,8 +19,11 @@ function convertStepAndDescendantsToMarkdownLines({ step, depth }: { step: Step;
 
 function formatTaskDurationForMarkdown({ task, now }: { task: Task; now: Date }): string | null {
 	const minimumRequiredMilliseconds = task.getMinRequiredTime();
-	if (task.hasMaxRequiredTime()) return formatAbbreviatedDurationRange(minimumRequiredMilliseconds, task.getMaxRequiredTime(now));
-	if (minimumRequiredMilliseconds > 0) return `${formatAbbreviatedDuration(minimumRequiredMilliseconds)}+`;
+	if (task.hasMaxRequiredTime()) return formatReadableDurationRange({
+		minimumMilliseconds: minimumRequiredMilliseconds,
+		maximumMilliseconds: task.getMaxRequiredTime(now),
+	});
+	if (minimumRequiredMilliseconds > 0) return `${formatReadableDuration(minimumRequiredMilliseconds)}+`;
 	return null;
 }
 

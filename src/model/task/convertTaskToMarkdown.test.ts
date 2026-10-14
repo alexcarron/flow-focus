@@ -79,7 +79,7 @@ describe('convertTaskToMarkdown', () => {
 			'Due Oct 3, 2026 5:00 PM',
 			'Ends Oct 3, 2026 6:30 PM',
 			'Repeats every 2 weeks',
-			'Duration: 30 min-1 hr',
+			'Duration: 30 minutes to 1 hour',
 			'Skipped until Oct 2, 2026 8:00 AM',
 			'',
 			'- [ ] Outline',
@@ -89,7 +89,7 @@ describe('convertTaskToMarkdown', () => {
 	it('marks a minimum-only duration as open-ended', () => {
 		task.setMinRequiredTime(30 * MILLISECONDS_PER_MINUTE);
 
-		expect(convertTaskToMarkdown({ task, tags: [], now })).toBe('# Write report\n\nDuration: 30 min+');
+		expect(convertTaskToMarkdown({ task, tags: [], now })).toBe('# Write report\n\nDuration: 30 minutes+');
 	});
 
 	it('leaves out a skip that has already ended', () => {
