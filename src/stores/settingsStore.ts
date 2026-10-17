@@ -17,6 +17,7 @@ interface SettingsActions {
 	setShouldKeepTaskDetailsAfterCreating: (value: boolean) => Promise<void>;
 	setShouldShowQuickAddTaskBarOnFocusPage: (value: boolean) => Promise<void>;
 	setShouldShowRemainingTasksSummaryOnFocusPage: (value: boolean) => Promise<void>;
+	setShouldPlayCelebrationSound: (value: boolean) => Promise<void>;
 	importSettings: (settings: AppSettings) => Promise<void>;
 }
 
@@ -29,6 +30,7 @@ function pickSettings(state: SettingsState): AppSettings {
 		shouldKeepTaskDetailsAfterCreating: state.shouldKeepTaskDetailsAfterCreating,
 		shouldShowQuickAddTaskBarOnFocusPage: state.shouldShowQuickAddTaskBarOnFocusPage,
 		shouldShowRemainingTasksSummaryOnFocusPage: state.shouldShowRemainingTasksSummaryOnFocusPage,
+		shouldPlayCelebrationSound: state.shouldPlayCelebrationSound,
 	};
 }
 
@@ -89,6 +91,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 	async setShouldShowRemainingTasksSummaryOnFocusPage(value: boolean) {
 		set({ shouldShowRemainingTasksSummaryOnFocusPage: value });
 		await persistSettings({ ...pickSettings(get()), shouldShowRemainingTasksSummaryOnFocusPage: value });
+	},
+
+	async setShouldPlayCelebrationSound(value: boolean) {
+		set({ shouldPlayCelebrationSound: value });
+		await persistSettings({ ...pickSettings(get()), shouldPlayCelebrationSound: value });
 	},
 
 	async importSettings(importedSettings: AppSettings) {

@@ -278,10 +278,12 @@ export default function TaskCard({ task }: Props) {
 					Skip
 				</button>
 				<button
+					data-complete-task-button
 					onClick={() => store.completeAllSteps(task)}
 					className={`button button--primary ${styles.actionButton} ${styles.actionGrows}`}
 				>
-					Complete Task
+					<span className={styles.completeTaskLabel}>Complete Task</span>
+					<span className={styles.completeLabel}>Complete</span>
 				</button>
 				<button
 					onClick={() => setIsTimingOpen(true)}

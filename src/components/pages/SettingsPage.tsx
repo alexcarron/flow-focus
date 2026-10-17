@@ -14,6 +14,7 @@ export default function SettingsPage() {
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(state => state.shouldKeepTaskDetailsAfterCreating);
 	const shouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
 	const shouldShowRemainingTasksSummaryOnFocusPage = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
+	const shouldPlayCelebrationSound = useSettingsStore(state => state.shouldPlayCelebrationSound);
 	const setMorningTime = useSettingsStore(state => state.setMorningTime);
 	const setNightTime = useSettingsStore(state => state.setNightTime);
 	const setBedtime = useSettingsStore(state => state.setBedtime);
@@ -21,6 +22,7 @@ export default function SettingsPage() {
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(state => state.setShouldKeepTaskDetailsAfterCreating);
 	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(state => state.setShouldShowQuickAddTaskBarOnFocusPage);
 	const setShouldShowRemainingTasksSummaryOnFocusPage = useSettingsStore(state => state.setShouldShowRemainingTasksSummaryOnFocusPage);
+	const setShouldPlayCelebrationSound = useSettingsStore(state => state.setShouldPlayCelebrationSound);
 
 	const tasks = useTasksStore(state => state.tasks);
 	const [backupStatus, setBackupStatus] = useState<string | null>(null);
@@ -150,6 +152,12 @@ export default function SettingsPage() {
 					value={shouldShowRemainingTasksSummaryOnFocusPage}
 					onChange={setShouldShowRemainingTasksSummaryOnFocusPage}
 					label="Show number of remaining tasks and time to complete them on focus page"
+				/>
+
+				<CheckboxInput
+					value={shouldPlayCelebrationSound}
+					onChange={setShouldPlayCelebrationSound}
+					label="Play a celebration sound when completing a task"
 				/>
 			</section>
 

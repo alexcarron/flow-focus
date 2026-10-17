@@ -279,6 +279,20 @@
 	flex: 1;
 }
 
+.completeLabel {
+	display: none;
+}
+
+@media (max-width: 599px) {
+	.completeTaskLabel {
+		display: none;
+	}
+
+	.completeLabel {
+		display: inline;
+	}
+}
+
 .actionButtonSquare {
 	width: var(--action-button-height);
 	aspect-ratio: unset;

@@ -20,11 +20,11 @@ function formatTimestamp(date: Date): string {
 }
 
 export function createBackup(): BackupData {
-	const { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage, shouldShowRemainingTasksSummaryOnFocusPage } = useSettingsStore.getState();
+	const { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage, shouldShowRemainingTasksSummaryOnFocusPage, shouldPlayCelebrationSound } = useSettingsStore.getState();
 	return {
 		format: BACKUP_FORMAT,
 		exportedAt: new Date().toISOString(),
-		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage, shouldShowRemainingTasksSummaryOnFocusPage },
+		settings: { morningTime, nightTime, bedtime, wakeTime, shouldKeepTaskDetailsAfterCreating, shouldShowQuickAddTaskBarOnFocusPage, shouldShowRemainingTasksSummaryOnFocusPage, shouldPlayCelebrationSound },
 		tasks: useTasksStore.getState().tasks.map(taskToBackupTask),
 		quickToDoChecklist: useQuickToDoChecklistStore.getState().items,
 		tags: useTagsStore.getState().tags,

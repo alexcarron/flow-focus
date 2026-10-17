@@ -10,11 +10,11 @@ function formatTotalDurationRange({ totalMinRequiredTime, totalAssumedMaxRequire
 		maximumMilliseconds: totalAssumedMaxRequiredTime,
 		shouldOnlyShowTopUnitUnlessItIsOne: true,
 	});
-	return `${formattedDurationRange} of work`;
+	return `(about ${formattedDurationRange} of work)`;
 }
 
 function formatRemainingTaskCount(summary: RemainingTasksSummaryData): string {
-	return `${summary.remainingTaskCount} ${summary.remainingTaskCount === 1 ? 'task' : 'tasks'} left`;
+	return `${summary.remainingTaskCount} ${summary.remainingTaskCount === 1 ? 'task' : 'tasks'} remaining`;
 }
 
 export default function RemainingTasksSummary() {
