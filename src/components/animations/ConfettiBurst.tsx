@@ -5,14 +5,16 @@ import type { ConfettiPiece } from './ConfettiPiece';
 const CONFETTI_PIECES_PER_SQUARE_PIXEL = 1 / 9000;
 const MINIMUM_CONFETTI_PIECE_COUNT = 35;
 const MAXIMUM_CONFETTI_PIECE_COUNT = 250;
+const TALL_VIEWPORT_EXTRA_PIECE_COUNT_PER_HEIGHT_TO_WIDTH_RATIO_EXCESS = 0.8;
+const HORIZONTAL_REACH_FRACTION_OF_VERTICAL_REACH = 0.8;
 
 const SMALL_VIEWPORT_SHORTER_SIDE = 400;
 const LARGE_VIEWPORT_SHORTER_SIDE = 900;
-const SMALL_VIEWPORT_PIECE_COUNT_MULTIPLIER = 1.5;
+const SMALL_VIEWPORT_PIECE_COUNT_MULTIPLIER = 2;
 const LARGE_VIEWPORT_PIECE_COUNT_MULTIPLIER = 1;
-const SMALL_VIEWPORT_HORIZONTAL_REACH_MULTIPLIER = 2;
+const SMALL_VIEWPORT_HORIZONTAL_REACH_MULTIPLIER = 2.6;
 const LARGE_VIEWPORT_HORIZONTAL_REACH_MULTIPLIER = 1;
-const SMALL_VIEWPORT_VERTICAL_REACH_MULTIPLIER = 1.1;
+const SMALL_VIEWPORT_VERTICAL_REACH_MULTIPLIER = 1.6;
 const LARGE_VIEWPORT_VERTICAL_REACH_MULTIPLIER = 0.85;
 const VIEWPORT_EDGE_MARGIN_FRACTION = 0.05;
 
@@ -27,13 +29,16 @@ const DOWNWARD_REACH_MULTIPLIER = 0.5;
 const OFF_SCREEN_HORIZONTAL_REACH_FRACTION_OF_OPPOSITE_ROOM = 0.5;
 const OFF_SCREEN_VERTICAL_REACH_FRACTION_OF_OPPOSITE_ROOM = 0.5;
 const UPWARD_LAUNCH_BIAS = 0.6;
-const LARGEST_BURST_ROOM_FRACTION_OF_SHORTER_SIDE = 0.9;
+const LARGEST_BURST_ROOM_FRACTION_OF_SHORTER_SIDE = 1;
+const LARGEST_BURST_VERTICAL_ROOM_FRACTION_OF_VIEWPORT_HEIGHT = 1;
 
 const PIECE_LIFETIME_SECONDS_RANGE = { minimum: 3.8, maximum: 5 };
 
 const REFERENCE_VIEWPORT_SHORTER_SIDE = 900;
 const SMALLEST_PIECE_SIZE_SCALE = 0.8;
 const LARGEST_PIECE_SIZE_SCALE = 1.8;
+const SMALL_VIEWPORT_PIECE_SIZE_MULTIPLIER = 2.7;
+const LARGE_VIEWPORT_PIECE_SIZE_MULTIPLIER = 1;
 const PIECE_WIDTH_RANGE = { minimum: 6, maximum: 8 };
 const PIECE_RANDOM_SIZE_MULTIPLIER_RANGE = { minimum: 0.6, maximum: 1.5 };
 const PIECE_HEIGHT_TO_WIDTH_RATIO_RANGE = { minimum: 0.25, maximum: 0.8 };
@@ -44,7 +49,7 @@ const PIECE_SIZE_MULTIPLIER_EXPONENT_ON_LIGHTNESS = 0.5;
 
 const FULL_TURN_RADIANS_RANGE = { minimum: 0, maximum: Math.PI * 2 };
 const ROTATION_SPEED_RANGE = { minimum: -6, maximum: 6 };
-const FLIP_SPEED_RANGE = { minimum: 1, maximum: 2 };
+const FLIP_SPEED_RANGE = { minimum: 0, maximum: 1 };
 const SWAY_SPEED_RANGE = { minimum: 0, maximum: 1 };
 const SWAY_AMPLITUDE_RANGE = { minimum: 0, maximum: 0.7 };
 const SWAY_SCALE_LIMITS_BY_RELATIVE_AIR_DRAG = { minimum: 0.2, maximum: 1.3 };
@@ -140,7 +145,9 @@ function calculateConfettiPieceCount({ viewportWidth, viewportHeight }: {
 		smallViewportValue: SMALL_VIEWPORT_PIECE_COUNT_MULTIPLIER,
 		largeViewportValue: LARGE_VIEWPORT_PIECE_COUNT_MULTIPLIER,
 	});
-	return Math.round(Math.min(densityBasedPieceCount * pieceCountMultiplier, MAXIMUM_CONFETTI_PIECE_COUNT));
+	const heightToWidthRatio = viewportHeight / viewportWidth;
+	const tallViewportPieceCountMultiplier = 1 + Math.max(0, heightToWidthRatio - 1) * TALL_VIEWPORT_EXTRA_PIECE_COUNT_PER_HEIGHT_TO_WIDTH_RATIO_EXCESS;
+	return Math.round(Math.min(densityBasedPieceCount * pieceCountMultiplier * tallViewportPieceCountMultiplier, MAXIMUM_CONFETTI_PIECE_COUNT));
 }
 
 function calculateRiseHeightOfLaunchSpeed({ launchSpeed, gravityPerFrame, airResistanceDecayRatePerFrame }: {
@@ -225,6 +232,10 @@ function createConfettiPiece({
 		value: viewportShorterSide / REFERENCE_VIEWPORT_SHORTER_SIDE,
 		minimum: SMALLEST_PIECE_SIZE_SCALE,
 		maximum: LARGEST_PIECE_SIZE_SCALE,
+	}) * interpolateFromSmallToLargeViewport({
+		viewportShorterSide,
+		smallViewportValue: SMALL_VIEWPORT_PIECE_SIZE_MULTIPLIER,
+		largeViewportValue: LARGE_VIEWPORT_PIECE_SIZE_MULTIPLIER,
 	});
 	const typicalGravityPerFrame = GRAVITY_PER_FRAME_AT_REFERENCE_VIEWPORT_HEIGHT * (viewportHeight / REFERENCE_VIEWPORT_HEIGHT) * getRandomNumberInRange(GRAVITY_MULTIPLIER_RANGE);
 	const gravityPerFrame = typicalGravityPerFrame * burstGravityMultiplier;
@@ -270,7 +281,7 @@ function createConfettiPiece({
 	const upwardDirection = Math.cos(angleFromStraightUp);
 	const isLaunchedRightward = horizontalDirection > 0;
 	const isLaunchedUpward = upwardDirection > 0;
-	const horizontalReachMultiplier = interpolateFromSmallToLargeViewport({
+	const viewportHorizontalReachMultiplier = interpolateFromSmallToLargeViewport({
 		viewportShorterSide,
 		smallViewportValue: SMALL_VIEWPORT_HORIZONTAL_REACH_MULTIPLIER,
 		largeViewportValue: LARGE_VIEWPORT_HORIZONTAL_REACH_MULTIPLIER,
@@ -287,12 +298,15 @@ function createConfettiPiece({
 	const roomInLaunchedHorizontalDirection = isLaunchedRightward ? roomToRightOfLaunch : roomToLeftOfLaunch;
 	const roomInOppositeHorizontalDirection = isLaunchedRightward ? roomToLeftOfLaunch : roomToRightOfLaunch;
 	const horizontalRoom = Math.max(roomInLaunchedHorizontalDirection, roomInOppositeHorizontalDirection * OFF_SCREEN_HORIZONTAL_REACH_FRACTION_OF_OPPOSITE_ROOM);
-	const roomAboveOrigin = Math.min(largestRoomForRoundBurst, Math.max(0, originY - viewportEdgeMargin));
-	const roomBelowOrigin = Math.min(largestRoomForRoundBurst, Math.max(0, viewportHeight - originY - viewportEdgeMargin));
+	const largestVerticalRoomForBurst = Math.max(largestRoomForRoundBurst, viewportHeight * LARGEST_BURST_VERTICAL_ROOM_FRACTION_OF_VIEWPORT_HEIGHT);
+	const roomAboveOrigin = Math.min(largestVerticalRoomForBurst, Math.max(0, originY - viewportEdgeMargin));
+	const roomBelowOrigin = Math.min(largestVerticalRoomForBurst, Math.max(0, viewportHeight - originY - viewportEdgeMargin));
 	const roomInLaunchedVerticalDirection = isLaunchedUpward ? roomAboveOrigin : roomBelowOrigin;
 	const roomInOppositeVerticalDirection = isLaunchedUpward ? roomBelowOrigin : roomAboveOrigin;
 	const verticalRoom = Math.max(roomInLaunchedVerticalDirection, roomInOppositeVerticalDirection * OFF_SCREEN_VERTICAL_REACH_FRACTION_OF_OPPOSITE_ROOM);
 	const downwardReachMultiplier = isLaunchedUpward ? 1 : DOWNWARD_REACH_MULTIPLIER;
+	const horizontalReachMultiplierThatMatchesVerticalReach = horizontalRoom > 0 ? verticalRoom * verticalReachMultiplier * HORIZONTAL_REACH_FRACTION_OF_VERTICAL_REACH / horizontalRoom : 0;
+	const horizontalReachMultiplier = Math.max(viewportHorizontalReachMultiplier, horizontalReachMultiplierThatMatchesVerticalReach);
 	const horizontalDistance = horizontalRoom * reachFraction * horizontalReachMultiplier * Math.abs(horizontalDirection) * getRandomNumberInRange(PER_AXIS_REACH_FRACTION_RANGE);
 	const verticalDistance = verticalRoom * reachFraction * verticalReachMultiplier * downwardReachMultiplier * Math.abs(upwardDirection) * getRandomNumberInRange(PER_AXIS_REACH_FRACTION_RANGE);
 	const launchSpeedUpward = calculateLaunchSpeedToRiseHeight({
