@@ -10,6 +10,7 @@ export interface CloudSettingsRow {
 	should_keep_task_details_after_creating: boolean;
 	should_show_quick_add_task_bar_on_focus_page: boolean;
 	should_show_remaining_tasks_summary_on_focus_page: boolean;
+	should_show_confetti: boolean;
 	should_play_celebration_sound: boolean;
 	updated_at: string;
 }
@@ -24,6 +25,7 @@ export function settingsRowToCloudRow(row: SettingsRow, userID: string): CloudSe
 		should_keep_task_details_after_creating: row.shouldKeepTaskDetailsAfterCreating,
 		should_show_quick_add_task_bar_on_focus_page: row.shouldShowQuickAddTaskBarOnFocusPage,
 		should_show_remaining_tasks_summary_on_focus_page: row.shouldShowRemainingTasksSummaryOnFocusPage,
+		should_show_confetti: row.shouldShowConfetti,
 		should_play_celebration_sound: row.shouldPlayCelebrationSound,
 		updated_at: toCloudTimestamp(fromCloudTimestamp(row.updatedAt)),
 	};
@@ -39,6 +41,7 @@ export function cloudRowToSettingsRow({ cloudRow, id }: { cloudRow: CloudSetting
 		shouldKeepTaskDetailsAfterCreating: cloudRow.should_keep_task_details_after_creating,
 		shouldShowQuickAddTaskBarOnFocusPage: cloudRow.should_show_quick_add_task_bar_on_focus_page,
 		shouldShowRemainingTasksSummaryOnFocusPage: cloudRow.should_show_remaining_tasks_summary_on_focus_page,
+		shouldShowConfetti: cloudRow.should_show_confetti,
 		shouldPlayCelebrationSound: cloudRow.should_play_celebration_sound,
 		updatedAt: toCloudTimestamp(fromCloudTimestamp(cloudRow.updated_at)),
 		isSynced: true,

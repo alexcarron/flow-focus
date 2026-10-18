@@ -72,6 +72,7 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 				p_should_keep_task_details_after_creating: cloudRow.should_keep_task_details_after_creating,
 				p_should_show_quick_add_task_bar_on_focus_page: cloudRow.should_show_quick_add_task_bar_on_focus_page,
 				p_should_show_remaining_tasks_summary_on_focus_page: cloudRow.should_show_remaining_tasks_summary_on_focus_page,
+				p_should_show_confetti: cloudRow.should_show_confetti,
 				p_should_play_celebration_sound: cloudRow.should_play_celebration_sound,
 				p_updated_at: cloudRow.updated_at,
 			});

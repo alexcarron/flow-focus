@@ -17,6 +17,7 @@ interface SettingsActions {
 	setShouldKeepTaskDetailsAfterCreating: (value: boolean) => Promise<void>;
 	setShouldShowQuickAddTaskBarOnFocusPage: (value: boolean) => Promise<void>;
 	setShouldShowRemainingTasksSummaryOnFocusPage: (value: boolean) => Promise<void>;
+	setShouldShowConfetti: (value: boolean) => Promise<void>;
 	setShouldPlayCelebrationSound: (value: boolean) => Promise<void>;
 	importSettings: (settings: AppSettings) => Promise<void>;
 }
@@ -30,6 +31,7 @@ function pickSettings(state: SettingsState): AppSettings {
 		shouldKeepTaskDetailsAfterCreating: state.shouldKeepTaskDetailsAfterCreating,
 		shouldShowQuickAddTaskBarOnFocusPage: state.shouldShowQuickAddTaskBarOnFocusPage,
 		shouldShowRemainingTasksSummaryOnFocusPage: state.shouldShowRemainingTasksSummaryOnFocusPage,
+		shouldShowConfetti: state.shouldShowConfetti,
 		shouldPlayCelebrationSound: state.shouldPlayCelebrationSound,
 	};
 }
@@ -91,6 +93,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 	async setShouldShowRemainingTasksSummaryOnFocusPage(value: boolean) {
 		set({ shouldShowRemainingTasksSummaryOnFocusPage: value });
 		await persistSettings({ ...pickSettings(get()), shouldShowRemainingTasksSummaryOnFocusPage: value });
+	},
+
+	async setShouldShowConfetti(value: boolean) {
+		set({ shouldShowConfetti: value });
+		await persistSettings({ ...pickSettings(get()), shouldShowConfetti: value });
 	},
 
 	async setShouldPlayCelebrationSound(value: boolean) {

@@ -10,6 +10,7 @@ export interface AppSettings {
 	shouldKeepTaskDetailsAfterCreating: boolean;
 	shouldShowQuickAddTaskBarOnFocusPage: boolean;
 	shouldShowRemainingTasksSummaryOnFocusPage: boolean;
+	shouldShowConfetti: boolean;
 	shouldPlayCelebrationSound: boolean;
 }
 
@@ -21,5 +22,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	shouldKeepTaskDetailsAfterCreating: false,
 	shouldShowQuickAddTaskBarOnFocusPage: true,
 	shouldShowRemainingTasksSummaryOnFocusPage: true,
+	shouldShowConfetti: true,
 	shouldPlayCelebrationSound: true,
 };

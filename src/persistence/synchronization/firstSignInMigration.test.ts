@@ -173,6 +173,7 @@ describe('migrateLocalDataToCloud', () => {
 			shouldKeepTaskDetailsAfterCreating: false,
 			shouldShowQuickAddTaskBarOnFocusPage: true,
 			shouldShowRemainingTasksSummaryOnFocusPage: true,
+			shouldShowConfetti: true,
 			shouldPlayCelebrationSound: true,
 			updatedAt: '2026-03-01T12:00:00.000Z',
 			isSynced: false,
@@ -198,6 +199,7 @@ describe('migrateLocalDataToCloud', () => {
 			should_keep_task_details_after_creating: false, 
 			should_show_quick_add_task_bar_on_focus_page: true,
 			should_show_remaining_tasks_summary_on_focus_page: true, 
+			should_show_confetti: true,
 			should_play_celebration_sound: true, 
 			updated_at: localSettings.updatedAt
 		};

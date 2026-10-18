@@ -34,6 +34,7 @@ export default function FocusPage() {
 	const completeNextStep = useTasksStore(state => state.completeNextStep);
 	const shouldShowQuickAddTaskBar = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
 	const shouldShowRemainingTasksSummary = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
+	const shouldShowConfetti = useSettingsStore(state => state.shouldShowConfetti);
 	const shouldPlayCelebrationSound = useSettingsStore(state => state.shouldPlayCelebrationSound);
 	const hasInteractedSinceRegainingFocus = useHasInteractedSinceRegainingFocus();
 	const [confettiBursts, setConfettiBursts] = useState<{
@@ -110,6 +111,7 @@ export default function FocusPage() {
 				stopCelebrationSound: playCelebrationSound(),
 			});
 		}
+		if (!shouldShowConfetti) return;
 		setConfettiBursts(previousConfettiBursts => [
 			...previousConfettiBursts,
 			{
