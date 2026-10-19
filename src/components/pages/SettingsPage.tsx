@@ -165,7 +165,7 @@ export default function SettingsPage() {
 				<CheckboxInput
 					value={shouldPlayCelebrationSound}
 					onChange={setShouldPlayCelebrationSound}
-					label="Play a celebration sound when completing a task"
+					label="Play sounds when completing tasks and steps"
 				/>
 			</section>
 

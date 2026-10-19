@@ -10,6 +10,7 @@
 .env.*
 !.env*.example
 *.local
+*.local.md
 
 # Logs
 npm-debug.log*

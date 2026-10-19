@@ -11,6 +11,8 @@ import QuickToDoChecklistSection from '../QuickToDoChecklistSection';
 import RemainingTasksSummary from '../RemainingTasksSummary';
 import ConfettiBurst from '../animations/ConfettiBurst';
 import { playCelebrationSound } from '../../audio/playCelebrationSound';
+import { playStepCompletionSound } from '../../audio/playStepCompletionSound';
+import { calculateTaskEffort } from '../../model/task/calculateTaskEffort';
 import styles from './FocusPage.module.css';
 
 const PRIORITY_TASK_PLACEHOLDER_TIERS_LONGEST_FIRST = [
@@ -62,63 +64,91 @@ export default function FocusPage() {
 		});
 	}), []);
 
-	const celebrateCompletion = useEffectEvent(() => {
+	const celebrateCompletion = useEffectEvent(({ taskEffort }: { taskEffort: number }) => {
+		const undoStackLengthAfterCompletion = useTasksStore.getState().undoStack.length;
+		if (shouldPlayCelebrationSound) {
+			playingCelebrationSoundsRef.current.push({
+				undoStackLengthAfterCompletion,
+				stopCelebrationSound: playCelebrationSound({ taskEffort }),
+			});
+		}
+
 		const completeTaskButton = document.querySelector<HTMLElement>('[data-complete-task-button]');
 		if (completeTaskButton) flashElementWithAccentColor(completeTaskButton);
+		if (!shouldShowConfetti) return;
 
 		const activePointerPosition = getActivePointerPosition();
 		if (activePointerPosition) {
-			celebrateCompletionAtPosition({ ...activePointerPosition, isCursorPosition: true });
+			showConfettiBurstAtPosition({
+				...activePointerPosition,
+				isCursorPosition: true,
+				undoStackLengthAfterCompletion,
+			});
 			return;
 		}
 
 		const completeTaskButtonBounds = completeTaskButton?.getBoundingClientRect();
 		if (completeTaskButtonBounds) {
-			celebrateCompletionAtPosition({
+			showConfettiBurstAtPosition({
 				x: completeTaskButtonBounds.left + completeTaskButtonBounds.width / 2,
 				y: completeTaskButtonBounds.top + completeTaskButtonBounds.height / 2,
 				isCursorPosition: false,
+				undoStackLengthAfterCompletion,
 			});
 			return;
 		}
 
-		celebrateCompletionAtPosition({
+		showConfettiBurstAtPosition({
 			x: window.innerWidth / 2,
 			y: window.innerHeight / 2,
 			isCursorPosition: false,
+			undoStackLengthAfterCompletion,
 		});
+	});
+
+	const celebrateStepCompletion = useEffectEvent(({ taskProgress }: { taskProgress: number }) => {
+		if (shouldPlayCelebrationSound) playStepCompletionSound({ taskProgress });
 	});
 
 	useEffect(() => {
 		const getTaskIDToIsComplete = (tasks: Task[]) => new Map(tasks.map(task => [task.id, task.getIsComplete()]));
+		const getTaskIDToProgress = (tasks: Task[]) => new Map(tasks.map(task => [task.id, task.getProgress()]));
 		let taskIDToWasComplete = getTaskIDToIsComplete(useTasksStore.getState().tasks);
+		let taskIDToPreviousProgress = getTaskIDToProgress(useTasksStore.getState().tasks);
 		let previousUndoStackLength = useTasksStore.getState().undoStack.length;
 
 		return useTasksStore.subscribe(({ tasks, undoStack }) => {
 			const wasMutationJustMade = undoStack.length > previousUndoStackLength;
-			const wasAnyTaskJustCompleted = tasks.some(task => taskIDToWasComplete.get(task.id) === false && task.getIsComplete());
+			const justCompletedTasks = tasks.filter(task => taskIDToWasComplete.get(task.id) === false && task.getIsComplete());
+			const justProgressedTasks = tasks.filter(task => !task.getIsComplete() && task.getProgress() > (taskIDToPreviousProgress.get(task.id) ?? Infinity));
 			previousUndoStackLength = undoStack.length;
 			taskIDToWasComplete = getTaskIDToIsComplete(tasks);
-			if (wasMutationJustMade && wasAnyTaskJustCompleted) celebrateCompletion();
+			taskIDToPreviousProgress = getTaskIDToProgress(tasks);
+			if (!wasMutationJustMade) return;
+
+			if (justCompletedTasks.length > 0) {
+				celebrateCompletion({ taskEffort: Math.max(...justCompletedTasks.map(calculateTaskEffort)) });
+				return;
+			}
+			if (justProgressedTasks.length > 0) {
+				celebrateStepCompletion({ taskProgress: Math.max(...justProgressedTasks.map(task => task.getProgress())) });
+			}
 		});
 	}, []);
 
-	function celebrateCompletionAtPosition(completionPosition: { x: number, y: number, isCursorPosition: boolean }) {
-		const undoStackLengthAfterCompletion = useTasksStore.getState().undoStack.length;
-		if (shouldPlayCelebrationSound) {
-			playingCelebrationSoundsRef.current.push({
-				undoStackLengthAfterCompletion,
-				stopCelebrationSound: playCelebrationSound(),
-			});
-		}
-		if (!shouldShowConfetti) return;
+	function showConfettiBurstAtPosition({ x, y, isCursorPosition, undoStackLengthAfterCompletion }: {
+		x: number,
+		y: number,
+		isCursorPosition: boolean,
+		undoStackLengthAfterCompletion: number,
+	}) {
 		setConfettiBursts(previousConfettiBursts => [
 			...previousConfettiBursts,
 			{
 				id: crypto.randomUUID(),
-				originX: completionPosition.x,
-				originY: completionPosition.y,
-				isOriginCursorPosition: completionPosition.isCursorPosition,
+				originX: x,
+				originY: y,
+				isOriginCursorPosition: isCursorPosition,
 				undoStackLengthAfterCompletion,
 			},
 		]);
