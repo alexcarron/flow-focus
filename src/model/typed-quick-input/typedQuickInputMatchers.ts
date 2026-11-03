@@ -9,7 +9,7 @@ import parseDatePhrase, { nextDateForWeekday } from './parseDatePhrase';
 import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
 import { stepsMatcher } from './stepsMatcher';
 import { tagMatcher } from './tagMatcher';
-import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputField } from './TypedQuickInputToken';
+import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputField } from './TypedQuickInputToken';
 
 export type RawMatch = {
 	field: TypedQuickInputField;
@@ -200,13 +200,15 @@ const impliedDueDateMatcher: Matcher = {
 	field: 'deadline',
 	colorClass: 'deadline',
 	findMatches(config) {
-		const escapedKeys = new Set(config.escapedTokenLocations.map(serializeEscapedTokenLocation));
-		const isCandidateEscaped = (candidate: BareDateCandidate) => escapedKeys.has(serializeEscapedTokenLocation({
-			field: 'deadline',
-			matchedText: candidate.matchedText,
-			startIndex: candidate.startIndex,
-			endIndex: candidate.endIndex,
-		}));
+		const isCandidateEscaped = (candidate: BareDateCandidate) => isTokenEscapedByAnyLocation(
+			{
+				field: 'deadline',
+				matchedText: candidate.matchedText,
+				startIndex: candidate.startIndex,
+				endIndex: candidate.endIndex,
+			},
+			config.escapedTokenLocations
+		);
 
 		const candidates = findBareDateCandidates(config).sort((left, right) => left.startIndex - right.startIndex);
 		if (candidates.length === 0) return [];

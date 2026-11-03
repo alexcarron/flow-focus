@@ -70,6 +70,14 @@ function getCanonicalFieldForEscapeIdentity(field: TypedQuickInputField): TypedQ
 	return field === 'ignoredDate' ? 'deadline' : field;
 }
 
-export function serializeEscapedTokenLocation(location: EscapedTokenLocation): string {
-	return JSON.stringify([getCanonicalFieldForEscapeIdentity(location.field), location.matchedText, location.startIndex]);
+export function isTokenEscapedByLocation({ token, location }: { token: EscapedTokenLocation; location: EscapedTokenLocation }): boolean {
+	return (
+		getCanonicalFieldForEscapeIdentity(token.field) === getCanonicalFieldForEscapeIdentity(location.field) &&
+		token.startIndex === location.startIndex &&
+		token.matchedText.startsWith(location.matchedText)
+	);
+}
+
+export function isTokenEscapedByAnyLocation(token: EscapedTokenLocation, escapedTokenLocations: EscapedTokenLocation[]): boolean {
+	return escapedTokenLocations.some(location => isTokenEscapedByLocation({ token, location }));
 }

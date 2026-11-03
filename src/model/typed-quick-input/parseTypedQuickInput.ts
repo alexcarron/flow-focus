@@ -3,7 +3,7 @@ import Tag from '../tag/Tag';
 import TaskTimingOptions from '../task/TaskTimingOptions';
 import Time from '../time-management/Time';
 import { RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
-import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputParseResult, TypedQuickInputTagMatch } from './TypedQuickInputToken';
+import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputParseResult, TypedQuickInputTagMatch } from './TypedQuickInputToken';
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
@@ -68,14 +68,7 @@ export default function parseTypedQuickInput(config: {
 
 	const protectedRanges: Range[] = quoteSpans.map(span => ({ start: span.openIndex + 1, end: span.closeIndex }));
 
-	const escapedKeys = new Set(escapedTokenLocations.map(serializeEscapedTokenLocation));
-
-	const isMatchEscaped = (match: RawMatch) => escapedKeys.has(serializeEscapedTokenLocation({
-		field: match.field,
-		matchedText: match.matchedText,
-		startIndex: match.startIndex,
-		endIndex: match.endIndex,
-	}));
+	const isMatchEscaped = (match: RawMatch) => isTokenEscapedByAnyLocation(match, escapedTokenLocations);
 
 	const unprotectedMatches = rawMatches.filter(match =>
 		match.field === 'tag' ||
