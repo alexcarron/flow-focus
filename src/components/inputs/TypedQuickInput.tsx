@@ -88,6 +88,23 @@ function setCaretCharacterOffset(container: HTMLElement, offset: number): void {
 	selection?.addRange(range);
 }
 
+function shiftCaretOffsetPastRemovedBackslashes(previousText: string, nextText: string, caretOffset: number): number {
+	if (nextText.length >= previousText.length) return caretOffset;
+
+	let previousIndex = 0;
+	let nextIndex = 0;
+	while (previousIndex < caretOffset && previousIndex < previousText.length) {
+		if (nextIndex < nextText.length && previousText[previousIndex] === nextText[nextIndex]) {
+			nextIndex++;
+		}
+		else if (previousText[previousIndex] !== '\\') {
+			return caretOffset;
+		}
+		previousIndex++;
+	}
+	return nextIndex;
+}
+
 function getCaretClientRect(editor: HTMLElement): DOMRect | null {
 	const selection = window.getSelection();
 	if (!selection || selection.rangeCount === 0) return null;
@@ -265,7 +282,10 @@ export default function TypedQuickInput({
 		if (editor.innerHTML === nextHtml) return;
 
 		const isFocused = document.activeElement === editor;
-		const caretOffset = isFocused ? getCaretCharacterOffset(editor) : null;
+		const caretOffsetBeforeRewrite = isFocused ? getCaretCharacterOffset(editor) : null;
+		const caretOffset = caretOffsetBeforeRewrite === null
+			? null
+			: shiftCaretOffsetPastRemovedBackslashes(editor.textContent ?? '', nextValue, caretOffsetBeforeRewrite);
 
 		editor.innerHTML = nextHtml;
 

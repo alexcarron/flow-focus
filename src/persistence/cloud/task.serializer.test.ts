@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
+import Weekday from '../../model/time-management/Weekday';
 import { CloudTaskRow, cloudRowToTaskRow, taskRowToCloudRow } from './task.serializer';
 import { PlainTaskRow } from '../local/flowfocus.db';
 
@@ -47,6 +48,7 @@ function makeCloudTaskRow(overrides: Partial<CloudTaskRow> = {}): CloudTaskRow {
 		max_required_time: null,
 		recurrence_duration_amount: null,
 		recurrence_duration_unit: null,
+		recurrence_duration_weekdays: null,
 		should_not_skip_missed_occurrences: false,
 		completed_occurrence_index: null,
 		skipped_occurrence_index: null,
@@ -98,6 +100,15 @@ describe('taskRowToCloudRow', () => {
 
 		expect(cloudRow.recurrence_duration_amount).toBe(1);
 		expect(cloudRow.recurrence_duration_unit).toBe('month');
+		expect(cloudRow.recurrence_duration_weekdays).toBeNull();
+	});
+
+	it('stores the weekdays of a weekday repeat in their own column, ordered from Monday', () => {
+		const row = makeTaskRow({ recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.THURSDAY, Weekday.TUESDAY] } });
+
+		const cloudRow = taskRowToCloudRow(row, USER_ID);
+
+		expect(cloudRow.recurrence_duration_weekdays).toEqual([Weekday.TUESDAY, Weekday.THURSDAY]);
 	});
 
 	it('normalizes a non-UTC offset timestamp to a UTC ISO string', () => {
@@ -133,6 +144,29 @@ describe('cloudRowToTaskRow', () => {
 			tagIDs: [],
 			isSynced: true,
 		}));
+	});
+
+	it('restores the weekdays of a weekday repeat', () => {
+		const cloudRow = makeCloudTaskRow({
+			recurrence_duration_amount: 1,
+			recurrence_duration_unit: 'week',
+			recurrence_duration_weekdays: [Weekday.FRIDAY, Weekday.SATURDAY, Weekday.SUNDAY],
+		});
+
+		expect(cloudRowToTaskRow(cloudRow).recurrenceDuration).toEqual({
+			amount: 1,
+			unit: RecurrenceUnit.Week,
+			weekdays: [Weekday.FRIDAY, Weekday.SATURDAY, Weekday.SUNDAY],
+		});
+	});
+
+	it('treats a row from before the weekdays column existed as a plain repeat', () => {
+		const { recurrence_duration_weekdays: _, ...cloudRowWithoutWeekdaysColumn } = makeCloudTaskRow({
+			recurrence_duration_amount: 1,
+			recurrence_duration_unit: 'week',
+		});
+
+		expect(cloudRowToTaskRow(cloudRowWithoutWeekdaysColumn as CloudTaskRow).recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week });
 	});
 
 	it('treats an unknown recurrence unit as not recurring', () => {

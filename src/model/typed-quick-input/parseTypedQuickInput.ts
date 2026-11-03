@@ -1,8 +1,11 @@
 import { DEFAULT_SETTINGS } from '../AppSettings';
 import Tag from '../tag/Tag';
 import TaskTimingOptions from '../task/TaskTimingOptions';
+import { hasRecurrenceWeekdays } from '../task/recurrence/RecurrenceDuration';
+import { getDefaultDeadlineOfWeekdayRepeat } from '../task/recurrence/recurrenceWeekdayOccurrences';
 import Time from '../time-management/Time';
-import { RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
+import { addDays } from '../../utilities/dateFormatting';
+import { getEndOfDayTimeOfDay, RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
 import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputParseResult, TypedQuickInputTagMatch } from './TypedQuickInputToken';
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
@@ -45,6 +48,40 @@ function buildCleanedName(input: string, removedIndices: Set<number>): string {
 		if (!removedIndices.has(index)) result += input[index];
 	}
 	return result.replace(/\s+/g, ' ').trim();
+}
+
+function moveTimeOfDayToFirstMomentOnOrAfterStartTime({ time, startTime }: { time: Date; startTime: Date }): Date {
+	const timeOnStartDay = new Date(startTime);
+	timeOnStartDay.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), time.getMilliseconds());
+	if (timeOnStartDay.getTime() >= startTime.getTime()) return timeOnStartDay;
+	return addDays(timeOnStartDay, 1);
+}
+
+function keepTimeOnOrAfterStartTime({ time, startTime }: { time: Date | null | undefined; startTime: Date }): Date | null | undefined {
+	if (time === null || time === undefined) return time;
+	if (time.getTime() >= startTime.getTime()) return time;
+	return moveTimeOfDayToFirstMomentOnOrAfterStartTime({ time, startTime });
+}
+
+function applyWeekdayRepeatTimingDefaults({ timing, nightTime }: { timing: Partial<TaskTimingOptions>; nightTime: Time }): Partial<TaskTimingOptions> {
+	const { recurrenceDuration, startTime } = timing;
+	if (!recurrenceDuration || !startTime || !hasRecurrenceWeekdays(recurrenceDuration)) return timing;
+
+	const timingWithDefaults: Partial<TaskTimingOptions> = { ...timing };
+	if (timing.deadline === undefined) {
+		const defaultDeadline = getDefaultDeadlineOfWeekdayRepeat({
+			startTime,
+			endOfDayTimeOfDay: getEndOfDayTimeOfDay(nightTime),
+		});
+		if (defaultDeadline) timingWithDefaults.deadline = defaultDeadline;
+	}
+	else {
+		timingWithDefaults.deadline = keepTimeOnOrAfterStartTime({ time: timing.deadline, startTime });
+	}
+	if (timing.endTime !== undefined) {
+		timingWithDefaults.endTime = keepTimeOnOrAfterStartTime({ time: timing.endTime, startTime });
+	}
+	return timingWithDefaults;
 }
 
 export default function parseTypedQuickInput(config: {
@@ -128,7 +165,7 @@ export default function parseTypedQuickInput(config: {
 
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
-		timing,
+		timing: applyWeekdayRepeatTimingDefaults({ timing, nightTime }),
 		steps,
 		tags,
 		tokens,

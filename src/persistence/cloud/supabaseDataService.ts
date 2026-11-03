@@ -35,6 +35,7 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 				p_max_required_time: cloudRow.max_required_time,
 				p_recurrence_duration_amount: cloudRow.recurrence_duration_amount,
 				p_recurrence_duration_unit: cloudRow.recurrence_duration_unit,
+				p_recurrence_duration_weekdays: cloudRow.recurrence_duration_weekdays,
 				p_should_not_skip_missed_occurrences: cloudRow.should_not_skip_missed_occurrences,
 				p_completed_occurrence_index: cloudRow.completed_occurrence_index,
 				p_skipped_occurrence_index: cloudRow.skipped_occurrence_index,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import RecurrenceUnit from './RecurrenceUnit';
-import { computeCurrentTaskOccurrence, getCurrentOccurrenceIndex, getLatestStartedOccurrenceIndex, TaskRecurrenceSnapshot } from './computeTaskOccurrence';
+import Weekday from '../../time-management/Weekday';
+import { computeCurrentTaskOccurrence, computeOccurrenceAtIndex, getCurrentOccurrenceIndex, getLatestStartedOccurrenceIndex, TaskRecurrenceSnapshot } from './computeTaskOccurrence';
 
 const weeklyFromMondayMorning: TaskRecurrenceSnapshot = {
 	anchorStartTime: new Date(2026, 8, 7, 9, 0, 0),
@@ -199,5 +200,46 @@ describe('computeCurrentTaskOccurrence', () => {
 		}, atLocalTime(2026, 8, 14, 9));
 
 		expect(occurrence.endTime).toEqual(atLocalTime(2026, 8, 20, 22));
+	});
+});
+
+describe('weekday repeats', () => {
+	const tuesdaysAndThursdaysFromTuesdayMorning: TaskRecurrenceSnapshot = {
+		anchorStartTime: atLocalTime(2026, 8, 8, 7),
+		anchorEndTime: null,
+		anchorDeadline: atLocalTime(2026, 8, 8, 23),
+		recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.TUESDAY, Weekday.THURSDAY] },
+		completedOccurrenceIndex: null,
+		skippedOccurrenceIndex: null,
+		shouldNotSkipMissedOccurrences: false,
+	};
+
+	it('places each occurrence on the next chosen weekday, keeping the anchor time of day', () => {
+		expect(computeOccurrenceAtIndex(tuesdaysAndThursdaysFromTuesdayMorning, 1).startTime).toEqual(atLocalTime(2026, 8, 10, 7));
+		expect(computeOccurrenceAtIndex(tuesdaysAndThursdaysFromTuesdayMorning, 2).startTime).toEqual(atLocalTime(2026, 8, 15, 7));
+		expect(computeOccurrenceAtIndex(tuesdaysAndThursdaysFromTuesdayMorning, 5).startTime).toEqual(atLocalTime(2026, 8, 24, 7));
+	});
+
+	it('wraps into the next week when the anchor is on the last chosen weekday', () => {
+		const fromThursday = { ...tuesdaysAndThursdaysFromTuesdayMorning, anchorStartTime: atLocalTime(2026, 8, 10, 7) };
+		expect(computeOccurrenceAtIndex(fromThursday, 1).startTime).toEqual(atLocalTime(2026, 8, 15, 7));
+		expect(computeOccurrenceAtIndex(fromThursday, 2).startTime).toEqual(atLocalTime(2026, 8, 17, 7));
+	});
+
+	it('gives every occurrence a deadline at the same time on its own day', () => {
+		expect(computeOccurrenceAtIndex(tuesdaysAndThursdaysFromTuesdayMorning, 1).deadline).toEqual(atLocalTime(2026, 8, 10, 23));
+		expect(computeOccurrenceAtIndex(tuesdaysAndThursdaysFromTuesdayMorning, 2).deadline).toEqual(atLocalTime(2026, 8, 15, 23));
+	});
+
+	it('keeps the deadline day offset but clamps it to the next occurrence start', () => {
+		const dueThreeDaysAfterStart = { ...tuesdaysAndThursdaysFromTuesdayMorning, anchorDeadline: atLocalTime(2026, 8, 11, 17) };
+		expect(computeOccurrenceAtIndex(dueThreeDaysAfterStart, 0).deadline).toEqual(atLocalTime(2026, 8, 10, 7));
+		expect(computeOccurrenceAtIndex(dueThreeDaysAfterStart, 1).deadline).toEqual(atLocalTime(2026, 8, 13, 17));
+	});
+
+	it('finds the current occurrence between chosen weekdays', () => {
+		expect(getLatestStartedOccurrenceIndex(tuesdaysAndThursdaysFromTuesdayMorning, atLocalTime(2026, 8, 12, 12))).toBe(1);
+		expect(getLatestStartedOccurrenceIndex(tuesdaysAndThursdaysFromTuesdayMorning, atLocalTime(2026, 8, 15, 6, 59))).toBe(1);
+		expect(getLatestStartedOccurrenceIndex(tuesdaysAndThursdaysFromTuesdayMorning, atLocalTime(2026, 9, 1, 7))).toBe(7);
 	});
 });

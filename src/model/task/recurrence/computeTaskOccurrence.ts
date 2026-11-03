@@ -1,4 +1,5 @@
-import RecurrenceDuration, { addRecurrenceDurations, getApproximateMillisecondsOfRecurrenceDuration } from './RecurrenceDuration';
+import RecurrenceDuration, { addRecurrenceDurations, getApproximateMillisecondsOfRecurrenceDuration, getWeekdaysOfRecurrenceDuration } from './RecurrenceDuration';
+import { getWeekdayOccurrenceStartTime, getWeekdayOccurrenceTimeMatchingAnchor } from './recurrenceWeekdayOccurrences';
 import TaskOccurrence from './TaskOccurrence';
 
 export type TaskRecurrenceSnapshot = {
@@ -13,8 +14,32 @@ export type TaskRecurrenceSnapshot = {
 
 const NO_OCCURRENCE_RESOLVED_INDEX = -1;
 
-function getOccurrenceStartTime(snapshot: Pick<TaskRecurrenceSnapshot, 'anchorStartTime' | 'recurrenceDuration'>, index: number): Date {
-	return addRecurrenceDurations(snapshot.anchorStartTime, snapshot.recurrenceDuration, index);
+export function getOccurrenceStartTime(snapshot: Pick<TaskRecurrenceSnapshot, 'anchorStartTime' | 'recurrenceDuration'>, index: number): Date {
+	const weekdaysFromMonday = getWeekdaysOfRecurrenceDuration(snapshot.recurrenceDuration);
+	if (weekdaysFromMonday.length === 0) return addRecurrenceDurations(snapshot.anchorStartTime, snapshot.recurrenceDuration, index);
+	return getWeekdayOccurrenceStartTime({
+		anchorStartTime: snapshot.anchorStartTime,
+		weekdaysFromMonday,
+		occurrenceIndex: index,
+	});
+}
+
+function getOccurrenceTimeMatchingAnchor(parameters: {
+	snapshot: TaskRecurrenceSnapshot;
+	anchorTime: Date;
+	occurrenceIndex: number;
+	occurrenceStartTime: Date;
+}): Date {
+	const { snapshot, anchorTime, occurrenceIndex, occurrenceStartTime } = parameters;
+	if (getWeekdaysOfRecurrenceDuration(snapshot.recurrenceDuration).length === 0) {
+		return addRecurrenceDurations(anchorTime, snapshot.recurrenceDuration, occurrenceIndex);
+	}
+	return getWeekdayOccurrenceTimeMatchingAnchor({
+		anchorStartTime: snapshot.anchorStartTime,
+		anchorTime,
+		occurrenceStartTime,
+		nextOccurrenceStartTime: getOccurrenceStartTime(snapshot, occurrenceIndex + 1),
+	});
 }
 
 export function getLatestStartedOccurrenceIndex(
@@ -56,11 +81,21 @@ export function getCurrentOccurrenceIndex(snapshot: TaskRecurrenceSnapshot, curr
 }
 
 export function computeOccurrenceAtIndex(snapshot: TaskRecurrenceSnapshot, index: number): TaskOccurrence {
+	const startTime = getOccurrenceStartTime(snapshot, index);
+	const getTimeMatchingAnchor = (anchorTime: Date | null) => {
+		if (anchorTime === null) return null;
+		return getOccurrenceTimeMatchingAnchor({
+			snapshot,
+			anchorTime,
+			occurrenceIndex: index,
+			occurrenceStartTime: startTime,
+		});
+	};
 	return {
 		index,
-		startTime: getOccurrenceStartTime(snapshot, index),
-		endTime: snapshot.anchorEndTime === null ? null : addRecurrenceDurations(snapshot.anchorEndTime, snapshot.recurrenceDuration, index),
-		deadline: snapshot.anchorDeadline === null ? null : addRecurrenceDurations(snapshot.anchorDeadline, snapshot.recurrenceDuration, index),
+		startTime,
+		endTime: getTimeMatchingAnchor(snapshot.anchorEndTime),
+		deadline: getTimeMatchingAnchor(snapshot.anchorDeadline),
 	};
 }
 

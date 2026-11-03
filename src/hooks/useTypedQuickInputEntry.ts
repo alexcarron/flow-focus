@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import Tag from '../model/tag/Tag';
 import parseTypedQuickInput from '../model/typed-quick-input/parseTypedQuickInput';
-import { EscapedTokenLocation, serializeEscapedTokenLocation, TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
+import { EscapedTokenLocation, isTokenEscapedByLocation, TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
+import removeEscapeCharactersBeforeTokens from '../model/typed-quick-input/removeEscapeCharactersBeforeTokens';
 import updateEscapedTokenLocationsAfterTextChange from '../model/typed-quick-input/updateEscapedTokenLocationsAfterTextChange';
 import Time from '../model/time-management/Time';
 
@@ -25,17 +26,26 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 	);
 
 	function setName(nextName: string) {
-		setEscapedTokenLocations(previous => updateEscapedTokenLocationsAfterTextChange(name, nextName, previous));
-		setNameState(nextName);
+		const shiftedEscapedTokenLocations = updateEscapedTokenLocationsAfterTextChange(name, nextName, escapedTokenLocations);
+		const { input, escapedTokenLocations: nextEscapedTokenLocations } = removeEscapeCharactersBeforeTokens({
+			input: nextName,
+			now: new Date(),
+			nightTime: Time.fromString(nightTimeText),
+			morningTime: Time.fromString(morningTimeText),
+			escapedTokenLocations: shiftedEscapedTokenLocations,
+			existingTags: config.existingTags,
+		});
+		setEscapedTokenLocations(nextEscapedTokenLocations);
+		setNameState(input);
 	}
 
 	function toggleTokenEscape(field: TypedQuickInputField, matchedText: string, startIndex: number, endIndex: number) {
-		const location: EscapedTokenLocation = { field, matchedText, startIndex, endIndex };
-		const key = serializeEscapedTokenLocation(location);
+		const token: EscapedTokenLocation = { field, matchedText, startIndex, endIndex };
+		const doesLocationEscapeToken = (location: EscapedTokenLocation) => isTokenEscapedByLocation({ token, location });
 		setEscapedTokenLocations(previous => {
-			const isAlreadyEscaped = previous.some(existing => serializeEscapedTokenLocation(existing) === key);
-			if (isAlreadyEscaped) return previous.filter(existing => serializeEscapedTokenLocation(existing) !== key);
-			return [...previous, location];
+			const isAlreadyEscaped = previous.some(doesLocationEscapeToken);
+			if (isAlreadyEscaped) return previous.filter(location => !doesLocationEscapeToken(location));
+			return [...previous, token];
 		});
 	}
 

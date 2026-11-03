@@ -4,6 +4,7 @@ import Step from "./step/Step";
 import Task from "./Task";
 import RecurrenceDuration from "./recurrence/RecurrenceDuration";
 import RecurrenceUnit from "./recurrence/RecurrenceUnit";
+import Weekday from "../time-management/Weekday";
 
 const oneHour: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Hour };
 const oneDay: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Day };
@@ -52,6 +53,34 @@ describe('Task', () => {
 	})
 
 	describe('makeRecurring', () => {
+		it('moves the anchor occurrence forward to the first chosen weekday, keeping its deadline offset', () => {
+			const mondayMorning = new Date(2026, 8, 7, 7, 0);
+			const tuesdaysAndThursdays: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.TUESDAY, Weekday.THURSDAY] };
+			task.setDeadline(new Date(2026, 8, 7, 23, 0));
+
+			task.makeRecurring(tuesdaysAndThursdays, mondayMorning, mondayMorning);
+
+			expect(task.getAnchorStartTime()).toEqual(new Date(2026, 8, 8, 7, 0));
+			expect(task.getAnchorDeadline()).toEqual(new Date(2026, 8, 8, 23, 0));
+		});
+
+		it('moves the anchor occurrence to a chosen weekday when the timing options change', () => {
+			const mondayMorning = new Date(2026, 8, 7, 7, 0);
+			task.setFromTaskTimingOptions({
+				startTime: mondayMorning,
+				endTime: null,
+				deadline: new Date(2026, 8, 7, 23, 0),
+				minDuration: null,
+				maxDuration: null,
+				recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.FRIDAY] },
+				shouldNotSkipMissedOccurrences: false,
+				isMandatory: false,
+			}, mondayMorning);
+
+			expect(task.getAnchorStartTime()).toEqual(new Date(2026, 8, 11, 7, 0));
+			expect(task.getAnchorDeadline()).toEqual(new Date(2026, 8, 11, 23, 0));
+		});
+
 		it('should set the recurrence duration and anchor start time', () => {
 			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
 

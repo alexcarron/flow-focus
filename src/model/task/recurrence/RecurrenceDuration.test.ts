@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import RecurrenceUnit from './RecurrenceUnit';
+import Weekday from '../../time-management/Weekday';
 import {
 	addRecurrenceDurations,
 	areRecurrenceDurationsEqual,
@@ -79,6 +80,10 @@ describe('formatRecurrenceDuration', () => {
 	it('uses the amount and plural unit otherwise', () => {
 		expect(formatRecurrenceDuration({ amount: 3, unit: RecurrenceUnit.Month })).toBe('3 months');
 	});
+
+	it('lists the weekdays of a weekday repeat from Monday', () => {
+		expect(formatRecurrenceDuration({ amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.THURSDAY, Weekday.TUESDAY] })).toBe('week on Tue, Thu');
+	});
 });
 
 describe('areRecurrenceDurationsEqual', () => {
@@ -87,6 +92,13 @@ describe('areRecurrenceDurationsEqual', () => {
 		expect(areRecurrenceDurationsEqual({ amount: 1, unit: RecurrenceUnit.Day }, { amount: 2, unit: RecurrenceUnit.Day })).toBe(false);
 		expect(areRecurrenceDurationsEqual({ amount: 1, unit: RecurrenceUnit.Day }, null)).toBe(false);
 		expect(areRecurrenceDurationsEqual(null, null)).toBe(true);
+	});
+
+	it('compares weekdays regardless of their order and treats no weekdays as an empty list', () => {
+		const weekly = { amount: 1, unit: RecurrenceUnit.Week };
+		expect(areRecurrenceDurationsEqual({ ...weekly, weekdays: [Weekday.TUESDAY, Weekday.THURSDAY] }, { ...weekly, weekdays: [Weekday.THURSDAY, Weekday.TUESDAY] })).toBe(true);
+		expect(areRecurrenceDurationsEqual({ ...weekly, weekdays: [Weekday.TUESDAY] }, { ...weekly, weekdays: [Weekday.TUESDAY, Weekday.THURSDAY] })).toBe(false);
+		expect(areRecurrenceDurationsEqual({ ...weekly, weekdays: [] }, weekly)).toBe(true);
 	});
 });
 
@@ -100,5 +112,19 @@ describe('isRecurrenceDuration', () => {
 		expect(isRecurrenceDuration({ amount: 0, unit: 'week' })).toBe(false);
 		expect(isRecurrenceDuration({ amount: 1.5, unit: 'week' })).toBe(false);
 		expect(isRecurrenceDuration(null)).toBe(false);
+	});
+
+	it('accepts weekdays only on a one week repeat', () => {
+		expect(isRecurrenceDuration({ amount: 1, unit: 'week', weekdays: [2, 4] })).toBe(true);
+		expect(isRecurrenceDuration({ amount: 2, unit: 'week', weekdays: [2, 4] })).toBe(false);
+		expect(isRecurrenceDuration({ amount: 1, unit: 'day', weekdays: [2] })).toBe(false);
+		expect(isRecurrenceDuration({ amount: 1, unit: 'week', weekdays: [0] })).toBe(false);
+	});
+});
+
+describe('getApproximateMillisecondsOfRecurrenceDuration', () => {
+	it('splits a week between its weekdays so a weekday repeat sorts as more frequent than weekly', () => {
+		const oneWeekInMilliseconds = getApproximateMillisecondsOfRecurrenceDuration({ amount: 1, unit: RecurrenceUnit.Week });
+		expect(getApproximateMillisecondsOfRecurrenceDuration({ amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.TUESDAY, Weekday.THURSDAY] })).toBe(oneWeekInMilliseconds / 2);
 	});
 });

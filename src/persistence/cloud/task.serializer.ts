@@ -3,7 +3,8 @@ import Step from '../../model/task/step/Step';
 import StepStatus from '../../model/task/step/StepStatus';
 import { TaskWriteInput } from '../TaskRepository';
 import { PlainStepRow, PlainTaskRow } from '../local/flowfocus.db';
-import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
+import RecurrenceDuration, { getWeekdaysOfRecurrenceDuration } from '../../model/task/recurrence/RecurrenceDuration';
+import { isWeekday } from '../../model/time-management/Weekday';
 import RecurrenceUnit, { isRecurrenceUnit } from '../../model/task/recurrence/RecurrenceUnit';
 import { fromCloudTimestamp, fromNullableCloudTimestamp, toCloudTimestamp, toNullableCloudTimestamp } from './cloudTimestamp';
 
@@ -99,6 +100,7 @@ export interface CloudTaskRow {
 	max_required_time: number | null;
 	recurrence_duration_amount: number | null;
 	recurrence_duration_unit: string | null;
+	recurrence_duration_weekdays: number[] | null;
 	should_not_skip_missed_occurrences: boolean;
 	completed_occurrence_index: number | null;
 	skipped_occurrence_index: number | null;
@@ -121,9 +123,25 @@ function normalizeTimestamp(value: string): string {
 	return toCloudTimestamp(fromCloudTimestamp(value));
 }
 
-function cloudRecurrenceDurationColumnsToRecurrenceDuration(amount: number | null, unit: string | null): RecurrenceDuration | null {
+function convertCloudRecurrenceDurationColumnsToRecurrenceDuration(row: Pick<CloudTaskRow, 'recurrence_duration_amount' | 'recurrence_duration_unit' | 'recurrence_duration_weekdays'>): RecurrenceDuration | null {
+	const amount = row.recurrence_duration_amount;
+	const unit = row.recurrence_duration_unit;
 	if (amount === null || !isRecurrenceUnit(unit)) return null;
-	return { amount, unit: unit as RecurrenceUnit };
+
+	const weekdays = (row.recurrence_duration_weekdays ?? []).filter(isWeekday);
+	if (weekdays.length === 0) return { amount, unit: unit as RecurrenceUnit };
+	return {
+		amount,
+		unit: unit as RecurrenceUnit,
+		weekdays,
+	};
+}
+
+function convertRecurrenceDurationToCloudWeekdaysColumn(recurrenceDuration: RecurrenceDuration | null): number[] | null {
+	if (recurrenceDuration === null) return null;
+	const weekdays = getWeekdaysOfRecurrenceDuration(recurrenceDuration);
+	if (weekdays.length === 0) return null;
+	return weekdays;
 }
 
 export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskRow {
@@ -139,6 +157,7 @@ export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskR
 		max_required_time: row.maxRequiredTime,
 		recurrence_duration_amount: row.recurrenceDuration?.amount ?? null,
 		recurrence_duration_unit: row.recurrenceDuration?.unit ?? null,
+		recurrence_duration_weekdays: convertRecurrenceDurationToCloudWeekdaysColumn(row.recurrenceDuration),
 		should_not_skip_missed_occurrences: row.shouldNotSkipMissedOccurrences,
 		completed_occurrence_index: row.completedOccurrenceIndex,
 		skipped_occurrence_index: row.skippedOccurrenceIndex,
@@ -164,7 +183,7 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		deadline: normalizeNullableTimestamp(row.deadline),
 		minRequiredTime: row.min_required_time,
 		maxRequiredTime: row.max_required_time,
-		recurrenceDuration: cloudRecurrenceDurationColumnsToRecurrenceDuration(row.recurrence_duration_amount, row.recurrence_duration_unit),
+		recurrenceDuration: convertCloudRecurrenceDurationColumnsToRecurrenceDuration(row),
 		shouldNotSkipMissedOccurrences: row.should_not_skip_missed_occurrences,
 		completedOccurrenceIndex: row.completed_occurrence_index,
 		skippedOccurrenceIndex: row.skipped_occurrence_index,

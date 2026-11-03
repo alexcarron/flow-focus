@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import Task from '../model/task/Task';
 import Tag from '../model/tag/Tag';
 import Duration from '../model/time-management/Duration';
-import { formatRecurrenceDuration } from '../model/task/recurrence/RecurrenceDuration';
+import RecurrenceDuration, { formatRecurrenceDuration, formatWeekdaysOfRecurrenceDuration, hasRecurrenceWeekdays } from '../model/task/recurrence/RecurrenceDuration';
 import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
 import { formatDate } from '../utilities/dateFormatting';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
@@ -25,6 +25,11 @@ import TimingIcon from './svg-icons/TimingIcon';
 import styles from './TaskManagerRow.module.css';
 
 export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'timeAvailable' | 'deadline';
+
+function formatRecurrenceDurationForRepeatColumn(recurrenceDuration: RecurrenceDuration): string {
+	if (hasRecurrenceWeekdays(recurrenceDuration)) return formatWeekdaysOfRecurrenceDuration(recurrenceDuration);
+	return formatRecurrenceDuration(recurrenceDuration);
+}
 
 function getDurationRange(minMs: number | null, maxMs: number | null): string {
 	if (minMs === null && maxMs === null) return '—';
@@ -274,7 +279,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 
 			<td data-mobile-label="Repeat" data-mobile-empty={task.getRecurrenceDuration() === null ? 'true' : 'false'} className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{task.getRecurrenceDuration() !== null
-					? formatRecurrenceDuration(task.getRecurrenceDuration()!)
+					? formatRecurrenceDurationForRepeatColumn(task.getRecurrenceDuration()!)
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 

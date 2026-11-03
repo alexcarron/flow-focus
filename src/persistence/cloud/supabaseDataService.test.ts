@@ -242,6 +242,7 @@ describe('pullTasks', () => {
 				max_required_time: null,
 				recurrence_duration_amount: null,
 				recurrence_duration_unit: null,
+				recurrence_duration_weekdays: null,
 				should_not_skip_missed_occurrences: false,
 				completed_occurrence_index: null,
 				skipped_occurrence_index: null,

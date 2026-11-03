@@ -1,12 +1,10 @@
 import Tag from '../tag/Tag';
 import TaskTimingOptions from '../task/TaskTimingOptions';
-import RecurrenceDuration, { formatRecurrenceDuration } from '../task/recurrence/RecurrenceDuration';
-import RecurrenceUnit from '../task/recurrence/RecurrenceUnit';
 import Time from '../time-management/Time';
 import { timeUnits, TimeUnitName } from '../time-management/StandardTimeUnit';
-import Weekday from '../time-management/Weekday';
-import parseDatePhrase, { nextDateForWeekday } from './parseDatePhrase';
+import parseDatePhrase from './parseDatePhrase';
 import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
+import { repeatMatcher } from './repeatMatcher';
 import { stepsMatcher } from './stepsMatcher';
 import { tagMatcher } from './tagMatcher';
 import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputField } from './TypedQuickInputToken';
@@ -39,7 +37,7 @@ export type Matcher = {
 	findMatches: (config: FindMatchesConfig) => RawMatch[];
 };
 
-function getEndOfDayTimeOfDay(nightTime: Time): { hour: number; minute: number } {
+export function getEndOfDayTimeOfDay(nightTime: Time): { hour: number; minute: number } {
 	const isNightTimeBeforeEndOfDay = nightTime.getTotalMinutes() < 23 * 60 + 59;
 	if (isNightTimeBeforeEndOfDay) return { hour: nightTime.getHour(), minute: nightTime.getMinute() };
 	return { hour: 23, minute: 59 };
@@ -210,7 +208,14 @@ const impliedDueDateMatcher: Matcher = {
 			config.escapedTokenLocations
 		);
 
-		const candidates = findBareDateCandidates(config).sort((left, right) => left.startIndex - right.startIndex);
+		const repeatMatches = repeatMatcher.findMatches(config);
+		const isCandidateInsideRepeatMatch = (candidate: BareDateCandidate) => repeatMatches.some(repeatMatch =>
+			candidate.startIndex < repeatMatch.endIndex && repeatMatch.startIndex < candidate.endIndex
+		);
+
+		const candidates = findBareDateCandidates(config)
+			.filter(candidate => !isCandidateInsideRepeatMatch(candidate))
+			.sort((left, right) => left.startIndex - right.startIndex);
 		if (candidates.length === 0) return [];
 
 		const winner = candidates.find(candidate => !isCandidateEscaped(candidate));
@@ -241,126 +246,6 @@ const impliedDueDateMatcher: Matcher = {
 				keepInName: true,
 			};
 		});
-	},
-};
-
-const weekdayNameToWeekday: Record<string, Weekday> = {
-	monday: Weekday.MONDAY, mon: Weekday.MONDAY,
-	tuesday: Weekday.TUESDAY, tues: Weekday.TUESDAY, tue: Weekday.TUESDAY,
-	wednesday: Weekday.WEDNESDAY, wed: Weekday.WEDNESDAY,
-	thursday: Weekday.THURSDAY, thurs: Weekday.THURSDAY, thur: Weekday.THURSDAY, thu: Weekday.THURSDAY,
-	friday: Weekday.FRIDAY, fri: Weekday.FRIDAY,
-	saturday: Weekday.SATURDAY, sat: Weekday.SATURDAY,
-	sunday: Weekday.SUNDAY, sun: Weekday.SUNDAY,
-};
-
-const weekdayAlternation = Object.keys(weekdayNameToWeekday)
-	.sort((left, right) => right.length - left.length)
-	.join('|');
-
-const repeatUnitWordToRecurrenceUnit: Record<string, RecurrenceUnit> = {
-	hour: RecurrenceUnit.Hour, hours: RecurrenceUnit.Hour,
-	day: RecurrenceUnit.Day, days: RecurrenceUnit.Day,
-	week: RecurrenceUnit.Week, weeks: RecurrenceUnit.Week,
-	month: RecurrenceUnit.Month, months: RecurrenceUnit.Month,
-	year: RecurrenceUnit.Year, years: RecurrenceUnit.Year,
-};
-
-const repeatUnitAlternation = Object.keys(repeatUnitWordToRecurrenceUnit)
-	.sort((left, right) => right.length - left.length)
-	.join('|');
-
-const namedRepeatWordToRecurrenceUnit: Record<string, RecurrenceUnit> = {
-	hourly: RecurrenceUnit.Hour,
-	everyday: RecurrenceUnit.Day,
-	daily: RecurrenceUnit.Day,
-	weekly: RecurrenceUnit.Week,
-	monthly: RecurrenceUnit.Month,
-	yearly: RecurrenceUnit.Year,
-	annually: RecurrenceUnit.Year,
-};
-
-function buildRepeatMatch(config: {
-	startIndex: number;
-	endIndex: number;
-	input: string;
-	recurrenceDuration: RecurrenceDuration;
-	explanation: string;
-	startTime?: Date;
-}): RawMatch {
-	const timing: Partial<TaskTimingOptions> = { recurrenceDuration: config.recurrenceDuration };
-	if (config.startTime) timing.startTime = config.startTime;
-	return {
-		field: 'recurrenceDuration',
-		colorClass: 'repeat',
-		startIndex: config.startIndex,
-		endIndex: config.endIndex,
-		matchedText: config.input.slice(config.startIndex, config.endIndex),
-		explanation: config.explanation,
-		timing,
-	};
-}
-
-const repeatMatcher: Matcher = {
-	field: 'recurrenceDuration',
-	colorClass: 'repeat',
-	findMatches({ input, now }) {
-		const matches: RawMatch[] = [];
-
-		const namedRegex = new RegExp(`\\b(${Object.keys(namedRepeatWordToRecurrenceUnit).join('|')}|every\\s+day)\\b`, 'gi');
-		let namedMatch: RegExpExecArray | null;
-		while ((namedMatch = namedRegex.exec(input)) !== null) {
-			const word = namedMatch[1].toLowerCase().replace(/\s+/g, '');
-			const recurrenceDuration: RecurrenceDuration = { amount: 1, unit: namedRepeatWordToRecurrenceUnit[word] };
-			const endIndex = namedMatch.index + namedMatch[0].length;
-			matches.push(buildRepeatMatch({
-				startIndex: namedMatch.index,
-				endIndex,
-				input,
-				recurrenceDuration,
-				explanation: `Repeats every ${formatRecurrenceDuration(recurrenceDuration)}`,
-			}));
-		}
-
-		const everyRegex = /\bevery\s+/gi;
-		let everyMatch: RegExpExecArray | null;
-		while ((everyMatch = everyRegex.exec(input)) !== null) {
-			const argumentStart = everyMatch.index + everyMatch[0].length;
-			const remainder = input.slice(argumentStart);
-
-			const weekdayMatch = new RegExp(`^(${weekdayAlternation})\\b`, 'i').exec(remainder);
-			if (weekdayMatch) {
-				const weekday = weekdayNameToWeekday[weekdayMatch[1].toLowerCase()];
-				const endIndex = argumentStart + weekdayMatch[0].length;
-				matches.push(buildRepeatMatch({
-					startIndex: everyMatch.index,
-					endIndex,
-					input,
-					recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Week },
-					explanation: `Repeats every week on ${weekdayMatch[1]}`,
-					startTime: nextDateForWeekday(weekday, true, now),
-				}));
-				everyRegex.lastIndex = endIndex;
-				continue;
-			}
-
-			const countUnitMatch = new RegExp(`^(?:(\\d+)\\s+)?(${repeatUnitAlternation})\\b`, 'i').exec(remainder);
-			if (countUnitMatch) {
-				const amount = countUnitMatch[1] ? parseInt(countUnitMatch[1], 10) : 1;
-				const recurrenceDuration: RecurrenceDuration = { amount, unit: repeatUnitWordToRecurrenceUnit[countUnitMatch[2].toLowerCase()] };
-				const endIndex = argumentStart + countUnitMatch[0].length;
-				matches.push(buildRepeatMatch({
-					startIndex: everyMatch.index,
-					endIndex,
-					input,
-					recurrenceDuration,
-					explanation: `Repeats every ${formatRecurrenceDuration(recurrenceDuration)}`,
-				}));
-				everyRegex.lastIndex = endIndex;
-			}
-		}
-
-		return matches;
 	},
 };
 

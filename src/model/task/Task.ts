@@ -9,9 +9,10 @@ import { getAncestorIDs, getSubtreeIDsIncludingSelf, findNodeWithParent, mapNode
 import { PastedListItem } from "../../utilities/parsePastedTextIntoNestedListItems";
 import TaskState from "./TaskState";
 import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError, SkipUntilDateInPastError } from "./TaskTimingError";
-import RecurrenceDuration, { addRecurrenceDurations, areRecurrenceDurationsEqual } from "./recurrence/RecurrenceDuration";
+import RecurrenceDuration, { areRecurrenceDurationsEqual, cloneRecurrenceDuration, getWeekdaysOfRecurrenceDuration } from "./recurrence/RecurrenceDuration";
 import TaskOccurrence from "./recurrence/TaskOccurrence";
-import { computeCurrentTaskOccurrence, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
+import { computeCurrentTaskOccurrence, getOccurrenceStartTime, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
+import { moveAnchorOccurrenceToFirstRecurrenceWeekday } from "./recurrence/recurrenceWeekdayOccurrences";
 
 const FIRST_OCCURRENCE_INDEX = 0;
 
@@ -259,14 +260,46 @@ export default class Task {
 	}
 
 	protected getDefaultDeadlineForAnchorOccurrence(anchorStartTime: Date, recurrenceDuration: RecurrenceDuration, existingDeadline: Date | null): Date {
-		const nextOccurrenceStartTime = addRecurrenceDurations(anchorStartTime, recurrenceDuration, 1);
+		const nextOccurrenceStartTime = getOccurrenceStartTime({ anchorStartTime, recurrenceDuration }, 1);
 		const isExistingDeadlineWithinFirstOccurrence =
 			existingDeadline !== null && existingDeadline.getTime() <= nextOccurrenceStartTime.getTime();
 		if (isExistingDeadlineWithinFirstOccurrence) return existingDeadline;
 		return nextOccurrenceStartTime;
 	}
 
-	makeRecurring(recurrenceDuration: RecurrenceDuration, anchorStartTime: Date, currentTime: Date = new Date()): void {
+	protected static moveAnchorOccurrenceToFirstWeekdayOfRecurrence(parameters: {
+		startTime: Date;
+		endTime: Date | null;
+		deadline: Date | null;
+		recurrenceDuration: RecurrenceDuration;
+	}): { startTime: Date; endTime: Date | null; deadline: Date | null } {
+		const weekdays = getWeekdaysOfRecurrenceDuration(parameters.recurrenceDuration);
+		if (weekdays.length === 0) {
+			return {
+				startTime: parameters.startTime,
+				endTime: parameters.endTime,
+				deadline: parameters.deadline,
+			};
+		}
+		return moveAnchorOccurrenceToFirstRecurrenceWeekday({
+			startTime: parameters.startTime,
+			endTime: parameters.endTime,
+			deadline: parameters.deadline,
+			weekdays,
+		});
+	}
+
+	makeRecurring(recurrenceDuration: RecurrenceDuration, requestedAnchorStartTime: Date, currentTime: Date = new Date()): void {
+		const movedAnchorOccurrence = Task.moveAnchorOccurrenceToFirstWeekdayOfRecurrence({
+			startTime: requestedAnchorStartTime,
+			endTime: this.endTime,
+			deadline: this.deadline,
+			recurrenceDuration,
+		});
+		const anchorStartTime = movedAnchorOccurrence.startTime;
+		this.setEndTime(movedAnchorOccurrence.endTime);
+		this.setDeadline(movedAnchorOccurrence.deadline);
+
 		Task.assertStartTimeNotAfterEndTime(anchorStartTime, this.endTime);
 
 		const anchorDeadline = this.getDefaultDeadlineForAnchorOccurrence(anchorStartTime, recurrenceDuration, this.deadline);
@@ -691,12 +724,28 @@ export default class Task {
 		);
 	}
 
-	setFromTaskTimingOptions(taskTimingOptions: TaskTimingOptions, currentTime: Date = new Date()): void {
+	protected static moveTimingOptionsAnchorToFirstRecurrenceWeekday(taskTimingOptions: TaskTimingOptions): TaskTimingOptions {
+		if (taskTimingOptions.recurrenceDuration === null || taskTimingOptions.startTime === null) return taskTimingOptions;
+		return {
+			...taskTimingOptions,
+			...Task.moveAnchorOccurrenceToFirstWeekdayOfRecurrence({
+				startTime: taskTimingOptions.startTime,
+				endTime: taskTimingOptions.endTime,
+				deadline: taskTimingOptions.deadline,
+				recurrenceDuration: taskTimingOptions.recurrenceDuration,
+			}),
+		};
+	}
+
+	setFromTaskTimingOptions(requestedTaskTimingOptions: TaskTimingOptions, currentTime: Date = new Date()): void {
 		const wasRecurring = this.isRecurring();
-		const recurrenceDuration = taskTimingOptions.recurrenceDuration;
-		const finalStartTime = recurrenceDuration !== null
-			? taskTimingOptions.startTime ?? currentTime
-			: taskTimingOptions.startTime;
+		const recurrenceDuration = requestedTaskTimingOptions.recurrenceDuration;
+		const requestedStartTime = recurrenceDuration !== null ? requestedTaskTimingOptions.startTime ?? currentTime : requestedTaskTimingOptions.startTime;
+		const taskTimingOptions = Task.moveTimingOptionsAnchorToFirstRecurrenceWeekday({
+			...requestedTaskTimingOptions,
+			startTime: requestedStartTime,
+		});
+		const finalStartTime = taskTimingOptions.startTime;
 
 		Task.assertStartTimeNotAfterEndTime(finalStartTime, taskTimingOptions.endTime);
 		Task.assertStartTimeNotAfterDeadline(finalStartTime, taskTimingOptions.deadline);
@@ -793,7 +842,7 @@ export default class Task {
 			deadline: this.deadline,
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
-			recurrenceDuration: this.recurrenceDuration === null ? null : { ...this.recurrenceDuration },
+			recurrenceDuration: this.recurrenceDuration === null ? null : cloneRecurrenceDuration(this.recurrenceDuration),
 			shouldNotSkipMissedOccurrences: this.shouldNotSkipMissedOccurrences,
 			completedOccurrenceIndex: this.completedOccurrenceIndex,
 			skippedOccurrenceIndex: this.skippedOccurrenceIndex,
@@ -818,7 +867,7 @@ export default class Task {
 		this.setDeadline(taskState.deadline);
 		this.setMinRequiredTime(taskState.minDuration);
 		this.setMaxRequiredTime(taskState.maxDuration);
-		this.setRecurrenceDuration(taskState.recurrenceDuration === null ? null : { ...taskState.recurrenceDuration });
+		this.setRecurrenceDuration(taskState.recurrenceDuration === null ? null : cloneRecurrenceDuration(taskState.recurrenceDuration));
 		this.setShouldNotSkipMissedOccurrences(taskState.shouldNotSkipMissedOccurrences);
 		this.setCompletedOccurrenceIndex(taskState.completedOccurrenceIndex);
 		this.setSkippedOccurrenceIndex(taskState.skippedOccurrenceIndex);

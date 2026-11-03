@@ -14,7 +14,7 @@ const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
 
 export const PAST_WEEKDAY_TRIGGER_WORDS = ['last', 'past', 'previous', 'prior'];
 
-const weekdayNameToWeekday: Record<string, Weekday> = {
+export const WEEKDAY_NAME_TO_WEEKDAY: Record<string, Weekday> = {
 	monday: Weekday.MONDAY, mon: Weekday.MONDAY,
 	tuesday: Weekday.TUESDAY, tues: Weekday.TUESDAY, tue: Weekday.TUESDAY,
 	wednesday: Weekday.WEDNESDAY, wed: Weekday.WEDNESDAY,
@@ -45,7 +45,7 @@ function toAlternation(words: string[]): string {
 		.join('|');
 }
 
-const weekdayAlternation = toAlternation(Object.keys(weekdayNameToWeekday));
+const weekdayAlternation = toAlternation(Object.keys(WEEKDAY_NAME_TO_WEEKDAY));
 const monthAlternation = toAlternation(Object.keys(monthNameToIndex));
 const pastWeekdayTriggerAlternation = toAlternation(PAST_WEEKDAY_TRIGGER_WORDS);
 
@@ -104,7 +104,7 @@ function parseNamedTimeOfDayWord(config: { text: string; morningTime: Time; nigh
 	};
 }
 
-function parseTimeOfDayPhrase(config: { text: string; morningTime: Time; nightTime: Time }): { matchedLength: number; timeOfDay: { hour: number; minute: number }; dayOffset: number } | null {
+export function parseTimeOfDayPhrase(config: { text: string; morningTime: Time; nightTime: Time }): { matchedLength: number; timeOfDay: { hour: number; minute: number }; dayOffset: number } | null {
 	const leadingWhitespace = /^\s*/.exec(config.text)?.[0].length ?? 0;
 	const rest = config.text.slice(leadingWhitespace);
 
@@ -141,7 +141,7 @@ function makeParseNextWeekday(weekdayWordAlternation: string) {
 		const match = new RegExp(`^next\\s+(${weekdayWordAlternation})`, 'i').exec(text);
 		if (!match) return null;
 
-		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
+		const weekday = WEEKDAY_NAME_TO_WEEKDAY[match[1].toLowerCase()];
 		const upcoming = nextDateForWeekday(weekday, false, now);
 		upcoming.setDate(upcoming.getDate() + 7);
 		return { date: upcoming, matchedLength: match[0].length };
@@ -164,7 +164,7 @@ function makeParseLastWeekday(weekdayWordAlternation: string) {
 		const match = new RegExp(`^(?:${pastWeekdayTriggerAlternation})\\s+(${weekdayWordAlternation})`, 'i').exec(text);
 		if (!match) return null;
 
-		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
+		const weekday = WEEKDAY_NAME_TO_WEEKDAY[match[1].toLowerCase()];
 		return { date: lastDateForWeekday(weekday, now), matchedLength: match[0].length };
 	};
 }
@@ -174,7 +174,7 @@ function makeParseWeekday(weekdayWordAlternation: string) {
 		const match = new RegExp(`^(${weekdayWordAlternation})`, 'i').exec(text);
 		if (!match) return null;
 
-		const weekday = weekdayNameToWeekday[match[1].toLowerCase()];
+		const weekday = WEEKDAY_NAME_TO_WEEKDAY[match[1].toLowerCase()];
 		return { date: nextDateForWeekday(weekday, false, now), matchedLength: match[0].length };
 	};
 }

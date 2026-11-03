@@ -2,6 +2,7 @@ import parseTypedQuickInput from './parseTypedQuickInput';
 import { toEscapedTokenLocation } from './TypedQuickInputToken';
 import Time from '../time-management/Time';
 import RecurrenceUnit from '../task/recurrence/RecurrenceUnit';
+import Weekday from '../time-management/Weekday';
 
 const testNow = new Date(2026, 0, 5, 9, 0, 0);
 const oneMinute = 1000 * 60;
@@ -137,11 +138,53 @@ describe('parseTypedQuickInput', () => {
 		expect(result.timing.recurrenceDuration).toEqual({ amount: 2, unit: RecurrenceUnit.Hour });
 	});
 
-	it('extracts a weekly repeat anchored to a weekday', () => {
+	it('extracts a weekly repeat on one weekday, starting at the morning time and due at the end of that day', () => {
 		const result = parseTypedQuickInput({ input: 'gym every monday', now: testNow });
 		expect(result.cleanedName).toBe('gym');
-		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week });
-		expect(result.timing.startTime?.getDay()).toBe(1);
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.MONDAY] });
+		expect(result.timing.startTime).toEqual(new Date(2026, 0, 5, 7, 0));
+		expect(result.timing.deadline).toEqual(new Date(2026, 0, 5, 23, 0));
+	});
+
+	it.each([
+		['every tue and thu', [Weekday.TUESDAY, Weekday.THURSDAY]],
+		['every monday wednesday', [Weekday.MONDAY, Weekday.WEDNESDAY]],
+		['every friday, saturday, sunday', [Weekday.FRIDAY, Weekday.SATURDAY, Weekday.SUNDAY]],
+		['every fri, sat, and sun', [Weekday.FRIDAY, Weekday.SATURDAY, Weekday.SUNDAY]],
+		['every thu/tue', [Weekday.TUESDAY, Weekday.THURSDAY]],
+		['every weekday', [Weekday.MONDAY, Weekday.TUESDAY, Weekday.WEDNESDAY, Weekday.THURSDAY, Weekday.FRIDAY]],
+		['every weekend', [Weekday.SATURDAY, Weekday.SUNDAY]],
+	])('extracts a weekly repeat on several weekdays from "%s"', (phrase, expectedWeekdays) => {
+		const result = parseTypedQuickInput({ input: `stretch ${phrase}`, now: testNow });
+		expect(result.cleanedName).toBe('stretch');
+		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week, weekdays: expectedWeekdays });
+		expect(result.tokens).toHaveLength(1);
+		expect(result.tokens[0].explanation).toContain('Repeats every week on');
+	});
+
+	it('starts a weekday repeat on the earliest upcoming chosen weekday', () => {
+		const result = parseTypedQuickInput({ input: 'stretch every sat and wed', now: testNow });
+		expect(result.timing.startTime).toEqual(new Date(2026, 0, 7, 7, 0));
+	});
+
+	it('uses a typed time of day as the start of each weekday occurrence', () => {
+		const result = parseTypedQuickInput({ input: 'class every tue and thu at 6pm', now: testNow, nightTime: testNightTime });
+		expect(result.cleanedName).toBe('class');
+		expect(result.timing.startTime).toEqual(new Date(2026, 0, 6, 18, 0));
+		expect(result.timing.deadline).toEqual(new Date(2026, 0, 6, 22, 30));
+	});
+
+	it('moves a time-only deadline onto the first weekday occurrence', () => {
+		const result = parseTypedQuickInput({ input: 'class every tue and thu due 5pm', now: testNow });
+		expect(result.timing.startTime).toEqual(new Date(2026, 0, 6, 7, 0));
+		expect(result.timing.deadline).toEqual(new Date(2026, 0, 6, 17, 0));
+	});
+
+	it('does not treat later weekdays in a repeat list as a due date', () => {
+		const result = parseTypedQuickInput({ input: 'call mom friday every tue and thu', now: testNow });
+		expect(result.cleanedName).toBe('call mom');
+		expect(result.tokens.map(token => token.field)).toEqual(['deadline', 'recurrenceDuration']);
+		expect(result.timing.deadline?.getDay()).toBe(5);
 	});
 
 	it('extracts a duration range from the "takes" form', () => {

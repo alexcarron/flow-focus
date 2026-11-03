@@ -1,0 +1,32 @@
+.weekdayToggles {
+	display: flex;
+	gap: var(--space-extra-small);
+	margin-top: var(--space-small);
+}
+
+.weekdayToggle {
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 2.25rem;
+	aspect-ratio: 1;
+	padding: 0;
+	background: none;
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-full);
+	color: var(--color-text-muted);
+	font-size: var(--font-size-small);
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.weekdayToggle:hover {
+		color: var(--color-text-primary);
+	}
+}
+
+.weekdayToggleSelected {
+	background-color: var(--color-accent-selected-background);
+	border-color: var(--color-accent-border);
+	color: var(--color-text-primary);
+	border-width: 2px;
+}
