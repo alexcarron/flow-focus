@@ -3,7 +3,6 @@ import Task from '../model/task/Task';
 import Tag from '../model/tag/Tag';
 import { useTasksStore } from '../stores/tasksStore';
 import { useTagsStore } from '../stores/tagsStore';
-import { useShrinkToFit } from '../hooks/useShrinkToFit';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
@@ -62,7 +61,6 @@ export default function TaskCard({ task }: Props) {
 	const [stepPendingDeletionID, setStepPendingDeletionID] = useState<string | null>(null);
 	const [stepIDToFocusAfterDeletion, setStepIDToFocusAfterDeletion] = useState<string | null>(null);
 	const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
-	const timeRef = useShrinkToFit<HTMLSpanElement>();
 
 	const descRef = useRef<HTMLHeadingElement>(null);
 	const stepsEditorHandleRef = useRef<StepsTreeEditorHandle | null>(null);
@@ -252,7 +250,7 @@ export default function TaskCard({ task }: Props) {
 						<span>Due {formatDate(deadline)}</span>
 					)}
 					{timeLeftStr && (
-						<span ref={timeRef} className={styles.timeLeft}>
+						<span className={styles.timeLeft}>
 							{timeLeftStr}
 						</span>
 					)}

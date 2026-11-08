@@ -240,7 +240,7 @@
 
 .timeLeft {
 	font-weight: var(--font-weight-semibold);
-	overflow: hidden;
+	flex-shrink: 0;
 	white-space: nowrap;
 }
 
