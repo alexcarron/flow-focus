@@ -11,6 +11,7 @@ import SelectionCheckbox from '../SelectionCheckbox';
 import TaskManagerRow, { TaskManagerRowActions, HidableColumnKey } from '../TaskManagerRow';
 import TagFilterControl from '../TagFilterControl';
 import TimingOptionsPopup from '../TimingOptionsPopup';
+import SkipPopup from '../SkipPopup';
 import ConfirmModal from '../ConfirmModal';
 import CheckIcon from '../svg-icons/CheckIcon';
 import MandatoryIcon from '../svg-icons/MandatoryIcon';
@@ -204,6 +205,7 @@ export default function TasksManagerPage() {
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
 	const [timingTask, setTimingTask] = useState<Task | null>(null);
+	const [skipTask, setSkipTask] = useState<Task | null>(null);
 	const [taskPendingDeletion, setTaskPendingDeletion] = useState<Task | null>(null);
 	const [isDeleteSelectedConfirmOpen, setIsDeleteSelectedConfirmOpen] = useState(false);
 	const [selectedRowIDs, setSelectedRowIDs] = useState<Set<string>>(new Set());
@@ -444,6 +446,7 @@ export default function TasksManagerPage() {
 									hiddenColumnKeys={hiddenColumnKeys}
 									onToggleSelected={() => toggleRowSelected(rowID)}
 									onOpenTiming={() => setTimingTask(task)}
+									onOpenSkip={() => setSkipTask(task)}
 									onRequestDelete={() => setTaskPendingDeletion(task)}
 								/>
 							);
@@ -461,6 +464,14 @@ export default function TasksManagerPage() {
 				isOpen={timingTask !== null}
 				onClose={() => setTimingTask(null)}
 			/>
+
+			{skipTask !== null && (
+				<SkipPopup
+					task={skipTask}
+					isOpen={true}
+					onClose={() => setSkipTask(null)}
+				/>
+			)}
 
 			<ConfirmModal
 				headingText="Delete task?"

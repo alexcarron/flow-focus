@@ -177,6 +177,16 @@
 	padding: var(--space-extra-small);
 }
 
+.rowActions .mobileOnlyActionButton {
+	display: none;
+}
+
+@media (max-width: 599px) {
+	.rowActions .mobileOnlyActionButton {
+		display: inline-flex;
+	}
+}
+
 .rowActionIcon {
 	width: 0.9rem;
 	height: 0.9rem;

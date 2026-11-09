@@ -22,6 +22,7 @@ import CloseIcon from './svg-icons/CloseIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import MandatoryIcon from './svg-icons/MandatoryIcon';
 import TimingIcon from './svg-icons/TimingIcon';
+import SkipIcon from './svg-icons/SkipIcon';
 import styles from './TaskManagerRow.module.css';
 
 export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'timeAvailable' | 'deadline';
@@ -82,10 +83,11 @@ interface Props {
 	hiddenColumnKeys: Set<HidableColumnKey>;
 	onToggleSelected: () => void;
 	onOpenTiming: () => void;
+	onOpenSkip: () => void;
 	onRequestDelete: () => void;
 }
 
-export default function TaskManagerRow({ rowID, task, now, store, tags, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onRequestDelete }: Props) {
+export default function TaskManagerRow({ rowID, task, now, store, tags, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onOpenSkip, onRequestDelete }: Props) {
 	const steps = task.getSteps();
 	const alreadyAddedTagIDs = task.getTagIDs();
 	const alreadyAddedTags = alreadyAddedTagIDs
@@ -289,6 +291,14 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 
 			<td className={isCompactRow ? `${styles.actionsCell} ${styles.actionsCellCompact}` : styles.actionsCell}>
 				<div className={styles.rowActions}>
+					<button
+						onClick={onOpenSkip}
+						className={`button icon touch-hit-area ${styles.rowActionButton} ${styles.mobileOnlyActionButton}`}
+						aria-label="Skip task"
+						title="Skip task"
+					>
+						<SkipIcon className={styles.rowActionIcon} />
+					</button>
 					<button
 						onClick={onOpenTiming}
 						className={`button icon touch-hit-area ${styles.rowActionButton}`}
