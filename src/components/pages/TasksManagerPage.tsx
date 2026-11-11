@@ -29,6 +29,7 @@ enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
 enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartTime, Deadline, DateAdded }
 enum SortDir { Asc, Desc }
 
+const DEFAULT_FILTER = Filter.Active;
 const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'duration', 'timeAvailable', 'deadline'];
 const STACKED_CARD_LAYOUT_MAX_WIDTH_PX = 599;
 
@@ -200,7 +201,7 @@ export default function TasksManagerPage() {
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
 	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
 
-	const [filter, setFilter] = useState<Filter>(Filter.All);
+	const [filter, setFilter] = useState<Filter>(DEFAULT_FILTER);
 	const [searchText, setSearchText] = useState('');
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
