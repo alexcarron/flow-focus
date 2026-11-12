@@ -153,7 +153,7 @@ export default function SettingsPage() {
 				<CheckboxInput
 					value={shouldShowRemainingTasksSummaryOnFocusPage}
 					onChange={setShouldShowRemainingTasksSummaryOnFocusPage}
-					label="Show number of remaining tasks and time to complete them on focus page"
+					label="Show titles of upcoming tasks below the focused task"
 				/>
 
 				<CheckboxInput

@@ -1,0 +1,13 @@
+.titles {
+	color: var(--color-text-subtle);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+.title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

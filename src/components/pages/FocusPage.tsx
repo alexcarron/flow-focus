@@ -8,7 +8,7 @@ import { useActivePointerPositionGetter } from '../../hooks/useActivePointerPosi
 import TaskCard from '../TaskCard';
 import QuickAddTaskBar from '../QuickAddTaskBar';
 import QuickToDoChecklistSection from '../QuickToDoChecklistSection';
-import RemainingTasksSummary from '../RemainingTasksSummary';
+import UpcomingTaskTitles from '../UpcomingTaskTitles';
 import ConfettiBurst from '../animations/ConfettiBurst';
 import { playCelebrationSound } from '../../audio/playCelebrationSound';
 import { playStepCompletionSound } from '../../audio/playStepCompletionSound';
@@ -192,7 +192,7 @@ export default function FocusPage() {
 			{priorityTask ? (
 				<>
 					<TaskCard task={priorityTask} />
-					{shouldShowRemainingTasksSummary && <RemainingTasksSummary />}
+					{shouldShowRemainingTasksSummary && <UpcomingTaskTitles />}
 				</>
 			) : (
 				<div className={styles.emptyState}>
