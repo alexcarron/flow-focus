@@ -6,7 +6,7 @@ FlowFocus exists to reduce decision fatigue by surfacing one task at a time. The
 
 2. Danger is a state you hover into, not one that shouts at rest. Destructive affordances are muted text or icon color at rest, and only intensify to a filled danger color on hover or press.
 
-3. No motion for its own sake. Nothing in the app animates on open and on close, so new floating UI should appear and disappear instantly too, unless a future need proves otherwise.
+3. No motion for its own sake. Floating UI appears and disappears instantly, unless a future need proves otherwise. The one exception is modals on narrow screens, which open as a bottom sheet that slides up into view (skipped under reduced motion) so it reads as coming from the bottom edge it's docked to.
 
 4. Anything that floats above content, like modals and context menus, uses the same building blocks: a dark surface background, a subtle border, rounded corners, a dialog shadow, and the same spacing scale.
 
