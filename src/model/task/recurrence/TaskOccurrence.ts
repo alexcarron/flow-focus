@@ -1,8 +1,8 @@
 type TaskOccurrence = {
 	index: number;
-	startTime: Date;
-	endTime: Date | null;
-	deadline: Date | null;
+	startDate: Date;
+	targetDate: Date | null;
+	dueDate: Date | null;
 };
 
 export default TaskOccurrence;

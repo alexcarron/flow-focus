@@ -1,12 +1,11 @@
 import TaskTimingOptions from '../task/TaskTimingOptions';
 
 export type TypedQuickInputField =
-	| 'deadline'
-	| 'startTime'
-	| 'endTime'
+	| 'dueDate'
+	| 'targetDate'
+	| 'startDate'
 	| 'recurrenceDuration'
 	| 'duration'
-	| 'isMandatory'
 	| 'ignoredDate'
 	| 'steps'
 	| 'tag';
@@ -44,21 +43,17 @@ export type TypedQuickInputParseResult = {
 };
 
 const fieldToBecomeLabel: Record<TypedQuickInputField, string> = {
-	deadline: 'deadline',
-	startTime: 'start time',
-	endTime: 'end time',
+	dueDate: 'due date',
+	targetDate: 'target date',
+	startDate: 'start date',
 	recurrenceDuration: 'repeat interval',
 	duration: 'duration',
-	isMandatory: 'mandatory',
 	ignoredDate: 'date',
 	steps: 'step',
 	tag: 'tag',
 };
 
 export function getTokenBecomeLabel(token: TypedQuickInputToken): string {
-	if (token.field === 'isMandatory') {
-		return token.explanation.includes('optional') ? 'optional' : 'mandatory';
-	}
 	return fieldToBecomeLabel[token.field];
 }
 
@@ -66,8 +61,11 @@ export function toEscapedTokenLocation(token: TypedQuickInputToken): EscapedToke
 	return { field: token.field, matchedText: token.matchedText, startIndex: token.startIndex, endIndex: token.endIndex };
 }
 
+const fieldsThatCanSwapBetweenDateKinds: TypedQuickInputField[] = ['ignoredDate', 'targetDate', 'dueDate'];
+
 function getCanonicalFieldForEscapeIdentity(field: TypedQuickInputField): TypedQuickInputField {
-	return field === 'ignoredDate' ? 'deadline' : field;
+	if (fieldsThatCanSwapBetweenDateKinds.includes(field)) return 'targetDate';
+	return field;
 }
 
 export function isTokenEscapedByLocation({ token, location }: { token: EscapedTokenLocation; location: EscapedTokenLocation }): boolean {

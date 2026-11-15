@@ -30,12 +30,11 @@ const NO_TAG_IDS: string[] = [];
 const NO_TAG_NAMES: string[] = [];
 
 const fieldToColorClass: Record<TypedQuickInputField, string> = {
-	deadline: styles.tokenDeadline,
-	startTime: styles.tokenStart,
-	endTime: styles.tokenEnd,
+	dueDate: styles.tokenDueDate,
+	targetDate: styles.tokenTargetDate,
+	startDate: styles.tokenStartDate,
 	recurrenceDuration: styles.tokenRepeat,
 	duration: styles.tokenDuration,
-	isMandatory: styles.tokenMandatory,
 	ignoredDate: styles.tokenIgnoredDate,
 	steps: styles.tokenSteps,
 	tag: styles.tokenTag,

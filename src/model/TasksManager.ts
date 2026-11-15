@@ -61,7 +61,7 @@ export default class TasksManager {
 		const sleepDateRange = this.asleepTimeWindow.toDateRange(currentTime);
 
 		const task = new Task(this, "Go To Sleep");
-		task.setDeadline(sleepDateRange.getEndDate());
+		task.setDueDate(sleepDateRange.getEndDate());
 		task.makeRecurring({ amount: 1, unit: RecurrenceUnit.Day }, sleepDateRange.getStartDate(), currentTime);
 
 		return task;

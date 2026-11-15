@@ -22,9 +22,9 @@ export function serializeTask(task: Task): TaskWriteInput {
 		id: task.id,
 		description: state.description,
 		steps: state.steps.map(stepToStepRow),
-		startTime: state.startTime ? state.startTime.toISOString() : null,
-		endTime: state.endTime ? state.endTime.toISOString() : null,
-		deadline: state.deadline ? state.deadline.toISOString() : null,
+		startDate: state.startDate ? state.startDate.toISOString() : null,
+		targetDate: state.targetDate ? state.targetDate.toISOString() : null,
+		dueDate: state.dueDate ? state.dueDate.toISOString() : null,
 		minRequiredTime: state.minDuration,
 		maxRequiredTime: state.maxDuration,
 		recurrenceDuration: state.recurrenceDuration,
@@ -32,7 +32,6 @@ export function serializeTask(task: Task): TaskWriteInput {
 		completedOccurrenceIndex: state.completedOccurrenceIndex,
 		skippedOccurrenceIndex: state.skippedOccurrenceIndex,
 		progressOccurrenceIndex: state.progressOccurrenceIndex,
-		isMandatory: state.isMandatory,
 		isComplete: state.isComplete,
 		isSkipped: state.isSkipped,
 		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
@@ -45,9 +44,9 @@ export function serializeTask(task: Task): TaskWriteInput {
 export function deserializeRow(row: PlainTaskRow): {
 	description: string;
 	steps: Step[];
-	startTime: Date | null;
-	endTime: Date | null;
-	deadline: Date | null;
+	startDate: Date | null;
+	targetDate: Date | null;
+	dueDate: Date | null;
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
 	recurrenceDuration: RecurrenceDuration | null;
@@ -55,7 +54,6 @@ export function deserializeRow(row: PlainTaskRow): {
 	completedOccurrenceIndex: number | null;
 	skippedOccurrenceIndex: number | null;
 	progressOccurrenceIndex: number | null;
-	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
 	skippedUntil: Date | null;
@@ -66,9 +64,9 @@ export function deserializeRow(row: PlainTaskRow): {
 	return {
 		description: row.description,
 		steps: row.steps.map(stepRowToStep),
-		startTime: row.startTime ? new Date(row.startTime) : null,
-		endTime: row.endTime ? new Date(row.endTime) : null,
-		deadline: row.deadline ? new Date(row.deadline) : null,
+		startDate: row.startDate ? new Date(row.startDate) : null,
+		targetDate: row.targetDate ? new Date(row.targetDate) : null,
+		dueDate: row.dueDate ? new Date(row.dueDate) : null,
 		minRequiredTime: row.minRequiredTime,
 		maxRequiredTime: row.maxRequiredTime,
 		recurrenceDuration: row.recurrenceDuration,
@@ -76,7 +74,6 @@ export function deserializeRow(row: PlainTaskRow): {
 		completedOccurrenceIndex: row.completedOccurrenceIndex,
 		skippedOccurrenceIndex: row.skippedOccurrenceIndex,
 		progressOccurrenceIndex: row.progressOccurrenceIndex,
-		isMandatory: row.isMandatory,
 		isComplete: row.isComplete,
 		isSkipped: row.isSkipped,
 		skippedUntil: row.skippedUntil ? new Date(row.skippedUntil) : null,
@@ -93,9 +90,9 @@ export interface CloudTaskRow {
 	user_id: string;
 	description: string;
 	steps: PlainStepRow[];
-	start_time: string | null;
-	end_time: string | null;
-	deadline: string | null;
+	start_date: string | null;
+	target_date: string | null;
+	due_date: string | null;
 	min_required_time: number | null;
 	max_required_time: number | null;
 	recurrence_duration_amount: number | null;
@@ -105,7 +102,6 @@ export interface CloudTaskRow {
 	completed_occurrence_index: number | null;
 	skipped_occurrence_index: number | null;
 	progress_occurrence_index: number | null;
-	is_mandatory: boolean;
 	is_complete: boolean;
 	is_skipped: boolean;
 	skipped_until: string | null;
@@ -150,9 +146,9 @@ export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskR
 		user_id: userID,
 		description: row.description,
 		steps: row.steps,
-		start_time: normalizeNullableTimestamp(row.startTime),
-		end_time: normalizeNullableTimestamp(row.endTime),
-		deadline: normalizeNullableTimestamp(row.deadline),
+		start_date: normalizeNullableTimestamp(row.startDate),
+		target_date: normalizeNullableTimestamp(row.targetDate),
+		due_date: normalizeNullableTimestamp(row.dueDate),
 		min_required_time: row.minRequiredTime,
 		max_required_time: row.maxRequiredTime,
 		recurrence_duration_amount: row.recurrenceDuration?.amount ?? null,
@@ -162,7 +158,6 @@ export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskR
 		completed_occurrence_index: row.completedOccurrenceIndex,
 		skipped_occurrence_index: row.skippedOccurrenceIndex,
 		progress_occurrence_index: row.progressOccurrenceIndex,
-		is_mandatory: row.isMandatory,
 		is_complete: row.isComplete,
 		is_skipped: row.isSkipped,
 		skipped_until: normalizeNullableTimestamp(row.skippedUntil),
@@ -178,9 +173,9 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		id: row.id,
 		description: row.description,
 		steps: row.steps,
-		startTime: normalizeNullableTimestamp(row.start_time),
-		endTime: normalizeNullableTimestamp(row.end_time),
-		deadline: normalizeNullableTimestamp(row.deadline),
+		startDate: normalizeNullableTimestamp(row.start_date),
+		targetDate: normalizeNullableTimestamp(row.target_date),
+		dueDate: normalizeNullableTimestamp(row.due_date),
 		minRequiredTime: row.min_required_time,
 		maxRequiredTime: row.max_required_time,
 		recurrenceDuration: convertCloudRecurrenceDurationColumnsToRecurrenceDuration(row),
@@ -188,7 +183,6 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		completedOccurrenceIndex: row.completed_occurrence_index,
 		skippedOccurrenceIndex: row.skipped_occurrence_index,
 		progressOccurrenceIndex: row.progress_occurrence_index,
-		isMandatory: row.is_mandatory,
 		isComplete: row.is_complete,
 		isSkipped: row.is_skipped,
 		skippedUntil: normalizeNullableTimestamp(row.skipped_until),

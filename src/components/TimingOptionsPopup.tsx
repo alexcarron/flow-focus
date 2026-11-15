@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Task from '../model/task/Task';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
+import { getDateOrderErrorMessage } from '../model/task/TaskTimingError';
 import { useTasksStore } from '../stores/tasksStore';
 import TimingOptionsInput from './inputs/TimingOptionsInput';
 import ErrorMessage from './errors/ErrorMessage';
@@ -36,13 +36,7 @@ export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
 		try {
 			setTimingOptions(task, options);
 		} catch (timingError) {
-			if (timingError instanceof StartTimeAfterEndTimeError) {
-				setError('Start time cannot be after end time.');
-			} else if (timingError instanceof StartTimeAfterDeadlineError) {
-				setError('Start time cannot be after the deadline.');
-			} else {
-				setError('Failed to update timing options.');
-			}
+			setError(getDateOrderErrorMessage(timingError) ?? 'Failed to update timing options.');
 			return;
 		}
 		onClose();

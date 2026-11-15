@@ -1,5 +1,3 @@
-import Task from '../../../model/task/Task';
-import Step from '../../../model/task/step/Step';
 import QuickToDoChecklistItem from '../../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import Tag from '../../../model/tag/Tag';
 import { AppSettings } from '../../../model/AppSettings';
@@ -21,35 +19,6 @@ export interface BackupData {
 	tasks: BackupTask[];
 	quickToDoChecklist: QuickToDoChecklistItem[];
 	tags: Tag[];
-}
-
-export function taskToBackupTask(task: Task): BackupTask {
-	const state = task.getState();
-	return {
-		description: state.description,
-		steps: state.steps.map(stepToBackupStep),
-		startTime: state.startTime ? state.startTime.toISOString() : null,
-		endTime: state.endTime ? state.endTime.toISOString() : null,
-		deadline: state.deadline ? state.deadline.toISOString() : null,
-		minRequiredTime: state.minDuration,
-		maxRequiredTime: state.maxDuration,
-		recurrenceDuration: state.recurrenceDuration,
-		shouldNotSkipMissedOccurrences: state.shouldNotSkipMissedOccurrences,
-		completedOccurrenceIndex: state.completedOccurrenceIndex,
-		skippedOccurrenceIndex: state.skippedOccurrenceIndex,
-		progressOccurrenceIndex: state.progressOccurrenceIndex,
-		isMandatory: state.isMandatory,
-		isComplete: state.isComplete,
-		isSkipped: state.isSkipped,
-		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
-		lastActionedStep: state.lastActionedStep,
-		tagIDs: state.tagIDs,
-		createdAt: task.createdAt.toISOString(),
-	};
-}
-
-function stepToBackupStep(step: Step): BackupStep {
-	return { id: step.id, text: step.text, status: step.status, children: step.children.map(stepToBackupStep) };
 }
 
 export function isBackupTask(value: unknown): value is BackupTask {

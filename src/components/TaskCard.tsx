@@ -90,10 +90,11 @@ export default function TaskCard({ task }: Props) {
 		}
 	}, [task.getDescription()]);
 
-	const deadline = task.getDeadline();
-	const startTime = task.getStartTime();
-	const timeUntilDeadline = task.getTimeUntilDeadline(currentTime);
-	const timeLeftStr = timeUntilDeadline === Number.POSITIVE_INFINITY ? null : getTimeString(timeUntilDeadline);
+	const startDate = task.getStartDate();
+	const targetDate = task.getTargetDate();
+	const dueDate = task.getDueDate();
+	const timeUntilDueDate = task.getTimeUntilDueDate(currentTime);
+	const timeLeftStr = timeUntilDueDate === Number.POSITIVE_INFINITY ? null : getTimeString(timeUntilDueDate);
 	const progress = task.getProgress();
 	const progressPct = progress * 94 + 3;
 	const skippedUntil = task.getSkippedUntil();
@@ -243,11 +244,14 @@ export default function TaskCard({ task }: Props) {
 
 			<div className={styles.meta}>
 				<div className={styles.metaRow}>
-					{startTime && startTime > currentTime && (
-						<span>Starts {formatDate(startTime)}</span>
+					{startDate && startDate > currentTime && (
+						<span className={styles.date}>Starts {formatDate(startDate)}</span>
 					)}
-					{deadline && (
-						<span>Due {formatDate(deadline)}</span>
+					{targetDate && (
+						<span className={`${styles.date} ${styles.targetDate}`}>Ideally {formatDate(targetDate)}</span>
+					)}
+					{dueDate && (
+						<span className={styles.date}>Due {formatDate(dueDate)}</span>
 					)}
 					{timeLeftStr && (
 						<span className={styles.timeLeft}>

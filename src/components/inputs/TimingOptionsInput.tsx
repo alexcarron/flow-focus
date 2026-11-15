@@ -2,7 +2,7 @@ import { useState } from 'react';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
 import RecurrenceDuration, { getWeekdaysOfRecurrenceDuration, hasRecurrenceWeekdays } from '../../model/task/recurrence/RecurrenceDuration';
 import RecurrenceUnit from '../../model/task/recurrence/RecurrenceUnit';
-import { getDefaultDeadlineOfWeekdayRepeat, moveAnchorOccurrenceToFirstRecurrenceWeekday } from '../../model/task/recurrence/recurrenceWeekdayOccurrences';
+import { getDefaultTargetDateOfWeekdayRepeat, moveAnchorOccurrenceToFirstRecurrenceWeekday } from '../../model/task/recurrence/recurrenceWeekdayOccurrences';
 import Time from '../../model/time-management/Time';
 import { getStartOfDay } from '../../utilities/dateFormatting';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -10,7 +10,6 @@ import DatetimeInput from './DatetimeInput';
 import RecurrenceDurationInput from './RecurrenceDurationInput';
 import DurationRangeInput from './DurationRangeInput';
 import CheckboxInput from './CheckboxInput';
-import MandatoryIcon from '../svg-icons/MandatoryIcon';
 import styles from './TimingOptionsInput.module.css';
 
 interface Props {
@@ -43,14 +42,15 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 
 		const wereWeekdaysSelectedBefore = value.recurrenceDuration !== null && hasRecurrenceWeekdays(value.recurrenceDuration);
 		const anchorOccurrence = moveAnchorOccurrenceToFirstRecurrenceWeekday({
-			startTime: value.startTime ?? getTodayAtTimeOfDay(morningTime),
-			endTime: value.endTime,
-			deadline: value.deadline,
+			startDate: value.startDate ?? getTodayAtTimeOfDay(morningTime),
+			targetDate: value.targetDate,
+			dueDate: value.dueDate,
 			weekdays: getWeekdaysOfRecurrenceDuration(recurrenceDuration),
 		});
-		if (!wereWeekdaysSelectedBefore && anchorOccurrence.deadline === null) {
-			anchorOccurrence.deadline = getDefaultDeadlineOfWeekdayRepeat({
-				startTime: anchorOccurrence.startTime,
+		const hasTargetOrDueDate = anchorOccurrence.targetDate !== null || anchorOccurrence.dueDate !== null;
+		if (!wereWeekdaysSelectedBefore && !hasTargetOrDueDate) {
+			anchorOccurrence.targetDate = getDefaultTargetDateOfWeekdayRepeat({
+				startDate: anchorOccurrence.startDate,
 				endOfDayTimeOfDay: { hour: nightTime.getHour(), minute: nightTime.getMinute() },
 			});
 		}
@@ -63,24 +63,24 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 	return (
 		<div className={styles.fields}>
 			<DatetimeInput
-				label="Start time"
-				description="When this task will begin to appear. It will stay hidden until then. Leave blank if you can start this task right now."
-				value={value.startTime}
-				onChange={startTime => update({ startTime })}
+				label="Start date"
+				description="The earliest you can work on this task. It stays hidden until then. Leave blank if you can start it right now."
+				value={value.startDate}
+				onChange={startDate => update({ startDate })}
 				defaultTimeOfDay="morning"
 			/>
 			<DatetimeInput
-				label="End time"
-				description="When this task will no longer be shown, even if you haven't completed it yet. Leave blank if this task can always be attempted."
-				value={value.endTime}
-				onChange={endTime => update({ endTime })}
+				label="Target date"
+				description="When you'd ideally like this done. Missing it just means your plan slipped. Leave blank if you're not aiming for a date."
+				value={value.targetDate}
+				onChange={targetDate => update({ targetDate })}
 				defaultTimeOfDay="night"
 			/>
 			<DatetimeInput
-				label="Deadline"
-				description="When you want to complete this task. Leave blank if it does not matter when this task is done."
-				value={value.deadline}
-				onChange={deadline => update({ deadline })}
+				label="Due date"
+				description="When this has to be done. Only a due date can make a task urgent. Leave blank if it doesn't have to be done by a certain date."
+				value={value.dueDate}
+				onChange={dueDate => update({ dueDate })}
 				defaultTimeOfDay="night"
 			/>
 			<DurationRangeInput
@@ -116,20 +116,12 @@ export default function TimingOptionsInput({ value, onChange }: Props) {
 								value={value.shouldNotSkipMissedOccurrences}
 								onChange={shouldNotSkipMissedOccurrences => update({ shouldNotSkipMissedOccurrences })}
 								label="Don't skip missed repeats"
-								description="If a repeat's deadline passes without you completing it, keep showing that overdue repeat until you complete or skip it, instead of moving on to the current one."
+								description="If you don't complete a repeat before the next one starts, keep showing the missed one until you complete or skip it, instead of moving on to the current one."
 							/>
 						)}
 					</div>
 				</>
 			)}
-			<CheckboxInput
-				value={value.isMandatory}
-				onChange={isMandatory => update({ isMandatory })}
-				label="Mandatory"
-				description="Whether this task should jump ahead of other optional tasks that are due sooner."
-				icon={<MandatoryIcon />}
-				accentColor="var(--color-mandatory)"
-			/>
 		</div>
 	);
 }

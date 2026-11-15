@@ -20,12 +20,11 @@ import TagChip from './TagChip';
 import AddTagPopover from './AddTagPopover';
 import CloseIcon from './svg-icons/CloseIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
-import MandatoryIcon from './svg-icons/MandatoryIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import SkipIcon from './svg-icons/SkipIcon';
 import styles from './TaskManagerRow.module.css';
 
-export type HidableColumnKey = 'repeat' | 'start' | 'duration' | 'timeAvailable' | 'deadline';
+export type HidableColumnKey = 'repeat' | 'startDate' | 'duration' | 'timeAvailable' | 'targetDate' | 'dueDate';
 
 function formatRecurrenceDurationForRepeatColumn(recurrenceDuration: RecurrenceDuration): string {
 	if (hasRecurrenceWeekdays(recurrenceDuration)) return formatWeekdaysOfRecurrenceDuration(recurrenceDuration);
@@ -57,7 +56,6 @@ export interface TaskManagerRowActions {
 	addFirstStep: (task: Task) => string;
 	deleteStep: (task: Task, stepID: string) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
-	setMandatory: (task: Task, isMandatory: boolean) => void;
 	cancelSkip: (task: Task) => void;
 	deleteTask: (task: Task) => Promise<void>;
 	refreshTasks: () => void;
@@ -95,9 +93,10 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 		.filter((tag): tag is Tag => tag !== undefined);
 	const minMs = task.getMinRequiredTime() ?? null;
 	const maxMs = task.hasMaxRequiredTime() ? task.getMaxRequiredTime(now) : null;
-	const startTime = task.getStartTime();
-	const displayStartTime = startTime && startTime > now ? startTime : null;
-	const endTime = task.getEndTime();
+	const startDate = task.getStartDate();
+	const displayStartDate = startDate && startDate > now ? startDate : null;
+	const targetDate = task.getTargetDate();
+	const dueDate = task.getDueDate();
 	const skippedUntil = task.getSkippedUntil();
 	const isSkipActive = skippedUntil !== null && skippedUntil > now;
 	const isCompactRow = steps.length === 0 && alreadyAddedTags.length === 0 && !isSkipActive;
@@ -136,15 +135,6 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 				<CheckboxInput
 					value={task.getIsComplete()}
 					onChange={v => store.setComplete(task, v)}
-				/>
-			</td>
-
-			<td className={isCompactRow ? `${styles.checkboxCell} ${styles.iconColumn} ${styles.iconColumnCompact}` : `${styles.checkboxCell} ${styles.iconColumn}`}>
-				<CheckboxInput
-					value={task.getIsMandatory()}
-					onChange={v => store.setMandatory(task, v)}
-					icon={<MandatoryIcon />}
-					accentColor="var(--color-mandatory)"
 				/>
 			</td>
 
@@ -258,8 +248,8 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 			</td>
 
 			<td data-mobile-label="Time Left to Complete" data-mobile-empty={task.getIsComplete() ? 'true' : 'false'} className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
-				{task.getDeadline()
-					? formatTime(task.getTimeToComplete(now))
+				{dueDate
+					? formatTime(task.getTimeToCompleteByDueDate(now))
 					: '∞'}
 			</td>
 
@@ -271,12 +261,8 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td data-mobile-label="Start" data-mobile-empty={displayStartTime ? 'false' : 'true'} className={hiddenColumnKeys.has('start') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
-				{displayStartTime ? formatDate(displayStartTime) : <span className={styles.emptyValue}>—</span>}
-			</td>
-
-			<td data-mobile-label="End" data-mobile-empty={endTime ? 'false' : 'true'} className={`${styles.cell} ${styles.endCell}`}>
-				{endTime ? formatDate(endTime) : <span className={styles.emptyValue}>—</span>}
+			<td data-mobile-label="Start Date" data-mobile-empty={displayStartDate ? 'false' : 'true'} className={hiddenColumnKeys.has('startDate') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+				{displayStartDate ? formatDate(displayStartDate) : <span className={styles.emptyValue}>—</span>}
 			</td>
 
 			<td data-mobile-label="Repeat" data-mobile-empty={task.getRecurrenceDuration() === null ? 'true' : 'false'} className={hiddenColumnKeys.has('repeat') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
@@ -285,8 +271,12 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 					: <span className={styles.emptyValue}>—</span>}
 			</td>
 
-			<td data-mobile-label="Deadline" data-mobile-empty={task.getDeadline() ? 'false' : 'true'} className={hiddenColumnKeys.has('deadline') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
-				{task.getDeadline() ? formatDate(task.getDeadline(), '—') : <span className={styles.emptyValue}>—</span>}
+			<td data-mobile-label="Target Date" data-mobile-empty={targetDate ? 'false' : 'true'} className={hiddenColumnKeys.has('targetDate') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+				{targetDate ? formatDate(targetDate) : <span className={styles.emptyValue}>—</span>}
+			</td>
+
+			<td data-mobile-label="Due Date" data-mobile-empty={dueDate ? 'false' : 'true'} className={hiddenColumnKeys.has('dueDate') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
+				{dueDate ? formatDate(dueDate) : <span className={styles.emptyValue}>—</span>}
 			</td>
 
 			<td className={isCompactRow ? `${styles.actionsCell} ${styles.actionsCellCompact}` : styles.actionsCell}>

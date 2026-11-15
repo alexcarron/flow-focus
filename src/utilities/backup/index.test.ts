@@ -6,7 +6,8 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV10';
+import { BACKUP_FORMAT } from './versions/backupV11';
+import { BACKUP_FORMAT as BACKUP_FORMAT_V10 } from './versions/backupV10';
 import { BACKUP_FORMAT as BACKUP_FORMAT_V9 } from './versions/backupV9';
 import { BACKUP_FORMAT_V6 } from './versions/backupV6';
 import { BACKUP_FORMAT_V1 } from './versions/backupV1';
@@ -156,8 +157,8 @@ describe('readBackupFile', () => {
 
 		expect(migrated.format).toBe(BACKUP_FORMAT);
 		expect(migrated.tasks[0].recurrenceDuration).toEqual({ amount: 1, unit: 'week' });
-		expect(migrated.tasks[0].startTime).toBe('2026-09-13T08:00:00.000Z');
-		expect(migrated.tasks[0].deadline).toBe('2026-09-20T08:00:00.000Z');
+		expect(migrated.tasks[0].startDate).toBe('2026-09-13T08:00:00.000Z');
+		expect(migrated.tasks[0].dueDate).toBe('2026-09-20T08:00:00.000Z');
 		expect(migrated.tasks[0].progressOccurrenceIndex).toBe(0);
 		expect(migrated.tasks[0]).not.toHaveProperty('repeatInterval');
 	});
@@ -199,6 +200,70 @@ describe('readBackupFile', () => {
 		expect(migrated.tasks[0].createdAt).toBe('2026-08-15T10:00:00.000Z');
 	});
 
+	it("turns a v10 backup's mandatory flags and end times into target and due dates", async () => {
+		const makeV10Task = (dates: { description: string; startTime: string | null; endTime: string | null; deadline: string | null; isMandatory: boolean }) => ({
+			steps: [],
+			minRequiredTime: null,
+			maxRequiredTime: null,
+			recurrenceDuration: null,
+			shouldNotSkipMissedOccurrences: false,
+			completedOccurrenceIndex: null,
+			skippedOccurrenceIndex: null,
+			progressOccurrenceIndex: null,
+			isComplete: false,
+			isSkipped: false,
+			skippedUntil: null,
+			lastActionedStep: null,
+			tagIDs: [],
+			createdAt: '2026-08-15T10:00:00.000Z',
+			...dates,
+		});
+		const v10Backup = {
+			format: BACKUP_FORMAT_V10,
+			exportedAt: '2026-11-15T10:00:00.000Z',
+			settings: DEFAULT_SETTINGS,
+			tasks: [
+				makeV10Task({
+					description: 'Cook batch meals',
+					startTime: '2026-11-14T00:00:00.000Z',
+					endTime: null,
+					deadline: '2026-11-15T23:00:00.000Z',
+					isMandatory: true,
+				}),
+				makeV10Task({
+					description: 'Play a game',
+					startTime: null,
+					endTime: null,
+					deadline: '2026-11-15T17:00:00.000Z',
+					isMandatory: false,
+				}),
+				makeV10Task({
+					description: 'Weekly routine',
+					startTime: null,
+					endTime: '2026-11-16T23:00:00.000Z',
+					deadline: '2026-11-15T23:00:00.000Z',
+					isMandatory: true,
+				}),
+			],
+			quickToDoChecklist: [],
+			tags: [],
+		};
+
+		const migrated = await readBackupFile(makeBackupFile(v10Backup));
+		const [cookBatchMeals, playAGame, weeklyRoutine] = migrated.tasks;
+
+		expect(migrated.format).toBe(BACKUP_FORMAT);
+		expect(cookBatchMeals.startDate).toBe('2026-11-14T00:00:00.000Z');
+		expect(cookBatchMeals.targetDate).toBeNull();
+		expect(cookBatchMeals.dueDate).toBe('2026-11-15T23:00:00.000Z');
+		expect(playAGame.targetDate).toBe('2026-11-15T17:00:00.000Z');
+		expect(playAGame.dueDate).toBeNull();
+		expect(weeklyRoutine.targetDate).toBe('2026-11-15T23:00:00.000Z');
+		expect(weeklyRoutine.dueDate).toBe('2026-11-16T23:00:00.000Z');
+		expect(weeklyRoutine).not.toHaveProperty('isMandatory');
+		expect(weeklyRoutine).not.toHaveProperty('endTime');
+	});
+
 	it('rejects a file that is not a recognized backup', async () => {
 		await expect(readBackupFile(makeBackupFile({ not: 'a backup' }))).rejects.toThrow();
 	});
@@ -216,9 +281,9 @@ describe('applyBackup', () => {
 				{
 					description: 'Restored task',
 					steps: [],
-					startTime: null,
-					endTime: null,
-					deadline: null,
+					startDate: null,
+					targetDate: null,
+					dueDate: null,
 					minRequiredTime: null,
 					maxRequiredTime: null,
 					recurrenceDuration: null,
@@ -226,7 +291,6 @@ describe('applyBackup', () => {
 					completedOccurrenceIndex: null,
 					skippedOccurrenceIndex: null,
 					progressOccurrenceIndex: null,
-					isMandatory: false,
 					isComplete: false,
 					isSkipped: false,
 					skippedUntil: null,
@@ -261,9 +325,9 @@ describe('backup and restore while signed in', () => {
 			id: 'local-only-task',
 			description: 'Local-only leftover task',
 			steps: [],
-			startTime: null,
-			endTime: null,
-			deadline: null,
+			startDate: null,
+			targetDate: null,
+			dueDate: null,
 			minRequiredTime: null,
 			maxRequiredTime: null,
 			recurrenceDuration: null,
@@ -271,7 +335,6 @@ describe('backup and restore while signed in', () => {
 			completedOccurrenceIndex: null,
 			skippedOccurrenceIndex: null,
 			progressOccurrenceIndex: null,
-			isMandatory: false,
 			isComplete: false,
 			isSkipped: false,
 			skippedUntil: null,
@@ -308,9 +371,9 @@ describe('backup and restore while signed in', () => {
 				{
 					description: 'Restored account task',
 					steps: [],
-					startTime: null,
-					endTime: null,
-					deadline: null,
+					startDate: null,
+					targetDate: null,
+					dueDate: null,
 					minRequiredTime: null,
 					maxRequiredTime: null,
 					recurrenceDuration: null,
@@ -318,7 +381,6 @@ describe('backup and restore while signed in', () => {
 					completedOccurrenceIndex: null,
 					skippedOccurrenceIndex: null,
 					progressOccurrenceIndex: null,
-					isMandatory: false,
 					isComplete: false,
 					isSkipped: false,
 					skippedUntil: null,

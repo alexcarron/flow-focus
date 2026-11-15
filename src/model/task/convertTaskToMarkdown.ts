@@ -29,18 +29,26 @@ function formatTaskDurationForMarkdown({ task, now }: { task: Task; now: Date })
 
 function convertTaskDetailsToMarkdownLines({ task, now }: { task: Task; now: Date }): string[] {
 	const detailLines: string[] = [];
-	const startTime = task.getStartTime();
-	const deadline = task.getDeadline();
-	const endTime = task.getEndTime();
+	const startDate = task.getStartDate();
+	const targetDate = task.getTargetDate();
+	const dueDate = task.getDueDate();
 	const recurrenceDuration = task.getRecurrenceDuration();
 	const formattedDuration = formatTaskDurationForMarkdown({ task, now });
 	const skippedUntil = task.getSkippedUntil();
 	const isSkipActive = skippedUntil !== null && skippedUntil > now;
 
-	if (task.getIsMandatory()) detailLines.push('Mandatory');
-	if (startTime !== null) detailLines.push(`Starts ${formatAbsoluteDateAndTime(startTime)}`);
-	if (deadline !== null) detailLines.push(`Due ${formatAbsoluteDateAndTime(deadline)}`);
-	if (endTime !== null) detailLines.push(`Ends ${formatAbsoluteDateAndTime(endTime)}`);
+	if (startDate !== null) {
+		const formattedStartDate = formatAbsoluteDateAndTime(startDate);
+		detailLines.push(`Starts ${formattedStartDate}`);
+	}
+	if (targetDate !== null) {
+		const formattedTargetDate = formatAbsoluteDateAndTime(targetDate);
+		detailLines.push(`Ideally ${formattedTargetDate}`);
+	}
+	if (dueDate !== null) {
+		const formattedDueDate = formatAbsoluteDateAndTime(dueDate);
+		detailLines.push(`Due ${formattedDueDate}`);
+	}
 	if (recurrenceDuration !== null) detailLines.push(`Repeats every ${formatRecurrenceDuration(recurrenceDuration)}`);
 	if (formattedDuration !== null) detailLines.push(`Duration: ${formattedDuration}`);
 	if (isSkipActive) detailLines.push(`Skipped until ${formatAbsoluteDateAndTime(skippedUntil)}`);

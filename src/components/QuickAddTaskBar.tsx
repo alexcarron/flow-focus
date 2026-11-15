@@ -12,7 +12,7 @@ import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import Step from '../model/task/step/Step';
 import { createStep, pruneEmptySteps, convertPastedListItemsIntoSteps, insertStepsAfterStepReplacingItIfBlank } from '../model/task/step/stepTree';
 import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode, getNodeIDsInDepthFirstOrder } from '../utilities/tree/orderedTree';
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../model/task/TaskTimingError';
+import { getDateOrderErrorMessage } from '../model/task/TaskTimingError';
 import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TypedQuickInput from './inputs/TypedQuickInput';
@@ -21,14 +21,13 @@ import EyeOffIcon from './svg-icons/EyeOffIcon';
 import styles from './QuickAddTaskBar.module.css';
 
 const DEFAULT_TIMING: TaskTimingOptions = {
-	startTime: null,
-	endTime: null,
-	deadline: null,
+	startDate: null,
+	targetDate: null,
+	dueDate: null,
 	minDuration: null,
 	maxDuration: null,
 	recurrenceDuration: null,
 	shouldNotSkipMissedOccurrences: false,
-	isMandatory: true,
 };
 
 interface Props {
@@ -126,10 +125,9 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			setManualSteps([]);
 			setIsStepsSectionVisible(false);
 		} catch (creationError) {
-			if (creationError instanceof StartTimeAfterEndTimeError) {
-				setErrorMessage('Start time cannot be after end time.');
-			} else if (creationError instanceof StartTimeAfterDeadlineError) {
-				setErrorMessage('Start time cannot be after the deadline.');
+			const dateOrderErrorMessage = getDateOrderErrorMessage(creationError);
+			if (dateOrderErrorMessage !== null) {
+				setErrorMessage(dateOrderErrorMessage);
 			} else if (creationError instanceof DuplicateTagNameError || creationError instanceof EmptyTagNameError) {
 				setErrorMessage(creationError.message);
 			} else {

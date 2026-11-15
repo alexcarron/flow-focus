@@ -2,7 +2,7 @@ import { DEFAULT_SETTINGS } from '../AppSettings';
 import Tag from '../tag/Tag';
 import TaskTimingOptions from '../task/TaskTimingOptions';
 import { hasRecurrenceWeekdays } from '../task/recurrence/RecurrenceDuration';
-import { getDefaultDeadlineOfWeekdayRepeat } from '../task/recurrence/recurrenceWeekdayOccurrences';
+import { getDefaultTargetDateOfWeekdayRepeat } from '../task/recurrence/recurrenceWeekdayOccurrences';
 import Time from '../time-management/Time';
 import { addDays } from '../../utilities/dateFormatting';
 import { getEndOfDayTimeOfDay, RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
@@ -50,38 +50,64 @@ function buildCleanedName(input: string, removedIndices: Set<number>): string {
 	return result.replace(/\s+/g, ' ').trim();
 }
 
-function moveTimeOfDayToFirstMomentOnOrAfterStartTime({ time, startTime }: { time: Date; startTime: Date }): Date {
-	const timeOnStartDay = new Date(startTime);
+function moveTimeOfDayToFirstMomentOnOrAfterStartDate({ time, startDate }: { time: Date; startDate: Date }): Date {
+	const timeOnStartDay = new Date(startDate);
 	timeOnStartDay.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), time.getMilliseconds());
-	if (timeOnStartDay.getTime() >= startTime.getTime()) return timeOnStartDay;
+	if (timeOnStartDay.getTime() >= startDate.getTime()) return timeOnStartDay;
 	return addDays(timeOnStartDay, 1);
 }
 
-function keepTimeOnOrAfterStartTime({ time, startTime }: { time: Date | null | undefined; startTime: Date }): Date | null | undefined {
-	if (time === null || time === undefined) return time;
-	if (time.getTime() >= startTime.getTime()) return time;
-	return moveTimeOfDayToFirstMomentOnOrAfterStartTime({ time, startTime });
+function keepDateOnOrAfterStartDate({ date, startDate }: { date: Date | null | undefined; startDate: Date }): Date | null | undefined {
+	if (date === null || date === undefined) return date;
+	if (date.getTime() >= startDate.getTime()) return date;
+	return moveTimeOfDayToFirstMomentOnOrAfterStartDate({ time: date, startDate });
 }
 
 function applyWeekdayRepeatTimingDefaults({ timing, nightTime }: { timing: Partial<TaskTimingOptions>; nightTime: Time }): Partial<TaskTimingOptions> {
-	const { recurrenceDuration, startTime } = timing;
-	if (!recurrenceDuration || !startTime || !hasRecurrenceWeekdays(recurrenceDuration)) return timing;
+	const { recurrenceDuration, startDate } = timing;
+	if (!recurrenceDuration || !startDate || !hasRecurrenceWeekdays(recurrenceDuration)) return timing;
 
 	const timingWithDefaults: Partial<TaskTimingOptions> = { ...timing };
-	if (timing.deadline === undefined) {
-		const defaultDeadline = getDefaultDeadlineOfWeekdayRepeat({
-			startTime,
+	const wasAnyTargetOrDueDateTyped = timing.targetDate !== undefined || timing.dueDate !== undefined;
+	if (!wasAnyTargetOrDueDateTyped) {
+		const defaultTargetDate = getDefaultTargetDateOfWeekdayRepeat({
+			startDate,
 			endOfDayTimeOfDay: getEndOfDayTimeOfDay(nightTime),
 		});
-		if (defaultDeadline) timingWithDefaults.deadline = defaultDeadline;
+		if (defaultTargetDate) timingWithDefaults.targetDate = defaultTargetDate;
 	}
-	else {
-		timingWithDefaults.deadline = keepTimeOnOrAfterStartTime({ time: timing.deadline, startTime });
+	if (timing.targetDate !== undefined) {
+		timingWithDefaults.targetDate = keepDateOnOrAfterStartDate({ date: timing.targetDate, startDate });
 	}
-	if (timing.endTime !== undefined) {
-		timingWithDefaults.endTime = keepTimeOnOrAfterStartTime({ time: timing.endTime, startTime });
+	if (timing.dueDate !== undefined) {
+		timingWithDefaults.dueDate = keepDateOnOrAfterStartDate({ date: timing.dueDate, startDate });
 	}
 	return timingWithDefaults;
+}
+
+function isTargetDateAfterDueDate(timing: Partial<TaskTimingOptions>): boolean {
+	const { targetDate, dueDate } = timing;
+	if (!targetDate || !dueDate) return false;
+	return targetDate.getTime() > dueDate.getTime();
+}
+
+function ignoreTargetDateAfterDueDate(parameters: { timing: Partial<TaskTimingOptions>; keptMatches: RawMatch[] }): { timing: Partial<TaskTimingOptions>; keptMatches: RawMatch[] } {
+	if (!isTargetDateAfterDueDate(parameters.timing)) return parameters;
+
+	const timing = { ...parameters.timing };
+	delete timing.targetDate;
+	const keptMatches = parameters.keptMatches.map(match => {
+		if (match.timing.targetDate === undefined) return match;
+		return {
+			...match,
+			explanation: "Ignored, it's after the due date",
+			timing: {},
+		};
+	});
+	return {
+		timing,
+		keptMatches,
+	};
 }
 
 export default function parseTypedQuickInput(config: {
@@ -114,11 +140,11 @@ export default function parseTypedQuickInput(config: {
 		)
 	);
 
-	const keptMatches = resolveOverlappingMatches(unprotectedMatches.filter(match => !isMatchEscaped(match)));
+	const keptMatchesBeforeDateOrderCheck = resolveOverlappingMatches(unprotectedMatches.filter(match => !isMatchEscaped(match)));
 	const keptEscapedMatches = resolveOverlappingMatches(unprotectedMatches.filter(isMatchEscaped));
 
 	const removedIndices = new Set<number>();
-	for (const match of keptMatches) {
+	for (const match of keptMatchesBeforeDateOrderCheck) {
 		if (match.keepInName) continue;
 		for (let index = match.startIndex; index < match.endIndex; index++) removedIndices.add(index);
 	}
@@ -134,12 +160,20 @@ export default function parseTypedQuickInput(config: {
 		}
 	}
 
-	const timing: Partial<TaskTimingOptions> = {};
+	const typedTiming: Partial<TaskTimingOptions> = {};
 	let steps: string[] | null = null;
-	for (const match of keptMatches) {
-		Object.assign(timing, match.timing);
+	for (const match of keptMatchesBeforeDateOrderCheck) {
+		Object.assign(typedTiming, match.timing);
 		if (match.stepsList) steps = match.stepsList;
 	}
+	const timingWithDefaults = applyWeekdayRepeatTimingDefaults({
+		timing: typedTiming,
+		nightTime,
+	});
+	const { timing, keptMatches } = ignoreTargetDateAfterDueDate({
+		timing: timingWithDefaults,
+		keptMatches: keptMatchesBeforeDateOrderCheck,
+	});
 
 	const matchToToken = (match: RawMatch) => ({
 		field: match.field,
@@ -165,7 +199,7 @@ export default function parseTypedQuickInput(config: {
 
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
-		timing: applyWeekdayRepeatTimingDefaults({ timing, nightTime }),
+		timing,
 		steps,
 		tags,
 		tokens,

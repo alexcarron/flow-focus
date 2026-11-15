@@ -1,7 +1,7 @@
 import updateEscapedTokenLocationsAfterTextChange from './updateEscapedTokenLocationsAfterTextChange';
 import { EscapedTokenLocation } from './TypedQuickInputToken';
 
-const satLocation: EscapedTokenLocation = { field: 'deadline', matchedText: 'sat', startIndex: 2, endIndex: 5 };
+const satLocation: EscapedTokenLocation = { field: 'targetDate', matchedText: 'sat', startIndex: 2, endIndex: 5 };
 
 describe('updateEscapedTokenLocationsAfterTextChange', () => {
 	it('shifts a location forward when text is inserted before it', () => {

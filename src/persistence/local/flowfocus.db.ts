@@ -3,6 +3,7 @@ import { AppSettings } from '../../model/AppSettings';
 import QuickToDoChecklistItem from '../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import RecurrenceDuration from '../../model/task/recurrence/RecurrenceDuration';
 import { convertRepeatIntervalTaskRowToRecurrenceDuration } from './convertRepeatIntervalTaskRowToRecurrenceDuration';
+import { convertMandatoryAndEndTimeToTargetAndDueDates } from './convertMandatoryAndEndTimeToTargetAndDueDates';
 
 export interface PlainStepRow {
 	id: string;
@@ -24,9 +25,9 @@ export interface PlainTaskRow extends DeletableRecordMetadata {
 	id: string;
 	description: string;
 	steps: PlainStepRow[];
-	startTime: string | null;
-	endTime: string | null;
-	deadline: string | null;
+	startDate: string | null;
+	targetDate: string | null;
+	dueDate: string | null;
 	minRequiredTime: number | null;
 	maxRequiredTime: number | null;
 	recurrenceDuration: RecurrenceDuration | null;
@@ -34,7 +35,6 @@ export interface PlainTaskRow extends DeletableRecordMetadata {
 	completedOccurrenceIndex: number | null;
 	skippedOccurrenceIndex: number | null;
 	progressOccurrenceIndex: number | null;
-	isMandatory: boolean;
 	isComplete: boolean;
 	isSkipped: boolean;
 	skippedUntil: string | null;
@@ -210,7 +210,34 @@ export class FlowFocusDB extends Dexie {
 				backfillTaskRowCreatedAtFromUpdatedAt(row);
 			});
 		});
+		this.version(13).stores({
+			tasks: 'id, dueDate, targetDate, startDate, isComplete, isSkipped, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		}).upgrade(transaction => {
+			return transaction.table('tasks').toCollection().modify(row => {
+				convertTaskRowFromMandatoryAndEndTimeToTargetAndDueDates(row);
+			});
+		});
 	}
+}
+
+function convertTaskRowFromMandatoryAndEndTimeToTargetAndDueDates(row: Record<string, unknown>): void {
+	const convertedDates = convertMandatoryAndEndTimeToTargetAndDueDates({
+		startTime: (row.startTime as string | null | undefined) ?? null,
+		endTime: (row.endTime as string | null | undefined) ?? null,
+		deadline: (row.deadline as string | null | undefined) ?? null,
+		isMandatory: row.isMandatory === true,
+	});
+	row.startDate = convertedDates.startDate;
+	row.targetDate = convertedDates.targetDate;
+	row.dueDate = convertedDates.dueDate;
+	delete row.startTime;
+	delete row.endTime;
+	delete row.deadline;
+	delete row.isMandatory;
 }
 
 function addEmptyChildrenToFlatSteps(row: { steps?: PlainStepRow[] }): void {

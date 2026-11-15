@@ -44,8 +44,8 @@ describe('Task', () => {
 		});
 
 		it('should return false if task is not recurring', () => {
-			task.setDeadline(new Date());
-			task.setStartTime(new Date());
+			task.setDueDate(new Date());
+			task.setStartDate(new Date());
 			task.setMinRequiredTime(1000);
 			task.setMaxRequiredTime(2000);
 			expect(task.isRecurring()).toBe(false);
@@ -53,73 +53,91 @@ describe('Task', () => {
 	})
 
 	describe('makeRecurring', () => {
-		it('moves the anchor occurrence forward to the first chosen weekday, keeping its deadline offset', () => {
+		it('moves the anchor occurrence forward to the first chosen weekday, keeping its due date offset', () => {
 			const mondayMorning = new Date(2026, 8, 7, 7, 0);
 			const tuesdaysAndThursdays: RecurrenceDuration = { amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.TUESDAY, Weekday.THURSDAY] };
-			task.setDeadline(new Date(2026, 8, 7, 23, 0));
+			task.setDueDate(new Date(2026, 8, 7, 23, 0));
 
 			task.makeRecurring(tuesdaysAndThursdays, mondayMorning, mondayMorning);
 
-			expect(task.getAnchorStartTime()).toEqual(new Date(2026, 8, 8, 7, 0));
-			expect(task.getAnchorDeadline()).toEqual(new Date(2026, 8, 8, 23, 0));
+			expect(task.getAnchorStartDate()).toEqual(new Date(2026, 8, 8, 7, 0));
+			expect(task.getAnchorDueDate()).toEqual(new Date(2026, 8, 8, 23, 0));
 		});
 
 		it('moves the anchor occurrence to a chosen weekday when the timing options change', () => {
 			const mondayMorning = new Date(2026, 8, 7, 7, 0);
 			task.setFromTaskTimingOptions({
-				startTime: mondayMorning,
-				endTime: null,
-				deadline: new Date(2026, 8, 7, 23, 0),
+				startDate: mondayMorning,
+				targetDate: null,
+				dueDate: new Date(2026, 8, 7, 23, 0),
 				minDuration: null,
 				maxDuration: null,
 				recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.FRIDAY] },
 				shouldNotSkipMissedOccurrences: false,
-				isMandatory: false,
 			}, mondayMorning);
 
-			expect(task.getAnchorStartTime()).toEqual(new Date(2026, 8, 11, 7, 0));
-			expect(task.getAnchorDeadline()).toEqual(new Date(2026, 8, 11, 23, 0));
+			expect(task.getAnchorStartDate()).toEqual(new Date(2026, 8, 11, 7, 0));
+			expect(task.getAnchorDueDate()).toEqual(new Date(2026, 8, 11, 23, 0));
 		});
 
-		it('should set the recurrence duration and anchor start time', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+		it('should set the recurrence duration and anchor start date', () => {
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
 
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 
 			expect(task.getRecurrenceDuration()).toEqual(oneDay);
-			expect(task.getAnchorStartTime()).toEqual(anchorStartTime);
-			expect(task.getStartTime()).toEqual(anchorStartTime);
+			expect(task.getAnchorStartDate()).toEqual(anchorStartDate);
+			expect(task.getStartDate()).toEqual(anchorStartDate);
 		});
 
-		it('should set deadline to the next occurrence start if deadline is not set', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			task.makeRecurring(oneHour, anchorStartTime, anchorStartTime);
+		it('should set the target date to the next occurrence start if neither a target date nor a due date is set', () => {
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneHour, anchorStartDate, anchorStartDate);
 
-			expect(task.getDeadline()).toEqual(new Date('2023-01-01T09:00:00Z'));
+			expect(task.getTargetDate()).toEqual(new Date('2023-01-01T09:00:00Z'));
+			expect(task.getDueDate()).toBeNull();
 		});
 
-		it('should clamp the deadline to the next occurrence start if deadline is past it', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			task.setDeadline(new Date('2023-01-01T11:00:00Z'));
+		it('should leave the target date empty if only a due date is set', () => {
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.setDueDate(new Date('2023-01-01T08:30:00Z'));
 
-			task.makeRecurring(oneHour, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneHour, anchorStartDate, anchorStartDate);
 
-			expect(task.getDeadline()).toEqual(new Date('2023-01-01T09:00:00Z'));
+			expect(task.getTargetDate()).toBeNull();
 		});
 
-		it('should keep the deadline if it is within the first occurrence', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			const deadline = new Date('2023-01-01T08:30:00Z');
-			task.setDeadline(deadline);
+		it('should clamp the target date to the next occurrence start if the target date is past it', () => {
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.setTargetDate(new Date('2023-01-01T11:00:00Z'));
 
-			task.makeRecurring(oneHour, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneHour, anchorStartDate, anchorStartDate);
 
-			expect(task.getDeadline()).toEqual(deadline);
+			expect(task.getTargetDate()).toEqual(new Date('2023-01-01T09:00:00Z'));
+		});
+
+		it('should clamp the due date to the next occurrence start if due date is past it', () => {
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.setDueDate(new Date('2023-01-01T11:00:00Z'));
+
+			task.makeRecurring(oneHour, anchorStartDate, anchorStartDate);
+
+			expect(task.getDueDate()).toEqual(new Date('2023-01-01T09:00:00Z'));
+		});
+
+		it('should keep the due date if it is within the first occurrence', () => {
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			const dueDate = new Date('2023-01-01T08:30:00Z');
+			task.setDueDate(dueDate);
+
+			task.makeRecurring(oneHour, anchorStartDate, anchorStartDate);
+
+			expect(task.getDueDate()).toEqual(dueDate);
 		});
 
 		it('should start progress on the first occurrence', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 
 			expect(task.getProgressOccurrenceIndex()).toBe(0);
 			expect(task.getCompletedOccurrenceIndex()).toBeNull();
@@ -128,12 +146,12 @@ describe('Task', () => {
 	});
 
 	describe('refreshCurrentOccurrence', () => {
-		const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+		const anchorStartDate = new Date('2023-01-01T08:00:00Z');
 
 		it('should do nothing for a non-recurring task', () => {
-			const deadline = new Date('2023-01-05T08:00:00Z');
-			task.setStartTime(anchorStartTime);
-			task.setDeadline(deadline);
+			const dueDate = new Date('2023-01-05T08:00:00Z');
+			task.setStartDate(anchorStartDate);
+			task.setDueDate(dueDate);
 			task.addStep('Step 1');
 			task.addStep('Step 2');
 			task.completeNextStep();
@@ -141,41 +159,41 @@ describe('Task', () => {
 			task.refreshCurrentOccurrence(new Date('2023-01-10T08:00:00Z'));
 
 			expect(task.getCurrentOccurrence()).toBeNull();
-			expect(task.getStartTime()).toEqual(anchorStartTime);
-			expect(task.getDeadline()).toEqual(deadline);
+			expect(task.getStartDate()).toEqual(anchorStartDate);
+			expect(task.getDueDate()).toEqual(dueDate);
 			expect(task.getNextStep()?.text).toEqual('Step 2');
 		});
 
 		it('should expose the anchor occurrence while the current time is within it', () => {
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 
 			task.refreshCurrentOccurrence(new Date('2023-01-01T20:00:00Z'));
 
 			expect(task.getCurrentOccurrence()?.index).toBe(0);
-			expect(task.getStartTime()).toEqual(anchorStartTime);
-			expect(task.getDeadline()).toEqual(new Date('2023-01-02T08:00:00Z'));
+			expect(task.getStartDate()).toEqual(anchorStartDate);
+			expect(task.getTargetDate()).toEqual(new Date('2023-01-02T08:00:00Z'));
 		});
 
-		it('should advance the start time, end time, and deadline to the occurrence containing the current time', () => {
-			task.setEndTime(new Date('2023-01-01T22:00:00Z'));
-			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+		it('should advance the start date, target date, and due date to the occurrence containing the current time', () => {
+			task.setTargetDate(new Date('2023-01-01T20:00:00Z'));
+			task.setDueDate(new Date('2023-01-01T22:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 
 			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
 
 			expect(task.getCurrentOccurrence()?.index).toBe(2);
-			expect(task.getStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
-			expect(task.getDeadline()).toEqual(new Date('2023-01-03T20:00:00Z'));
-			expect(task.getEndTime()).toEqual(new Date('2023-01-03T22:00:00Z'));
-			expect(task.getAnchorStartTime()).toEqual(anchorStartTime);
+			expect(task.getStartDate()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getTargetDate()).toEqual(new Date('2023-01-03T20:00:00Z'));
+			expect(task.getDueDate()).toEqual(new Date('2023-01-03T22:00:00Z'));
+			expect(task.getAnchorStartDate()).toEqual(anchorStartDate);
 		});
 
 		it('should reset progress when the occurrence changes', () => {
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.addStep('Step 1');
 			task.addStep('Step 2');
 			task.completeNextStep();
-			task.skipUntil(new Date('2023-01-01T09:00:00Z'), anchorStartTime);
+			task.skipUntil(new Date('2023-01-01T09:00:00Z'), anchorStartDate);
 
 			task.refreshCurrentOccurrence(new Date('2023-01-02T09:00:00Z'));
 
@@ -188,7 +206,7 @@ describe('Task', () => {
 		});
 
 		it('should keep progress when refreshed again within the same occurrence', () => {
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.addStep('Step 1');
 			task.addStep('Step 2');
 			task.completeNextStep();
@@ -200,23 +218,23 @@ describe('Task', () => {
 		});
 
 		it('should be idempotent no matter how many times or in what order it runs', () => {
-			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
-			task.makeRecurring(oneWeek, anchorStartTime, anchorStartTime);
+			task.setDueDate(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneWeek, anchorStartDate, anchorStartDate);
 
 			task.refreshCurrentOccurrence(new Date('2023-01-20T09:00:00Z'));
 			task.refreshCurrentOccurrence(new Date('2023-01-20T09:00:01Z'));
 			task.refreshCurrentOccurrence(new Date('2023-01-20T09:00:02Z'));
 
-			expect(task.getStartTime()).toEqual(new Date('2023-01-15T08:00:00Z'));
-			expect(task.getDeadline()).toEqual(new Date('2023-01-15T20:00:00Z'));
+			expect(task.getStartDate()).toEqual(new Date('2023-01-15T08:00:00Z'));
+			expect(task.getDueDate()).toEqual(new Date('2023-01-15T20:00:00Z'));
 		});
 	});
 
 	describe('completing a recurring task', () => {
-		const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+		const anchorStartDate = new Date('2023-01-01T08:00:00Z');
 
 		it('should mark the current occurrence complete until the next occurrence starts', () => {
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 
 			task.setComplete(true, new Date('2023-01-01T10:00:00Z'));
 
@@ -232,8 +250,8 @@ describe('Task', () => {
 		});
 
 		it('should count a late completion for the occurrence containing the current time', () => {
-			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.setDueDate(new Date('2023-01-01T12:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-01T18:00:00Z'));
 
 			task.setComplete(true, new Date('2023-01-01T18:00:00Z'));
@@ -243,7 +261,7 @@ describe('Task', () => {
 		});
 
 		it('should uncomplete the current occurrence without forgetting earlier resolved occurrences', () => {
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
 			task.setComplete(true, new Date('2023-01-03T09:00:00Z'));
 
@@ -256,22 +274,22 @@ describe('Task', () => {
 	});
 
 	describe('shouldNotSkipMissedOccurrences', () => {
-		const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+		const anchorStartDate = new Date('2023-01-01T08:00:00Z');
 
 		it('should stay on the missed occurrence until it is completed', () => {
 			task.setShouldNotSkipMissedOccurrences(true);
-			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.setDueDate(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 
 			task.refreshCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
 
 			expect(task.getCurrentOccurrence()?.index).toBe(0);
-			expect(task.getDeadline()).toEqual(new Date('2023-01-01T20:00:00Z'));
+			expect(task.getDueDate()).toEqual(new Date('2023-01-01T20:00:00Z'));
 		});
 
 		it('should move to the very next occurrence after completing a missed one', () => {
 			task.setShouldNotSkipMissedOccurrences(true);
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
 
 			task.setComplete(true, new Date('2023-01-04T09:00:00Z'));
@@ -279,12 +297,12 @@ describe('Task', () => {
 			expect(task.getCompletedOccurrenceIndex()).toBe(0);
 			expect(task.getCurrentOccurrence()?.index).toBe(1);
 			expect(task.getIsComplete()).toBe(false);
-			expect(task.getStartTime()).toEqual(new Date('2023-01-02T08:00:00Z'));
+			expect(task.getStartDate()).toEqual(new Date('2023-01-02T08:00:00Z'));
 		});
 
 		it('should move to the very next occurrence after skipping a missed one', () => {
 			task.setShouldNotSkipMissedOccurrences(true);
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
 
 			task.skipCurrentOccurrence(new Date('2023-01-04T09:00:00Z'));
@@ -296,7 +314,7 @@ describe('Task', () => {
 
 		it('should wait for the next occurrence after skipping the occurrence containing the current time', () => {
 			task.setShouldNotSkipMissedOccurrences(true);
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-01T09:00:00Z'));
 
 			task.skipCurrentOccurrence(new Date('2023-01-01T09:00:00Z'));
@@ -309,23 +327,23 @@ describe('Task', () => {
 
 	describe('makeNonRecurring', () => {
 		it('should keep the current occurrence schedule as the task schedule', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			task.setDeadline(new Date('2023-01-01T20:00:00Z'));
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.setDueDate(new Date('2023-01-01T20:00:00Z'));
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
 
 			task.makeNonRecurring();
 
 			expect(task.isRecurring()).toBe(false);
-			expect(task.getStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
-			expect(task.getDeadline()).toEqual(new Date('2023-01-03T20:00:00Z'));
+			expect(task.getStartDate()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getDueDate()).toEqual(new Date('2023-01-03T20:00:00Z'));
 			expect(task.getCompletedOccurrenceIndex()).toBeNull();
 			expect(task.getProgressOccurrenceIndex()).toBeNull();
 		});
 
 		it('should keep a completed current occurrence as a completed task', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.setComplete(true, new Date('2023-01-01T09:00:00Z'));
 
 			task.makeNonRecurring();
@@ -335,59 +353,60 @@ describe('Task', () => {
 	});
 
 	describe('setFromTaskTimingOptions with recurrence', () => {
-		it('should anchor the first occurrence at the start time when recurrence is turned on', () => {
-			const startTime = new Date('2023-01-01T08:00:00Z');
+		it('should anchor the first occurrence at the start date when recurrence is turned on', () => {
+			const startDate = new Date('2023-01-01T08:00:00Z');
 			task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				startTime,
-				deadline: null,
+				startDate,
+				dueDate: null,
 				recurrenceDuration: oneHour,
-			}, startTime);
+			}, startDate);
 
 			expect(task.isRecurring()).toBe(true);
-			expect(task.getAnchorStartTime()).toEqual(startTime);
-			expect(task.getDeadline()).toEqual(new Date('2023-01-01T09:00:00Z'));
+			expect(task.getAnchorStartDate()).toEqual(startDate);
+			expect(task.getTargetDate()).toEqual(new Date('2023-01-01T09:00:00Z'));
 		});
 
 		it('should keep the current occurrence values and indices when only unrelated fields change', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(new Date('2023-01-03T09:00:00Z'));
 			task.setComplete(true, new Date('2023-01-03T09:00:00Z'));
 
 			task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				isMandatory: true,
+				minDuration: 1000,
 			}, new Date('2023-01-03T09:00:00Z'));
 
-			expect(task.getAnchorStartTime()).toEqual(anchorStartTime);
+			expect(task.getAnchorStartDate()).toEqual(anchorStartDate);
 			expect(task.getCurrentOccurrence()?.index).toBe(2);
 			expect(task.getIsComplete()).toBe(true);
 		});
 
 		it('should re-anchor to the edited occurrence and re-tag completion when the schedule changes', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
 			const currentTime = new Date('2023-01-03T09:00:00Z');
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(currentTime);
 			task.setComplete(true, currentTime);
 
 			task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				deadline: new Date('2023-01-03T21:00:00Z'),
+				targetDate: null,
+				dueDate: new Date('2023-01-03T21:00:00Z'),
 			}, currentTime);
 
-			expect(task.getAnchorStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
-			expect(task.getAnchorDeadline()).toEqual(new Date('2023-01-03T21:00:00Z'));
+			expect(task.getAnchorStartDate()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getAnchorDueDate()).toEqual(new Date('2023-01-03T21:00:00Z'));
 			expect(task.getCurrentOccurrence()?.index).toBe(0);
 			expect(task.getCompletedOccurrenceIndex()).toBe(0);
 			expect(task.getIsComplete()).toBe(true);
 		});
 
 		it('should bake the current occurrence into the task when recurrence is turned off', () => {
-			const anchorStartTime = new Date('2023-01-01T08:00:00Z');
+			const anchorStartDate = new Date('2023-01-01T08:00:00Z');
 			const currentTime = new Date('2023-01-03T09:00:00Z');
-			task.makeRecurring(oneDay, anchorStartTime, anchorStartTime);
+			task.makeRecurring(oneDay, anchorStartDate, anchorStartDate);
 			task.refreshCurrentOccurrence(currentTime);
 
 			task.setFromTaskTimingOptions({
@@ -396,86 +415,86 @@ describe('Task', () => {
 			}, currentTime);
 
 			expect(task.isRecurring()).toBe(false);
-			expect(task.getStartTime()).toEqual(new Date('2023-01-03T08:00:00Z'));
+			expect(task.getStartDate()).toEqual(new Date('2023-01-03T08:00:00Z'));
 			expect(task.getCurrentOccurrence()).toBeNull();
 		});
 	});
 
-	describe('start time cannot be after end time', () => {
-		it('setFromTaskTimingOptions should throw if the new start time is after the new end time', () => {
+	describe('start date cannot be after target date', () => {
+		it('setFromTaskTimingOptions should throw if the new start date is after the new target date', () => {
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				startTime: new Date('2023-01-01T13:00:00Z'),
-				endTime: new Date('2023-01-01T12:00:00Z'),
+				startDate: new Date('2023-01-01T13:00:00Z'),
+				targetDate: new Date('2023-01-01T12:00:00Z'),
 			})).toThrow();
 		});
 
-		it('setFromTaskTimingOptions should throw when turning on recurrence would start after the existing end time', () => {
-			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
+		it('setFromTaskTimingOptions should throw when turning on recurrence would start after the existing target date', () => {
+			task.setTargetDate(new Date('2023-01-01T12:00:00Z'));
 
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				startTime: new Date('2023-01-01T13:00:00Z'),
+				startDate: new Date('2023-01-01T13:00:00Z'),
 				recurrenceDuration: oneHour,
 			})).toThrow();
 		});
 
-		it('makeRecurring should throw if the anchor start time is after the existing end time', () => {
-			task.setEndTime(new Date('2023-01-01T12:00:00Z'));
+		it('makeRecurring should throw if the anchor start date is after the existing target date', () => {
+			task.setTargetDate(new Date('2023-01-01T12:00:00Z'));
 
 			expect(() => task.makeRecurring(oneHour, new Date('2023-01-01T13:00:00Z'))).toThrow();
 		});
 
-		it('restoreState should throw if the restored state has a start time after its end time', () => {
+		it('restoreState should throw if the restored state has a start date after its target date', () => {
 			const state = task.getState();
 
 			expect(() => task.restoreState({
 				...state,
-				startTime: new Date('2023-01-01T13:00:00Z'),
-				endTime: new Date('2023-01-01T12:00:00Z'),
+				startDate: new Date('2023-01-01T13:00:00Z'),
+				targetDate: new Date('2023-01-01T12:00:00Z'),
 			})).toThrow();
 		});
 	});
 
-	describe('start time cannot be after deadline', () => {
-		it('setFromTaskTimingOptions should throw if the new start time is after the new deadline', () => {
+	describe('start date cannot be after due date', () => {
+		it('setFromTaskTimingOptions should throw if the new start date is after the new due date', () => {
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				startTime: new Date('2023-01-01T13:00:00Z'),
-				deadline: new Date('2023-01-01T12:00:00Z'),
+				startDate: new Date('2023-01-01T13:00:00Z'),
+				dueDate: new Date('2023-01-01T12:00:00Z'),
 			})).toThrow();
 		});
 
-		it('setFromTaskTimingOptions should throw when turning on recurrence would start after the existing deadline', () => {
-			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+		it('setFromTaskTimingOptions should throw when turning on recurrence would start after the existing due date', () => {
+			task.setDueDate(new Date('2023-01-01T12:00:00Z'));
 
 			expect(() => task.setFromTaskTimingOptions({
 				...task.getTaskTimingOptions(),
-				startTime: new Date('2023-01-01T13:00:00Z'),
+				startDate: new Date('2023-01-01T13:00:00Z'),
 				recurrenceDuration: oneHour,
 			})).toThrow();
 		});
 
-		it('makeRecurring should throw if the anchor start time is after the existing deadline', () => {
-			task.setDeadline(new Date('2023-01-01T12:00:00Z'));
+		it('makeRecurring should throw if the anchor start date is after the existing due date', () => {
+			task.setDueDate(new Date('2023-01-01T12:00:00Z'));
 
 			expect(() => task.makeRecurring(oneHour, new Date('2023-01-01T13:00:00Z'))).toThrow();
 		});
 
-		it('makeRecurring should not throw when the existing deadline is before the next occurrence but still after the anchor start time', () => {
-			task.setDeadline(new Date('2023-01-01T10:30:00Z'));
+		it('makeRecurring should not throw when the existing due date is before the next occurrence but still after the anchor start date', () => {
+			task.setDueDate(new Date('2023-01-01T10:30:00Z'));
 
 			expect(() => task.makeRecurring(oneHour, new Date('2023-01-01T10:00:00Z'))).not.toThrow();
-			expect(task.getAnchorDeadline()).toEqual(new Date('2023-01-01T10:30:00Z'));
+			expect(task.getAnchorDueDate()).toEqual(new Date('2023-01-01T10:30:00Z'));
 		});
 
-		it('restoreState should throw if the restored state has a start time after its deadline', () => {
+		it('restoreState should throw if the restored state has a start date after its due date', () => {
 			const state = task.getState();
 
 			expect(() => task.restoreState({
 				...state,
-				startTime: new Date('2023-01-01T13:00:00Z'),
-				deadline: new Date('2023-01-01T12:00:00Z'),
+				startDate: new Date('2023-01-01T13:00:00Z'),
+				dueDate: new Date('2023-01-01T12:00:00Z'),
 			})).toThrow();
 		});
 	});
@@ -987,65 +1006,65 @@ describe('Task', () => {
 		});
 	});
 
-	describe('getTimeToComplete', () => {
-		it('getTimeToComplete should return infinity if there is no deadline', () => {
-			expect(task.getTimeToComplete(new Date())).toEqual(Infinity);
+	describe('getTimeToCompleteByDueDate', () => {
+		it('getTimeToCompleteByDueDate should return infinity if there is no due date', () => {
+			expect(task.getTimeToCompleteByDueDate(new Date())).toEqual(Infinity);
 		});
 
-		it('getTimeToComplete should return negative if the deadline is in the past', () => {
+		it('getTimeToCompleteByDueDate should return negative if the due date is in the past', () => {
 			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
-			task.setDeadline(new Date(currentTime.getTime() - 1));
-			expect(task.getTimeToComplete(currentTime)).toEqual(-1);
+			task.setDueDate(new Date(currentTime.getTime() - 1));
+			expect(task.getTimeToCompleteByDueDate(currentTime)).toEqual(-1);
 		});
 
-		it('getTimeToComplete should return the number of milliseconds left if the deadline is in the future', () => {
+		it('getTimeToCompleteByDueDate should return the number of milliseconds left if the due date is in the future', () => {
 			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
-			const deadline = new Date(currentTime.getTime() + 1000);
-			task.setDeadline(deadline);
-			expect(task.getTimeToComplete(currentTime)).toBe(1000);
+			const dueDate = new Date(currentTime.getTime() + 1000);
+			task.setDueDate(dueDate);
+			expect(task.getTimeToCompleteByDueDate(currentTime)).toBe(1000);
 		});
 
-		it('getTimeToComplete should return the number of milliseconds between the deadline and start time if the start time is in the future', () => {
+		it('getTimeToCompleteByDueDate should return the number of milliseconds between the due date and start date if the start date is in the future', () => {
 			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
-			const startTime = new Date(currentTime.getTime() + 1000);
-			const deadline = new Date(currentTime.getTime() + 2000);
-			task.setStartTime(startTime);
-			task.setDeadline(deadline);
-			expect(task.getTimeToComplete(currentTime)).toBe(1000);
+			const startDate = new Date(currentTime.getTime() + 1000);
+			const dueDate = new Date(currentTime.getTime() + 2000);
+			task.setStartDate(startDate);
+			task.setDueDate(dueDate);
+			expect(task.getTimeToCompleteByDueDate(currentTime)).toBe(1000);
 		});
 	});
 
-	describe('getTimeUntilDeadline', () => {
+	describe('getTimeUntilDueDate', () => {
 		const currentTime = new Date();
 
-		it('should return infinity if there is no deadline', () => {
-			expect(task.getTimeUntilDeadline(currentTime)).toEqual(Infinity);
+		it('should return infinity if there is no due date', () => {
+			expect(task.getTimeUntilDueDate(currentTime)).toEqual(Infinity);
 		});
 
-		it('should return the number of milliseconds left if the deadline is in the future', () => {
-			const deadline = new Date(currentTime.getTime() + 1000);
-			task.setDeadline(deadline);
-			expect(task.getTimeUntilDeadline(currentTime)).toBe(1000);
+		it('should return the number of milliseconds left if the due date is in the future', () => {
+			const dueDate = new Date(currentTime.getTime() + 1000);
+			task.setDueDate(dueDate);
+			expect(task.getTimeUntilDueDate(currentTime)).toBe(1000);
 		});
 
-		it('should return negative time if the deadline is in the past', () => {
-			const deadline = new Date(currentTime.getTime() - 1000);
-			task.setDeadline(deadline);
-			expect(task.getTimeUntilDeadline(currentTime)).toBe(-1000);
+		it('should return negative time if the due date is in the past', () => {
+			const dueDate = new Date(currentTime.getTime() - 1000);
+			task.setDueDate(dueDate);
+			expect(task.getTimeUntilDueDate(currentTime)).toBe(-1000);
 		})
 	});
 
 	describe('getMaxRequiredTime', () => {
-		it('getMaxRequiredTime should return infinity if there is no maxRequiredTime or deadline', () => {
+		it('getMaxRequiredTime should return infinity if there is no maxRequiredTime or due date', () => {
 			expect(task.getMaxRequiredTime(new Date())).toEqual(Infinity);
 		});
 
-		it('getMaxRequiredTime should return the time left to complete the task if there is a deadline', () => {
+		it('getMaxRequiredTime should return the time left to complete the task if there is a due date', () => {
 			const currentTime = new Date();
 
-			task.setDeadline(new Date(currentTime.getTime() + 1000));
+			task.setDueDate(new Date(currentTime.getTime() + 1000));
 
-			expect(task.getMaxRequiredTime(currentTime)).toEqual(task.getTimeToComplete(currentTime));
+			expect(task.getMaxRequiredTime(currentTime)).toEqual(task.getTimeToCompleteByDueDate(currentTime));
 		});
 	});
 
@@ -1065,11 +1084,11 @@ describe('Task', () => {
 			expect(task.getAssumedMaxRequiredTime()).toEqual(9000);
 		});
 
-		it('should leave a task with a deadline and no durations with slack equal to its available time and not urgent', () => {
+		it('should leave a task with a due date and no durations with slack equal to its available time and not urgent', () => {
 			const currentTime = new Date();
-			task.setDeadline(new Date(currentTime.getTime() + 1000));
+			task.setDueDate(new Date(currentTime.getTime() + 1000));
 
-			expect(task.getMinSlackTime(currentTime)).toEqual(task.getTimeToComplete(currentTime));
+			expect(task.getDueDateSlack(currentTime)).toEqual(task.getTimeToCompleteByDueDate(currentTime));
 			expect(task.isUrgent(currentTime)).toBe(false);
 		});
 	});
@@ -1106,7 +1125,7 @@ describe('Task', () => {
 		task.completeStep(step1.id);
 		const step2 = findStepByText(task, 'Step 2');
 		task.skipStep(step2.id);
-		task.setDeadline(currentTime);
+		task.setDueDate(currentTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
 		task.makeRecurring(oneHour, currentTime, currentTime);
@@ -1115,12 +1134,11 @@ describe('Task', () => {
 
 		expect(state.description).toEqual(task.getDescription());
 		expect(state.isComplete).toEqual(task.getIsComplete());
-		expect(state.isMandatory).toEqual(task.getIsMandatory());
 		expect(state.isSkipped).toEqual(task.getIsSkipped());
 		expect(state.skippedUntil).toEqual(task.getSkippedUntil());
 
-		expect(state.startTime).toEqual(task.getAnchorStartTime());
-		expect(state.deadline).toEqual(task.getAnchorDeadline());
+		expect(state.startDate).toEqual(task.getAnchorStartDate());
+		expect(state.dueDate).toEqual(task.getAnchorDueDate());
 		expect(state.minDuration).toEqual(task.getMinRequiredTime());
 		expect(state.maxDuration).toEqual(task.getMaxRequiredTime(currentTime));
 		expect(state.recurrenceDuration).toEqual(oneHour);
@@ -1143,7 +1161,7 @@ describe('Task', () => {
 		task.addStep('Step 3');
 		task.completeStep(findStepByText(task, 'Step 1').id);
 		task.skipStep(findStepByText(task, 'Step 2').id);
-		task.setDeadline(currentTime);
+		task.setDueDate(currentTime);
 		task.setMinRequiredTime(1000);
 		task.setMaxRequiredTime(2000);
 		task.makeRecurring(oneHour, currentTime, currentTime);
@@ -1156,20 +1174,18 @@ describe('Task', () => {
 		task.completeNextStep();
 		task.setMaxRequiredTime(3000);
 		task.setMinRequiredTime(2000);
-		task.setDeadline(new Date(currentTime.getTime() + 1000));
-		task.setStartTime(new Date(currentTime.getTime() + 2000));
-		task.setMandatory(true);
+		task.setDueDate(new Date(currentTime.getTime() + 1000));
+		task.setStartDate(new Date(currentTime.getTime() + 2000));
 		task.cancelSkip();
 
 		task.restoreState(state, currentTime);
 
 		expect(task.getDescription()).toEqual('Sample Task');
 		expect(task.getIsComplete()).toEqual(false);
-		expect(task.getIsMandatory()).toEqual(false);
 		expect(task.getIsSkipped()).toEqual(false);
 		expect(task.getSkippedUntil()).toEqual(new Date(currentTime.getTime() + 5000));
-		expect(task.getDeadline()).toEqual(currentTime);
-		expect(task.getStartTime()).toEqual(currentTime);
+		expect(task.getDueDate()).toEqual(currentTime);
+		expect(task.getStartDate()).toEqual(currentTime);
 		expect(task.getMinRequiredTime()).toEqual(1000);
 		expect(task.getMaxRequiredTime(currentTime)).toEqual(2000);
 		expect(task.getRecurrenceDuration()).toEqual(oneHour);
@@ -1179,40 +1195,35 @@ describe('Task', () => {
 	describe('isActive', () => {
 		const currentTime = new Date();
 
-		it('should return true if the start and end time is not set', () => {
+		it('should return true if no dates are set', () => {
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
 
-		it('should return false if the start time is after the current time', () => {
-			task.setStartTime(new Date(currentTime.getTime() + 1));
+		it('should return false if the start date is after the current time', () => {
+			task.setStartDate(new Date(currentTime.getTime() + 1));
 
 			expect(task.isActive(currentTime)).toEqual(false);
 		});
 
-		it('should return false if the end time is before the current time', () => {
-			task.setEndTime(new Date(currentTime.getTime() - 1));
-
-			expect(task.isActive(currentTime)).toEqual(false);
-		});
-
-		it('should return true if the time is between the start and end time', () => {
-			const startTime = new Date(currentTime.getTime() - 1000);
-			const endTime = new Date(currentTime.getTime() + 1000);
-
-			task.setStartTime(startTime);
-			task.setEndTime(endTime);
+		it('should return true even after the target date and due date have passed', () => {
+			task.setTargetDate(new Date(currentTime.getTime() - 2));
+			task.setDueDate(new Date(currentTime.getTime() - 1));
 
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
 
-		it('should return true ifthe end time is after the current time', () => {
-			task.setEndTime(new Date(currentTime.getTime() + 1000));
+		it('should return true if the time is between the start date and target date', () => {
+			const startDate = new Date(currentTime.getTime() - 1000);
+			const targetDate = new Date(currentTime.getTime() + 1000);
+
+			task.setStartDate(startDate);
+			task.setTargetDate(targetDate);
 
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
 
-		it('should return true if the start time is before the current time', () => {
-			task.setStartTime(new Date(currentTime.getTime() - 1000));
+		it('should return true if the start date is before the current time', () => {
+			task.setStartDate(new Date(currentTime.getTime() - 1000));
 
 			expect(task.isActive(currentTime)).toEqual(true);
 		});
@@ -1222,9 +1233,9 @@ describe('Task', () => {
 			expect(task.isActive(currentTime)).toEqual(false);
 		});
 
-		it('should return false if skippedUntil is after the current time, even past its deadline and end time', () => {
-			task.setDeadline(new Date(currentTime.getTime() - 1000));
-			task.setEndTime(new Date(currentTime.getTime() + 1000));
+		it('should return false if skippedUntil is after the current time, even past its due date and target date', () => {
+			task.setTargetDate(new Date(currentTime.getTime() - 1000));
+			task.setDueDate(new Date(currentTime.getTime() + 1000));
 			task.skipUntil(new Date(currentTime.getTime() + 500), new Date(currentTime.getTime() - 2000));
 
 			expect(task.isActive(currentTime)).toEqual(false);
@@ -1238,29 +1249,29 @@ describe('Task', () => {
 	});
 
 	describe('skipUntil', () => {
-		it('should set skippedUntil without changing start time, end time, or deadline', () => {
+		it('should set skippedUntil without changing start date, target date, or due date', () => {
 			const currentTime = new Date('2023-01-01T00:00:00Z');
-			const startTime = new Date('2023-01-01T01:00:00Z');
-			const endTime = new Date('2023-01-01T02:00:00Z');
-			const deadline = new Date('2023-01-01T03:00:00Z');
-			task.setStartTime(startTime);
-			task.setEndTime(endTime);
-			task.setDeadline(deadline);
+			const startDate = new Date('2023-01-01T01:00:00Z');
+			const targetDate = new Date('2023-01-01T02:00:00Z');
+			const dueDate = new Date('2023-01-01T03:00:00Z');
+			task.setStartDate(startDate);
+			task.setTargetDate(targetDate);
+			task.setDueDate(dueDate);
 
 			const skipUntilDate = new Date('2023-02-01T00:00:00Z');
 			task.skipUntil(skipUntilDate, currentTime);
 
 			expect(task.getSkippedUntil()).toEqual(skipUntilDate);
-			expect(task.getStartTime()).toEqual(startTime);
-			expect(task.getEndTime()).toEqual(endTime);
-			expect(task.getDeadline()).toEqual(deadline);
+			expect(task.getStartDate()).toEqual(startDate);
+			expect(task.getTargetDate()).toEqual(targetDate);
+			expect(task.getDueDate()).toEqual(dueDate);
 		});
 
-		it('should allow skipping a task whose deadline, end time, and start time have already passed', () => {
+		it('should allow skipping a task whose due date, target date, and start date have already passed', () => {
 			const currentTime = new Date('2023-01-01T04:00:00Z');
-			task.setStartTime(new Date('2023-01-01T01:00:00Z'));
-			task.setEndTime(new Date('2023-01-01T02:00:00Z'));
-			task.setDeadline(new Date('2023-01-01T03:00:00Z'));
+			task.setStartDate(new Date('2023-01-01T01:00:00Z'));
+			task.setTargetDate(new Date('2023-01-01T02:00:00Z'));
+			task.setDueDate(new Date('2023-01-01T03:00:00Z'));
 
 			const skipUntilDate = new Date('2023-02-01T00:00:00Z');
 

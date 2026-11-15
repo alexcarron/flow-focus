@@ -47,10 +47,10 @@ function buildRepeatMatch(parameters: {
 	input: string;
 	recurrenceDuration: RecurrenceDuration;
 	explanation: string;
-	startTime?: Date;
+	startDate?: Date;
 }): RawMatch {
 	const timing: Partial<TaskTimingOptions> = { recurrenceDuration: parameters.recurrenceDuration };
-	if (parameters.startTime) timing.startTime = parameters.startTime;
+	if (parameters.startDate) timing.startDate = parameters.startDate;
 	return {
 		field: 'recurrenceDuration',
 		colorClass: 'repeat',
@@ -87,9 +87,9 @@ function getEarliestUpcomingDateOfWeekdays({ weekdays, now }: { weekdays: Weekda
 	return upcomingDates.reduce((earliest, date) => date.getTime() < earliest.getTime() ? date : earliest);
 }
 
-function formatTypedTimeOfDayForExplanation({ startTime, wasTimeOfDayTyped }: { startTime: Date; wasTimeOfDayTyped: boolean }): string {
+function formatTypedTimeOfDayForExplanation({ startDate, wasTimeOfDayTyped }: { startDate: Date; wasTimeOfDayTyped: boolean }): string {
 	if (!wasTimeOfDayTyped) return '';
-	return ` at ${startTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+	return ` at ${startDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 }
 
 function findWeekdayRepeatMatch(parameters: {
@@ -108,12 +108,12 @@ function findWeekdayRepeatMatch(parameters: {
 		nightTime: config.nightTime,
 	});
 
-	const startTime = getEarliestUpcomingDateOfWeekdays({ weekdays: weekdayNameList.weekdays, now: config.now });
+	const startDate = getEarliestUpcomingDateOfWeekdays({ weekdays: weekdayNameList.weekdays, now: config.now });
 	if (typedTimeOfDay) {
-		startTime.setHours(typedTimeOfDay.timeOfDay.hour, typedTimeOfDay.timeOfDay.minute, 0, 0);
+		startDate.setHours(typedTimeOfDay.timeOfDay.hour, typedTimeOfDay.timeOfDay.minute, 0, 0);
 	}
 	else {
-		startTime.setHours(config.morningTime.getHour(), config.morningTime.getMinute(), 0, 0);
+		startDate.setHours(config.morningTime.getHour(), config.morningTime.getMinute(), 0, 0);
 	}
 
 	const recurrenceDuration: RecurrenceDuration = {
@@ -126,8 +126,8 @@ function findWeekdayRepeatMatch(parameters: {
 		endIndex: weekdayListEndIndex + (typedTimeOfDay?.matchedLength ?? 0),
 		input: config.input,
 		recurrenceDuration,
-		explanation: `Repeats every ${formatRecurrenceDuration(recurrenceDuration)}${formatTypedTimeOfDayForExplanation({ startTime, wasTimeOfDayTyped: typedTimeOfDay !== null })}`,
-		startTime,
+		explanation: `Repeats every ${formatRecurrenceDuration(recurrenceDuration)}${formatTypedTimeOfDayForExplanation({ startDate, wasTimeOfDayTyped: typedTimeOfDay !== null })}`,
+		startDate,
 	});
 }
 

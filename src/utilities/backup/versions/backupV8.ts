@@ -1,5 +1,3 @@
-import Task from '../../../model/task/Task';
-import Step from '../../../model/task/step/Step';
 import StepStatus from '../../../model/task/step/StepStatus';
 import RecurrenceDuration, { isRecurrenceDuration } from '../../../model/task/recurrence/RecurrenceDuration';
 import QuickToDoChecklistItem from '../../../model/quickToDoChecklist/QuickToDoChecklistItem';
@@ -42,33 +40,6 @@ export interface BackupData {
 	settings: AppSettings;
 	tasks: BackupTask[];
 	quickToDoChecklist: QuickToDoChecklistItem[];
-}
-
-function stepToBackupStep(step: Step): BackupStep {
-	return { id: step.id, text: step.text, status: step.status, children: step.children.map(stepToBackupStep) };
-}
-
-export function taskToBackupTask(task: Task): BackupTask {
-	const state = task.getState();
-	return {
-		description: state.description,
-		steps: state.steps.map(stepToBackupStep),
-		startTime: state.startTime ? state.startTime.toISOString() : null,
-		endTime: state.endTime ? state.endTime.toISOString() : null,
-		deadline: state.deadline ? state.deadline.toISOString() : null,
-		minRequiredTime: state.minDuration,
-		maxRequiredTime: state.maxDuration,
-		recurrenceDuration: state.recurrenceDuration,
-		shouldNotSkipMissedOccurrences: state.shouldNotSkipMissedOccurrences,
-		completedOccurrenceIndex: state.completedOccurrenceIndex,
-		skippedOccurrenceIndex: state.skippedOccurrenceIndex,
-		progressOccurrenceIndex: state.progressOccurrenceIndex,
-		isMandatory: state.isMandatory,
-		isComplete: state.isComplete,
-		isSkipped: state.isSkipped,
-		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
-		lastActionedStep: state.lastActionedStep,
-	};
 }
 
 export function isBackupStep(value: unknown): value is BackupStep {

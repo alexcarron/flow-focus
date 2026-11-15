@@ -8,10 +8,10 @@ import { createStep, cloneStepsDeep, getStepLeavesInOrder, rollUpStepStatuses, s
 import { getAncestorIDs, getSubtreeIDsIncludingSelf, findNodeWithParent, mapNode, indentNode, unindentNode, canIndentNode, canUnindentNode, moveNodeAmongSiblings, reparentAndReorderNode, insertSiblingRelativeToNode, appendRootNode, deleteNode, getNodeIDsInDepthFirstOrder } from "../../utilities/tree/orderedTree";
 import { PastedListItem } from "../../utilities/parsePastedTextIntoNestedListItems";
 import TaskState from "./TaskState";
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError, SkipUntilDateInPastError } from "./TaskTimingError";
+import { StartDateAfterTargetDateError, StartDateAfterDueDateError, TargetDateAfterDueDateError, SkipUntilDateInPastError } from "./TaskTimingError";
 import RecurrenceDuration, { areRecurrenceDurationsEqual, cloneRecurrenceDuration, getWeekdaysOfRecurrenceDuration } from "./recurrence/RecurrenceDuration";
 import TaskOccurrence from "./recurrence/TaskOccurrence";
-import { computeCurrentTaskOccurrence, getOccurrenceStartTime, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
+import { computeCurrentTaskOccurrence, getOccurrenceStartDate, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
 import { moveAnchorOccurrenceToFirstRecurrenceWeekday } from "./recurrence/recurrenceWeekdayOccurrences";
 
 const FIRST_OCCURRENCE_INDEX = 0;
@@ -24,9 +24,9 @@ export default class Task {
 
 	protected description: string;
 	protected steps: Step[] = [];
-	protected startTime: Date | null = null;
-	protected endTime: Date | null = null;
-	protected deadline: Date | null = null;
+	protected startDate: Date | null = null;
+	protected targetDate: Date | null = null;
+	protected dueDate: Date | null = null;
 	protected minRequiredTime: number | null = null;
 	protected maxRequiredTime: number | null = null;
 	protected recurrenceDuration: RecurrenceDuration | null = null;
@@ -35,7 +35,6 @@ export default class Task {
 	protected skippedOccurrenceIndex: number | null = null;
 	protected progressOccurrenceIndex: number | null = null;
 	protected currentOccurrence: TaskOccurrence | null = null;
-	protected isMandatory: boolean = false;
 	protected isComplete: boolean = false;
 	protected isSkipped: boolean = false;
 	protected skippedUntil: Date | null = null;
@@ -67,44 +66,60 @@ export default class Task {
 		return this.minRequiredTime === this.maxRequiredTime;
 	}
 
-	static assertStartTimeNotAfterEndTime(startTime: Date | null, endTime: Date | null): void {
-		if (startTime !== null && endTime !== null && startTime.getTime() > endTime.getTime()) {
-			throw new StartTimeAfterEndTimeError(startTime, endTime);
+	static assertStartDateNotAfterTargetDate(startDate: Date | null, targetDate: Date | null): void {
+		if (startDate !== null && targetDate !== null && startDate.getTime() > targetDate.getTime()) {
+			throw new StartDateAfterTargetDateError(startDate, targetDate);
 		}
 	}
 
-	static assertStartTimeNotAfterDeadline(startTime: Date | null, deadline: Date | null): void {
-		if (startTime !== null && deadline !== null && startTime.getTime() > deadline.getTime()) {
-			throw new StartTimeAfterDeadlineError(startTime, deadline);
+	static assertStartDateNotAfterDueDate(startDate: Date | null, dueDate: Date | null): void {
+		if (startDate !== null && dueDate !== null && startDate.getTime() > dueDate.getTime()) {
+			throw new StartDateAfterDueDateError(startDate, dueDate);
 		}
 	}
 
-	getStartTime(): Date | null {
-		if (this.currentOccurrence !== null) return this.currentOccurrence.startTime;
-		return this.startTime;
+	static assertTargetDateNotAfterDueDate(targetDate: Date | null, dueDate: Date | null): void {
+		if (targetDate !== null && dueDate !== null && targetDate.getTime() > dueDate.getTime()) {
+			throw new TargetDateAfterDueDateError(targetDate, dueDate);
+		}
 	}
 
-	getAnchorStartTime(): Date | null {return this.startTime}
-
-	setStartTime(startTime: Date | null): void {this.startTime = startTime};
-
-	getEndTime(): Date | null {
-		if (this.currentOccurrence !== null) return this.currentOccurrence.endTime;
-		return this.endTime;
+	static assertDatesInOrder({ startDate, targetDate, dueDate }: {
+		startDate: Date | null,
+		targetDate: Date | null,
+		dueDate: Date | null,
+	}): void {
+		Task.assertStartDateNotAfterTargetDate(startDate, targetDate);
+		Task.assertStartDateNotAfterDueDate(startDate, dueDate);
+		Task.assertTargetDateNotAfterDueDate(targetDate, dueDate);
 	}
 
-	getAnchorEndTime(): Date | null {return this.endTime}
-
-	setEndTime(endTime: Date | null): void {this.endTime = endTime};
-
-	getDeadline(): Date | null {
-		if (this.currentOccurrence !== null) return this.currentOccurrence.deadline;
-		return this.deadline;
+	getStartDate(): Date | null {
+		if (this.currentOccurrence !== null) return this.currentOccurrence.startDate;
+		return this.startDate;
 	}
 
-	getAnchorDeadline(): Date | null {return this.deadline}
+	getAnchorStartDate(): Date | null {return this.startDate}
 
-	setDeadline(deadline: Date | null): void {this.deadline = deadline};
+	setStartDate(startDate: Date | null): void {this.startDate = startDate};
+
+	getTargetDate(): Date | null {
+		if (this.currentOccurrence !== null) return this.currentOccurrence.targetDate;
+		return this.targetDate;
+	}
+
+	getAnchorTargetDate(): Date | null {return this.targetDate}
+
+	setTargetDate(targetDate: Date | null): void {this.targetDate = targetDate};
+
+	getDueDate(): Date | null {
+		if (this.currentOccurrence !== null) return this.currentOccurrence.dueDate;
+		return this.dueDate;
+	}
+
+	getAnchorDueDate(): Date | null {return this.dueDate}
+
+	setDueDate(dueDate: Date | null): void {this.dueDate = dueDate};
 
 	getMinRequiredTime(): number {
 		if (this.minRequiredTime === null) {
@@ -121,12 +136,7 @@ export default class Task {
 
 	getMaxRequiredTime(currentTime: Date): number {
 		if (this.maxRequiredTime === null) {
-			if (this.getDeadline() === null) {
-				return Number.POSITIVE_INFINITY;
-			}
-			else {
-				return this.getTimeToComplete(currentTime);
-			}
+			return this.getTimeToCompleteByTargetOrDueDate(currentTime);
 		}
 		return this.maxRequiredTime
 	};
@@ -159,10 +169,6 @@ export default class Task {
 	getProgressOccurrenceIndex(): number | null {return this.progressOccurrenceIndex}
 
 	setProgressOccurrenceIndex(progressOccurrenceIndex: number | null): void {this.progressOccurrenceIndex = progressOccurrenceIndex}
-
-	getIsMandatory(): boolean {return this.isMandatory}
-
-	setMandatory(isMandatory: boolean): void {this.isMandatory = isMandatory}
 
 	getIsComplete(): boolean {
 		if (this.currentOccurrence !== null) {
@@ -199,10 +205,6 @@ export default class Task {
 
 	setSkippedUntil(skippedUntil: Date | null): void {this.skippedUntil = skippedUntil}
 
-	/**
-	 * Hides the task until skipUntilDate without changing its start time, end time, or deadline.
-	 * @throws SkipUntilDateInPastError if skipUntilDate is not after currentTime
-	 */
 	skipUntil(skipUntilDate: Date, currentTime: Date = new Date()): void {
 		if (skipUntilDate.getTime() <= currentTime.getTime()) {
 			throw new SkipUntilDateInPastError(skipUntilDate, currentTime);
@@ -232,11 +234,11 @@ export default class Task {
 	getCurrentOccurrence(): TaskOccurrence | null {return this.currentOccurrence}
 
 	protected getRecurrenceSnapshot(): TaskRecurrenceSnapshot | null {
-		if (this.recurrenceDuration === null || this.startTime === null) return null;
+		if (this.recurrenceDuration === null || this.startDate === null) return null;
 		return {
-			anchorStartTime: this.startTime,
-			anchorEndTime: this.endTime,
-			anchorDeadline: this.deadline,
+			anchorStartDate: this.startDate,
+			anchorTargetDate: this.targetDate,
+			anchorDueDate: this.dueDate,
 			recurrenceDuration: this.recurrenceDuration,
 			completedOccurrenceIndex: this.completedOccurrenceIndex,
 			skippedOccurrenceIndex: this.skippedOccurrenceIndex,
@@ -259,56 +261,81 @@ export default class Task {
 		}
 	}
 
-	protected getDefaultDeadlineForAnchorOccurrence(anchorStartTime: Date, recurrenceDuration: RecurrenceDuration, existingDeadline: Date | null): Date {
-		const nextOccurrenceStartTime = getOccurrenceStartTime({ anchorStartTime, recurrenceDuration }, 1);
-		const isExistingDeadlineWithinFirstOccurrence =
-			existingDeadline !== null && existingDeadline.getTime() <= nextOccurrenceStartTime.getTime();
-		if (isExistingDeadlineWithinFirstOccurrence) return existingDeadline;
-		return nextOccurrenceStartTime;
+	protected static fitTargetAndDueDatesIntoFirstOccurrence(parameters: {
+		anchorStartDate: Date,
+		recurrenceDuration: RecurrenceDuration,
+		targetDate: Date | null,
+		dueDate: Date | null,
+	}): { targetDate: Date | null; dueDate: Date | null } {
+		const nextOccurrenceStartDate = getOccurrenceStartDate({
+			anchorStartDate: parameters.anchorStartDate,
+			recurrenceDuration: parameters.recurrenceDuration,
+		}, 1);
+		const moveDateIntoFirstOccurrence = (date: Date | null): Date | null => {
+			if (date === null) return null;
+			if (date.getTime() > nextOccurrenceStartDate.getTime()) return nextOccurrenceStartDate;
+			return date;
+		};
+
+		if (parameters.targetDate === null && parameters.dueDate === null) {
+			return {
+				targetDate: nextOccurrenceStartDate,
+				dueDate: null,
+			};
+		}
+		return {
+			targetDate: moveDateIntoFirstOccurrence(parameters.targetDate),
+			dueDate: moveDateIntoFirstOccurrence(parameters.dueDate),
+		};
 	}
 
 	protected static moveAnchorOccurrenceToFirstWeekdayOfRecurrence(parameters: {
-		startTime: Date;
-		endTime: Date | null;
-		deadline: Date | null;
+		startDate: Date;
+		targetDate: Date | null;
+		dueDate: Date | null;
 		recurrenceDuration: RecurrenceDuration;
-	}): { startTime: Date; endTime: Date | null; deadline: Date | null } {
+	}): { startDate: Date; targetDate: Date | null; dueDate: Date | null } {
 		const weekdays = getWeekdaysOfRecurrenceDuration(parameters.recurrenceDuration);
 		if (weekdays.length === 0) {
 			return {
-				startTime: parameters.startTime,
-				endTime: parameters.endTime,
-				deadline: parameters.deadline,
+				startDate: parameters.startDate,
+				targetDate: parameters.targetDate,
+				dueDate: parameters.dueDate,
 			};
 		}
 		return moveAnchorOccurrenceToFirstRecurrenceWeekday({
-			startTime: parameters.startTime,
-			endTime: parameters.endTime,
-			deadline: parameters.deadline,
+			startDate: parameters.startDate,
+			targetDate: parameters.targetDate,
+			dueDate: parameters.dueDate,
 			weekdays,
 		});
 	}
 
-	makeRecurring(recurrenceDuration: RecurrenceDuration, requestedAnchorStartTime: Date, currentTime: Date = new Date()): void {
+	makeRecurring(recurrenceDuration: RecurrenceDuration, requestedAnchorStartDate: Date, currentTime: Date = new Date()): void {
 		const movedAnchorOccurrence = Task.moveAnchorOccurrenceToFirstWeekdayOfRecurrence({
-			startTime: requestedAnchorStartTime,
-			endTime: this.endTime,
-			deadline: this.deadline,
+			startDate: requestedAnchorStartDate,
+			targetDate: this.targetDate,
+			dueDate: this.dueDate,
 			recurrenceDuration,
 		});
-		const anchorStartTime = movedAnchorOccurrence.startTime;
-		this.setEndTime(movedAnchorOccurrence.endTime);
-		this.setDeadline(movedAnchorOccurrence.deadline);
+		const anchorStartDate = movedAnchorOccurrence.startDate;
+		const anchorTargetAndDueDates = Task.fitTargetAndDueDatesIntoFirstOccurrence({
+			anchorStartDate,
+			recurrenceDuration,
+			targetDate: movedAnchorOccurrence.targetDate,
+			dueDate: movedAnchorOccurrence.dueDate,
+		});
 
-		Task.assertStartTimeNotAfterEndTime(anchorStartTime, this.endTime);
-
-		const anchorDeadline = this.getDefaultDeadlineForAnchorOccurrence(anchorStartTime, recurrenceDuration, this.deadline);
-
-		Task.assertStartTimeNotAfterDeadline(anchorStartTime, anchorDeadline);
+		Task.assertDatesInOrder({
+			startDate: anchorStartDate,
+			targetDate: anchorTargetAndDueDates.targetDate,
+			dueDate: anchorTargetAndDueDates.dueDate,
+		});
 
 		this.setRecurrenceDuration(recurrenceDuration);
-		this.setStartTime(anchorStartTime);
-		this.setDeadline(anchorDeadline);
+		this.setStartDate(anchorStartDate);
+		this.setTargetDate(anchorTargetAndDueDates.targetDate);
+		this.setDueDate(anchorTargetAndDueDates.dueDate);
 		this.setCompletedOccurrenceIndex(this.isComplete ? FIRST_OCCURRENCE_INDEX : null);
 		this.setSkippedOccurrenceIndex(null);
 		this.setProgressOccurrenceIndex(FIRST_OCCURRENCE_INDEX);
@@ -317,9 +344,9 @@ export default class Task {
 
 	makeNonRecurring(): void {
 		const isCurrentOccurrenceComplete = this.getIsComplete();
-		this.setStartTime(this.getStartTime());
-		this.setEndTime(this.getEndTime());
-		this.setDeadline(this.getDeadline());
+		this.setStartDate(this.getStartDate());
+		this.setTargetDate(this.getTargetDate());
+		this.setDueDate(this.getDueDate());
 		this.setRecurrenceDuration(null);
 		this.setCompletedOccurrenceIndex(null);
 		this.setSkippedOccurrenceIndex(null);
@@ -338,9 +365,9 @@ export default class Task {
 		if (this.currentOccurrence === null) return;
 
 		const currentIndex = this.currentOccurrence.index;
-		this.setStartTime(this.currentOccurrence.startTime);
-		this.setEndTime(this.currentOccurrence.endTime);
-		this.setDeadline(this.currentOccurrence.deadline);
+		this.setStartDate(this.currentOccurrence.startDate);
+		this.setTargetDate(this.currentOccurrence.targetDate);
+		this.setDueDate(this.currentOccurrence.dueDate);
 		this.setCompletedOccurrenceIndex(this.completedOccurrenceIndex === currentIndex ? FIRST_OCCURRENCE_INDEX : null);
 		this.setSkippedOccurrenceIndex(this.skippedOccurrenceIndex === currentIndex ? FIRST_OCCURRENCE_INDEX : null);
 		this.setProgressOccurrenceIndex(FIRST_OCCURRENCE_INDEX);
@@ -435,12 +462,12 @@ export default class Task {
 		return getAncestorIDs(this.steps, stepID).length;
 	}
 
-	removeDeadline(): void {
-		this.setDeadline(null);
+	removeDueDate(): void {
+		this.setDueDate(null);
 	}
 
-	removeStartTime(): void {
-		this.setStartTime(null);
+	removeStartDate(): void {
+		this.setStartDate(null);
 	}
 
 	isStepComplete(stepID: string) {
@@ -448,14 +475,8 @@ export default class Task {
 	}
 
 	hasTaskStarted(currentTime: Date): boolean {
-		return (
-			(this.getStartTime() === null || this.getStartTime()! <= currentTime) &&
-			(this.getEndTime() === null || this.getEndTime()! >= currentTime)
-		);
-	}
-
-	willAlwaysBeAvailable(currentTime: Date): boolean {
-		return this.hasTaskStarted(currentTime) && this.getEndTime() === null;
+		const startDate = this.getStartDate();
+		return startDate === null || startDate <= currentTime;
 	}
 
 	replaceNextStep(newStepText: string) {
@@ -668,28 +689,27 @@ export default class Task {
 		this.steps = deleteNode(this.steps, stepID);
 	}
 
-	getTimeUntilDeadline(currentTime: Date): number {
-		if (this.getDeadline() === null) {
+	getTimeUntilDueDate(currentTime: Date): number {
+		if (this.getDueDate() === null) {
 			return Number.POSITIVE_INFINITY;
 		}
-		return this.getDeadline()!.getTime() - currentTime.getTime();
+		return this.getDueDate()!.getTime() - currentTime.getTime();
 	}
 
-	getTimeToComplete(currentTime: Date): number {
-		if (this.getDeadline() === null) {
+	getTargetOrDueDate(): Date | null {
+		return this.getTargetDate() ?? this.getDueDate();
+	}
+
+	protected getAwakeTimeAvailableBefore(date: Date | null, currentTime: Date): number {
+		if (date === null) {
 			return Number.POSITIVE_INFINITY;
 		}
 
-		const startTime = this.getStartTime()
-		const deadlineDate = this.getDeadline()!;
-
-		let taskDateRange = new DateRange(currentTime, deadlineDate);
-
-		if (
-			startTime !== null &&
-			currentTime.getTime() < startTime.getTime()
-		) {
-			taskDateRange = new DateRange(startTime, deadlineDate);
+		const startDate = this.getStartDate();
+		const hasNotStarted = startDate !== null && currentTime.getTime() < startDate.getTime();
+		let taskDateRange = new DateRange(currentTime, date);
+		if (hasNotStarted) {
+			taskDateRange = new DateRange(startDate, date);
 		}
 
 		return taskDateRange.getDurationWithoutTimeWindow(
@@ -697,16 +717,23 @@ export default class Task {
 		);
 	}
 
+	getTimeToCompleteByDueDate(currentTime: Date): number {
+		return this.getAwakeTimeAvailableBefore(this.getDueDate(), currentTime);
+	}
+
+	getTimeToCompleteByTargetOrDueDate(currentTime: Date): number {
+		return this.getAwakeTimeAvailableBefore(this.getTargetOrDueDate(), currentTime);
+	}
+
 	getTaskTimingOptions(): TaskTimingOptions {
 		return {
-			startTime: this.getStartTime(),
-			endTime: this.getEndTime(),
-			deadline: this.getDeadline(),
+			startDate: this.getStartDate(),
+			targetDate: this.getTargetDate(),
+			dueDate: this.getDueDate(),
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
 			recurrenceDuration: this.recurrenceDuration,
 			shouldNotSkipMissedOccurrences: this.shouldNotSkipMissedOccurrences,
-			isMandatory: this.isMandatory
 		}
 	}
 
@@ -717,21 +744,21 @@ export default class Task {
 
 	protected isOccurrenceScheduleChanging(taskTimingOptions: TaskTimingOptions): boolean {
 		return (
-			!Task.areNullableDatesEqual(taskTimingOptions.startTime, this.getStartTime()) ||
-			!Task.areNullableDatesEqual(taskTimingOptions.endTime, this.getEndTime()) ||
-			!Task.areNullableDatesEqual(taskTimingOptions.deadline, this.getDeadline()) ||
+			!Task.areNullableDatesEqual(taskTimingOptions.startDate, this.getStartDate()) ||
+			!Task.areNullableDatesEqual(taskTimingOptions.targetDate, this.getTargetDate()) ||
+			!Task.areNullableDatesEqual(taskTimingOptions.dueDate, this.getDueDate()) ||
 			!areRecurrenceDurationsEqual(taskTimingOptions.recurrenceDuration, this.recurrenceDuration)
 		);
 	}
 
 	protected static moveTimingOptionsAnchorToFirstRecurrenceWeekday(taskTimingOptions: TaskTimingOptions): TaskTimingOptions {
-		if (taskTimingOptions.recurrenceDuration === null || taskTimingOptions.startTime === null) return taskTimingOptions;
+		if (taskTimingOptions.recurrenceDuration === null || taskTimingOptions.startDate === null) return taskTimingOptions;
 		return {
 			...taskTimingOptions,
 			...Task.moveAnchorOccurrenceToFirstWeekdayOfRecurrence({
-				startTime: taskTimingOptions.startTime,
-				endTime: taskTimingOptions.endTime,
-				deadline: taskTimingOptions.deadline,
+				startDate: taskTimingOptions.startDate,
+				targetDate: taskTimingOptions.targetDate,
+				dueDate: taskTimingOptions.dueDate,
 				recurrenceDuration: taskTimingOptions.recurrenceDuration,
 			}),
 		};
@@ -740,19 +767,21 @@ export default class Task {
 	setFromTaskTimingOptions(requestedTaskTimingOptions: TaskTimingOptions, currentTime: Date = new Date()): void {
 		const wasRecurring = this.isRecurring();
 		const recurrenceDuration = requestedTaskTimingOptions.recurrenceDuration;
-		const requestedStartTime = recurrenceDuration !== null ? requestedTaskTimingOptions.startTime ?? currentTime : requestedTaskTimingOptions.startTime;
+		const requestedStartDate = recurrenceDuration !== null ? requestedTaskTimingOptions.startDate ?? currentTime : requestedTaskTimingOptions.startDate;
 		const taskTimingOptions = Task.moveTimingOptionsAnchorToFirstRecurrenceWeekday({
 			...requestedTaskTimingOptions,
-			startTime: requestedStartTime,
+			startDate: requestedStartDate,
 		});
-		const finalStartTime = taskTimingOptions.startTime;
+		const finalStartDate = taskTimingOptions.startDate;
 
-		Task.assertStartTimeNotAfterEndTime(finalStartTime, taskTimingOptions.endTime);
-		Task.assertStartTimeNotAfterDeadline(finalStartTime, taskTimingOptions.deadline);
+		Task.assertDatesInOrder({
+			startDate: finalStartDate,
+			targetDate: taskTimingOptions.targetDate,
+			dueDate: taskTimingOptions.dueDate,
+		});
 
 		this.setMinRequiredTime(taskTimingOptions.minDuration);
 		this.setMaxRequiredTime(taskTimingOptions.maxDuration);
-		this.setMandatory(taskTimingOptions.isMandatory);
 		this.setShouldNotSkipMissedOccurrences(taskTimingOptions.shouldNotSkipMissedOccurrences);
 
 		if (wasRecurring && recurrenceDuration === null) {
@@ -767,14 +796,14 @@ export default class Task {
 			this.reanchorToCurrentOccurrence();
 		}
 
-		this.setStartTime(finalStartTime);
-		this.setEndTime(taskTimingOptions.endTime);
-		this.setDeadline(taskTimingOptions.deadline);
+		this.setStartDate(finalStartDate);
+		this.setTargetDate(taskTimingOptions.targetDate);
+		this.setDueDate(taskTimingOptions.dueDate);
 
 		if (recurrenceDuration === null) return;
 
 		if (!wasRecurring) {
-			this.makeRecurring(recurrenceDuration, finalStartTime as Date, currentTime);
+			this.makeRecurring(recurrenceDuration, finalStartDate as Date, currentTime);
 			return;
 		}
 
@@ -782,24 +811,23 @@ export default class Task {
 		this.refreshCurrentOccurrence(currentTime);
 	}
 
-	getMinSlackTime(currentTime: Date): number {
-		return this.getTimeToComplete(currentTime) - this.getAssumedMaxRequiredTime();
+	getDueDateSlack(currentTime: Date): number {
+		return this.getTimeToCompleteByDueDate(currentTime) - this.getAssumedMaxRequiredTime();
 	}
 
-	getMaxSlackTime(currentTime: Date): number {
-		return this.getTimeToComplete(currentTime) - this.getMinRequiredTime();
+	getTargetOrDueDateSlack(currentTime: Date): number {
+		return this.getTimeToCompleteByTargetOrDueDate(currentTime) - this.getAssumedMaxRequiredTime();
 	}
 
 	isUrgent(currentTime: Date): boolean {
-		if (this.getDeadline() === null) {
-			return false;
-		}
+		return this.getDueDateSlack(currentTime) <= 0;
+	}
 
-		if (!this.isMandatory) {
-			return false;
-		}
-
-		return this.getTimeToComplete(currentTime) <= this.getAssumedMaxRequiredTime()
+	isDueDateSlackRunningOutToday(currentTime: Date): boolean {
+		const endOfToday = new Date(currentTime);
+		endOfToday.setHours(23, 59, 59, 999);
+		const millisecondsUntilEndOfToday = endOfToday.getTime() - currentTime.getTime();
+		return this.getDueDateSlack(currentTime) <= millisecondsUntilEndOfToday;
 	}
 
 	protected complete(): void {
@@ -834,12 +862,11 @@ export default class Task {
 		return {
 			description: this.description,
 			isComplete: this.isComplete,
-			isMandatory: this.isMandatory,
 			isSkipped: this.isSkipped,
 			skippedUntil: this.skippedUntil,
-			startTime: this.startTime,
-			endTime: this.endTime,
-			deadline: this.deadline,
+			startDate: this.startDate,
+			targetDate: this.targetDate,
+			dueDate: this.dueDate,
 			minDuration: this.minRequiredTime,
 			maxDuration: this.maxRequiredTime,
 			recurrenceDuration: this.recurrenceDuration === null ? null : cloneRecurrenceDuration(this.recurrenceDuration),
@@ -854,17 +881,19 @@ export default class Task {
 	}
 
 	restoreState(taskState: TaskState, currentTime: Date = new Date()) {
-		Task.assertStartTimeNotAfterEndTime(taskState.startTime, taskState.endTime);
-		Task.assertStartTimeNotAfterDeadline(taskState.startTime, taskState.deadline);
+		Task.assertDatesInOrder({
+			startDate: taskState.startDate,
+			targetDate: taskState.targetDate,
+			dueDate: taskState.dueDate,
+		});
 
 		this.setDescription(taskState.description);
 		this.isComplete = taskState.isComplete;
-		this.setMandatory(taskState.isMandatory);
 		this.setSkipped(taskState.isSkipped);
 		this.setSkippedUntil(taskState.skippedUntil);
-		this.setStartTime(taskState.startTime);
-		this.setEndTime(taskState.endTime);
-		this.setDeadline(taskState.deadline);
+		this.setStartDate(taskState.startDate);
+		this.setTargetDate(taskState.targetDate);
+		this.setDueDate(taskState.dueDate);
 		this.setMinRequiredTime(taskState.minDuration);
 		this.setMaxRequiredTime(taskState.maxDuration);
 		this.setRecurrenceDuration(taskState.recurrenceDuration === null ? null : cloneRecurrenceDuration(taskState.recurrenceDuration));
@@ -890,36 +919,10 @@ export default class Task {
 	}
 
 	isActiveIgnoringSkip(currentTime: Date): boolean {
-		if (this.getIsComplete()) {
-			return false;
-		}
-
-		const startTime = this.getStartTime();
-		if (startTime !== null && startTime > currentTime) {
-			return false;
-		}
-
-		const endTime = this.getEndTime();
-		if (endTime !== null && endTime < currentTime) {
-			return false;
-		}
-
-		return true;
+		return !this.getIsComplete() && this.hasTaskStarted(currentTime);
 	}
 
 	mustStartToday(currentTime: Date): boolean {
-		const endOfDay = new Date(currentTime);
-		endOfDay.setHours(23, 59, 59, 999);
-
-		const millisecondsUntilEndOfDay = endOfDay.getTime() - currentTime.getTime();
-
-		const minSlackTime = this.getMinSlackTime(currentTime);
-		const mustStartTaskToday = minSlackTime <= millisecondsUntilEndOfDay;
-
-		const isTaskActive = this.isActive(currentTime);
-
-		return (
-			isTaskActive && mustStartTaskToday
-		)
+		return this.isActive(currentTime) && this.isDueDateSlackRunningOutToday(currentTime);
 	}
 }

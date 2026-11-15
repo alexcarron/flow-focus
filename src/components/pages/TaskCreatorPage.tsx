@@ -23,30 +23,28 @@ import AddTagPopover from '../AddTagPopover';
 import TagChip from '../TagChip';
 import ErrorMessage from '../errors/ErrorMessage';
 import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
-import { StartTimeAfterEndTimeError, StartTimeAfterDeadlineError } from '../../model/task/TaskTimingError';
+import { getDateOrderErrorMessage } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
 
 const TASK_NAME_PLACEHOLDER_TIERS_LONGEST_FIRST = ['Calculus Homework 3.2 due thursday takes 1-2 hours'];
 
 const DEFAULT_TIMING: TaskTimingOptions = {
-	startTime: null,
-	endTime: null,
-	deadline: null,
+	startDate: null,
+	targetDate: null,
+	dueDate: null,
 	minDuration: null,
 	maxDuration: null,
 	recurrenceDuration: null,
 	shouldNotSkipMissedOccurrences: false,
-	isMandatory: true,
 };
 
 const timingKeyToTokenField: Partial<Record<keyof TaskTimingOptions, TypedQuickInputToken['field']>> = {
-	deadline: 'deadline',
-	startTime: 'startTime',
-	endTime: 'endTime',
+	dueDate: 'dueDate',
+	targetDate: 'targetDate',
+	startDate: 'startDate',
 	recurrenceDuration: 'recurrenceDuration',
 	minDuration: 'duration',
 	maxDuration: 'duration',
-	isMandatory: 'isMandatory',
 };
 
 function findTokenForTimingKey(tokens: TypedQuickInputToken[], key: keyof TaskTimingOptions): TypedQuickInputToken | undefined {
@@ -163,8 +161,8 @@ export default function TaskCreatorPage() {
 		setManualTiming(previous => ({ ...previous, ...changedTiming }));
 	}
 
-	function handleDeadlineChange(deadline: Date | null) {
-		handleTimingChange({ ...effectiveTiming, deadline });
+	function handleDueDateChange(dueDate: Date | null) {
+		handleTimingChange({ ...effectiveTiming, dueDate });
 	}
 
 	async function handleCreate() {
@@ -195,13 +193,7 @@ export default function TaskCreatorPage() {
 					task.addTagID(tagID);
 				}
 			} catch (creationError) {
-				if (creationError instanceof StartTimeAfterEndTimeError) {
-					setError('Start time cannot be after end time.');
-				} else if (creationError instanceof StartTimeAfterDeadlineError) {
-					setError('Start time cannot be after the deadline.');
-				} else {
-					setError('Failed to create task.');
-				}
+				setError(getDateOrderErrorMessage(creationError) ?? 'Failed to create task.');
 				return;
 			}
 			task.replaceAllSteps(combinedSteps);
@@ -316,9 +308,9 @@ export default function TaskCreatorPage() {
 
 			{!showMoreOptions && (
 				<DatetimeInput
-					label="Deadline"
-					value={effectiveTiming.deadline}
-					onChange={handleDeadlineChange}
+					label="Due date"
+					value={effectiveTiming.dueDate}
+					onChange={handleDueDateChange}
 					defaultTimeOfDay="night"
 				/>
 			)}

@@ -14,7 +14,6 @@ import TimingOptionsPopup from '../TimingOptionsPopup';
 import SkipPopup from '../SkipPopup';
 import ConfirmModal from '../ConfirmModal';
 import CheckIcon from '../svg-icons/CheckIcon';
-import MandatoryIcon from '../svg-icons/MandatoryIcon';
 import FilterIcon from '../svg-icons/FilterIcon';
 import SortAscIcon from '../svg-icons/SortAscIcon';
 import SortDescIcon from '../svg-icons/SortDescIcon';
@@ -26,11 +25,11 @@ import { mergeRefs } from '../../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
 enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
-enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartTime, Deadline, DateAdded }
+enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartDate, TargetDate, DueDate, DateAdded }
 enum SortDir { Asc, Desc }
 
 const DEFAULT_FILTER = Filter.Active;
-const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'start', 'duration', 'timeAvailable', 'deadline'];
+const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'startDate', 'duration', 'timeAvailable', 'targetDate', 'dueDate'];
 const STACKED_CARD_LAYOUT_MAX_WIDTH_PX = 599;
 
 const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = [
@@ -47,12 +46,12 @@ const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = 
 	{
 		value: Filter.Active,
 		label: 'Active Tasks',
-		description: 'Tasks that have started, haven\'t ended, are not completed, and have a deadline',
+		description: 'Tasks that have started, are not completed, and have a target date or due date',
 	},
 	{
 		value: Filter.MustStartToday,
 		label: 'Today\'s Tasks',
-		description: 'Active tasks that need to be started today to still meet their deadline',
+		description: 'Active tasks that need to be started today to still meet their due date',
 	},
 	{
 		value: Filter.Recurring,
@@ -61,7 +60,7 @@ const FILTER_OPTIONS: { value: Filter; label: string; description: string }[] = 
 	},
 ];
 
-const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | SortBy.StartTime | SortBy.DateAdded>, string> = {
+const SORT_LABELS: Record<Exclude<SortBy, SortBy.Priority | SortBy.StartDate | SortBy.TargetDate | SortBy.DueDate | SortBy.DateAdded>, string> = {
 	[SortBy.Name]: 'Name',
 	[SortBy.Steps]: 'Steps',
 	[SortBy.TimeAvailable]: 'Time Left to Complete',
@@ -72,8 +71,9 @@ const SORT_LABELS: Record<Exclude<SortBy, SortBy.Deadline | SortBy.Priority | So
 const ALL_SORT_LABELS: Record<SortBy, string> = {
 	[SortBy.Priority]: 'Priority',
 	...SORT_LABELS,
-	[SortBy.StartTime]: 'Start',
-	[SortBy.Deadline]: 'Deadline',
+	[SortBy.StartDate]: 'Start Date',
+	[SortBy.TargetDate]: 'Target Date',
+	[SortBy.DueDate]: 'Due Date',
 	[SortBy.DateAdded]: 'Date Added',
 };
 
@@ -84,8 +84,9 @@ const SORT_BY_OPTIONS: { value: SortBy; label: string; description: string }[] =
 	SortBy.TimeAvailable,
 	SortBy.Duration,
 	SortBy.RecurrenceDuration,
-	SortBy.StartTime,
-	SortBy.Deadline,
+	SortBy.StartDate,
+	SortBy.TargetDate,
+	SortBy.DueDate,
 	SortBy.DateAdded,
 ].map(sortBy => ({ value: sortBy, label: ALL_SORT_LABELS[sortBy], description: `Sort by ${ALL_SORT_LABELS[sortBy]}` }));
 
@@ -111,7 +112,7 @@ function applyFilter(tasks: Task[], filter: Filter): Task[] {
 			return tasks.filter(task => !task.getIsComplete())
 			
 		case Filter.Active:
-			return tasks.filter(task => task.isActive(now) && task.getDeadline() !== null);
+			return tasks.filter(task => task.isActive(now) && task.getTargetOrDueDate() !== null);
 			
 		case Filter.MustStartToday:
 			return tasks.filter(task => task.mustStartToday(now));
@@ -124,6 +125,12 @@ function applyFilter(tasks: Task[], filter: Filter): Task[] {
 	}
 }
 
+function compareNullableDatesWithNullsLast(dateA: Date | null, dateB: Date | null): number {
+	if (dateA === null) return 1;
+	if (dateB === null) return -1;
+	return dateA.getTime() - dateB.getTime();
+}
+
 function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 	const now = new Date();
 	let sorted = [...tasks];
@@ -133,7 +140,7 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 	else if (sortBy === SortBy.Steps)
 		sorted.sort((a, b) => a.getSteps().length - b.getSteps().length);
 	else if (sortBy === SortBy.TimeAvailable)
-		sorted.sort((a, b) => a.getTimeToComplete(now) - b.getTimeToComplete(now));
+		sorted.sort((a, b) => a.getTimeToCompleteByDueDate(now) - b.getTimeToCompleteByDueDate(now));
 	else if (sortBy === SortBy.Duration)
 		sorted.sort((a, b) => a.getMaxRequiredTime(now) - b.getMaxRequiredTime(now));
 	else if (sortBy === SortBy.RecurrenceDuration)
@@ -144,22 +151,12 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 			if (recurrenceDurationB === null) return 1;
 			return getApproximateMillisecondsOfRecurrenceDuration(recurrenceDurationA) - getApproximateMillisecondsOfRecurrenceDuration(recurrenceDurationB);
 		});
-	else if (sortBy === SortBy.StartTime)
-		sorted.sort((a, b) => {
-			const startTimeA = a.getStartTime();
-			const startTimeB = b.getStartTime();
-			if (startTimeA === null) return 1;
-			if (startTimeB === null) return -1;
-			return startTimeA.getTime() - startTimeB.getTime();
-		});
-	else if (sortBy === SortBy.Deadline)
-		sorted.sort((a, b) => {
-			const deadlineA = a.getDeadline();
-			const deadlineB = b.getDeadline();
-			if (deadlineA === null) return 1;
-			if (deadlineB === null) return -1;
-			return deadlineA.getTime() - deadlineB.getTime();
-		});
+	else if (sortBy === SortBy.StartDate)
+		sorted.sort((a, b) => compareNullableDatesWithNullsLast(a.getStartDate(), b.getStartDate()));
+	else if (sortBy === SortBy.TargetDate)
+		sorted.sort((a, b) => compareNullableDatesWithNullsLast(a.getTargetDate(), b.getTargetDate()));
+	else if (sortBy === SortBy.DueDate)
+		sorted.sort((a, b) => compareNullableDatesWithNullsLast(a.getDueDate(), b.getDueDate()));
 	else if (sortBy === SortBy.DateAdded)
 		sorted.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
@@ -189,7 +186,6 @@ export default function TasksManagerPage() {
 	const addFirstStep = useTasksStore(s => s.addFirstStep);
 	const deleteStep = useTasksStore(s => s.deleteStep);
 	const setComplete = useTasksStore(s => s.setComplete);
-	const setMandatory = useTasksStore(s => s.setMandatory);
 	const cancelSkip = useTasksStore(s => s.cancelSkip);
 	const deleteTask = useTasksStore(s => s.deleteTask);
 	const refreshTasks = useTasksStore(s => s.refreshTasks);
@@ -199,7 +195,7 @@ export default function TasksManagerPage() {
 	const tags = useTagsStore(s => s.tags);
 	const renameTag = useTagsStore(s => s.renameTag);
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
-	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, setMandatory, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
+	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
 
 	const [filter, setFilter] = useState<Filter>(DEFAULT_FILTER);
 	const [searchText, setSearchText] = useState('');
@@ -382,10 +378,6 @@ export default function TasksManagerPage() {
 								<CheckIcon className={styles.columnHeaderIcon} />
 								<span className={styles.srOnly}>Done</span>
 							</th>
-							<th className={`${styles.columnHeader} ${styles.iconColumn}`} title="Mandatory">
-								<MandatoryIcon className={styles.columnHeaderIcon} />
-								<span className={styles.srOnly}>Mandatory</span>
-							</th>
 							<th
 								className={`${styles.columnHeader} ${styles.sortableHeader}`}
 								onClick={() => toggleSort(SortBy.Name)}
@@ -411,10 +403,10 @@ export default function TasksManagerPage() {
 								{SORT_LABELS[SortBy.Duration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Duration)}</span>
 							</th>
 							<th
-								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('start') ? ` ${styles.hiddenColumn}` : ''}`}
-								onClick={() => toggleSort(SortBy.StartTime)}
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('startDate') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.StartDate)}
 							>
-								Start <span className={styles.sortIndicator}>{renderSortIcon(SortBy.StartTime)}</span>
+								Start Date <span className={styles.sortIndicator}>{renderSortIcon(SortBy.StartDate)}</span>
 							</th>
 							<th
 								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('repeat') ? ` ${styles.hiddenColumn}` : ''}`}
@@ -423,10 +415,16 @@ export default function TasksManagerPage() {
 								{SORT_LABELS[SortBy.RecurrenceDuration]} <span className={styles.sortIndicator}>{renderSortIcon(SortBy.RecurrenceDuration)}</span>
 							</th>
 							<th
-								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('deadline') ? ` ${styles.hiddenColumn}` : ''}`}
-								onClick={() => toggleSort(SortBy.Deadline)}
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('targetDate') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.TargetDate)}
 							>
-								Deadline <span className={styles.sortIndicator}>{renderSortIcon(SortBy.Deadline)}</span>
+								Target Date <span className={styles.sortIndicator}>{renderSortIcon(SortBy.TargetDate)}</span>
+							</th>
+							<th
+								className={`${styles.columnHeader} ${styles.sortableHeader}${hiddenColumnKeys.has('dueDate') ? ` ${styles.hiddenColumn}` : ''}`}
+								onClick={() => toggleSort(SortBy.DueDate)}
+							>
+								Due Date <span className={styles.sortIndicator}>{renderSortIcon(SortBy.DueDate)}</span>
 							</th>
 							<th className={styles.columnHeader}>Actions</th>
 						</tr>

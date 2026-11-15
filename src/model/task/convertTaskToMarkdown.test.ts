@@ -59,10 +59,9 @@ describe('convertTaskToMarkdown', () => {
 
 	it('outputs every set detail in order between the tags and the steps', () => {
 		task = new Task(new TasksManager(), 'Write report', 'task-id', ['work-tag-id']);
-		task.setMandatory(true);
-		task.setStartTime(new Date(2026, 9, 1, 9, 0));
-		task.setDeadline(new Date(2026, 9, 3, 17, 0));
-		task.setEndTime(new Date(2026, 9, 3, 18, 30));
+		task.setStartDate(new Date(2026, 9, 1, 9, 0));
+		task.setTargetDate(new Date(2026, 9, 3, 17, 0));
+		task.setDueDate(new Date(2026, 9, 3, 18, 30));
 		task.setRecurrenceDuration({ amount: 2, unit: RecurrenceUnit.Week });
 		task.setMinRequiredTime(30 * MILLISECONDS_PER_MINUTE);
 		task.setMaxRequiredTime(60 * MILLISECONDS_PER_MINUTE);
@@ -74,10 +73,9 @@ describe('convertTaskToMarkdown', () => {
 			'',
 			'(work)',
 			'',
-			'Mandatory',
 			'Starts Oct 1, 2026 9:00 AM',
-			'Due Oct 3, 2026 5:00 PM',
-			'Ends Oct 3, 2026 6:30 PM',
+			'Ideally Oct 3, 2026 5:00 PM',
+			'Due Oct 3, 2026 6:30 PM',
 			'Repeats every 2 weeks',
 			'Duration: 30 minutes to 1 hour',
 			'Skipped until Oct 2, 2026 8:00 AM',

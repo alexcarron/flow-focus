@@ -12,75 +12,76 @@ const oneWeek = oneDay * 7;
 const testNightTime = Time.fromString('22:30');
 
 describe('parseTypedQuickInput', () => {
-	it('extracts a deadline and strips it from the name', () => {
+	it('extracts a due date and strips it from the name', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due friday', now: testNow });
 		expect(result.cleanedName).toBe('finish essay');
-		expect(result.timing.deadline?.getHours()).toBe(23);
-		expect(result.timing.deadline?.getMinutes()).toBe(0);
+		expect(result.timing.dueDate?.getHours()).toBe(23);
+		expect(result.timing.dueDate?.getMinutes()).toBe(0);
 		expect(result.tokens).toHaveLength(1);
-		expect(result.tokens[0].field).toBe('deadline');
+		expect(result.tokens[0].field).toBe('dueDate');
 	});
 
-	it('clamps a deadline to night time when night time is earlier than end-of-day', () => {
+	it('clamps a due date to night time when night time is earlier than end-of-day', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due friday', now: testNow, nightTime: testNightTime });
-		expect(result.timing.deadline?.getHours()).toBe(22);
-		expect(result.timing.deadline?.getMinutes()).toBe(30);
+		expect(result.timing.dueDate?.getHours()).toBe(22);
+		expect(result.timing.dueDate?.getMinutes()).toBe(30);
 	});
 
-	it('does not clamp a deadline when night time is at or after end-of-day', () => {
+	it('does not clamp a due date when night time is at or after end-of-day', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due friday', now: testNow, nightTime: Time.fromString('23:59') });
-		expect(result.timing.deadline?.getHours()).toBe(23);
-		expect(result.timing.deadline?.getMinutes()).toBe(59);
+		expect(result.timing.dueDate?.getHours()).toBe(23);
+		expect(result.timing.dueDate?.getMinutes()).toBe(59);
 	});
 
 	it('extracts "due midnight" as the start of the next day at exactly 00:00', () => {
 		const result = parseTypedQuickInput({ input: 'take out trash due midnight', now: testNow, nightTime: testNightTime });
 		expect(result.cleanedName).toBe('take out trash');
-		expect(result.timing.deadline?.getDate()).toBe(6);
-		expect(result.timing.deadline?.getHours()).toBe(0);
-		expect(result.timing.deadline?.getMinutes()).toBe(0);
+		expect(result.timing.dueDate?.getDate()).toBe(6);
+		expect(result.timing.dueDate?.getHours()).toBe(0);
+		expect(result.timing.dueDate?.getMinutes()).toBe(0);
 	});
 
 	it('extracts "due tonight" as today at exactly night time', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due tonight', now: testNow, nightTime: testNightTime });
-		expect(result.timing.deadline?.getDate()).toBe(5);
-		expect(result.timing.deadline?.getHours()).toBe(22);
-		expect(result.timing.deadline?.getMinutes()).toBe(30);
+		expect(result.timing.dueDate?.getDate()).toBe(5);
+		expect(result.timing.dueDate?.getHours()).toBe(22);
+		expect(result.timing.dueDate?.getMinutes()).toBe(30);
 	});
 
 	it('extracts "due night" as today at exactly night time', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due night', now: testNow, nightTime: testNightTime });
-		expect(result.timing.deadline?.getDate()).toBe(5);
-		expect(result.timing.deadline?.getHours()).toBe(22);
-		expect(result.timing.deadline?.getMinutes()).toBe(30);
+		expect(result.timing.dueDate?.getDate()).toBe(5);
+		expect(result.timing.dueDate?.getHours()).toBe(22);
+		expect(result.timing.dueDate?.getMinutes()).toBe(30);
 	});
 
 	it('extracts "due fri night" as the next Friday at exactly night time', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due fri night', now: testNow, nightTime: testNightTime });
-		expect(result.timing.deadline?.getDay()).toBe(5);
-		expect(result.timing.deadline?.getHours()).toBe(22);
-		expect(result.timing.deadline?.getMinutes()).toBe(30);
+		expect(result.timing.dueDate?.getDay()).toBe(5);
+		expect(result.timing.dueDate?.getHours()).toBe(22);
+		expect(result.timing.dueDate?.getMinutes()).toBe(30);
 	});
 
 	it('extracts "due fri 2pm" with the explicit clock time', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due fri 2pm', now: testNow });
-		expect(result.timing.deadline?.getDay()).toBe(5);
-		expect(result.timing.deadline?.getHours()).toBe(14);
-		expect(result.timing.deadline?.getMinutes()).toBe(0);
+		expect(result.timing.dueDate?.getDay()).toBe(5);
+		expect(result.timing.dueDate?.getHours()).toBe(14);
+		expect(result.timing.dueDate?.getMinutes()).toBe(0);
 	});
 
 	it('extracts "starts tomorrow 2:34 am" with the explicit clock time', () => {
 		const result = parseTypedQuickInput({ input: 'call mom starts tomorrow 2:34 am', now: testNow });
-		expect(result.timing.startTime?.getDate()).toBe(6);
-		expect(result.timing.startTime?.getHours()).toBe(2);
-		expect(result.timing.startTime?.getMinutes()).toBe(34);
+		expect(result.timing.startDate?.getDate()).toBe(6);
+		expect(result.timing.startDate?.getHours()).toBe(2);
+		expect(result.timing.startDate?.getMinutes()).toBe(34);
 	});
 
-	it('extracts "ends next tuesday at 1:00pm" with the explicit clock time', () => {
-		const result = parseTypedQuickInput({ input: 'meeting ends next tuesday at 1:00pm', now: testNow });
-		expect(result.timing.endTime?.getDay()).toBe(2);
-		expect(result.timing.endTime?.getHours()).toBe(13);
-		expect(result.timing.endTime?.getMinutes()).toBe(0);
+	it('extracts "ideally by next tuesday at 1:00pm" as a target date with the explicit clock time', () => {
+		const result = parseTypedQuickInput({ input: 'meeting notes ideally by next tuesday at 1:00pm', now: testNow });
+		expect(result.cleanedName).toBe('meeting notes');
+		expect(result.timing.targetDate?.getDay()).toBe(2);
+		expect(result.timing.targetDate?.getHours()).toBe(13);
+		expect(result.timing.targetDate?.getMinutes()).toBe(0);
 	});
 
 	it('extracts "due friday morning" using the morning setting', () => {
@@ -90,28 +91,117 @@ describe('parseTypedQuickInput', () => {
 			nightTime: testNightTime,
 			morningTime: Time.fromString('06:45'),
 		});
-		expect(result.timing.deadline?.getDay()).toBe(5);
-		expect(result.timing.deadline?.getHours()).toBe(6);
-		expect(result.timing.deadline?.getMinutes()).toBe(45);
+		expect(result.timing.dueDate?.getDay()).toBe(5);
+		expect(result.timing.dueDate?.getHours()).toBe(6);
+		expect(result.timing.dueDate?.getMinutes()).toBe(45);
 	});
 
 	it.each([
-		'mandatory', 'required', 'must do', 'must be completed', 'needs to be completed',
-		'compulsory', 'obligatory', 'not optional',
-	])('marks the task mandatory for "%s"', (phrase) => {
+		'due friday',
+		'deadline friday',
+		'must be done by friday',
+		'has to be done by friday',
+		'no later than friday',
+		"can't finish after friday",
+		'cant do after friday',
+		'cannot do after friday',
+	])('sets a due date for "%s"', (phrase) => {
 		const result = parseTypedQuickInput({ input: `clean garage ${phrase}`, now: testNow });
 		expect(result.cleanedName).toBe('clean garage');
-		expect(result.timing.isMandatory).toBe(true);
+		expect(result.timing.dueDate?.getDay()).toBe(5);
+		expect(result.timing.targetDate).toBeUndefined();
 	});
 
 	it.each([
-		'optional', 'not required', 'not mandatory', 'do not have to complete',
-		'does not need to be completed', 'may complete', 'not obligated', 'not compulsory',
-		'voluntary', 'discretionary',
-	])('marks the task optional for "%s"', (phrase) => {
+		'by friday',
+		'want to finish by friday',
+		'aim for friday',
+		'aim to finish by friday',
+		'ideally by friday',
+		'friday',
+	])('sets a target date for "%s"', (phrase) => {
 		const result = parseTypedQuickInput({ input: `clean garage ${phrase}`, now: testNow });
 		expect(result.cleanedName).toBe('clean garage');
-		expect(result.timing.isMandatory).toBe(false);
+		expect(result.timing.targetDate?.getDay()).toBe(5);
+		expect(result.timing.dueDate).toBeUndefined();
+	});
+
+	it.each([
+		'starts friday',
+		'starting friday',
+		'from friday',
+		'after friday',
+		'not before friday',
+	])('sets a start date for "%s"', (phrase) => {
+		const result = parseTypedQuickInput({ input: `clean garage ${phrase}`, now: testNow });
+		expect(result.cleanedName).toBe('clean garage');
+		expect(result.timing.startDate?.getDay()).toBe(5);
+	});
+
+	it('makes "by" set a due date when the task starts with "have to"', () => {
+		const result = parseTypedQuickInput({ input: 'I have to finish homework by friday', now: testNow });
+		expect(result.cleanedName).toBe('finish homework');
+		expect(result.timing.dueDate?.getDay()).toBe(5);
+		expect(result.timing.targetDate).toBeUndefined();
+	});
+
+	it('keeps "by" setting a target date when the task starts with "want to"', () => {
+		const result = parseTypedQuickInput({ input: 'want to play Celeste by sunday', now: testNow });
+		expect(result.cleanedName).toBe('play Celeste');
+		expect(result.timing.targetDate?.getDay()).toBe(0);
+		expect(result.timing.dueDate).toBeUndefined();
+	});
+
+	it('keeps "have to" in the name when no "by" date follows it', () => {
+		const result = parseTypedQuickInput({ input: 'have to call the plumber', now: testNow });
+		expect(result.cleanedName).toBe('have to call the plumber');
+		expect(result.tokens).toHaveLength(0);
+	});
+
+	it('makes "by" set a target date again once the "have to" lead-in is escaped', () => {
+		const input = 'have to finish homework by friday';
+		const first = parseTypedQuickInput({ input, now: testNow });
+		const leadInToken = first.tokens.find(token => token.matchedText === 'have to')!;
+		const result = parseTypedQuickInput({ input, now: testNow, escapedTokenLocations: [toEscapedTokenLocation(leadInToken)] });
+		expect(result.cleanedName).toBe('have to finish homework');
+		expect(result.timing.targetDate?.getDay()).toBe(5);
+		expect(result.timing.dueDate).toBeUndefined();
+	});
+
+	it('sets both a target date and a due date in one line', () => {
+		const result = parseTypedQuickInput({ input: 'homework 5 by friday due sunday', now: testNow });
+		expect(result.cleanedName).toBe('homework 5');
+		expect(result.timing.targetDate?.getDay()).toBe(5);
+		expect(result.timing.dueDate?.getDay()).toBe(0);
+	});
+
+	it('ignores a target date that is after the due date and says so', () => {
+		const result = parseTypedQuickInput({ input: 'homework 5 by next sunday due friday', now: testNow });
+		expect(result.timing.targetDate).toBeUndefined();
+		expect(result.timing.dueDate?.getDay()).toBe(5);
+		const targetDateToken = result.tokens.find(token => token.field === 'targetDate')!;
+		expect(targetDateToken.explanation).toBe("Ignored, it's after the due date");
+	});
+
+	it.each([
+		'sort photos by date',
+		'email from Bob',
+		'clean up after dinner',
+	])('does not find a date in "%s"', (input) => {
+		const result = parseTypedQuickInput({ input, now: testNow });
+		expect(result.cleanedName).toBe(input);
+		expect(result.tokens).toHaveLength(0);
+	});
+
+	it('does not set a start date from a possessive date', () => {
+		const result = parseTypedQuickInput({ input: "notes from monday's meeting", now: testNow });
+		expect(result.timing.startDate).toBeUndefined();
+		expect(result.tokens).toHaveLength(0);
+	});
+
+	it('does not set a start date in the past', () => {
+		const result = parseTypedQuickInput({ input: 'Follow up on the call from last friday', now: testNow });
+		expect(result.timing.startDate).toBeUndefined();
 	});
 
 	it('extracts a daily repeat', () => {
@@ -138,12 +228,13 @@ describe('parseTypedQuickInput', () => {
 		expect(result.timing.recurrenceDuration).toEqual({ amount: 2, unit: RecurrenceUnit.Hour });
 	});
 
-	it('extracts a weekly repeat on one weekday, starting at the morning time and due at the end of that day', () => {
+	it('extracts a weekly repeat on one weekday, starting at the morning time with a target date at the end of that day', () => {
 		const result = parseTypedQuickInput({ input: 'gym every monday', now: testNow });
 		expect(result.cleanedName).toBe('gym');
 		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week, weekdays: [Weekday.MONDAY] });
-		expect(result.timing.startTime).toEqual(new Date(2026, 0, 5, 7, 0));
-		expect(result.timing.deadline).toEqual(new Date(2026, 0, 5, 23, 0));
+		expect(result.timing.startDate).toEqual(new Date(2026, 0, 5, 7, 0));
+		expect(result.timing.targetDate).toEqual(new Date(2026, 0, 5, 23, 0));
+		expect(result.timing.dueDate).toBeUndefined();
 	});
 
 	it.each([
@@ -164,27 +255,28 @@ describe('parseTypedQuickInput', () => {
 
 	it('starts a weekday repeat on the earliest upcoming chosen weekday', () => {
 		const result = parseTypedQuickInput({ input: 'stretch every sat and wed', now: testNow });
-		expect(result.timing.startTime).toEqual(new Date(2026, 0, 7, 7, 0));
+		expect(result.timing.startDate).toEqual(new Date(2026, 0, 7, 7, 0));
 	});
 
 	it('uses a typed time of day as the start of each weekday occurrence', () => {
 		const result = parseTypedQuickInput({ input: 'class every tue and thu at 6pm', now: testNow, nightTime: testNightTime });
 		expect(result.cleanedName).toBe('class');
-		expect(result.timing.startTime).toEqual(new Date(2026, 0, 6, 18, 0));
-		expect(result.timing.deadline).toEqual(new Date(2026, 0, 6, 22, 30));
+		expect(result.timing.startDate).toEqual(new Date(2026, 0, 6, 18, 0));
+		expect(result.timing.targetDate).toEqual(new Date(2026, 0, 6, 22, 30));
 	});
 
-	it('moves a time-only deadline onto the first weekday occurrence', () => {
+	it('moves a time-only due date onto the first weekday occurrence without adding a target date', () => {
 		const result = parseTypedQuickInput({ input: 'class every tue and thu due 5pm', now: testNow });
-		expect(result.timing.startTime).toEqual(new Date(2026, 0, 6, 7, 0));
-		expect(result.timing.deadline).toEqual(new Date(2026, 0, 6, 17, 0));
+		expect(result.timing.startDate).toEqual(new Date(2026, 0, 6, 7, 0));
+		expect(result.timing.dueDate).toEqual(new Date(2026, 0, 6, 17, 0));
+		expect(result.timing.targetDate).toBeUndefined();
 	});
 
-	it('does not treat later weekdays in a repeat list as a due date', () => {
+	it('does not treat later weekdays in a repeat list as a target date', () => {
 		const result = parseTypedQuickInput({ input: 'call mom friday every tue and thu', now: testNow });
 		expect(result.cleanedName).toBe('call mom');
-		expect(result.tokens.map(token => token.field)).toEqual(['deadline', 'recurrenceDuration']);
-		expect(result.timing.deadline?.getDay()).toBe(5);
+		expect(result.tokens.map(token => token.field)).toEqual(['targetDate', 'recurrenceDuration']);
+		expect(result.timing.targetDate?.getDay()).toBe(5);
 	});
 
 	it('extracts a duration range from the "takes" form', () => {
@@ -204,7 +296,7 @@ describe('parseTypedQuickInput', () => {
 	it('combines several phrases in one line', () => {
 		const result = parseTypedQuickInput({ input: 'finish essay due friday every week takes 2 to 4 hours', now: testNow });
 		expect(result.cleanedName).toBe('finish essay');
-		expect(result.timing.deadline).toBeInstanceOf(Date);
+		expect(result.timing.dueDate).toBeInstanceOf(Date);
 		expect(result.timing.recurrenceDuration).toEqual({ amount: 1, unit: RecurrenceUnit.Week });
 		expect(result.timing.minDuration).toBe(2 * oneHour);
 		expect(result.timing.maxDuration).toBe(4 * oneHour);
@@ -215,14 +307,14 @@ describe('parseTypedQuickInput', () => {
 		const escapedTokenLocations = [toEscapedTokenLocation(first.tokens[0])];
 		const result = parseTypedQuickInput({ input: 'read due monday book', now: testNow, escapedTokenLocations });
 		expect(result.cleanedName).toBe('read due monday book');
-		expect(result.timing.deadline).toBeUndefined();
+		expect(result.timing.dueDate).toBeUndefined();
 		expect(result.tokens).toHaveLength(0);
 	});
 
 	it('treats a quoted trigger as literal text and strips the quotes', () => {
 		const result = parseTypedQuickInput({ input: 'read "due monday"', now: testNow });
 		expect(result.cleanedName).toBe('read due monday');
-		expect(result.timing.deadline).toBeUndefined();
+		expect(result.timing.dueDate).toBeUndefined();
 	});
 
 	it('keeps quotes that do not protect a trigger', () => {
@@ -231,54 +323,55 @@ describe('parseTypedQuickInput', () => {
 		expect(result.tokens).toHaveLength(0);
 	});
 
-	it('treats an abbreviated weekday at the end of the input as an implied due date', () => {
+	it('treats an abbreviated weekday at the end of the input as an implied target date', () => {
 		const result = parseTypedQuickInput({ input: 'Read Chp.7 tue', now: testNow });
 		expect(result.cleanedName).toBe('Read Chp.7');
-		expect(result.timing.deadline?.getDay()).toBe(2);
+		expect(result.timing.targetDate?.getDay()).toBe(2);
 		expect(result.tokens).toHaveLength(1);
-		expect(result.tokens[0].field).toBe('deadline');
+		expect(result.tokens[0].field).toBe('targetDate');
 	});
 
-	it('still treats an abbreviated weekday at the end as an implied due date when followed by trailing punctuation', () => {
+	it('still treats an abbreviated weekday at the end as an implied target date when followed by trailing punctuation', () => {
 		const result = parseTypedQuickInput({ input: 'Read Chp.7 tue.', now: testNow });
-		expect(result.timing.deadline?.getDay()).toBe(2);
+		expect(result.timing.targetDate?.getDay()).toBe(2);
 	});
 
-	it('treats an abbreviated weekday in the middle of the input as an implied due date', () => {
+	it('treats an abbreviated weekday in the middle of the input as an implied target date', () => {
 		const result = parseTypedQuickInput({ input: 'Finish chapter 7 tue and chapter 8', now: testNow });
 		expect(result.cleanedName).toBe('Finish chapter 7 and chapter 8');
-		expect(result.timing.deadline?.getDay()).toBe(2);
+		expect(result.timing.targetDate?.getDay()).toBe(2);
 		expect(result.tokens).toHaveLength(1);
-		expect(result.tokens[0].field).toBe('deadline');
+		expect(result.tokens[0].field).toBe('targetDate');
 	});
 
-	it('treats "last weekday" as an implied due date in the past', () => {
+	it('treats "last weekday" as an implied target date in the past', () => {
 		const result = parseTypedQuickInput({ input: 'Follow up on the call from last friday', now: testNow });
-		expect(result.timing.deadline?.getDay()).toBe(5);
-		expect(result.timing.deadline?.getTime()).toBeLessThan(testNow.getTime());
+		expect(result.timing.targetDate?.getDay()).toBe(5);
+		expect(result.timing.targetDate?.getTime()).toBeLessThan(testNow.getTime());
 	});
 
-	it('treats a word that happens to match an abbreviated weekday as an implied due date even when not at the end', () => {
+	it('treats a word that happens to match an abbreviated weekday as an implied target date even when not at the end', () => {
 		const result = parseTypedQuickInput({ input: 'I sat on a chair', now: testNow });
-		expect(result.timing.deadline?.getDay()).toBe(6);
+		expect(result.timing.targetDate?.getDay()).toBe(6);
 		expect(result.tokens).toHaveLength(1);
-		expect(result.tokens[0].field).toBe('deadline');
+		expect(result.tokens[0].field).toBe('targetDate');
 	});
 });
 
 describe('escapedTokenLocations', () => {
 	it('keeps a specific occurrence of a repeated word literal without affecting the other occurrence', () => {
-		const first = parseTypedQuickInput({ input: 'optional optional', now: testNow });
+		const input = 'takes 1 hour takes 1 hour';
+		const first = parseTypedQuickInput({ input, now: testNow });
 		expect(first.tokens).toHaveLength(2);
 
 		const escapedTokenLocations = [toEscapedTokenLocation(first.tokens[0])];
-		const result = parseTypedQuickInput({ input: 'optional optional', now: testNow, escapedTokenLocations });
+		const result = parseTypedQuickInput({ input, now: testNow, escapedTokenLocations });
 		expect(result.tokens).toHaveLength(1);
-		expect(result.tokens[0].startIndex).toBe(9);
-		expect(result.cleanedName).toBe('optional');
+		expect(result.tokens[0].startIndex).toBe(13);
+		expect(result.cleanedName).toBe('takes 1 hour');
 	});
 
-	it('does not let an escaped implied-due-date candidate block a later candidate from becoming the winner', () => {
+	it('does not let an escaped implied-target-date candidate block a later candidate from becoming the winner', () => {
 		const first = parseTypedQuickInput({ input: 'I sat on a chair', now: testNow });
 		expect(first.tokens).toHaveLength(1);
 		expect(first.tokens[0].matchedText).toBe('sat');

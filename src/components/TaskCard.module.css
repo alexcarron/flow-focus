@@ -238,6 +238,14 @@
 	gap: var(--space-medium);
 }
 
+.date {
+	white-space: nowrap;
+}
+
+.targetDate {
+	color: var(--color-text-subtle);
+}
+
 .timeLeft {
 	font-weight: var(--font-weight-semibold);
 	flex-shrink: 0;

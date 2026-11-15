@@ -102,11 +102,11 @@ describe('completing a task', () => {
 });
 
 describe('skipping a task', () => {
-	it('keeps skippedUntil after reloading, without changing start time, end time, or deadline', async () => {
-		const startTime = new Date('2020-01-01T00:00:00.000Z');
-		const endTime = new Date('2020-01-01T01:00:00.000Z');
-		const deadline = new Date('2020-01-01T02:00:00.000Z');
-		const task = await useTasksStore.getState().addTask('Water the plants', { startTime, endTime, deadline });
+	it('keeps skippedUntil after reloading, without changing the start date, target date, or due date', async () => {
+		const startDate = new Date('2020-01-01T00:00:00.000Z');
+		const targetDate = new Date('2020-01-01T01:00:00.000Z');
+		const dueDate = new Date('2020-01-01T02:00:00.000Z');
+		const task = await useTasksStore.getState().addTask('Water the plants', { startDate, targetDate, dueDate });
 
 		const skipUntilDate = new Date(Date.now() + 1000 * 60 * 60);
 		useTasksStore.getState().skipTaskUntil(task, skipUntilDate);
@@ -115,9 +115,9 @@ describe('skipping a task', () => {
 
 		const reloadedTask = useTasksStore.getState().tasks[0];
 		expect(reloadedTask.getSkippedUntil()).toEqual(skipUntilDate);
-		expect(reloadedTask.getStartTime()).toEqual(startTime);
-		expect(reloadedTask.getEndTime()).toEqual(endTime);
-		expect(reloadedTask.getDeadline()).toEqual(deadline);
+		expect(reloadedTask.getStartDate()).toEqual(startDate);
+		expect(reloadedTask.getTargetDate()).toEqual(targetDate);
+		expect(reloadedTask.getDueDate()).toEqual(dueDate);
 	});
 
 	it('is undoable and redoable', async () => {
@@ -155,24 +155,24 @@ describe('a recurring task', () => {
 
 		const oneDayMilliseconds = 1000 * 60 * 60 * 24;
 		const task = await useTasksStore.getState().addTask('Take out the trash', {
-			startTime: now,
+			startDate: now,
 			recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Day },
 		});
-		const firstOccurrenceStart = task.getStartTime() as Date;
+		const firstOccurrenceStart = task.getStartDate() as Date;
 
 		vi.setSystemTime(new Date(now.getTime() + oneDayMilliseconds + 1000));
 		tasksManager.update(new Date());
 		useTasksStore.getState().refreshTasks();
 
-		const advancedOccurrenceStart = useTasksStore.getState().tasks[0].getStartTime();
+		const advancedOccurrenceStart = useTasksStore.getState().tasks[0].getStartDate();
 		expect(advancedOccurrenceStart?.getTime()).toBe(firstOccurrenceStart.getTime() + oneDayMilliseconds);
 
 		tasksManager.update(new Date(now.getTime() + oneDayMilliseconds + 2000));
 		useTasksStore.getState().refreshTasks();
 
-		expect(useTasksStore.getState().tasks[0].getStartTime()?.getTime())
+		expect(useTasksStore.getState().tasks[0].getStartDate()?.getTime())
 			.toBe(firstOccurrenceStart.getTime() + oneDayMilliseconds);
-		expect(useTasksStore.getState().tasks[0].getAnchorStartTime()?.getTime()).toBe(firstOccurrenceStart.getTime());
+		expect(useTasksStore.getState().tasks[0].getAnchorStartDate()?.getTime()).toBe(firstOccurrenceStart.getTime());
 	});
 
 	it('persists only the anchor occurrence, so reloading after time passes derives the same current occurrence', async () => {
@@ -182,7 +182,7 @@ describe('a recurring task', () => {
 
 		const oneDayMilliseconds = 1000 * 60 * 60 * 24;
 		await useTasksStore.getState().addTask('Take out the trash', {
-			startTime: now,
+			startDate: now,
 			recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Day },
 		});
 
@@ -192,8 +192,8 @@ describe('a recurring task', () => {
 		await useTasksStore.getState().loadTasks();
 
 		const reloadedTask = useTasksStore.getState().tasks[0];
-		expect(reloadedTask.getAnchorStartTime()?.getTime()).toBe(now.getTime());
-		expect(reloadedTask.getStartTime()?.getTime()).toBe(now.getTime() + 3 * oneDayMilliseconds);
+		expect(reloadedTask.getAnchorStartDate()?.getTime()).toBe(now.getTime());
+		expect(reloadedTask.getStartDate()?.getTime()).toBe(now.getTime() + 3 * oneDayMilliseconds);
 	});
 });
 

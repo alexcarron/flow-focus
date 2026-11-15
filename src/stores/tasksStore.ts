@@ -48,8 +48,7 @@ interface TasksActions {
 	setDescription: (task: Task, description: string) => void;
 	setSteps: (task: Task, stepTexts: string[]) => void;
 	setStepText: (task: Task, stepID: string, newText: string) => void;
-	setDeadline: (task: Task, deadline: Date | null) => void;
-	setMandatory: (task: Task, value: boolean) => void;
+	setDueDate: (task: Task, dueDate: Date | null) => void;
 	setTimingOptions: (task: Task, options: TaskTimingOptions) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setStepComplete: (task: Task, stepID: string, isComplete: boolean) => void;
@@ -113,9 +112,9 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 				createdAt: data.createdAt,
 			});
 			task.replaceAllSteps(data.steps);
-			task.setStartTime(data.startTime);
-			task.setEndTime(data.endTime);
-			task.setDeadline(data.deadline);
+			task.setStartDate(data.startDate);
+			task.setTargetDate(data.targetDate);
+			task.setDueDate(data.dueDate);
 			task.setMinRequiredTime(data.minRequiredTime);
 			task.setMaxRequiredTime(data.maxRequiredTime);
 			task.setRecurrenceDuration(data.recurrenceDuration);
@@ -123,7 +122,6 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 			task.setCompletedOccurrenceIndex(data.completedOccurrenceIndex);
 			task.setSkippedOccurrenceIndex(data.skippedOccurrenceIndex);
 			task.setProgressOccurrenceIndex(data.progressOccurrenceIndex);
-			task.setMandatory(data.isMandatory);
 			task.setComplete(data.isComplete);
 			task.setSkipped(data.isSkipped);
 			task.setSkippedUntil(data.skippedUntil);
@@ -237,12 +235,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().executeWithPatches(() => task.editStepText(stepID, newText), [task]);
 		},
 
-		setDeadline(task: Task, deadline: Date | null) {
-			get().executeWithPatches(() => task.setDeadline(deadline), [task]);
-		},
-
-		setMandatory(task: Task, value: boolean) {
-			get().executeWithPatches(() => task.setMandatory(value), [task]);
+		setDueDate(task: Task, dueDate: Date | null) {
+			get().executeWithPatches(() => task.setDueDate(dueDate), [task]);
 		},
 
 		setTimingOptions(task: Task, options: TaskTimingOptions) {
@@ -319,25 +313,23 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		},
 
 		async addTask(description: string, timingOptions?: Partial<TaskTimingOptions>) {
-			if (timingOptions?.startTime !== undefined && timingOptions?.endTime !== undefined) {
-				Task.assertStartTimeNotAfterEndTime(timingOptions.startTime, timingOptions.endTime);
-			}
-			if (timingOptions?.startTime !== undefined && timingOptions?.deadline !== undefined) {
-				Task.assertStartTimeNotAfterDeadline(timingOptions.startTime, timingOptions.deadline);
-			}
+			Task.assertDatesInOrder({
+				startDate: timingOptions?.startDate ?? null,
+				targetDate: timingOptions?.targetDate ?? null,
+				dueDate: timingOptions?.dueDate ?? null,
+			});
 
 			const task = tasksManager.addCreatedTask(description);
 			if (timingOptions) {
-				if (timingOptions.startTime !== undefined) task.setStartTime(timingOptions.startTime);
-				if (timingOptions.endTime !== undefined) task.setEndTime(timingOptions.endTime);
-				if (timingOptions.deadline !== undefined) task.setDeadline(timingOptions.deadline);
+				if (timingOptions.startDate !== undefined) task.setStartDate(timingOptions.startDate);
+				if (timingOptions.targetDate !== undefined) task.setTargetDate(timingOptions.targetDate);
+				if (timingOptions.dueDate !== undefined) task.setDueDate(timingOptions.dueDate);
 				if (timingOptions.minDuration !== undefined) task.setMinRequiredTime(timingOptions.minDuration);
 				if (timingOptions.maxDuration !== undefined) task.setMaxRequiredTime(timingOptions.maxDuration);
 				if (timingOptions.shouldNotSkipMissedOccurrences !== undefined) task.setShouldNotSkipMissedOccurrences(timingOptions.shouldNotSkipMissedOccurrences);
 				if (timingOptions.recurrenceDuration !== undefined && timingOptions.recurrenceDuration !== null) {
-					task.makeRecurring(timingOptions.recurrenceDuration, timingOptions.startTime ?? new Date());
+					task.makeRecurring(timingOptions.recurrenceDuration, timingOptions.startDate ?? new Date());
 				}
-				if (timingOptions.isMandatory !== undefined) task.setMandatory(timingOptions.isMandatory);
 			}
 			await persistTask(task);
 			set(state => { state.tasks = [...tasksManager.getTasks()]; });
@@ -372,9 +364,9 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			for (const backupTask of backupTasks) {
 				const task = tasksManager.addCreatedTask(backupTask.description, { createdAt: new Date(backupTask.createdAt) });
 				task.replaceAllSteps(cloneStepsDeep(backupTask.steps as Step[]));
-				task.setStartTime(backupTask.startTime ? new Date(backupTask.startTime) : null);
-				task.setEndTime(backupTask.endTime ? new Date(backupTask.endTime) : null);
-				task.setDeadline(backupTask.deadline ? new Date(backupTask.deadline) : null);
+				task.setStartDate(backupTask.startDate ? new Date(backupTask.startDate) : null);
+				task.setTargetDate(backupTask.targetDate ? new Date(backupTask.targetDate) : null);
+				task.setDueDate(backupTask.dueDate ? new Date(backupTask.dueDate) : null);
 				task.setMinRequiredTime(backupTask.minRequiredTime);
 				task.setMaxRequiredTime(backupTask.maxRequiredTime);
 				task.setRecurrenceDuration(backupTask.recurrenceDuration);
@@ -382,7 +374,6 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				task.setCompletedOccurrenceIndex(backupTask.completedOccurrenceIndex);
 				task.setSkippedOccurrenceIndex(backupTask.skippedOccurrenceIndex);
 				task.setProgressOccurrenceIndex(backupTask.progressOccurrenceIndex);
-				task.setMandatory(backupTask.isMandatory);
 				task.setComplete(backupTask.isComplete);
 				task.setSkipped(backupTask.isSkipped);
 				task.setSkippedUntil(backupTask.skippedUntil ? new Date(backupTask.skippedUntil) : null);

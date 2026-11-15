@@ -54,16 +54,20 @@ export default class TaskPrioritizer {
 					"Is active while other is completed, skipped, or in the future"
 				) ||
 				this.compareBy(
-					this.compareByMandatoryStatus.bind(this), task1, task2, currentTime,
-					"Is mandatory with not enough slack time to complete optional tasks first"
+					this.compareByDueDateOverTargetDateOnly.bind(this), task1, task2, currentTime,
+					"Has a due date without enough slack to do the tasks with only a target date first"
 				) ||
 				this.compareBy(
-					this.compareBySlackTime.bind(this), task1, task2, currentTime,
-					`Had less minimum slack time: ${task1.getMinSlackTime(currentTime)} VS ${task2.getMinSlackTime(currentTime)}`
+					this.compareByLessDueDateSlack.bind(this), task1, task2, currentTime,
+					"Has due date slack running out today while the other doesn't"
 				) ||
 				this.compareBy(
-					this.compareByTimeToComplete.bind(this), task1, task2, currentTime,
-					"Had less time to complete task"
+					this.compareByTargetOrDueDateSlack.bind(this), task1, task2, currentTime,
+					`Had less slack until its target or due date: ${task1.getTargetOrDueDateSlack(currentTime)} VS ${task2.getTargetOrDueDateSlack(currentTime)}`
+				) ||
+				this.compareBy(
+					this.compareByTimeToCompleteByTargetOrDueDate.bind(this), task1, task2, currentTime,
+					"Had less time to complete task by its target or due date"
 				) ||
 				this.compareBy(
 					this.compareByProgress.bind(this), task1, task2, currentTime,
@@ -107,24 +111,24 @@ export default class TaskPrioritizer {
 
 	private compareByTaskManagerGroupOrder(task1: Task, task2: Task, currentTime: Date): SortOrder {
 		if (this.getTaskManagerGroup(task1, currentTime) === 2) {
-			return this.compareByDeadline(task1, task2);
+			return this.compareByTargetOrDueDate(task1, task2);
 		}
 
 		return (
-			this.compareByTimeToComplete(task1, task2, currentTime) ||
+			this.compareByTimeToCompleteByTargetOrDueDate(task1, task2, currentTime) ||
 			this.compareByProgress(task1, task2)
 		);
 	}
 
-	private compareByDeadline(task1: Task, task2: Task): SortOrder {
-		const deadline1 = task1.getDeadline();
-		const deadline2 = task2.getDeadline();
+	private compareByTargetOrDueDate(task1: Task, task2: Task): SortOrder {
+		const targetOrDueDate1 = task1.getTargetOrDueDate();
+		const targetOrDueDate2 = task2.getTargetOrDueDate();
 
-		if (deadline1 === null && deadline2 === null) return SortOrder.UNDETERMINED;
-		if (deadline1 === null) return SortOrder.SECOND_BEFORE_FIRST;
-		if (deadline2 === null) return SortOrder.FIRST_BEFORE_SECOND;
-		if (deadline1.getTime() < deadline2.getTime()) return SortOrder.FIRST_BEFORE_SECOND;
-		if (deadline1.getTime() > deadline2.getTime()) return SortOrder.SECOND_BEFORE_FIRST;
+		if (targetOrDueDate1 === null && targetOrDueDate2 === null) return SortOrder.UNDETERMINED;
+		if (targetOrDueDate1 === null) return SortOrder.SECOND_BEFORE_FIRST;
+		if (targetOrDueDate2 === null) return SortOrder.FIRST_BEFORE_SECOND;
+		if (targetOrDueDate1.getTime() < targetOrDueDate2.getTime()) return SortOrder.FIRST_BEFORE_SECOND;
+		if (targetOrDueDate1.getTime() > targetOrDueDate2.getTime()) return SortOrder.SECOND_BEFORE_FIRST;
 		return SortOrder.UNDETERMINED;
 	}
 
@@ -151,13 +155,13 @@ export default class TaskPrioritizer {
 	private compareDuringDowntime(task1: Task, task2: Task, currentTime: Date): SortOrder {
 		if (this.tasksManager.getDowntime().isInRange(currentTime)) {
 			if (
-				task1.getIsMandatory() && !task2.getIsMandatory() &&
+				task1.getDueDate() !== null && task2.getDueDate() === null &&
 				!task1.isUrgent(currentTime)
 			) {
 				return SortOrder.SECOND_BEFORE_FIRST
 			}
 			else if (
-				!task1.getIsMandatory() && task2.getIsMandatory() &&
+				task1.getDueDate() === null && task2.getDueDate() !== null &&
 				!task2.isUrgent(currentTime)
 			) {
 				return SortOrder.FIRST_BEFORE_SECOND
@@ -167,16 +171,16 @@ export default class TaskPrioritizer {
 		return SortOrder.UNDETERMINED
 	}
 
-	private compareByMandatoryStatus(task1: Task, task2: Task, currentTime: Date): SortOrder {
+	private compareByDueDateOverTargetDateOnly(task1: Task, task2: Task, currentTime: Date): SortOrder {
 		if (
-			task1.getIsMandatory() && !task2.getIsMandatory() &&
-			this.shouldPrioritizeMandatoryTask(task1, currentTime)
+			task1.getDueDate() !== null && task2.getDueDate() === null &&
+			this.wouldTargetDateOnlyTasksLeaveTooLittleTimeFor(task1, currentTime)
 		) {
 			return SortOrder.FIRST_BEFORE_SECOND;
 		}
 		else if (
-			!task1.getIsMandatory() && task2.getIsMandatory() &&
-			this.shouldPrioritizeMandatoryTask(task2, currentTime)
+			task1.getDueDate() === null && task2.getDueDate() !== null &&
+			this.wouldTargetDateOnlyTasksLeaveTooLittleTimeFor(task2, currentTime)
 		) {
 			return SortOrder.SECOND_BEFORE_FIRST;
 		}
@@ -184,49 +188,62 @@ export default class TaskPrioritizer {
 		return SortOrder.UNDETERMINED;
 	}
 
-	/**
-	 * Decides whether a mandatory task should be prioritized over an optional one or if we should continue. If the first task is the optional task, you should reverse the return value.
-	 *
-	 * @param mandatoryTask - The mandatory task.
-	 * @return - Whether the mandatory task should be prioritized over the optional task.
-	 */
-	private shouldPrioritizeMandatoryTask(mandatoryTask: Task, currentTime: Date): boolean {
-		let totalOptionalTasksDuration = 0;
+	private wouldTargetDateOnlyTasksLeaveTooLittleTimeFor(dueDateTask: Task, currentTime: Date): boolean {
+		const dueDate = dueDateTask.getDueDate();
+		if (dueDate === null) return false;
 
-		for (const optionalTask of this.tasksManager.getTasks()) {
-			if (
-				!optionalTask.getIsMandatory() &&
-				optionalTask.isActive(currentTime) &&
-				optionalTask.getDeadline() !== null &&
-				mandatoryTask.getDeadline() !== null &&
-				optionalTask.getDeadline()! < mandatoryTask.getDeadline()!
-			) {
-					totalOptionalTasksDuration += optionalTask.getAssumedMaxRequiredTime();
+		let totalTargetDateOnlyTasksDuration = 0;
+		for (const task of this.tasksManager.getTasks()) {
+			const targetDate = task.getTargetDate();
+			const isTargetDateOnlyTaskTargetedBeforeDueDate =
+				task.getDueDate() === null &&
+				targetDate !== null &&
+				targetDate < dueDate &&
+				task.isActive(currentTime);
+			if (isTargetDateOnlyTaskTargetedBeforeDueDate) {
+				totalTargetDateOnlyTasksDuration += task.getAssumedMaxRequiredTime();
 			}
 		}
 
-		return (
-			mandatoryTask.getMinSlackTime(currentTime) <
-			totalOptionalTasksDuration
-		);
+		return dueDateTask.getDueDateSlack(currentTime) < totalTargetDateOnlyTasksDuration;
 	}
 
-	private compareByTimeToComplete(task1: Task, task2: Task, currentTime: Date): SortOrder {
-		if (task1.getTimeToComplete(currentTime) > task2.getTimeToComplete(currentTime)) {
+	private compareByLessDueDateSlack(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		const isTask1DueDateSlackRunningOutToday = task1.isDueDateSlackRunningOutToday(currentTime);
+		const isTask2DueDateSlackRunningOutToday = task2.isDueDateSlackRunningOutToday(currentTime);
+
+		if (isTask1DueDateSlackRunningOutToday && !isTask2DueDateSlackRunningOutToday) {
+			return SortOrder.FIRST_BEFORE_SECOND;
+		}
+		else if (!isTask1DueDateSlackRunningOutToday && isTask2DueDateSlackRunningOutToday) {
 			return SortOrder.SECOND_BEFORE_FIRST;
 		}
-		else if (task1.getTimeToComplete(currentTime) < task2.getTimeToComplete(currentTime)) {
+
+		return SortOrder.UNDETERMINED;
+	}
+
+	private compareByTimeToCompleteByTargetOrDueDate(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		const timeToComplete1 = task1.getTimeToCompleteByTargetOrDueDate(currentTime);
+		const timeToComplete2 = task2.getTimeToCompleteByTargetOrDueDate(currentTime);
+
+		if (timeToComplete1 > timeToComplete2) {
+			return SortOrder.SECOND_BEFORE_FIRST;
+		}
+		else if (timeToComplete1 < timeToComplete2) {
 			return SortOrder.FIRST_BEFORE_SECOND;
 		}
 
 		return SortOrder.UNDETERMINED;
 	}
 
-	private compareBySlackTime(task1: Task, task2: Task, currentTime: Date): SortOrder {
-		if (task1.getMinSlackTime(currentTime) < task2.getMinSlackTime(currentTime)) {
+	private compareByTargetOrDueDateSlack(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		const slack1 = task1.getTargetOrDueDateSlack(currentTime);
+		const slack2 = task2.getTargetOrDueDateSlack(currentTime);
+
+		if (slack1 < slack2) {
 			return SortOrder.FIRST_BEFORE_SECOND;
 		}
-		else if (task2.getMinSlackTime(currentTime) < task1.getMinSlackTime(currentTime)) {
+		else if (slack2 < slack1) {
 			return SortOrder.SECOND_BEFORE_FIRST;
 		}
 

@@ -41,22 +41,22 @@
 	}
 }
 
-.tokenDeadline {
-	color: var(--color-typed-quick-input-deadline);
-	background-color: color-mix(in srgb, var(--color-typed-quick-input-deadline) 15%, transparent);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-deadline) 15%, transparent);
+.tokenDueDate {
+	color: var(--color-typed-quick-input-due-date);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-due-date) 15%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-due-date) 15%, transparent);
 }
 
-.tokenStart {
-	color: var(--color-typed-quick-input-start);
-	background-color: color-mix(in srgb, var(--color-typed-quick-input-start) 15%, transparent);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-start) 15%, transparent);
+.tokenStartDate {
+	color: var(--color-typed-quick-input-start-date);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-start-date) 15%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-start-date) 15%, transparent);
 }
 
-.tokenEnd {
-	color: var(--color-typed-quick-input-end);
-	background-color: color-mix(in srgb, var(--color-typed-quick-input-end) 15%, transparent);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-end) 15%, transparent);
+.tokenTargetDate {
+	color: var(--color-typed-quick-input-target-date);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-target-date) 15%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-target-date) 15%, transparent);
 }
 
 .tokenRepeat {
@@ -69,12 +69,6 @@
 	color: var(--color-typed-quick-input-duration);
 	background-color: color-mix(in srgb, var(--color-typed-quick-input-duration) 15%, transparent);
 	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-duration) 15%, transparent);
-}
-
-.tokenMandatory {
-	color: var(--color-typed-quick-input-mandatory);
-	background-color: color-mix(in srgb, var(--color-typed-quick-input-mandatory) 15%, transparent);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-mandatory) 15%, transparent);
 }
 
 .tokenSteps {
