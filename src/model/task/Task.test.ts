@@ -1085,7 +1085,7 @@ describe('Task', () => {
 		});
 
 		it('should leave a task with a due date and no durations with slack equal to its available time and not urgent', () => {
-			const currentTime = new Date();
+			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
 			task.setDueDate(new Date(currentTime.getTime() + 1000));
 
 			expect(task.getDueDateSlack(currentTime)).toEqual(task.getTimeToCompleteByDueDate(currentTime));
