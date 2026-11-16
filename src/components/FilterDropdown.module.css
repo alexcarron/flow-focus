@@ -3,22 +3,44 @@
 	display: inline-block;
 }
 
-.button {
+.trigger {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--space-extra-small);
+	gap: var(--space-extra-extra-small);
+	padding: var(--space-extra-small) var(--space-extra-small) var(--space-extra-small) var(--space-small);
+	background-color: transparent;
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-small);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-small);
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.trigger:focus-visible {
+	outline: none;
+	border-color: var(--color-accent-border);
+}
+
+@media (hover: hover) {
+	.trigger:hover {
+		background-color: var(--color-surface-inset);
+		color: var(--color-text-primary);
+	}
 }
 
 .prefixIcon {
 	width: 0.9rem;
 	height: 0.9rem;
 	flex-shrink: 0;
+	margin-right: var(--space-extra-extra-small);
 	color: var(--color-text-subtle);
 }
 
 .caret {
-	width: 0.85rem;
-	height: 0.85rem;
+	width: 1rem;
+	height: 1rem;
 	flex-shrink: 0;
 	color: var(--color-text-subtle);
 }

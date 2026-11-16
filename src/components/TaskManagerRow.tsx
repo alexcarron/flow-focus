@@ -283,7 +283,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 				<div className={styles.rowActions}>
 					<button
 						onClick={onOpenSkip}
-						className={`button icon touch-hit-area ${styles.rowActionButton} ${styles.mobileOnlyActionButton}`}
+						className={`button icon touch-hit-area ${styles.rowActionButton}`}
 						aria-label="Skip task"
 						title="Skip task"
 					>

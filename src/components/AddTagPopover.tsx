@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Tag from '../model/tag/Tag';
 import { useOutsideClickAndEscape } from '../hooks/useOutsideClickAndEscape';
 import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
@@ -16,6 +16,8 @@ interface Props {
 }
 
 const NO_ITEM_HIGHLIGHTED = -1;
+const POPOVER_GAP_PX = 8;
+const VIEWPORT_EDGE_MARGIN_PX = 8;
 
 type SuggestionListItem =
 	| { type: 'existingTag'; tag: Tag }
@@ -29,6 +31,9 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 	const containerRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const highlightedItemRef = useRef<HTMLButtonElement>(null);
+	const triggerButtonRef = useRef<HTMLButtonElement>(null);
+	const popoverRef = useRef<HTMLDivElement>(null);
+	const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
 
 	const trimmedSearchText = searchText.trim();
 	const normalizedSearchText = trimmedSearchText.toLowerCase();
@@ -55,6 +60,37 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 	useEffect(() => {
 		highlightedItemRef.current?.scrollIntoView({ block: 'nearest' });
 	}, [highlightedIndex]);
+
+	useLayoutEffect(() => {
+		if (!isOpen) return;
+
+		function placePopoverNextToTriggerButton() {
+			const triggerButton = triggerButtonRef.current;
+			const popover = popoverRef.current;
+			if (!triggerButton || !popover) return;
+
+			const triggerRectangle = triggerButton.getBoundingClientRect();
+			const maximumLeft = window.innerWidth - popover.offsetWidth - VIEWPORT_EDGE_MARGIN_PX;
+			const left = Math.max(VIEWPORT_EDGE_MARGIN_PX, Math.min(triggerRectangle.left, maximumLeft));
+			const belowTop = triggerRectangle.bottom + POPOVER_GAP_PX;
+			const aboveTop = triggerRectangle.top - POPOVER_GAP_PX - popover.offsetHeight;
+			const doesPopoverFitBelow = belowTop + popover.offsetHeight <= window.innerHeight - VIEWPORT_EDGE_MARGIN_PX;
+			const doesPopoverFitAbove = aboveTop >= VIEWPORT_EDGE_MARGIN_PX;
+			const maximumTop = window.innerHeight - popover.offsetHeight - VIEWPORT_EDGE_MARGIN_PX;
+			const clampedBelowTop = Math.max(VIEWPORT_EDGE_MARGIN_PX, Math.min(belowTop, maximumTop));
+			let top = clampedBelowTop;
+			if (!doesPopoverFitBelow && doesPopoverFitAbove) top = aboveTop;
+			setPopoverPosition({ top, left });
+		}
+
+		placePopoverNextToTriggerButton();
+		window.addEventListener('resize', placePopoverNextToTriggerButton);
+		window.addEventListener('scroll', placePopoverNextToTriggerButton, true);
+		return () => {
+			window.removeEventListener('resize', placePopoverNextToTriggerButton);
+			window.removeEventListener('scroll', placePopoverNextToTriggerButton, true);
+		};
+	}, [isOpen, listItems.length, errorMessage]);
 
 	function openPopover() {
 		setIsOpen(true);
@@ -143,6 +179,7 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 	return (
 		<div ref={containerRef} className={styles.container} data-popover-open={isOpen}>
 			<button
+				ref={triggerButtonRef}
 				type="button"
 				onClick={() => isOpen ? closePopover() : openPopover()}
 				className={isCompact ? `${styles.triggerButton} ${styles.triggerButtonCompact} touch-hit-area` : `${styles.triggerButton} touch-hit-area`}
@@ -153,7 +190,7 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 			</button>
 
 			{isOpen && (
-				<div className={styles.popover}>
+				<div ref={popoverRef} className={styles.popover} style={{ top: popoverPosition.top, left: popoverPosition.left }}>
 					<input
 						ref={inputRef}
 						type="text"

@@ -10,20 +10,24 @@
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-start;
 	gap: var(--space-small);
 	margin-bottom: var(--space-large);
 }
 
 .searchInput {
-	display: inline-block;
-	flex: 1 1 auto;
+	display: block;
+	flex: 1 1 100%;
 	min-width: 12ch;
 }
 
 .toolbar :global(.button) {
 	padding-top: var(--space-extra-small);
 	padding-bottom: var(--space-extra-small);
+}
+
+.selectionControls {
+	display: contents;
 }
 
 .deleteSelectedButton {
@@ -84,8 +88,15 @@
 	color: var(--color-accent);
 }
 
-.sortIndicatorIconPrimary {
-	color: var(--color-text-primary);
+.sortDirectionButton {
+	composes: trigger from '../FilterDropdown.module.css';
+	padding: var(--space-extra-small);
+}
+
+.sortDirectionIcon {
+	width: 1rem;
+	height: 1rem;
+	color: var(--color-text-subtle);
 }
 
 .emptyMessage {
@@ -129,9 +140,10 @@
 
 .sortAndSelectAllControls {
 	display: flex;
-	align-items: center;
+	align-items: stretch;
 	flex-wrap: wrap;
 	gap: var(--space-small);
+	margin-left: var(--space-large);
 }
 
 .selectAllLabel {
@@ -145,6 +157,18 @@
 }
 
 @media (max-width: 599px) {
+	.sortAndSelectAllControls {
+		margin-left: auto;
+	}
+
+	.selectionControls {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-small);
+		flex: 1 1 100%;
+	}
+
 	.selectAllLabel {
 		display: flex;
 	}

@@ -26,7 +26,14 @@ import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
 import { getDateOrderErrorMessage } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
 
-const TASK_NAME_PLACEHOLDER_TIERS_LONGEST_FIRST = ['Calculus Homework 3.2 due thursday takes 1-2 hours'];
+const TASK_NAME_PLACEHOLDER_TIERS_LONGEST_FIRST = [
+	'Math Homework friday starts tomorrow due sunday takes 2 hours',
+	'Math Homework friday due sunday takes 2 hours',
+	'Math Homework friday due sunday',
+	'Math Homework friday',
+	'Math Homework',
+	'Study',
+];
 
 const DEFAULT_TIMING: TaskTimingOptions = {
 	startDate: null,

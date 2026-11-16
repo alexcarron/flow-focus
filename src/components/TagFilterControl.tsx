@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import Tag from '../model/tag/Tag';
 import { useOutsideClickAndEscape } from '../hooks/useOutsideClickAndEscape';
+import { useKeepElementInViewport } from '../hooks/useKeepElementInViewport';
 import CheckboxInput from './inputs/CheckboxInput';
 import TagIcon from './svg-icons/TagIcon';
 import ChevronDownIcon from './svg-icons/ChevronDownIcon';
@@ -29,6 +30,7 @@ export default function TagFilterControl({ tags, selectedTagIDs, isUntaggedSelec
 	const [isRowOverflowing, setIsRowOverflowing] = useState(false);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const dropdownContainerRef = useRef<HTMLDivElement>(null);
+	const dropdownMenuRef = useRef<HTMLUListElement>(null);
 
 	const items: FilterItem[] = [
 		{ id: UNTAGGED_ITEM_ID, label: 'Untagged', isSelected: isUntaggedSelected, onToggle: onToggleUntagged },
@@ -54,6 +56,7 @@ export default function TagFilterControl({ tags, selectedTagIDs, isUntaggedSelec
 	}, [items.length]);
 
 	useOutsideClickAndEscape(dropdownContainerRef, isDropdownOpen, () => setIsDropdownOpen(false));
+	useKeepElementInViewport(dropdownMenuRef, isDropdownOpen);
 
 	if (tags.length === 0) return null;
 
@@ -82,7 +85,7 @@ export default function TagFilterControl({ tags, selectedTagIDs, isUntaggedSelec
 					<button
 						type="button"
 						onClick={() => setIsDropdownOpen(current => !current)}
-						className={`button outlined ${styles.dropdownButton}`}
+						className={styles.dropdownButton}
 					>
 						<TagIcon className={styles.dropdownButtonIcon} />
 						Tags{selectedCount > 0 ? ` (${selectedCount})` : ''}
@@ -90,7 +93,7 @@ export default function TagFilterControl({ tags, selectedTagIDs, isUntaggedSelec
 					</button>
 
 					{isDropdownOpen && (
-						<ul className={styles.dropdownMenu} role="listbox">
+						<ul ref={dropdownMenuRef} className={styles.dropdownMenu} role="listbox">
 							{items.map(item => (
 								<li key={item.id}>
 									<CheckboxInput value={item.isSelected} onChange={item.onToggle} label={item.label} className={styles.dropdownCheckbox} />

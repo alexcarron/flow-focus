@@ -1,5 +1,6 @@
 import { cloneElement, useRef, useState } from 'react';
 import { useOutsideClickAndEscape } from '../hooks/useOutsideClickAndEscape';
+import { useKeepElementInViewport } from '../hooks/useKeepElementInViewport';
 import ChevronDownIcon from './svg-icons/ChevronDownIcon';
 import styles from './FilterDropdown.module.css';
 
@@ -22,7 +23,10 @@ export default function FilterDropdown<Value extends string | number>({ value, o
 	const containerRef = useRef<HTMLDivElement>(null);
 	const selectedOption = options.find(option => option.value === value) ?? options[0];
 
+	const menuRef = useRef<HTMLUListElement>(null);
+
 	useOutsideClickAndEscape(containerRef, isOpen, () => setIsOpen(false));
+	useKeepElementInViewport(menuRef, isOpen);
 
 	function selectOption(option: FilterDropdownOption<Value>) {
 		onChange(option.value);
@@ -34,7 +38,7 @@ export default function FilterDropdown<Value extends string | number>({ value, o
 			<button
 				type="button"
 				onClick={() => setIsOpen(isCurrentlyOpen => !isCurrentlyOpen)}
-				className={`button outlined ${styles.button}`}
+				className={styles.trigger}
 				title={selectedOption.description}
 			>
 				{icon && cloneElement(icon, { className: styles.prefixIcon })}
@@ -43,7 +47,7 @@ export default function FilterDropdown<Value extends string | number>({ value, o
 			</button>
 
 			{isOpen && (
-				<ul className={styles.menu} role="listbox">
+				<ul ref={menuRef} className={styles.menu} role="listbox">
 					{options.map(option => (
 						<li key={option.value}>
 							<button

@@ -18,17 +18,43 @@ import FilterIcon from '../svg-icons/FilterIcon';
 import SortAscIcon from '../svg-icons/SortAscIcon';
 import SortDescIcon from '../svg-icons/SortDescIcon';
 import SortUnsortedIcon from '../svg-icons/SortUnsortedIcon';
+import SortIcon from '../svg-icons/SortIcon';
+import ArrowUpIcon from '../svg-icons/ArrowUpIcon';
+import ArrowDownIcon from '../svg-icons/ArrowDownIcon';
 import { useRowSelectionDrag } from '../../hooks/useRowSelectionDrag';
 import { useOverflowAwareTableColumns } from '../../hooks/useOverflowAwareTableColumns';
 import { useIsNarrowViewport } from '../../hooks/useIsNarrowViewport';
 import { mergeRefs } from '../../utilities/mergeRefs';
 import styles from './TasksManagerPage.module.css';
 
-enum Filter { Active, MustStartToday, Recurring, All, Uncompleted }
+enum Filter { Active = 'active', MustStartToday = 'must-start-today', Recurring = 'recurring', All = 'all', Uncompleted = 'uncompleted' }
 enum SortBy { Priority, Name, Steps, TimeAvailable, Duration, RecurrenceDuration, StartDate, TargetDate, DueDate, DateAdded }
 enum SortDir { Asc, Desc }
 
 const DEFAULT_FILTER = Filter.Active;
+const SAVED_FILTER_STORAGE_KEY = 'flow-focus-task-manager-filter';
+
+function isFilter(value: string | null): value is Filter {
+	return Object.values<string>(Filter).includes(value ?? '');
+}
+
+function loadSavedFilter(): Filter {
+	try {
+		const savedFilter = localStorage.getItem(SAVED_FILTER_STORAGE_KEY);
+		if (isFilter(savedFilter)) return savedFilter;
+	} catch {
+		return DEFAULT_FILTER;
+	}
+	return DEFAULT_FILTER;
+}
+
+function saveFilter(filter: Filter) {
+	try {
+		localStorage.setItem(SAVED_FILTER_STORAGE_KEY, filter);
+	} catch {
+		return;
+	}
+}
 const HIDE_COLUMN_PRIORITY_ORDER: readonly HidableColumnKey[] = ['repeat', 'startDate', 'duration', 'timeAvailable', 'targetDate', 'dueDate'];
 const STACKED_CARD_LAYOUT_MAX_WIDTH_PX = 599;
 
@@ -197,7 +223,7 @@ export default function TasksManagerPage() {
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
 	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
 
-	const [filter, setFilter] = useState<Filter>(DEFAULT_FILTER);
+	const [filter, setFilter] = useState<Filter>(loadSavedFilter);
 	const [searchText, setSearchText] = useState('');
 	const [sortBy, setSortBy] = useState<SortBy>(SortBy.Priority);
 	const [sortDir, setSortDir] = useState<SortDir>(SortDir.Asc);
@@ -217,6 +243,7 @@ export default function TasksManagerPage() {
 
 	function changeFilter(nextFilter: Filter) {
 		setFilter(nextFilter);
+		saveFilter(nextFilter);
 		clearSelectedRows();
 	}
 
@@ -309,13 +336,12 @@ export default function TasksManagerPage() {
 		setSortDir(d => d === SortDir.Asc ? SortDir.Desc : SortDir.Asc);
 	}
 
-	function renderSortIcon(col: SortBy, isMonochrome: boolean = false) {
+	function renderSortIcon(col: SortBy) {
 		if (sortBy !== col) return <SortUnsortedIcon className={styles.sortIndicatorIcon} />;
 
-		const activeClassName = isMonochrome ? styles.sortIndicatorIconPrimary : styles.sortIndicatorIconActive;
-		if (sortDir === SortDir.Asc) return <SortAscIcon className={`${styles.sortIndicatorIcon} ${activeClassName}`} />;
+		if (sortDir === SortDir.Asc) return <SortAscIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
 
-		return <SortDescIcon className={`${styles.sortIndicatorIcon} ${activeClassName}`} />;
+		return <SortDescIcon className={`${styles.sortIndicatorIcon} ${styles.sortIndicatorIconActive}`} />;
 	}
 
 	const rowIDs = displayedTasks.map((task) => getRowID(task));
@@ -324,14 +350,14 @@ export default function TasksManagerPage() {
 	return (
 		<div className={styles.page}>
 			<div className={styles.toolbar}>
-				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={changeFilter} icon={<FilterIcon />} />
-
 				<TextInput
 					value={searchText}
 					onChange={changeSearchText}
 					placeholder="Search tasks..."
 					className={`field ${styles.searchInput}`}
 				/>
+
+				<FilterDropdown value={filter} options={FILTER_OPTIONS} onChange={changeFilter} icon={<FilterIcon />} />
 
 				<TagFilterControl
 					tags={tags}
@@ -342,29 +368,34 @@ export default function TasksManagerPage() {
 				/>
 
 				<div className={styles.sortAndSelectAllControls}>
-					<FilterDropdown value={sortBy} options={SORT_BY_OPTIONS} onChange={selectSortByField} icon={<SortUnsortedIcon />} />
+					<FilterDropdown value={sortBy} options={SORT_BY_OPTIONS} onChange={selectSortByField} icon={<SortIcon />} />
 					<button
 						onClick={toggleSortDir}
-						className="button icon outlined"
+						className={styles.sortDirectionButton}
 						aria-label={sortDir === SortDir.Asc ? 'Sort ascending' : 'Sort descending'}
 						title={sortDir === SortDir.Asc ? 'Sort ascending' : 'Sort descending'}
 					>
-						{renderSortIcon(sortBy, true)}
+						{sortDir === SortDir.Asc
+							? <ArrowUpIcon className={styles.sortDirectionIcon} />
+							: <ArrowDownIcon className={styles.sortDirectionIcon} />}
 					</button>
-					<label className={styles.selectAllLabel}>
-						<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} onToggle={toggleSelectAll} />
-						Select all ({rowIDs.length})
-					</label>
 				</div>
 
-				{selectedRowIDs.size > 0 && (
-					<button
-						onClick={requestDeleteSelectedTasks}
-						className={`button danger ${styles.deleteSelectedButton}`}
-					>
-						Delete {selectedRowIDs.size} Selected
-					</button>
-				)}
+				<div className={styles.selectionControls}>
+					<label className={styles.selectAllLabel}>
+						<SelectionCheckbox isSelected={areAllDisplayedSelected} onMouseDown={toggleSelectAll} onToggle={toggleSelectAll} />
+						Select all
+					</label>
+
+					{selectedRowIDs.size > 0 && (
+						<button
+							onClick={requestDeleteSelectedTasks}
+							className={`button danger ${styles.deleteSelectedButton}`}
+						>
+							Delete {selectedRowIDs.size} Selected
+						</button>
+					)}
+				</div>
 			</div>
 
 			<div ref={scrollContainerRef} className={styles.tableScrollContainer}>
