@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type Task from '../../model/task/Task';
 import { flashElementWithAccentColor } from '../animations/flashElementWithAccentColor';
-import { useTasksStore, selectPriorityTask } from '../../stores/tasksStore';
+import { useTasksStore, selectFocusedTask, selectIsFocusedTaskTemporary } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useHasInteractedSinceRegainingFocus } from '../../hooks/useHasInteractedSinceRegainingFocus';
 import { useActivePointerPositionGetter } from '../../hooks/useActivePointerPositionGetter';
@@ -32,7 +32,8 @@ const NO_TASKS_LEFT_PLACEHOLDER_TIERS_LONGEST_FIRST = [
 ];
 
 export default function FocusPage() {
-	const priorityTask = useTasksStore(selectPriorityTask);
+	const focusedTask = useTasksStore(selectFocusedTask);
+	const isFocusedTaskTemporary = useTasksStore(selectIsFocusedTaskTemporary);
 	const completeNextStep = useTasksStore(state => state.completeNextStep);
 	const shouldShowQuickAddTaskBar = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
 	const shouldShowRemainingTasksSummary = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
@@ -160,7 +161,7 @@ export default function FocusPage() {
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
-			if (event.repeat || !priorityTask || !document.hasFocus() || !hasInteractedSinceRegainingFocus) return;
+			if (event.repeat || !focusedTask || !document.hasFocus() || !hasInteractedSinceRegainingFocus) return;
 			const focused = document.activeElement as HTMLElement;
 			if (
 				focused.matches('button, input, select, textarea, a, [role="checkbox"]') ||
@@ -171,27 +172,27 @@ export default function FocusPage() {
 				event.key === 'Enter' &&
 				!event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey
 			) {
-					completeNextStep(priorityTask);
+					completeNextStep(focusedTask);
 			}
 		}
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
-	}, [priorityTask, completeNextStep, hasInteractedSinceRegainingFocus]);
+	}, [focusedTask, completeNextStep, hasInteractedSinceRegainingFocus]);
 
 	return (
 		<div className={styles.page}>
 			{shouldShowQuickAddTaskBar && (
 				<QuickAddTaskBar
 					placeholderTiersLongestFirst={
-						priorityTask
+						focusedTask
 							? PRIORITY_TASK_PLACEHOLDER_TIERS_LONGEST_FIRST
 							: NO_TASKS_LEFT_PLACEHOLDER_TIERS_LONGEST_FIRST
 					}
 				/>
 			)}
-			{priorityTask ? (
+			{focusedTask ? (
 				<>
-					<TaskCard task={priorityTask} />
+					<TaskCard task={focusedTask} isTemporarilyFocused={isFocusedTaskTemporary} />
 					{shouldShowRemainingTasksSummary && <UpcomingTaskTitles />}
 				</>
 			) : (

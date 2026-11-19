@@ -65,6 +65,12 @@ How much spare time you have before a task's due date, after setting aside the l
 
 The priority rule that puts a task whose due date slack runs out before the end of today ahead of a task that only has its target date pushing it.
 
+## Focus Page
+
+### Temporarily Focused Task
+
+A task you picked from the upcoming tasks list on the Focus page, which takes the place of the priority task until you complete or skip it. It also ends if a different task takes the top of the priority order, or if the task stops being focusable. The Focus page shows "Temporarily focused" on its card. Undoing the completion or skip brings it back.
+
 ## No Longer Used Terms
 
 ### End Time

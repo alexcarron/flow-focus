@@ -19,12 +19,14 @@ import { isNativeContextMenuTarget } from './context-menu/isNativeContextMenuTar
 import ConfirmModal from './ConfirmModal';
 import TagChip from './TagChip';
 import AddTagPopover from './AddTagPopover';
+import CloseIcon from './svg-icons/CloseIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import styles from './TaskCard.module.css';
 
 interface Props {
 	task: Task;
+	isTemporarilyFocused?: boolean;
 }
 
 function getTimeString(ms: number): string {
@@ -49,7 +51,7 @@ function getTimeString(ms: number): string {
 	return '';
 }
 
-export default function TaskCard({ task }: Props) {
+export default function TaskCard({ task, isTemporarilyFocused = false }: Props) {
 	const store = useTasksStore();
 	const tags = useTagsStore(s => s.tags);
 	const renameTag = useTagsStore(s => s.renameTag);
@@ -256,6 +258,19 @@ export default function TaskCard({ task }: Props) {
 					{timeLeftStr && (
 						<span className={styles.timeLeft}>
 							{timeLeftStr}
+						</span>
+					)}
+					{isTemporarilyFocused && (
+						<span className={styles.temporarilyFocused}>
+							Temporarily focused
+							<button
+								type="button"
+								onClick={() => store.stopTemporarilyFocusing()}
+								className={`touch-hit-area ${styles.stopTemporarilyFocusingButton}`}
+								aria-label="Stop temporarily focusing this task"
+							>
+								<CloseIcon className={styles.stopTemporarilyFocusingIcon} />
+							</button>
 						</span>
 					)}
 				</div>

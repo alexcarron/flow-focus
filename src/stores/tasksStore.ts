@@ -8,6 +8,9 @@ import TaskState from '../model/task/TaskState';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
 import TasksManager from '../model/TasksManager';
 import TaskPrioritizer from '../model/TaskPrioritizer';
+import type TemporaryFocus from '../model/temporary-focus/TemporaryFocus';
+import { isTemporaryFocusStillValid } from '../model/temporary-focus/isTemporaryFocusStillValid';
+import { didTaskGetCompletedOrSkipped } from '../model/temporary-focus/didTaskGetCompletedOrSkipped';
 import { serializeTask, deserializeRow } from '../persistence/cloud/task.serializer';
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
@@ -21,6 +24,10 @@ setAutoFreeze(false);
 interface PatchEntry {
 	forwardPatches: Patch[];
 	inversePatches: Patch[];
+	temporaryFocusChange?: {
+		before: TemporaryFocus | null,
+		after: TemporaryFocus | null,
+	};
 }
 
 interface TasksState {
@@ -28,12 +35,15 @@ interface TasksState {
 	isLoading: boolean;
 	undoStack: PatchEntry[];
 	redoStack: PatchEntry[];
+	temporaryFocus: TemporaryFocus | null;
 }
 
 interface TasksActions {
 	loadTasks: () => Promise<void>;
 	refreshTasks: () => void;
 	persistChangedTasks: (tasks: Task[]) => Promise<void>;
+	temporarilyFocusTask: (task: Task) => void;
+	stopTemporarilyFocusing: () => void;
 
 	executeWithPatches: (action: () => void, affectedTasks?: Task[]) => void;
 
@@ -77,6 +87,41 @@ interface TasksActions {
 export const tasksManager = new TasksManager();
 
 const loadTasksRunner = new RunOnceThenAgainIfChanged();
+
+function dropTemporaryFocusIfNoLongerValid(state: { temporaryFocus: TemporaryFocus | null }): void {
+	if (state.temporaryFocus === null) return;
+
+	const focusableTasksInPriorityOrder = new TaskPrioritizer(tasksManager).getFocusableTasksInPriorityOrder(new Date());
+	const isStillValid = isTemporaryFocusStillValid({
+		temporaryFocus: state.temporaryFocus,
+		focusableTasksInPriorityOrder,
+	});
+	if (!isStillValid) state.temporaryFocus = null;
+}
+
+function getFocusStateOfFocusPage(): { focusedTask: Task | null, isFocusedTaskTemporary: boolean, upcomingTasks: Task[] } {
+	const { temporaryFocus } = useTasksStore.getState();
+	const focusableTasksInPriorityOrder = new TaskPrioritizer(tasksManager).getFocusableTasksInPriorityOrder(new Date());
+	const isTemporaryFocusValid = temporaryFocus !== null && isTemporaryFocusStillValid({
+		temporaryFocus,
+		focusableTasksInPriorityOrder,
+	});
+
+	if (isTemporaryFocusValid) {
+		const temporarilyFocusedTask = focusableTasksInPriorityOrder.find(task => task.id === temporaryFocus.taskID) ?? null;
+		return {
+			focusedTask: temporarilyFocusedTask,
+			isFocusedTaskTemporary: true,
+			upcomingTasks: focusableTasksInPriorityOrder.filter(task => task !== temporarilyFocusedTask),
+		};
+	}
+
+	return {
+		focusedTask: focusableTasksInPriorityOrder[0] ?? null,
+		isFocusedTaskTemporary: false,
+		upcomingTasks: focusableTasksInPriorityOrder.slice(1),
+	};
+}
 
 async function persistTask(task: Task): Promise<void> {
 	try {
@@ -132,6 +177,7 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 		useTasksStore.setState(state => {
 			state.tasks = [...tasksManager.getTasks()];
 			state.isLoading = false;
+			dropTemporaryFocusIfNoLongerValid(state);
 		});
 	} catch (err) {
 		console.error('Failed to load tasks from the active repository:', err);
@@ -145,6 +191,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		isLoading: true,
 		undoStack: [],
 		redoStack: [],
+		temporaryFocus: null,
 
 		loadTasks() {
 			return loadTasksRunner.run(() => loadTasksFromActiveRepository());
@@ -153,7 +200,27 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 		refreshTasks() {
 			set(state => {
 				state.tasks = [...tasksManager.getTasks()];
+				dropTemporaryFocusIfNoLongerValid(state);
 			});
+		},
+
+		temporarilyFocusTask(task: Task) {
+			const priorityTask = new TaskPrioritizer(tasksManager).getPriorityTask(new Date());
+			set(state => {
+				const isTaskAlreadyThePriorityTask = priorityTask === null || priorityTask.id === task.id;
+				if (isTaskAlreadyThePriorityTask) {
+					state.temporaryFocus = null;
+					return;
+				}
+				state.temporaryFocus = {
+					taskID: task.id,
+					priorityTaskIDWhenFocused: priorityTask.id,
+				};
+			});
+		},
+
+		stopTemporarilyFocusing() {
+			set(state => { state.temporaryFocus = null; });
 		},
 
 		async persistChangedTasks(tasks: Task[]) {
@@ -164,6 +231,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		executeWithPatches(action: () => void, affectedTasks?: Task[]) {
 			const currentTasks = get().tasks;
+			const temporaryFocusBefore = get().temporaryFocus;
 			const taskIDToStateBefore: Record<string, TaskState> = {};
 			currentTasks.forEach(t => { taskIDToStateBefore[t.id] = t.getState(); });
 
@@ -182,9 +250,26 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			});
 
 			set(state => {
-				state.undoStack.push({ forwardPatches, inversePatches });
-				state.redoStack = [];
 				state.tasks = [...tasksManager.getTasks()];
+				const temporarilyFocusedTaskID = temporaryFocusBefore?.taskID;
+				const wasTemporarilyFocusedTaskCompletedOrSkipped = temporarilyFocusedTaskID !== undefined &&
+					taskIDToStateBefore[temporarilyFocusedTaskID] !== undefined &&
+					taskIDToStateAfter[temporarilyFocusedTaskID] !== undefined &&
+					didTaskGetCompletedOrSkipped({
+						stateBefore: taskIDToStateBefore[temporarilyFocusedTaskID],
+						stateAfter: taskIDToStateAfter[temporarilyFocusedTaskID],
+					});
+				if (wasTemporarilyFocusedTaskCompletedOrSkipped) state.temporaryFocus = null;
+				dropTemporaryFocusIfNoLongerValid(state);
+
+				const temporaryFocusAfter = state.temporaryFocus;
+				const didTemporaryFocusGetDropped = temporaryFocusBefore !== null && temporaryFocusAfter === null;
+				state.undoStack.push({
+					forwardPatches,
+					inversePatches,
+					...(didTemporaryFocusGetDropped && { temporaryFocusChange: { before: temporaryFocusBefore, after: temporaryFocusAfter } }),
+				});
+				state.redoStack = [];
 			});
 
 			const tasksToSave = affectedTasks ?? currentTasks;
@@ -245,7 +330,11 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		setComplete(task: Task, isComplete: boolean) {
 			task.setComplete(isComplete);
-			set(state => { state.tasks = [...tasksManager.getTasks()]; });
+			set(state => {
+				state.tasks = [...tasksManager.getTasks()];
+				if (isComplete && state.temporaryFocus?.taskID === task.id) state.temporaryFocus = null;
+				dropTemporaryFocusIfNoLongerValid(state);
+			});
 			get().persistChangedTasks([task]);
 		},
 
@@ -340,7 +429,10 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			const tagIDsToCheck = task.getTagIDs();
 			await softDeleteTask(task.id);
 			tasksManager.deleteTask(task);
-			set(state => { state.tasks = [...tasksManager.getTasks()]; });
+			set(state => {
+				state.tasks = [...tasksManager.getTasks()];
+				dropTemporaryFocusIfNoLongerValid(state);
+			});
 			for (const tagID of tagIDsToCheck) {
 				await deleteTagIfNoLongerReferenced(tagID);
 			}
@@ -387,6 +479,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				state.tasks = [...tasksManager.getTasks()];
 				state.undoStack = [];
 				state.redoStack = [];
+				state.temporaryFocus = null;
 			});
 		},
 
@@ -409,6 +502,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				state.undoStack.pop();
 				state.redoStack.push(entry);
 				state.tasks = [...tasksManager.getTasks()];
+				if (entry.temporaryFocusChange) state.temporaryFocus = entry.temporaryFocusChange.before;
+				dropTemporaryFocusIfNoLongerValid(state);
 			});
 
 			get().persistChangedTasks(tasks);
@@ -433,6 +528,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				state.redoStack.pop();
 				state.undoStack.push(entry);
 				state.tasks = [...tasksManager.getTasks()];
+				if (entry.temporaryFocusChange) state.temporaryFocus = entry.temporaryFocusChange.after;
+				dropTemporaryFocusIfNoLongerValid(state);
 			});
 
 			get().persistChangedTasks(tasks);
@@ -445,11 +542,11 @@ export const selectPriorityTask = (state: TasksState): Task | null => {
 	return prioritizer.getPriorityTask(new Date());
 };
 
-export const selectUpcomingTaskTitles = (): string[] => {
-	const prioritizer = new TaskPrioritizer(tasksManager);
-	const tasksBehindPriorityTask = prioritizer.getFocusableTasksInPriorityOrder(new Date()).slice(1);
-	return tasksBehindPriorityTask.map(task => task.getDescription());
-};
+export const selectFocusedTask = (): Task | null => getFocusStateOfFocusPage().focusedTask;
+
+export const selectIsFocusedTaskTemporary = (): boolean => getFocusStateOfFocusPage().isFocusedTaskTemporary;
+
+export const selectUpcomingTasks = (): Task[] => getFocusStateOfFocusPage().upcomingTasks;
 
 export const selectTasksInPriorityOrder = (state: TasksState): Task[] => {
 	const prioritizer = new TaskPrioritizer(tasksManager);

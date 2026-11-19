@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import RecurrenceUnit from '../model/task/recurrence/RecurrenceUnit';
 import { db } from '../persistence/local/flowfocus.db';
 import StepStatus from '../model/task/step/StepStatus';
-import { useTasksStore, tasksManager } from './tasksStore';
+import type Task from '../model/task/Task';
+import { useTasksStore, tasksManager, selectFocusedTask, selectIsFocusedTaskTemporary, selectUpcomingTasks } from './tasksStore';
 import { useTagsStore } from './tagsStore';
 import parsePastedTextIntoNestedListItems from '../utilities/parsePastedTextIntoNestedListItems';
 
@@ -10,7 +11,7 @@ beforeEach(async () => {
 	await db.delete();
 	await db.open();
 	tasksManager.clearTasks();
-	useTasksStore.setState({ tasks: [], isLoading: true, undoStack: [], redoStack: [] });
+	useTasksStore.setState({ tasks: [], isLoading: true, undoStack: [], redoStack: [], temporaryFocus: null });
 	useTagsStore.setState({ tags: [], isLoading: true });
 });
 
@@ -288,5 +289,90 @@ describe('pasting a markdown checklist into a step', () => {
 		useTasksStore.getState().undo();
 
 		expect(task.getSteps().map(step => step.text)).toEqual(['Book hotel']);
+	});
+});
+
+describe('temporarily focusing a task', () => {
+	const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
+
+	async function addTasksWithPriorityOrder(): Promise<{ first: Task, second: Task, third: Task }> {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(currentTime);
+		const dayInMilliseconds = 24 * 60 * 60 * 1000;
+		const first = await useTasksStore.getState().addTask('First', { dueDate: new Date(currentTime.getTime() + 2 * dayInMilliseconds) });
+		const second = await useTasksStore.getState().addTask('Second', { dueDate: new Date(currentTime.getTime() + 4 * dayInMilliseconds) });
+		const third = await useTasksStore.getState().addTask('Third', { dueDate: new Date(currentTime.getTime() + 6 * dayInMilliseconds) });
+		return { first, second, third };
+	}
+
+	it('focuses the clicked task and lists the priority task in priority order', async () => {
+		const { first, second, third } = await addTasksWithPriorityOrder();
+
+		useTasksStore.getState().temporarilyFocusTask(third);
+
+		expect(selectFocusedTask()).toBe(third);
+		expect(selectIsFocusedTaskTemporary()).toBe(true);
+		expect(selectUpcomingTasks()).toEqual([first, second]);
+	});
+
+	it('goes back to normal when the priority task is clicked', async () => {
+		const { first, third } = await addTasksWithPriorityOrder();
+		useTasksStore.getState().temporarilyFocusTask(third);
+
+		useTasksStore.getState().temporarilyFocusTask(first);
+
+		expect(selectFocusedTask()).toBe(first);
+		expect(selectIsFocusedTaskTemporary()).toBe(false);
+	});
+
+	it('goes back to normal after completing the temporarily focused task', async () => {
+		const { first, third } = await addTasksWithPriorityOrder();
+		useTasksStore.getState().temporarilyFocusTask(third);
+
+		useTasksStore.getState().completeAllSteps(third);
+
+		expect(selectFocusedTask()).toBe(first);
+		expect(selectIsFocusedTaskTemporary()).toBe(false);
+	});
+
+	it('goes back to normal after skipping the temporarily focused task', async () => {
+		const { first, third } = await addTasksWithPriorityOrder();
+		useTasksStore.getState().temporarilyFocusTask(third);
+
+		useTasksStore.getState().skipTaskUntil(third, new Date(currentTime.getTime() + 60 * 60 * 1000));
+
+		expect(selectFocusedTask()).toBe(first);
+		expect(selectIsFocusedTaskTemporary()).toBe(false);
+	});
+
+	it('stays after editing the temporarily focused task', async () => {
+		const { third } = await addTasksWithPriorityOrder();
+		useTasksStore.getState().temporarilyFocusTask(third);
+
+		useTasksStore.getState().setDescription(third, 'Third edited');
+
+		expect(selectFocusedTask()).toBe(third);
+	});
+
+	it('is dropped when a different task takes the top of the priority order', async () => {
+		const { third } = await addTasksWithPriorityOrder();
+		useTasksStore.getState().temporarilyFocusTask(third);
+
+		const urgentTask = await useTasksStore.getState().addTask('Urgent', { dueDate: new Date(currentTime.getTime() + 60 * 60 * 1000) });
+		useTasksStore.getState().refreshTasks();
+
+		expect(selectFocusedTask()).toBe(urgentTask);
+		expect(useTasksStore.getState().temporaryFocus).toBeNull();
+	});
+
+	it('comes back when undoing the completion of the temporarily focused task', async () => {
+		const { third } = await addTasksWithPriorityOrder();
+		useTasksStore.getState().temporarilyFocusTask(third);
+		useTasksStore.getState().completeAllSteps(third);
+
+		useTasksStore.getState().undo();
+
+		expect(selectFocusedTask()).toBe(third);
+		expect(selectIsFocusedTaskTemporary()).toBe(true);
 	});
 });

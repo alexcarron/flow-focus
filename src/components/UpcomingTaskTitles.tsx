@@ -1,16 +1,26 @@
 import { useShallow } from 'zustand/react/shallow';
-import { useTasksStore, selectUpcomingTaskTitles } from '../stores/tasksStore';
+import { useTasksStore, selectUpcomingTasks } from '../stores/tasksStore';
 import styles from './UpcomingTaskTitles.module.css';
 
 export default function UpcomingTaskTitles() {
-	const upcomingTaskTitles = useTasksStore(useShallow(selectUpcomingTaskTitles));
+	const upcomingTasks = useTasksStore(useShallow(selectUpcomingTasks));
+	const temporarilyFocusTask = useTasksStore(state => state.temporarilyFocusTask);
+	useTasksStore(state => state.tasks);
 
-	if (upcomingTaskTitles.length === 0) return null;
+	if (upcomingTasks.length === 0) return null;
 
 	return (
 		<ul className={styles.titles}>
-			{upcomingTaskTitles.map((title, index) => (
-				<li key={index} className={styles.title}>{title}</li>
+			{upcomingTasks.map(task => (
+				<li key={task.id} className={styles.titleRow}>
+					<button
+						type="button"
+						className={styles.title}
+						onClick={() => temporarilyFocusTask(task)}
+					>
+						{task.getDescription()}
+					</button>
+				</li>
 			))}
 		</ul>
 	);

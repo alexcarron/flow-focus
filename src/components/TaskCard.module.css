@@ -312,3 +312,36 @@
 	height: 1.125rem;
 	flex-shrink: 0;
 }
+
+.temporarilyFocused {
+	align-items: center;
+	color: var(--color-text-subtle);
+	display: inline-flex;
+	gap: var(--space-extra-small);
+	margin-left: auto;
+	white-space: nowrap;
+}
+
+.stopTemporarilyFocusingButton {
+	align-items: center;
+	background: none;
+	border: none;
+	color: inherit;
+	cursor: pointer;
+	display: flex;
+	line-height: 0;
+	padding: 0;
+}
+
+.stopTemporarilyFocusingIcon {
+	display: block;
+	flex-shrink: 0;
+	height: 0.9em;
+	width: 0.9em;
+}
+
+@media (hover: hover) {
+	.stopTemporarilyFocusingButton:hover {
+		color: var(--color-text-muted);
+	}
+}

@@ -6,8 +6,30 @@
 	text-align: center;
 }
 
+.titleRow {
+	display: flex;
+	justify-content: center;
+}
+
 .title {
+	background: none;
+	border: none;
+	color: inherit;
+	font: inherit;
+	max-width: 100%;
 	overflow: hidden;
+	padding: 0;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.title:focus-visible {
+	text-decoration: underline;
+}
+
+@media (hover: hover) {
+	.title:hover {
+		cursor: pointer;
+		text-decoration: underline;
+	}
 }
