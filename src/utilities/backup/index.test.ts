@@ -6,7 +6,8 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV11';
+import { BACKUP_FORMAT } from './versions/backupV12';
+import { BACKUP_FORMAT as BACKUP_FORMAT_V11 } from './versions/backupV11';
 import { BACKUP_FORMAT as BACKUP_FORMAT_V10 } from './versions/backupV10';
 import { BACKUP_FORMAT as BACKUP_FORMAT_V9 } from './versions/backupV9';
 import { BACKUP_FORMAT_V6 } from './versions/backupV6';
@@ -264,6 +265,44 @@ describe('readBackupFile', () => {
 		expect(weeklyRoutine).not.toHaveProperty('endTime');
 	});
 
+	it('gives every task in a v11 backup an id and no prerequisite tasks', async () => {
+		const v11Backup = {
+			format: BACKUP_FORMAT_V11,
+			exportedAt: '2026-11-20T10:00:00.000Z',
+			settings: DEFAULT_SETTINGS,
+			tasks: [
+				{
+					description: 'Water the plants',
+					steps: [],
+					startDate: null,
+					targetDate: null,
+					dueDate: null,
+					minRequiredTime: null,
+					maxRequiredTime: null,
+					recurrenceDuration: null,
+					shouldNotSkipMissedOccurrences: false,
+					completedOccurrenceIndex: null,
+					skippedOccurrenceIndex: null,
+					progressOccurrenceIndex: null,
+					isComplete: false,
+					isSkipped: false,
+					skippedUntil: null,
+					lastActionedStep: null,
+					tagIDs: [],
+					createdAt: '2026-08-15T10:00:00.000Z',
+				},
+			],
+			quickToDoChecklist: [],
+			tags: [],
+		};
+
+		const migrated = await readBackupFile(makeBackupFile(v11Backup));
+
+		expect(migrated.format).toBe(BACKUP_FORMAT);
+		expect(typeof migrated.tasks[0].id).toBe('string');
+		expect(migrated.tasks[0].prerequisiteTaskIDs).toEqual([]);
+	});
+
 	it('rejects a file that is not a recognized backup', async () => {
 		await expect(readBackupFile(makeBackupFile({ not: 'a backup' }))).rejects.toThrow();
 	});
@@ -279,6 +318,7 @@ describe('applyBackup', () => {
 			settings: { ...DEFAULT_SETTINGS, bedtime: '02:00' },
 			tasks: [
 				{
+					id: 'restored-task',
 					description: 'Restored task',
 					steps: [],
 					startDate: null,
@@ -296,6 +336,7 @@ describe('applyBackup', () => {
 					skippedUntil: null,
 					lastActionedStep: null,
 					tagIDs: [],
+					prerequisiteTaskIDs: [],
 					createdAt: '2026-02-01T09:00:00.000Z',
 				},
 			],
@@ -316,6 +357,24 @@ describe('applyBackup', () => {
 		expect(tasks[0].createdAt.toISOString()).toBe('2026-02-01T09:00:00.000Z');
 		expect(useSettingsStore.getState().bedtime).toBe('02:00');
 		expect(useQuickToDoChecklistStore.getState().items[0].text).toBe('Restored item');
+	});
+});
+
+describe('backing up a sequence', () => {
+	it('restores each task with its own id so prerequisite task links still point at the right task', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+		const backup = createBackup();
+
+		await applyBackup(backup);
+		tasksManager.clearTasks();
+		await useTasksStore.getState().loadTasks();
+
+		const restoredCallParents = useTasksStore.getState().tasks.find(task => task.getDescription() === 'Call parents')!;
+		const restoredWatchD3 = useTasksStore.getState().tasks.find(task => task.getDescription() === 'Watch D3')!;
+		expect(restoredWatchD3.id).toBe(watchD3.id);
+		expect(restoredCallParents.getPrerequisiteTaskIDs()).toEqual([watchD3.id]);
 	});
 });
 
@@ -340,6 +399,7 @@ describe('backup and restore while signed in', () => {
 			skippedUntil: null,
 			lastActionedStep: null,
 			tagIDs: [],
+			prerequisiteTaskIDs: [],
 			createdAt: '2026-02-01T09:00:00.000Z',
 			updatedAt: new Date().toISOString(),
 			deletedAt: null,
@@ -369,6 +429,7 @@ describe('backup and restore while signed in', () => {
 			settings: { ...DEFAULT_SETTINGS, bedtime: '03:00' },
 			tasks: [
 				{
+					id: 'restored-account-task',
 					description: 'Restored account task',
 					steps: [],
 					startDate: null,
@@ -386,6 +447,7 @@ describe('backup and restore while signed in', () => {
 					skippedUntil: null,
 					lastActionedStep: null,
 					tagIDs: [],
+					prerequisiteTaskIDs: [],
 					createdAt: '2026-02-01T09:00:00.000Z',
 				},
 			],

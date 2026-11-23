@@ -428,3 +428,81 @@ describe('tags', () => {
 		expect(result.cleanedName).toBe('Buy milk #urgent');
 	});
 });
+
+describe('parseTypedQuickInput prerequisite tasks', () => {
+	const watchD3WithFriends = { id: 'watch-d3', description: 'Watch D3 with friends' };
+	const watchAMovie = { id: 'watch-movie', description: 'Watch a movie' };
+	const fridayGroceries = { id: 'friday-groceries', description: 'Friday groceries' };
+
+	it('matches the start of an existing task name after "after" and strips it from the name', () => {
+		const result = parseTypedQuickInput({
+			input: 'call parents after watch D3 by 10pm',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends, watchAMovie],
+		});
+
+		expect(result.cleanedName).toBe('call parents');
+		expect(result.prerequisiteTaskIDs).toEqual(['watch-d3']);
+		expect(result.timing.targetDate?.getHours()).toBe(22);
+		expect(result.tokens[0]).toMatchObject({
+			field: 'prerequisiteTask',
+			matchedText: 'after watch D3',
+			explanation: 'After: Watch D3 with friends',
+		});
+	});
+
+	it('does not match when the typed words start more than one task name', () => {
+		const result = parseTypedQuickInput({
+			input: 'call parents after watch',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends, watchAMovie],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual([]);
+		expect(result.cleanedName).toBe('call parents after watch');
+	});
+
+	it('does not match when the typed words cover only part of the task name\'s first word', () => {
+		const result = parseTypedQuickInput({
+			input: 'call parents after wat',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual([]);
+	});
+
+	it('prefers a matching task name over a start date', () => {
+		const result = parseTypedQuickInput({
+			input: 'cook dinner after friday groceries',
+			now: testNow,
+			prerequisiteTaskCandidates: [fridayGroceries],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual(['friday-groceries']);
+		expect(result.timing.startDate).toBeUndefined();
+		expect(result.cleanedName).toBe('cook dinner');
+	});
+
+	it('keeps reading "after" as a start date when no task name matches', () => {
+		const result = parseTypedQuickInput({
+			input: 'cook dinner after friday',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual([]);
+		expect(result.timing.startDate).toBeDefined();
+	});
+
+	it('matches more than one prerequisite task', () => {
+		const result = parseTypedQuickInput({
+			input: 'call parents after watch D3 after friday groceries',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends, fridayGroceries],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual(['watch-d3', 'friday-groceries']);
+		expect(result.cleanedName).toBe('call parents');
+	});
+});

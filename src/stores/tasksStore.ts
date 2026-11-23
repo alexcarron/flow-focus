@@ -11,6 +11,7 @@ import TaskPrioritizer from '../model/TaskPrioritizer';
 import type TemporaryFocus from '../model/temporary-focus/TemporaryFocus';
 import { isTemporaryFocusStillValid } from '../model/temporary-focus/isTemporaryFocusStillValid';
 import { didTaskGetCompletedOrSkipped } from '../model/temporary-focus/didTaskGetCompletedOrSkipped';
+import { getTasksDependingOnTask, getTasksThatCanBePrerequisiteTasksOfTask } from '../model/task/sequence/taskSequence';
 import { serializeTask, deserializeRow } from '../persistence/cloud/task.serializer';
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
@@ -79,6 +80,9 @@ interface TasksActions {
 
 	addTagToTask: (task: Task, tagName: string) => Promise<void>;
 	removeTagFromTask: (task: Task, tagID: string) => Promise<void>;
+
+	addPrerequisiteTaskToTask: (parameters: { dependentTask: Task, prerequisiteTask: Task }) => void;
+	removePrerequisiteTaskFromTask: (parameters: { dependentTask: Task, prerequisiteTaskID: string }) => void;
 
 	undo: () => void;
 	redo: () => void;
@@ -172,6 +176,9 @@ async function loadTasksFromActiveRepository(): Promise<void> {
 			task.setSkippedUntil(data.skippedUntil);
 			task.setLastActionedStep(data.lastActionedStep);
 			data.tagIDs.forEach(tagID => task.addTagID(tagID));
+			data.prerequisiteTaskIDs.forEach(prerequisiteTaskID => 
+				task.addPrerequisiteTaskID(prerequisiteTaskID)
+			);
 			task.refreshCurrentOccurrence(new Date());
 		});
 		useTasksStore.setState(state => {
@@ -427,12 +434,15 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 
 		async deleteTask(task: Task) {
 			const tagIDsToCheck = task.getTagIDs();
+			const tasksDependingOnTask = getTasksDependingOnTask({ task, tasks: tasksManager.getTasks() });
 			await softDeleteTask(task.id);
 			tasksManager.deleteTask(task);
+			tasksDependingOnTask.forEach(dependentTask => dependentTask.removePrerequisiteTaskID(task.id));
 			set(state => {
 				state.tasks = [...tasksManager.getTasks()];
 				dropTemporaryFocusIfNoLongerValid(state);
 			});
+			await get().persistChangedTasks(tasksDependingOnTask);
 			for (const tagID of tagIDsToCheck) {
 				await deleteTagIfNoLongerReferenced(tagID);
 			}
@@ -450,11 +460,29 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			await deleteTagIfNoLongerReferenced(tagID);
 		},
 
+		addPrerequisiteTaskToTask({ dependentTask, prerequisiteTask }: { dependentTask: Task, prerequisiteTask: Task }) {
+			const tasksThatCanBePrerequisiteTasks = getTasksThatCanBePrerequisiteTasksOfTask({
+				dependentTask,
+				tasks: tasksManager.getTasks(),
+			});
+			if (!tasksThatCanBePrerequisiteTasks.includes(prerequisiteTask)) {
+				throw new Error(`"${prerequisiteTask.getDescription()}" can't be an earlier task of "${dependentTask.getDescription()}".`);
+			}
+			get().executeWithPatches(() => dependentTask.addPrerequisiteTaskID(prerequisiteTask.id), [dependentTask]);
+		},
+
+		removePrerequisiteTaskFromTask({ dependentTask, prerequisiteTaskID }: { dependentTask: Task, prerequisiteTaskID: string }) {
+			get().executeWithPatches(() => dependentTask.removePrerequisiteTaskID(prerequisiteTaskID), [dependentTask]);
+		},
+
 		async importTasks(backupTasks: BackupTask[]) {
 			tasksManager.clearTasks();
 			await getActiveRepositories().taskRepository.clear();
 			for (const backupTask of backupTasks) {
-				const task = tasksManager.addCreatedTask(backupTask.description, { createdAt: new Date(backupTask.createdAt) });
+				const task = tasksManager.addCreatedTask(backupTask.description, {
+					taskID: backupTask.id,
+					createdAt: new Date(backupTask.createdAt),
+				});
 				task.replaceAllSteps(cloneStepsDeep(backupTask.steps as Step[]));
 				task.setStartDate(backupTask.startDate ? new Date(backupTask.startDate) : null);
 				task.setTargetDate(backupTask.targetDate ? new Date(backupTask.targetDate) : null);
@@ -471,6 +499,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 				task.setSkippedUntil(backupTask.skippedUntil ? new Date(backupTask.skippedUntil) : null);
 				task.setLastActionedStep(backupTask.lastActionedStep);
 				backupTask.tagIDs.forEach(tagID => task.addTagID(tagID));
+				backupTask.prerequisiteTaskIDs.forEach(prerequisiteTaskID => task.addPrerequisiteTaskID(prerequisiteTaskID));
 				task.refreshCurrentOccurrence(new Date());
 
 				await persistTask(task);

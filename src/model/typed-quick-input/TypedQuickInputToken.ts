@@ -8,7 +8,8 @@ export type TypedQuickInputField =
 	| 'duration'
 	| 'ignoredDate'
 	| 'steps'
-	| 'tag';
+	| 'tag'
+	| 'prerequisiteTask';
 
 export type TypedQuickInputToken = {
 	field: TypedQuickInputField;
@@ -38,6 +39,7 @@ export type TypedQuickInputParseResult = {
 	timing: Partial<TaskTimingOptions>;
 	steps: string[] | null;
 	tags: TypedQuickInputTagMatch[];
+	prerequisiteTaskIDs: string[];
 	tokens: TypedQuickInputToken[];
 	escapedTokens: TypedQuickInputToken[];
 };
@@ -51,6 +53,7 @@ const fieldToBecomeLabel: Record<TypedQuickInputField, string> = {
 	ignoredDate: 'date',
 	steps: 'step',
 	tag: 'tag',
+	prerequisiteTask: 'earlier task',
 };
 
 export function getTokenBecomeLabel(token: TypedQuickInputToken): string {

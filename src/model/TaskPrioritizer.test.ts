@@ -144,3 +144,67 @@ describe('missed dates', () => {
 		expect(getFocusableTaskDescriptions(sundayEvening)).toEqual(['Homework']);
 	});
 });
+
+describe('a sequence of playing Deadlock, then watching D3, then calling parents, with only the call having a target date', () => {
+	const noon = new Date(2026, 10, 23, 12, 0);
+	let playDeadlock: Task;
+	let watchD3: Task;
+	let callParents: Task;
+
+	beforeEach(() => {
+		playDeadlock = addTask({
+			description: 'Play Deadlock',
+			maximumDuration: 1 * MILLISECONDS_PER_HOUR,
+		});
+		watchD3 = addTask({
+			description: 'Watch D3',
+			maximumDuration: 2 * MILLISECONDS_PER_HOUR,
+		});
+		callParents = addTask({
+			description: 'Call parents',
+			targetDate: new Date(2026, 10, 23, 22, 0),
+			maximumDuration: 1 * MILLISECONDS_PER_HOUR,
+		});
+		addTask({
+			description: 'Do laundry',
+			targetDate: new Date(2026, 10, 24, 18, 0),
+			maximumDuration: 1 * MILLISECONDS_PER_HOUR,
+		});
+		watchD3.addPrerequisiteTaskID(playDeadlock.id);
+		callParents.addPrerequisiteTaskID(watchD3.id);
+	});
+
+	it('shows Deadlock first, ahead of a task it would have no date to compete with, and hides the later tasks', () => {
+		expect(getFocusableTaskDescriptions(noon)).toEqual(['Play Deadlock', 'Do laundry']);
+	});
+
+	it('shows each later task once the task before it is completed', () => {
+		playDeadlock.setComplete(true);
+
+		expect(getFocusableTaskDescriptions(noon)).toEqual(['Watch D3', 'Do laundry']);
+
+		watchD3.setComplete(true);
+
+		expect(getFocusableTaskDescriptions(noon)).toEqual(['Call parents', 'Do laundry']);
+	});
+
+	it('shows a skipped first task anyway when the sequence can no longer meet a due date otherwise', () => {
+		callParents.setTargetDate(null);
+		callParents.setDueDate(new Date(2026, 10, 23, 15, 30));
+		playDeadlock.skipNextStep();
+
+		expect(getFocusableTaskDescriptions(noon)).toEqual(['Play Deadlock', 'Do laundry']);
+	});
+
+	it('puts the sequence ahead of a target date only task when doing that task first would miss the due date passed down the sequence', () => {
+		callParents.setTargetDate(null);
+		callParents.setDueDate(new Date(2026, 10, 25, 12, 0));
+		addTask({
+			description: 'Read a long book',
+			targetDate: new Date(2026, 10, 24, 20, 0),
+			maximumDuration: 30 * MILLISECONDS_PER_HOUR,
+		});
+
+		expect(getFocusableTaskDescriptions(noon)).toEqual(['Play Deadlock', 'Read a long book', 'Do laundry']);
+	});
+});

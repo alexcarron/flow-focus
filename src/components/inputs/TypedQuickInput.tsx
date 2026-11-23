@@ -38,6 +38,7 @@ const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	ignoredDate: styles.tokenIgnoredDate,
 	steps: styles.tokenSteps,
 	tag: styles.tokenTag,
+	prerequisiteTask: styles.tokenStartDate,
 };
 
 function escapeHtml(text: string): string {

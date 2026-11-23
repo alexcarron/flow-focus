@@ -50,6 +50,7 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		skippedUntil: null,
 		lastActionedStep: null,
 		tagIDs: [],
+		prerequisiteTaskIDs: [],
 		createdAt: '2026-02-01T09:00:00.000Z',
 		updatedAt: '2026-03-01T12:00:00.000Z',
 		deletedAt: null,

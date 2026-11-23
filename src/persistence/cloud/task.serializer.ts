@@ -37,6 +37,7 @@ export function serializeTask(task: Task): TaskWriteInput {
 		skippedUntil: state.skippedUntil ? state.skippedUntil.toISOString() : null,
 		lastActionedStep: state.lastActionedStep,
 		tagIDs: state.tagIDs,
+		prerequisiteTaskIDs: state.prerequisiteTaskIDs,
 		createdAt: task.createdAt.toISOString(),
 	};
 }
@@ -59,6 +60,7 @@ export function deserializeRow(row: PlainTaskRow): {
 	skippedUntil: Date | null;
 	lastActionedStep: { stepID: string; status: StepStatus } | null;
 	tagIDs: string[];
+	prerequisiteTaskIDs: string[];
 	createdAt: Date;
 } {
 	return {
@@ -81,6 +83,7 @@ export function deserializeRow(row: PlainTaskRow): {
 			? { stepID: row.lastActionedStep.stepID, status: row.lastActionedStep.status as StepStatus }
 			: null,
 		tagIDs: row.tagIDs,
+		prerequisiteTaskIDs: row.prerequisiteTaskIDs,
 		createdAt: new Date(row.createdAt),
 	};
 }
@@ -106,6 +109,7 @@ export interface CloudTaskRow {
 	is_skipped: boolean;
 	skipped_until: string | null;
 	last_actioned_step: { stepID: string; status: string } | null;
+	prerequisite_task_ids: string[];
 	created_at: string;
 	updated_at: string;
 	deleted_at: string | null;
@@ -162,6 +166,7 @@ export function taskRowToCloudRow(row: PlainTaskRow, userID: string): CloudTaskR
 		is_skipped: row.isSkipped,
 		skipped_until: normalizeNullableTimestamp(row.skippedUntil),
 		last_actioned_step: row.lastActionedStep,
+		prerequisite_task_ids: row.prerequisiteTaskIDs,
 		created_at: normalizeTimestamp(row.createdAt),
 		updated_at: normalizeTimestamp(row.updatedAt),
 		deleted_at: normalizeNullableTimestamp(row.deletedAt),
@@ -188,6 +193,7 @@ export function cloudRowToTaskRow(row: CloudTaskRow): PlainTaskRow {
 		skippedUntil: normalizeNullableTimestamp(row.skipped_until),
 		lastActionedStep: row.last_actioned_step,
 		tagIDs: [],
+		prerequisiteTaskIDs: row.prerequisite_task_ids ?? [],
 		createdAt: normalizeTimestamp(row.created_at),
 		updatedAt: normalizeTimestamp(row.updated_at),
 		deletedAt: normalizeNullableTimestamp(row.deleted_at),

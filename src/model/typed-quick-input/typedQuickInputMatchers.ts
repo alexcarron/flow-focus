@@ -7,6 +7,7 @@ import { parseDurationRange, parseSingleDuration } from './parseDurationPhrase';
 import { repeatMatcher } from './repeatMatcher';
 import { stepsMatcher } from './stepsMatcher';
 import { tagMatcher } from './tagMatcher';
+import { prerequisiteTaskMatcher } from './prerequisiteTaskMatcher';
 import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputField } from './TypedQuickInputToken';
 
 export type RawMatch = {
@@ -19,6 +20,7 @@ export type RawMatch = {
 	timing: Partial<TaskTimingOptions>;
 	stepsList?: string[];
 	tagMatch?: { existingTagID: string | null; newTagName: string | null };
+	prerequisiteTaskID?: string;
 	keepInName?: boolean;
 };
 
@@ -29,6 +31,7 @@ export type FindMatchesConfig = {
 	morningTime: Time;
 	escapedTokenLocations: EscapedTokenLocation[];
 	existingTags: Tag[];
+	prerequisiteTaskCandidates: { id: string; description: string }[];
 };
 
 export type Matcher = {
@@ -449,6 +452,7 @@ const durationMatcher: Matcher = {
 };
 
 export const typedQuickInputMatchers: Matcher[] = [
+	prerequisiteTaskMatcher,
 	dueDateMatcher,
 	targetDateMatcher,
 	byDateMatcher,

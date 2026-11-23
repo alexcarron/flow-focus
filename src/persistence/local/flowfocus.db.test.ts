@@ -443,3 +443,57 @@ describe('upgrading a database with mandatory flags and end times to target and 
 		expect(row.isSynced).toBe(true);
 	});
 });
+
+class PrePrerequisiteTasksFlowFocusDB extends Dexie {
+	constructor() {
+		super(DB_NAME);
+		this.version(13).stores({
+			tasks: 'id, dueDate, targetDate, startDate, isComplete, isSkipped, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		});
+	}
+}
+
+describe('upgrading a database whose tasks have no prerequisite tasks', () => {
+	it('gives every existing task an empty prerequisiteTaskIDs list without marking it unsynced', async () => {
+		const legacyDB = new PrePrerequisiteTasksFlowFocusDB();
+		await legacyDB.open();
+		await legacyDB.table('tasks').add({
+			id: 'task-1',
+			description: 'Water the plants',
+			steps: [],
+			startDate: null,
+			targetDate: null,
+			dueDate: null,
+			minRequiredTime: null,
+			maxRequiredTime: null,
+			recurrenceDuration: null,
+			shouldNotSkipMissedOccurrences: false,
+			completedOccurrenceIndex: null,
+			skippedOccurrenceIndex: null,
+			progressOccurrenceIndex: null,
+			isComplete: false,
+			isSkipped: false,
+			skippedUntil: null,
+			lastActionedStep: null,
+			tagIDs: [],
+			createdAt: '2026-09-01T00:00:00.000Z',
+			updatedAt: '2026-09-01T00:00:00.000Z',
+			deletedAt: null,
+			isSynced: true,
+		});
+		legacyDB.close();
+
+		const upgradedDB = new FlowFocusDB();
+		await upgradedDB.open();
+		const row = await upgradedDB.tasks.get('task-1');
+		expect(row?.prerequisiteTaskIDs).toEqual([]);
+		expect(row?.updatedAt).toBe('2026-09-01T00:00:00.000Z');
+		expect(row?.isSynced).toBe(true);
+
+		upgradedDB.close();
+	});
+});

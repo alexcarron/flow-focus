@@ -1,12 +1,12 @@
 # Task Priority Algorithm
 
-Source files: `src/model/TaskPrioritizer.ts`, `src/model/task/Task.ts`, `src/model/time-management/DateRange.ts`
+Source files: `src/model/TaskPrioritizer.ts`, `src/model/task/Task.ts`, `src/model/task/sequence/taskSequence.ts`, `src/model/time-management/DateRange.ts`
 
 The algorithm decides which single task to surface on the Focus Page, and also determines the default sort order in the Task Manager.
 
 First, it sorts all tasks, then it filters only the active, non-skipped tasks.
 
-See `docs/glossary.md` for what a start date, target date, and due date are.
+See `docs/glossary.md` for what a start date, target date, due date, earlier task, later task, and sequence are.
 
 ## Metric Definitions
 
@@ -15,8 +15,9 @@ See `docs/glossary.md` for what a start date, target date, and due date are.
 A task is active when
 - It has not been completed
 - There is no start date or the start date is in the past or now
+- Every one of its earlier tasks is completed
 
-A task is not active when it has been completed or hasn't started yet. Passing a target date or due date never makes a task inactive, so a task never disappears just because a date passed.
+A task is not active when it has been completed, hasn't started yet, or is a later task still waiting for an earlier task. Passing a target date or due date never makes a task inactive, so a task never disappears just because a date passed.
 
 ### Target or Due Date
 
@@ -58,11 +59,19 @@ The same as due date slack, but measured to the target or due date.
 
 A task with neither date has infinite target or due date slack.
 
+### Sequence Due Date Slack and Sequence Target or Due Date Slack
+
+The task's due date slack (or target or due date slack), but also counting its later tasks. For each incomplete later task, take that later task's own sequence slack and subtract the maximum possible task duration of this task. The task's sequence slack is the smallest of those and its own slack.
+
+A task with no later tasks has the same sequence slack as its own slack.
+
+Why: A later task is hidden until its earlier tasks are done, so its dates can only be met by doing the earlier tasks in time. Passing the slack down the sequence lets the first available task move up on behalf of the whole sequence.
+
 ### Urgent Task
 
-A task is urgent if its due date slack is 0 or negative (i.e. the available time before the due date is less than or equal to the maximum task duration).
+A task is urgent if its sequence due date slack is 0 or negative (i.e. the available time before the due date is less than or equal to the maximum task duration, counting any later tasks that still have to happen after it).
 
-Only a due date can make a task urgent. A missed target date never does.
+Only a due date can make a task urgent. A missed target date never does. An earlier task can become urgent because of a later task's due date.
 
 ### Task Progress
 
@@ -82,9 +91,9 @@ Why: A completed or future-start task (a task that can't be started right now) s
 
 ### 2nd Criterion: Due Date Over Target Date Only
 
-A task with a due date appears before a task without one, but only if doing the tasks without a due date first would make the due date impossible to meet.
+A task with a due date in its sequence (its own or a later task's) appears before a task without one, but only if doing the tasks without a due date first would make the due date impossible to meet.
 
-This is determined by the sum of the maximum possible task duration for every active task that has no due date and has a target date before the due date task's due date. If that sum exceeds the due date task's due date slack, the due date task is prioritized.
+This is determined by the sum of the maximum possible task duration for every active task that has no due date in its sequence and whose target date in its sequence comes before the due date task's. Which comes first is compared by available time to complete, counting later tasks the same way sequence slack does. If that sum exceeds the due date task's sequence due date slack, the due date task is prioritized.
 
 In plain language: if there is less slack before the due date than the total worst-case time of all the tasks you'd only like to get done before it, you can't afford to do those first.
 
@@ -94,7 +103,7 @@ Why: This avoids spending all your time on things you'd like to do and missing s
 
 ### 3rd Criterion: Less Due Date Slack
 
-A task whose due date slack runs out before the end of today appears before a task whose due date slack doesn't. A task with only a target date never has its due date slack run out.
+A task whose sequence due date slack runs out before the end of today appears before a task whose sequence due date slack doesn't. A task with only a target date never has its due date slack run out.
 
 If both tasks' due date slack runs out today, or neither does, the algorithm falls through to the next criterion.
 
@@ -102,7 +111,7 @@ Why: A due date is a must and a target date is a want. When a due date has to be
 
 ### 4th Criterion: Prefer Less Target or Due Date Slack
 
-The task with less target or due date slack appears first.
+The task with less sequence target or due date slack appears first.
 
 If both tasks have equal slack, the algorithm falls through to the next criterion.
 
@@ -112,7 +121,7 @@ Why: Slack measures how long you can delay starting a task before you miss its d
 
 ### 5th Criterion: Prefer Less Available Time to Complete
 
-The task with less available time to complete before its target or due date comes first.
+The task with less available time to complete before its own target or due date comes first. Later tasks aren't counted here, since this only breaks ties left by the 4th criterion.
 
 If both tasks have equal available time to complete, the algorithm falls through to the next criterion.
 
@@ -142,7 +151,7 @@ After sorting, two filters are applied to the full sorted list.
 
 ### 1st Filter: Active Tasks Only
 
-Removes all tasks that are not active.
+Removes all tasks that are not active, including later tasks still waiting for an earlier task.
 
 Why: If a task is not active, it cannot be started right now, so the user shouldn't see it or have it on their mind.
 
@@ -157,9 +166,9 @@ When a task is completed, all tasks are un-skipped, so they reappear in the next
 ## Summary List
 
 1. Sort by active status
-2. Sort by due date over target date only
-3. Sort by less due date slack
-4. Sort by less target or due date slack
+2. Sort by due date over target date only, counting sequences
+3. Sort by less sequence due date slack
+4. Sort by less sequence target or due date slack
 5. Sort by less time to complete
 6. Sort by more progress
 7. Filter out inactive tasks

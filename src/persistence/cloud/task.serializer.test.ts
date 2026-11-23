@@ -26,6 +26,7 @@ function makeTaskRow(overrides: Partial<PlainTaskRow> = {}): PlainTaskRow {
 		skippedUntil: null,
 		lastActionedStep: null,
 		tagIDs: [],
+		prerequisiteTaskIDs: [],
 		createdAt: '2026-02-01T09:00:00.000Z',
 		updatedAt: '2026-03-01T12:00:00.000Z',
 		deletedAt: null,
@@ -56,6 +57,7 @@ function makeCloudTaskRow(overrides: Partial<CloudTaskRow> = {}): CloudTaskRow {
 		is_skipped: false,
 		skipped_until: null,
 		last_actioned_step: null,
+		prerequisite_task_ids: [],
 		created_at: '2026-02-01T09:00:00.000Z',
 		updated_at: '2026-03-01T12:00:00.000Z',
 		deleted_at: null,
@@ -115,6 +117,25 @@ describe('taskRowToCloudRow', () => {
 		const cloudRow = taskRowToCloudRow(row, USER_ID);
 
 		expect(cloudRow.updated_at).toBe('2026-03-01T12:00:00.000Z');
+	});
+});
+
+describe('prerequisite task ids', () => {
+	it('survive a round trip through the cloud row', () => {
+		const row = makeTaskRow({ prerequisiteTaskIDs: ['task-a', 'task-b'] });
+
+		const cloudRow = taskRowToCloudRow(row, USER_ID);
+
+		expect(cloudRow.prerequisite_task_ids).toEqual(['task-a', 'task-b']);
+		expect(cloudRowToTaskRow(cloudRow).prerequisiteTaskIDs).toEqual(['task-a', 'task-b']);
+	});
+
+	it('default to an empty list for a cloud row from before the column existed', () => {
+		const { prerequisite_task_ids: _prerequisiteTaskIDs, ...cloudRowWithoutColumn } = makeCloudTaskRow({});
+
+		const row = cloudRowToTaskRow(cloudRowWithoutColumn as CloudTaskRow);
+
+		expect(row.prerequisiteTaskIDs).toEqual([]);
 	});
 });
 

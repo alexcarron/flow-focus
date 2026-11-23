@@ -117,6 +117,7 @@ export default function parseTypedQuickInput(config: {
 	morningTime?: Time;
 	escapedTokenLocations?: EscapedTokenLocation[];
 	existingTags?: Tag[];
+	prerequisiteTaskCandidates?: { id: string; description: string }[];
 }): TypedQuickInputParseResult {
 	const input = config.input;
 	const now = config.now ?? new Date();
@@ -124,8 +125,17 @@ export default function parseTypedQuickInput(config: {
 	const morningTime = config.morningTime ?? defaultMorningTime;
 	const escapedTokenLocations = config.escapedTokenLocations ?? [];
 	const existingTags = config.existingTags ?? [];
+	const prerequisiteTaskCandidates = config.prerequisiteTaskCandidates ?? [];
 
-	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({ input, now, nightTime, morningTime, escapedTokenLocations, existingTags }));
+	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({
+		input,
+		now,
+		nightTime,
+		morningTime,
+		escapedTokenLocations,
+		existingTags,
+		prerequisiteTaskCandidates,
+	}));
 
 	const quoteSpans = findQuoteSpans(input);
 
@@ -197,11 +207,14 @@ export default function parseTypedQuickInput(config: {
 		}))
 		.sort((left, right) => left.startIndex - right.startIndex);
 
+	const prerequisiteTaskIDs = [...new Set(keptMatches.flatMap(match => match.prerequisiteTaskID ?? []))];
+
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
 		timing,
 		steps,
 		tags,
+		prerequisiteTaskIDs,
 		tokens,
 		escapedTokens,
 	};

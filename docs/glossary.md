@@ -16,7 +16,7 @@ Words or phrases you can type in quick add to set a start date:
 - start
 - starting
 - from
-- after
+- after (unless naming a task)
 - not before
 
 ### Target Date
@@ -54,6 +54,34 @@ Words or phrases you can type in quick add to set a due date:
 - "have to" or "has to" at the start of the task, with "by" and a date later on (e.g. have to finish homework by sunday)
 
 "Can't" can also be typed as "cant" or "cannot".
+
+## Sequences
+
+### After
+
+How a task waits for other tasks to be completed before it shows up. The app shows it as "After" followed by the earlier task's name (e.g. After: Wash Dishes).
+
+In quick add, type "after" followed by the start of an existing task's name. The typed words have to cover at least the whole first word of the task's name, and no other task's name can start with the same words. If no task matches, "after" is read as a start date word instead.
+
+### Earlier Task (Prerequisite Task)
+
+A task that has to be completed before a later task shows up. In the code it's called a prerequisite task.
+
+### Later Task (Task Depending on Task / Dependent Task)
+
+A task that waits for one or more earlier tasks. It stays hidden from the Focus page until every one of its earlier tasks is completed. In the code it's called a task depending on its earlier task or a dependent task
+
+### Sequence
+
+A chain of tasks linked by earlier and later tasks. Recurring tasks can't be in a sequence.
+
+### Sequence Due Date Slack
+
+A task's due date slack, but also counting its later tasks: the smallest of its own due date slack and each later task's sequence due date slack minus the longest this task could take. This lets the first available task in a sequence move up and become urgent when a later task's due date needs it to.
+
+### Sequence Target or Due Date Slack
+
+The same as sequence due date slack, but measured to each task's target or due date.
 
 ## Prioritization
 

@@ -13,6 +13,7 @@ type TaskState = {
 	skippedOccurrenceIndex: number | null,
 	progressOccurrenceIndex: number | null,
 	tagIDs: string[],
+	prerequisiteTaskIDs: string[],
 } & TaskTimingOptions;
 
 export default TaskState;

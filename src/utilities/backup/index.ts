@@ -12,7 +12,8 @@ import { isBackupData as isBackupDataV7, migrateV6ToV7 } from './versions/backup
 import { isBackupData as isBackupDataV8, migrateV7ToV8 } from './versions/backupV8';
 import { isBackupData as isBackupDataV9, migrateV8ToV9 } from './versions/backupV9';
 import { isBackupData as isBackupDataV10, migrateV9ToV10 } from './versions/backupV10';
-import { BackupData, BackupTask, BackupStep, BACKUP_FORMAT, isBackupData, migrateV10ToV11, taskToBackupTask } from './versions/backupV11';
+import { isBackupData as isBackupDataV11, migrateV10ToV11 } from './versions/backupV11';
+import { BackupData, BackupTask, BackupStep, BACKUP_FORMAT, isBackupData, migrateV11ToV12, taskToBackupTask } from './versions/backupV12';
 
 export type { BackupData, BackupTask, BackupStep };
 
@@ -54,35 +55,38 @@ export async function readBackupFile(file: File): Promise<BackupData> {
 	if (isBackupData(parsed)) {
 		return parsed;
 	}
+	if (isBackupDataV11(parsed)) {
+		return migrateV11ToV12(parsed);
+	}
 	if (isBackupDataV10(parsed)) {
-		return migrateV10ToV11(parsed);
+		return migrateV11ToV12(migrateV10ToV11(parsed));
 	}
 	if (isBackupDataV9(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(parsed));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(parsed)));
 	}
 	if (isBackupDataV8(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(parsed)));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(parsed))));
 	}
 	if (isBackupDataV7(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(parsed))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(parsed)))));
 	}
 	if (isBackupDataV6(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(parsed)))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(parsed))))));
 	}
 	if (isBackupDataV5(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(parsed))))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(parsed)))))));
 	}
 	if (isBackupDataV4(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(parsed)))))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(parsed))))))));
 	}
 	if (isBackupDataV3(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(parsed))))))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(parsed)))))))));
 	}
 	if (isBackupDataV2(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(parsed)))))))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(parsed))))))))));
 	}
 	if (isBackupDataV1(parsed)) {
-		return migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(parsed))))))))));
+		return migrateV11ToV12(migrateV10ToV11(migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(migrateV6ToV7(migrateV5ToV6(migrateV4ToV5(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(parsed)))))))))));
 	}
 	throw new Error('File is not a valid FlowFocus backup.');
 }

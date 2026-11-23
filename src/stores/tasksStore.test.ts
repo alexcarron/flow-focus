@@ -376,3 +376,63 @@ describe('temporarily focusing a task', () => {
 		expect(selectIsFocusedTaskTemporary()).toBe(true);
 	});
 });
+
+describe('linking a prerequisite task', () => {
+	it('keeps the link after reloading', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+		await reload();
+
+		const reloadedCallParents = useTasksStore.getState().tasks.find(task => task.id === callParents.id)!;
+		expect(reloadedCallParents.getPrerequisiteTaskIDs()).toEqual([watchD3.id]);
+	});
+
+	it('can be undone and redone', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+		useTasksStore.getState().undo();
+
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([]);
+
+		useTasksStore.getState().redo();
+
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([watchD3.id]);
+	});
+
+	it('refuses a link that would create a loop', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+
+		expect(() => useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: watchD3, prerequisiteTask: callParents })).toThrow();
+		expect(watchD3.getPrerequisiteTaskIDs()).toEqual([]);
+	});
+
+	it('can be removed', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+
+		useTasksStore.getState().removePrerequisiteTaskFromTask({ dependentTask: callParents, prerequisiteTaskID: watchD3.id });
+		await reload();
+
+		const reloadedCallParents = useTasksStore.getState().tasks.find(task => task.id === callParents.id)!;
+		expect(reloadedCallParents.getPrerequisiteTaskIDs()).toEqual([]);
+	});
+
+	it('is removed when the prerequisite task is deleted, so the later task becomes available', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+
+		await useTasksStore.getState().deleteTask(watchD3);
+		await reload();
+
+		const reloadedCallParents = useTasksStore.getState().tasks.find(task => task.id === callParents.id)!;
+		expect(reloadedCallParents.getPrerequisiteTaskIDs()).toEqual([]);
+	});
+});

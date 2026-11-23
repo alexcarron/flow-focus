@@ -26,6 +26,13 @@ export class SkipUntilDateInPastError extends Error {
 	}
 }
 
+export class RecurringTaskInSequenceError extends Error {
+	constructor() {
+		super('Remove this task from its sequence before making it repeat.');
+		this.name = 'RecurringTaskInSequenceError';
+	}
+}
+
 export function getDateOrderErrorMessage(error: unknown): string | null {
 	if (error instanceof StartDateAfterTargetDateError) return "The start date can't be after the target date.";
 	if (error instanceof StartDateAfterDueDateError) return "The start date can't be after the due date.";

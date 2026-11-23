@@ -8,11 +8,12 @@ import { createStep, cloneStepsDeep, getStepLeavesInOrder, rollUpStepStatuses, s
 import { getAncestorIDs, getSubtreeIDsIncludingSelf, findNodeWithParent, mapNode, indentNode, unindentNode, canIndentNode, canUnindentNode, moveNodeAmongSiblings, reparentAndReorderNode, insertSiblingRelativeToNode, appendRootNode, deleteNode, getNodeIDsInDepthFirstOrder } from "../../utilities/tree/orderedTree";
 import { PastedListItem } from "../../utilities/parsePastedTextIntoNestedListItems";
 import TaskState from "./TaskState";
-import { StartDateAfterTargetDateError, StartDateAfterDueDateError, TargetDateAfterDueDateError, SkipUntilDateInPastError } from "./TaskTimingError";
+import { StartDateAfterTargetDateError, StartDateAfterDueDateError, TargetDateAfterDueDateError, SkipUntilDateInPastError, RecurringTaskInSequenceError } from "./TaskTimingError";
 import RecurrenceDuration, { areRecurrenceDurationsEqual, cloneRecurrenceDuration, getWeekdaysOfRecurrenceDuration } from "./recurrence/RecurrenceDuration";
 import TaskOccurrence from "./recurrence/TaskOccurrence";
 import { computeCurrentTaskOccurrence, getOccurrenceStartDate, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
 import { moveAnchorOccurrenceToFirstRecurrenceWeekday } from "./recurrence/recurrenceWeekdayOccurrences";
+import { calculateSequenceDueDateSlack, hasIncompletePrerequisiteTask, isTaskInSequence } from "./sequence/taskSequence";
 
 const FIRST_OCCURRENCE_INDEX = 0;
 
@@ -40,6 +41,7 @@ export default class Task {
 	protected skippedUntil: Date | null = null;
 	protected lastActionedStep: {stepID: string, status: StepStatus} | null = null;
 	protected tagIDs: string[] = [];
+	protected prerequisiteTaskIDs: string[] = [];
 
 	constructor(
 		protected tasksManager: TasksManager,
@@ -229,6 +231,24 @@ export default class Task {
 		this.tagIDs = this.tagIDs.filter(existingTagID => existingTagID !== tagID);
 	}
 
+	getPrerequisiteTaskIDs(): string[] {return [...this.prerequisiteTaskIDs]};
+
+	addPrerequisiteTaskID(prerequisiteTaskID: string): void {
+		if (this.prerequisiteTaskIDs.includes(prerequisiteTaskID)) return;
+		this.prerequisiteTaskIDs = [...this.prerequisiteTaskIDs, prerequisiteTaskID];
+	}
+
+	removePrerequisiteTaskID(prerequisiteTaskID: string): void {
+		this.prerequisiteTaskIDs = this.prerequisiteTaskIDs.filter(existingPrerequisiteTaskID => existingPrerequisiteTaskID !== prerequisiteTaskID);
+	}
+
+	protected assertCanBecomeRecurring(): void {
+		if (this.isRecurring()) return;
+		if (isTaskInSequence({ task: this, tasks: this.tasksManager.getTasks() })) {
+			throw new RecurringTaskInSequenceError();
+		}
+	}
+
 	isRecurring(): boolean {return this.recurrenceDuration !== null};
 
 	getCurrentOccurrence(): TaskOccurrence | null {return this.currentOccurrence}
@@ -312,6 +332,7 @@ export default class Task {
 	}
 
 	makeRecurring(recurrenceDuration: RecurrenceDuration, requestedAnchorStartDate: Date, currentTime: Date = new Date()): void {
+		this.assertCanBecomeRecurring();
 		const movedAnchorOccurrence = Task.moveAnchorOccurrenceToFirstWeekdayOfRecurrence({
 			startDate: requestedAnchorStartDate,
 			targetDate: this.targetDate,
@@ -767,6 +788,7 @@ export default class Task {
 	setFromTaskTimingOptions(requestedTaskTimingOptions: TaskTimingOptions, currentTime: Date = new Date()): void {
 		const wasRecurring = this.isRecurring();
 		const recurrenceDuration = requestedTaskTimingOptions.recurrenceDuration;
+		if (recurrenceDuration !== null) this.assertCanBecomeRecurring();
 		const requestedStartDate = recurrenceDuration !== null ? requestedTaskTimingOptions.startDate ?? currentTime : requestedTaskTimingOptions.startDate;
 		const taskTimingOptions = Task.moveTimingOptionsAnchorToFirstRecurrenceWeekday({
 			...requestedTaskTimingOptions,
@@ -820,14 +842,14 @@ export default class Task {
 	}
 
 	isUrgent(currentTime: Date): boolean {
-		return this.getDueDateSlack(currentTime) <= 0;
+		return calculateSequenceDueDateSlack({ task: this, tasks: this.tasksManager.getTasks(), currentTime }) <= 0;
 	}
 
 	isDueDateSlackRunningOutToday(currentTime: Date): boolean {
 		const endOfToday = new Date(currentTime);
 		endOfToday.setHours(23, 59, 59, 999);
 		const millisecondsUntilEndOfToday = endOfToday.getTime() - currentTime.getTime();
-		return this.getDueDateSlack(currentTime) <= millisecondsUntilEndOfToday;
+		return calculateSequenceDueDateSlack({ task: this, tasks: this.tasksManager.getTasks(), currentTime }) <= millisecondsUntilEndOfToday;
 	}
 
 	protected complete(): void {
@@ -877,6 +899,7 @@ export default class Task {
 			steps: cloneStepsDeep(this.steps),
 			lastActionedStep: this.lastActionedStep,
 			tagIDs: [...this.tagIDs],
+			prerequisiteTaskIDs: [...this.prerequisiteTaskIDs],
 		};
 	}
 
@@ -904,6 +927,7 @@ export default class Task {
 		this.replaceAllSteps(cloneStepsDeep(taskState.steps));
 		this.setLastActionedStep(taskState.lastActionedStep);
 		this.tagIDs = [...taskState.tagIDs];
+		this.prerequisiteTaskIDs = [...taskState.prerequisiteTaskIDs];
 		this.refreshCurrentOccurrence(currentTime);
 	}
 
@@ -919,7 +943,11 @@ export default class Task {
 	}
 
 	isActiveIgnoringSkip(currentTime: Date): boolean {
-		return !this.getIsComplete() && this.hasTaskStarted(currentTime);
+		return (
+			!this.getIsComplete() &&
+			this.hasTaskStarted(currentTime) &&
+			!hasIncompletePrerequisiteTask({ task: this, tasks: this.tasksManager.getTasks() })
+		);
 	}
 
 	mustStartToday(currentTime: Date): boolean {

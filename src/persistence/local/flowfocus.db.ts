@@ -40,6 +40,7 @@ export interface PlainTaskRow extends DeletableRecordMetadata {
 	skippedUntil: string | null;
 	lastActionedStep: { stepID: string; status: string } | null;
 	tagIDs: string[];
+	prerequisiteTaskIDs: string[];
 	createdAt: string;
 }
 
@@ -221,6 +222,17 @@ export class FlowFocusDB extends Dexie {
 				convertTaskRowFromMandatoryAndEndTimeToTargetAndDueDates(row);
 			});
 		});
+		this.version(14).stores({
+			tasks: 'id, dueDate, targetDate, startDate, isComplete, isSkipped, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		}).upgrade(transaction => {
+			return transaction.table('tasks').toCollection().modify(row => {
+				addEmptyPrerequisiteTaskIDsToTaskRow(row);
+			});
+		});
 	}
 }
 
@@ -247,6 +259,10 @@ function addEmptyChildrenToFlatSteps(row: { steps?: PlainStepRow[] }): void {
 
 function addEmptyTagIDsToTaskRow(row: { tagIDs?: string[] }): void {
 	if (!Array.isArray(row.tagIDs)) row.tagIDs = [];
+}
+
+function addEmptyPrerequisiteTaskIDsToTaskRow(row: { prerequisiteTaskIDs?: string[] }): void {
+	if (!Array.isArray(row.prerequisiteTaskIDs)) row.prerequisiteTaskIDs = [];
 }
 
 function backfillTaskRowCreatedAtFromUpdatedAt(row: { createdAt?: string; updatedAt: string }): void {

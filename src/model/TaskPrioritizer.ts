@@ -1,9 +1,12 @@
 import SortOrder from './SortOrder';
 import Task from './task/Task';
 import TasksManager from './TasksManager';
+import { calculateSequenceDueDateSlack, calculateSequenceTargetOrDueDateSlack } from './task/sequence/taskSequence';
 
 export default class TaskPrioritizer {
 	private static readonly DO_LOG_PRIORITIES = false;
+
+	private taskToSequenceSlacks = new Map<Task, { dueDateSlack: number, targetOrDueDateSlack: number }>();
 
 	constructor(
 		private tasksManager: TasksManager
@@ -44,7 +47,25 @@ export default class TaskPrioritizer {
 		}
 	}
 
+	private getSequenceSlacksOfTask(task: Task, currentTime: Date): { dueDateSlack: number, targetOrDueDateSlack: number } {
+		const cachedSequenceSlacks = this.taskToSequenceSlacks.get(task);
+		if (cachedSequenceSlacks !== undefined) return cachedSequenceSlacks;
+
+		const tasks = this.getTasks();
+		const sequenceSlacks = {
+			dueDateSlack: calculateSequenceDueDateSlack({ task, tasks, currentTime }),
+			targetOrDueDateSlack: calculateSequenceTargetOrDueDateSlack({ task, tasks, currentTime }),
+		};
+		this.taskToSequenceSlacks.set(task, sequenceSlacks);
+		return sequenceSlacks;
+	}
+
+	private hasSequenceDueDate(task: Task, currentTime: Date): boolean {
+		return this.getSequenceSlacksOfTask(task, currentTime).dueDateSlack !== Number.POSITIVE_INFINITY;
+	}
+
 	public getTasksInPriorityOrder(tasksToPrioritize: Task[], currentTime: Date): Task[] {
+		this.taskToSequenceSlacks.clear();
 		let priorityTasks: Task[] = tasksToPrioritize;
 
 		priorityTasks = priorityTasks.sort((task1, task2) => {
@@ -63,7 +84,7 @@ export default class TaskPrioritizer {
 				) ||
 				this.compareBy(
 					this.compareByTargetOrDueDateSlack.bind(this), task1, task2, currentTime,
-					`Had less slack until its target or due date: ${task1.getTargetOrDueDateSlack(currentTime)} VS ${task2.getTargetOrDueDateSlack(currentTime)}`
+					"Had less sequence target or due date slack"
 				) ||
 				this.compareBy(
 					this.compareByTimeToCompleteByTargetOrDueDate.bind(this), task1, task2, currentTime,
@@ -172,14 +193,17 @@ export default class TaskPrioritizer {
 	}
 
 	private compareByDueDateOverTargetDateOnly(task1: Task, task2: Task, currentTime: Date): SortOrder {
+		const doesTask1HaveSequenceDueDate = this.hasSequenceDueDate(task1, currentTime);
+		const doesTask2HaveSequenceDueDate = this.hasSequenceDueDate(task2, currentTime);
+
 		if (
-			task1.getDueDate() !== null && task2.getDueDate() === null &&
+			doesTask1HaveSequenceDueDate && !doesTask2HaveSequenceDueDate &&
 			this.wouldTargetDateOnlyTasksLeaveTooLittleTimeFor(task1, currentTime)
 		) {
 			return SortOrder.FIRST_BEFORE_SECOND;
 		}
 		else if (
-			task1.getDueDate() === null && task2.getDueDate() !== null &&
+			!doesTask1HaveSequenceDueDate && doesTask2HaveSequenceDueDate &&
 			this.wouldTargetDateOnlyTasksLeaveTooLittleTimeFor(task2, currentTime)
 		) {
 			return SortOrder.SECOND_BEFORE_FIRST;
@@ -189,23 +213,23 @@ export default class TaskPrioritizer {
 	}
 
 	private wouldTargetDateOnlyTasksLeaveTooLittleTimeFor(dueDateTask: Task, currentTime: Date): boolean {
-		const dueDate = dueDateTask.getDueDate();
-		if (dueDate === null) return false;
+		const dueDateTaskSequenceDueDateSlack = this.getSequenceSlacksOfTask(dueDateTask, currentTime).dueDateSlack;
+		if (dueDateTaskSequenceDueDateSlack === Number.POSITIVE_INFINITY) return false;
 
+		const dueDateTaskTimeToCompleteBySequenceDueDate = dueDateTaskSequenceDueDateSlack + dueDateTask.getAssumedMaxRequiredTime();
 		let totalTargetDateOnlyTasksDuration = 0;
 		for (const task of this.tasksManager.getTasks()) {
-			const targetDate = task.getTargetDate();
-			const isTargetDateOnlyTaskTargetedBeforeDueDate =
-				task.getDueDate() === null &&
-				targetDate !== null &&
-				targetDate < dueDate &&
-				task.isActive(currentTime);
-			if (isTargetDateOnlyTaskTargetedBeforeDueDate) {
+			if (!task.isActive(currentTime) || this.hasSequenceDueDate(task, currentTime)) continue;
+
+			const sequenceTargetOrDueDateSlack = this.getSequenceSlacksOfTask(task, currentTime).targetOrDueDateSlack;
+			const timeToCompleteBySequenceTargetDate = sequenceTargetOrDueDateSlack + task.getAssumedMaxRequiredTime();
+			const isTargetedBeforeDueDate = timeToCompleteBySequenceTargetDate < dueDateTaskTimeToCompleteBySequenceDueDate;
+			if (isTargetedBeforeDueDate) {
 				totalTargetDateOnlyTasksDuration += task.getAssumedMaxRequiredTime();
 			}
 		}
 
-		return dueDateTask.getDueDateSlack(currentTime) < totalTargetDateOnlyTasksDuration;
+		return dueDateTaskSequenceDueDateSlack < totalTargetDateOnlyTasksDuration;
 	}
 
 	private compareByLessDueDateSlack(task1: Task, task2: Task, currentTime: Date): SortOrder {
@@ -237,8 +261,8 @@ export default class TaskPrioritizer {
 	}
 
 	private compareByTargetOrDueDateSlack(task1: Task, task2: Task, currentTime: Date): SortOrder {
-		const slack1 = task1.getTargetOrDueDateSlack(currentTime);
-		const slack2 = task2.getTargetOrDueDateSlack(currentTime);
+		const slack1 = this.getSequenceSlacksOfTask(task1, currentTime).targetOrDueDateSlack;
+		const slack2 = this.getSequenceSlacksOfTask(task2, currentTime).targetOrDueDateSlack;
 
 		if (slack1 < slack2) {
 			return SortOrder.FIRST_BEFORE_SECOND;

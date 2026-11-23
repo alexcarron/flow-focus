@@ -1,5 +1,3 @@
-import Task from '../../../model/task/Task';
-import Step from '../../../model/task/step/Step';
 import { isRecurrenceDuration } from '../../../model/task/recurrence/RecurrenceDuration';
 import QuickToDoChecklistItem from '../../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import Tag from '../../../model/tag/Tag';
@@ -27,44 +25,6 @@ export interface BackupData {
 	tasks: BackupTask[];
 	quickToDoChecklist: QuickToDoChecklistItem[];
 	tags: Tag[];
-}
-
-function convertNullableDateToISOString(date: Date | null): string | null {
-	if (date === null) return null;
-	return date.toISOString();
-}
-
-export function taskToBackupTask(task: Task): BackupTask {
-	const state = task.getState();
-	return {
-		description: state.description,
-		steps: state.steps.map(stepToBackupStep),
-		startDate: convertNullableDateToISOString(state.startDate),
-		targetDate: convertNullableDateToISOString(state.targetDate),
-		dueDate: convertNullableDateToISOString(state.dueDate),
-		minRequiredTime: state.minDuration,
-		maxRequiredTime: state.maxDuration,
-		recurrenceDuration: state.recurrenceDuration,
-		shouldNotSkipMissedOccurrences: state.shouldNotSkipMissedOccurrences,
-		completedOccurrenceIndex: state.completedOccurrenceIndex,
-		skippedOccurrenceIndex: state.skippedOccurrenceIndex,
-		progressOccurrenceIndex: state.progressOccurrenceIndex,
-		isComplete: state.isComplete,
-		isSkipped: state.isSkipped,
-		skippedUntil: convertNullableDateToISOString(state.skippedUntil),
-		lastActionedStep: state.lastActionedStep,
-		tagIDs: state.tagIDs,
-		createdAt: task.createdAt.toISOString(),
-	};
-}
-
-function stepToBackupStep(step: Step): BackupStep {
-	return {
-		id: step.id,
-		text: step.text,
-		status: step.status,
-		children: step.children.map(stepToBackupStep),
-	};
 }
 
 function isNullableInteger(value: unknown): boolean {
