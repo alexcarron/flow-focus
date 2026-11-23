@@ -1,5 +1,9 @@
 import type Task from '../Task';
 
+export const RECURRING_TASK_CANNOT_WAIT_MESSAGE = "Repeating tasks can't wait for other tasks.";
+
+export const WAITING_TASK_CANNOT_REPEAT_MESSAGE = "A task that waits for another task can't repeat.";
+
 export function getPrerequisiteTasksOfTask({ task, tasks }: { task: Task, tasks: Task[] }): Task[] {
 	const prerequisiteTaskIDs = task.getPrerequisiteTaskIDs();
 	if (prerequisiteTaskIDs.length === 0) return [];
@@ -46,23 +50,31 @@ export function canTaskBePrerequisiteTask(task: Task): boolean {
 	return !task.getIsComplete() && !task.isRecurring();
 }
 
+export function canTaskBePrerequisiteTaskOfTask({ candidateTask, dependentTask, tasks }: { candidateTask: Task, dependentTask: Task, tasks: Task[] }): boolean {
+	const wouldCreateLoop = doesTaskDependOnTask({
+		task: candidateTask,
+		otherTask: dependentTask,
+		tasks,
+	});
+	return (
+		candidateTask.id !== dependentTask.id &&
+		canTaskBePrerequisiteTask(candidateTask) &&
+		!wouldCreateLoop
+	);
+}
+
 export function getTasksThatCanBePrerequisiteTasksOfTask({ dependentTask, tasks }: { dependentTask: Task, tasks: Task[] }): Task[] {
 	if (dependentTask.isRecurring()) return [];
 
 	const existingPrerequisiteTaskIDs = dependentTask.getPrerequisiteTaskIDs();
-	return tasks.filter(candidateTask => {
-		const wouldCreateLoop = doesTaskDependOnTask({
-			task: candidateTask,
-			otherTask: dependentTask,
+	return tasks.filter(candidateTask =>
+		!existingPrerequisiteTaskIDs.includes(candidateTask.id) &&
+		canTaskBePrerequisiteTaskOfTask({
+			candidateTask,
+			dependentTask,
 			tasks,
-		});
-		return (
-			candidateTask.id !== dependentTask.id &&
-			canTaskBePrerequisiteTask(candidateTask) &&
-			!existingPrerequisiteTaskIDs.includes(candidateTask.id) &&
-			!wouldCreateLoop
-		);
-	});
+		})
+	);
 }
 
 function calculateSequenceSlack(parameters: {

@@ -13,6 +13,7 @@ interface Props {
 	onSelectExisting: (tagID: string) => void;
 	onCreateAndAdd: (name: string) => Promise<void>;
 	isCompact?: boolean;
+	shouldShowTriggerAsTextButton?: boolean;
 }
 
 const NO_ITEM_HIGHLIGHTED = -1;
@@ -23,7 +24,7 @@ type SuggestionListItem =
 	| { type: 'existingTag'; tag: Tag }
 	| { type: 'createTag'; name: string };
 
-export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYetAddedTagNames, onSelectExisting, onCreateAndAdd, isCompact = false }: Props) {
+export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYetAddedTagNames, onSelectExisting, onCreateAndAdd, isCompact = false, shouldShowTriggerAsTextButton = false }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
 	const [highlightedIndex, setHighlightedIndex] = useState(NO_ITEM_HIGHLIGHTED);
@@ -178,16 +179,28 @@ export default function AddTagPopover({ existingTags, alreadyAddedTagIDs, notYet
 
 	return (
 		<div ref={containerRef} className={styles.container} data-popover-open={isOpen}>
-			<button
-				ref={triggerButtonRef}
-				type="button"
-				onClick={() => isOpen ? closePopover() : openPopover()}
-				className={isCompact ? `${styles.triggerButton} ${styles.triggerButtonCompact} touch-hit-area` : `${styles.triggerButton} touch-hit-area`}
-				aria-label="Add tag"
-				title="Add tag"
-			>
-				<PlusIcon className={isCompact ? `${styles.triggerIcon} ${styles.triggerIconCompact}` : styles.triggerIcon} />
-			</button>
+			{shouldShowTriggerAsTextButton && (
+				<button
+					ref={triggerButtonRef}
+					type="button"
+					onClick={() => isOpen ? closePopover() : openPopover()}
+					className="button"
+				>
+					+ Add tag
+				</button>
+			)}
+			{!shouldShowTriggerAsTextButton && (
+				<button
+					ref={triggerButtonRef}
+					type="button"
+					onClick={() => isOpen ? closePopover() : openPopover()}
+					className={isCompact ? `${styles.triggerButton} ${styles.triggerButtonCompact} touch-hit-area` : `${styles.triggerButton} touch-hit-area`}
+					aria-label="Add tag"
+					title="Add tag"
+				>
+					<PlusIcon className={isCompact ? `${styles.triggerIcon} ${styles.triggerIconCompact}` : styles.triggerIcon} />
+				</button>
+			)}
 
 			{isOpen && (
 				<div ref={popoverRef} className={styles.popover} style={{ top: popoverPosition.top, left: popoverPosition.left }}>

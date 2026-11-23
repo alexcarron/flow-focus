@@ -33,11 +33,11 @@
 }
 
 .tooltip {
-	position: absolute;
-	top: calc(100% + var(--space-extra-small));
-	right: 0;
+	position: fixed;
+	top: 0;
+	left: 0;
 	width: max-content;
-	max-width: 16rem;
+	max-width: min(16rem, calc(100vw - 2 * var(--space-small)));
 	padding: var(--space-extra-small) var(--space-small);
 	background-color: var(--color-surface-hover-strong);
 	border: 1px solid var(--color-border-strong);

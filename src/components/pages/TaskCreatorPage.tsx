@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useTasksStore } from '../../stores/tasksStore';
+import { selectTasksInPriorityOrder, useTasksStore } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useTagsStore } from '../../stores/tagsStore';
 import Tag from '../../model/tag/Tag';
+import Task from '../../model/task/Task';
 import TaskTimingOptions from '../../model/task/TaskTimingOptions';
+import { canTaskBePrerequisiteTask } from '../../model/task/sequence/taskSequence';
 import { TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import Time from '../../model/time-management/Time';
 import useTypedQuickInputEntry from '../../hooks/useTypedQuickInputEntry';
@@ -19,11 +21,12 @@ import CheckboxInput from '../inputs/CheckboxInput';
 import DatetimeInput from '../inputs/DatetimeInput';
 import TypedQuickInput from '../inputs/TypedQuickInput';
 import TimingOptionsInput from '../inputs/TimingOptionsInput';
+import PrerequisiteTasksInput from '../inputs/PrerequisiteTasksInput';
 import AddTagPopover from '../AddTagPopover';
 import TagChip from '../TagChip';
 import ErrorMessage from '../errors/ErrorMessage';
 import { SHORTCUTS, matchesShortcut } from '../../utilities/shortcuts';
-import { getDateOrderErrorMessage } from '../../model/task/TaskTimingError';
+import { getTaskTimingErrorMessage, WAITING_TASK_CANNOT_REPEAT_FIX_MESSAGE } from '../../model/task/TaskTimingError';
 import styles from './TaskCreatorPage.module.css';
 
 const TASK_NAME_PLACEHOLDER_TIERS_LONGEST_FIRST = [
@@ -70,11 +73,28 @@ export default function TaskCreatorPage() {
 	const tags = useTagsStore(s => s.tags);
 	const renameTag = useTagsStore(s => s.renameTag);
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
+	const prerequisiteTaskCandidatesInPriorityOrder = useMemo(
+		() => selectTasksInPriorityOrder(useTasksStore.getState()).filter(canTaskBePrerequisiteTask),
+		[tasks]
+	);
+	const prerequisiteTaskCandidates = useMemo(
+		() => prerequisiteTaskCandidatesInPriorityOrder.map(task => ({ id: task.id, description: task.getDescription() })),
+		[prerequisiteTaskCandidatesInPriorityOrder]
+	);
 
-	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
+	const {
+		name,
+		setName,
+		setNameAndPinPrerequisiteTask,
+		pinnedPrerequisiteTaskLocations,
+		toggleTokenEscape,
+		reset: resetTypedQuickInputEntry,
+		...parseResult
+	} = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
 		existingTags: tags,
+		prerequisiteTaskCandidates,
 	});
 	const {
 		alreadyAddedTagIDs,
@@ -88,11 +108,9 @@ export default function TaskCreatorPage() {
 	} = useTaskTagSelection({
 		existingTags: tags,
 		parsedTags: parseResult.tags,
-		onStripRangeFromName: (startIndex, endIndex) => {
-			const effectiveEndIndex = name[endIndex] === ' ' ? endIndex + 1 : endIndex;
-			setName(name.slice(0, startIndex) + name.slice(effectiveEndIndex));
-		},
+		onStripRangeFromName: stripRangeFromName,
 	});
+	const [manuallyAddedPrerequisiteTaskIDs, setManuallyAddedPrerequisiteTaskIDs] = useState<string[]>([]);
 	const [steps, setSteps] = useState<Step[]>([]);
 	const [manualTiming, setManualTiming] = useState<TaskTimingOptions>(DEFAULT_TIMING);
 	const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -105,9 +123,15 @@ export default function TaskCreatorPage() {
 	const isTouchDevice = useIsTouchDevice();
 
 	const effectiveTiming: TaskTimingOptions = { ...manualTiming, ...parseResult.timing };
+	const prerequisiteTaskIDs = [...new Set([...parseResult.prerequisiteTaskIDs, ...manuallyAddedPrerequisiteTaskIDs])];
+	const prerequisiteTasks = prerequisiteTaskIDs
+		.map(prerequisiteTaskID => tasks.find(task => task.id === prerequisiteTaskID))
+		.filter((task): task is Task => task !== undefined);
+	const remainingPrerequisiteTaskCandidatesInPriorityOrder = prerequisiteTaskCandidatesInPriorityOrder.filter(task => !prerequisiteTaskIDs.includes(task.id));
 	const alreadyAddedTags = alreadyAddedTagIDs
 		.map(tagID => tags.find(tag => tag.id === tagID))
 		.filter((tag): tag is Tag => tag !== undefined);
+	const hasAnyTags = alreadyAddedTags.length > 0 || notYetAddedTagNames.length > 0;
 
 	const handleCreateRef = useRefToLatestValue(handleCreate);
 
@@ -126,6 +150,20 @@ export default function TaskCreatorPage() {
 		document.addEventListener('keydown', onKeyDown);
 		return () => document.removeEventListener('keydown', onKeyDown);
 	}, []);
+
+	function stripRangeFromName(startIndex: number, endIndex: number) {
+		const effectiveEndIndex = name[endIndex] === ' ' ? endIndex + 1 : endIndex;
+		setName(name.slice(0, startIndex) + name.slice(effectiveEndIndex));
+	}
+
+	function removePrerequisiteTask(prerequisiteTask: Task) {
+		if (manuallyAddedPrerequisiteTaskIDs.includes(prerequisiteTask.id)) {
+			setManuallyAddedPrerequisiteTaskIDs(previous => previous.filter(prerequisiteTaskID => prerequisiteTaskID !== prerequisiteTask.id));
+			return;
+		}
+		const typedPrerequisiteTaskMatch = parseResult.prerequisiteTaskMatches.find(match => match.prerequisiteTaskID === prerequisiteTask.id);
+		if (typedPrerequisiteTaskMatch) stripRangeFromName(typedPrerequisiteTaskMatch.startIndex, typedPrerequisiteTaskMatch.endIndex);
+	}
 
 	function handleNameChange(nextName: string) {
 		setName(nextName);
@@ -181,6 +219,18 @@ export default function TaskCreatorPage() {
 			return;
 		}
 
+		const disabledToken = parseResult.tokens.find(token => token.isDisabled);
+		if (disabledToken !== undefined) {
+			setError(disabledToken.explanation);
+			return;
+		}
+
+		const willTaskRepeat = effectiveTiming.recurrenceDuration !== null;
+		if (willTaskRepeat && prerequisiteTaskIDs.length > 0) {
+			setError(WAITING_TASK_CANNOT_REPEAT_FIX_MESSAGE);
+			return;
+		}
+
 		isCreatingTaskRef.current = true;
 		setIsCreatingTask(true);
 		try {
@@ -199,8 +249,11 @@ export default function TaskCreatorPage() {
 				for (const tagID of alreadyAddedTagIDs) {
 					task.addTagID(tagID);
 				}
+				for (const prerequisiteTaskID of prerequisiteTaskIDs) {
+					task.addPrerequisiteTaskID(prerequisiteTaskID);
+				}
 			} catch (creationError) {
-				setError(getDateOrderErrorMessage(creationError) ?? 'Failed to create task.');
+				setError(getTaskTimingErrorMessage(creationError) ?? 'Failed to create task.');
 				return;
 			}
 			task.replaceAllSteps(combinedSteps);
@@ -223,6 +276,7 @@ export default function TaskCreatorPage() {
 		resetTypedQuickInputEntry();
 		setSteps([]);
 		resetTagSelection();
+		setManuallyAddedPrerequisiteTaskIDs([]);
 		setManualTiming(DEFAULT_TIMING);
 		setDemotedRange(null);
 		setError(null);
@@ -251,6 +305,11 @@ export default function TaskCreatorPage() {
 					existingTagsSortedByUsage={tagsSortedByUsageCount}
 					alreadyAddedTagIDs={alreadyAddedTagIDs}
 					notYetAddedTagNames={notYetAddedTagNames}
+					prerequisiteTaskCandidatesInPriorityOrder={prerequisiteTaskCandidatesInPriorityOrder}
+					prerequisiteTaskMatches={parseResult.prerequisiteTaskMatches}
+					manuallyAddedPrerequisiteTaskIDs={manuallyAddedPrerequisiteTaskIDs}
+					pinnedPrerequisiteTaskLocations={pinnedPrerequisiteTaskLocations}
+					onPinPrerequisiteTask={setNameAndPinPrerequisiteTask}
 				/>
 			</div>
 
@@ -281,37 +340,49 @@ export default function TaskCreatorPage() {
 							onBackspaceDeleteEmptyStep={stepID => { setSteps(previous => deleteNode(previous, stepID)); return true; }}
 						/>
 					)}
+					{showMoreOptions && (
+						<button
+							type="button"
+							onClick={addStepAndFocus}
+							className={`button ${styles.addStepButton}`}
+						>
+							+ Add step
+						</button>
+					)}
 				</div>
 			)}
 
-			<div className="field-group">
-				<label className="field-label">Tags</label>
-				<div className={styles.tagsRow}>
-					{alreadyAddedTags.map(tag => (
-						<TagChip
-							key={tag.id}
-							name={tag.name}
-							onRename={newName => renameTag(tag.id, newName)}
-							onRemove={() => removeAlreadyAddedTag(tag.id)}
+			{showMoreOptions && (
+				<div className="field-group">
+					<label className="field-label">Tags</label>
+					<div className={styles.tagsRow}>
+						{alreadyAddedTags.map(tag => (
+							<TagChip
+								key={tag.id}
+								name={tag.name}
+								onRename={newName => renameTag(tag.id, newName)}
+								onRemove={() => removeAlreadyAddedTag(tag.id)}
+							/>
+						))}
+						{notYetAddedTagNames.map(tagName => (
+							<TagChip
+								key={tagName}
+								name={tagName}
+								onRename={newName => renameNotYetAddedTagName(tagName, newName)}
+								onRemove={() => removeNotYetAddedTagName(tagName)}
+							/>
+						))}
+						<AddTagPopover
+							existingTags={tags}
+							alreadyAddedTagIDs={alreadyAddedTagIDs}
+							notYetAddedTagNames={notYetAddedTagNames}
+							onSelectExisting={selectExistingTag}
+							onCreateAndAdd={createAndAddTag}
+							shouldShowTriggerAsTextButton={!hasAnyTags}
 						/>
-					))}
-					{notYetAddedTagNames.map(tagName => (
-						<TagChip
-							key={tagName}
-							name={tagName}
-							onRename={newName => renameNotYetAddedTagName(tagName, newName)}
-							onRemove={() => removeNotYetAddedTagName(tagName)}
-						/>
-					))}
-					<AddTagPopover
-						existingTags={tags}
-						alreadyAddedTagIDs={alreadyAddedTagIDs}
-						notYetAddedTagNames={notYetAddedTagNames}
-						onSelectExisting={selectExistingTag}
-						onCreateAndAdd={createAndAddTag}
-					/>
+					</div>
 				</div>
-			</div>
+			)}
 
 			{!showMoreOptions && (
 				<DatetimeInput
@@ -332,17 +403,19 @@ export default function TaskCreatorPage() {
 
 			{showMoreOptions && (
 				<>
-					<button
-						type="button"
-						onClick={addStepAndFocus}
-						className={`button ${styles.addStepButton}`}
-					>
-						+ Add step
-					</button>
-
 					<div className="field-group">
 						<label className="section-label">Timing</label>
-						<TimingOptionsInput value={effectiveTiming} onChange={handleTimingChange} />
+						<div className={styles.timingFields}>
+							{effectiveTiming.recurrenceDuration === null && (
+								<PrerequisiteTasksInput
+									prerequisiteTasks={prerequisiteTasks}
+									candidateTasksInPriorityOrder={remainingPrerequisiteTaskCandidatesInPriorityOrder}
+									onAdd={prerequisiteTask => setManuallyAddedPrerequisiteTaskIDs(previous => [...previous, prerequisiteTask.id])}
+									onRemove={removePrerequisiteTask}
+								/>
+							)}
+							<TimingOptionsInput value={effectiveTiming} onChange={handleTimingChange} />
+						</div>
 					</div>
 				</>
 			)}

@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import styles from './FieldDescription.module.css';
+
+const TOOLTIP_GAP_PX = 4;
+const VIEWPORT_EDGE_MARGIN_PX = 8;
 
 interface Props {
 	text: string;
@@ -8,10 +11,33 @@ interface Props {
 
 export default function FieldDescription({ text, className = '' }: Props) {
 	const [isTooltipOpenFromClick, setIsTooltipOpenFromClick] = useState(false);
+	const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const tooltipRef = useRef<HTMLDivElement>(null);
+
+	function placeTooltipInsideViewport() {
+		const trigger = triggerRef.current;
+		const tooltip = tooltipRef.current;
+		if (!trigger || !tooltip) return;
+
+		const triggerRectangle = trigger.getBoundingClientRect();
+		const rightAlignedLeft = triggerRectangle.right - tooltip.offsetWidth;
+		const maximumLeft = window.innerWidth - tooltip.offsetWidth - VIEWPORT_EDGE_MARGIN_PX;
+		const left = Math.max(VIEWPORT_EDGE_MARGIN_PX, Math.min(rightAlignedLeft, maximumLeft));
+		const belowTop = triggerRectangle.bottom + TOOLTIP_GAP_PX;
+		const aboveTop = triggerRectangle.top - TOOLTIP_GAP_PX - tooltip.offsetHeight;
+		const doesTooltipFitBelow = belowTop + tooltip.offsetHeight <= window.innerHeight - VIEWPORT_EDGE_MARGIN_PX;
+		const top = doesTooltipFitBelow ? belowTop : Math.max(VIEWPORT_EDGE_MARGIN_PX, aboveTop);
+		setTooltipPosition({ left, top });
+	}
 
 	return (
-		<div className={`${styles.container} ${className}`}>
+		<div
+			className={`${styles.container} ${className}`}
+			onPointerEnter={placeTooltipInsideViewport}
+		>
 			<button
+				ref={triggerRef}
 				type="button"
 				tabIndex={-1}
 				className={styles.trigger}
@@ -19,6 +45,7 @@ export default function FieldDescription({ text, className = '' }: Props) {
 				aria-expanded={isTooltipOpenFromClick}
 				onClick={event => {
 					event.stopPropagation();
+					placeTooltipInsideViewport();
 					setIsTooltipOpenFromClick(isOpen => !isOpen);
 				}}
 				onBlur={() => setIsTooltipOpenFromClick(false)}
@@ -30,8 +57,10 @@ export default function FieldDescription({ text, className = '' }: Props) {
 				</svg>
 			</button>
 			<div
+				ref={tooltipRef}
 				role="tooltip"
 				className={isTooltipOpenFromClick ? `${styles.tooltip} ${styles.tooltipVisible}` : styles.tooltip}
+				style={tooltipPosition ?? undefined}
 			>
 				{text}
 			</div>

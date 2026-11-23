@@ -197,6 +197,29 @@
 	white-space: nowrap;
 }
 
+.prerequisiteTasksRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-extra-extra-small);
+	min-width: 0;
+	margin-top: var(--space-extra-extra-small);
+	font-size: var(--font-size-extra-small);
+	color: var(--color-text-muted);
+}
+
+.addPrerequisiteTaskButton {
+	composes: triggerButton triggerButtonCompact from './AddTagPopover.module.css';
+}
+
+.addPrerequisiteTaskIcon {
+	composes: triggerIcon triggerIconCompact from './AddTagPopover.module.css';
+}
+
+.prerequisiteTasksLabel {
+	white-space: nowrap;
+}
+
 .cancelSkipButton {
 	display: inline-flex;
 	align-items: center;
@@ -234,24 +257,24 @@
 	gap: var(--space-extra-small);
 }
 
-.hoverRevealTagButton {
+.hoverRevealAddButton {
 	display: inline-flex;
 	visibility: hidden;
 }
 
 @media (hover: hover) {
-	.row:hover .hoverRevealTagButton {
+	.row:hover .hoverRevealAddButton {
 		visibility: visible;
 	}
 }
 
 @media (pointer: coarse) {
-	.hoverRevealTagButton {
+	.hoverRevealAddButton {
 		visibility: visible;
 	}
 }
 
-.hoverRevealTagButton:has([data-popover-open="true"]) {
+.hoverRevealAddButton:has([data-popover-open="true"]) {
 	visibility: visible;
 }
 

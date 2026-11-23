@@ -8,7 +8,7 @@ import { repeatMatcher } from './repeatMatcher';
 import { stepsMatcher } from './stepsMatcher';
 import { tagMatcher } from './tagMatcher';
 import { prerequisiteTaskMatcher } from './prerequisiteTaskMatcher';
-import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputField } from './TypedQuickInputToken';
+import { EscapedTokenLocation, isTokenEscapedByAnyLocation, PinnedPrerequisiteTaskLocation, TypedQuickInputField } from './TypedQuickInputToken';
 
 export type RawMatch = {
 	field: TypedQuickInputField;
@@ -22,6 +22,7 @@ export type RawMatch = {
 	tagMatch?: { existingTagID: string | null; newTagName: string | null };
 	prerequisiteTaskID?: string;
 	keepInName?: boolean;
+	isDisabled?: boolean;
 };
 
 export type FindMatchesConfig = {
@@ -32,6 +33,7 @@ export type FindMatchesConfig = {
 	escapedTokenLocations: EscapedTokenLocation[];
 	existingTags: Tag[];
 	prerequisiteTaskCandidates: { id: string; description: string }[];
+	pinnedPrerequisiteTaskLocations: PinnedPrerequisiteTaskLocation[];
 };
 
 export type Matcher = {

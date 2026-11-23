@@ -11,7 +11,8 @@ import TaskPrioritizer from '../model/TaskPrioritizer';
 import type TemporaryFocus from '../model/temporary-focus/TemporaryFocus';
 import { isTemporaryFocusStillValid } from '../model/temporary-focus/isTemporaryFocusStillValid';
 import { didTaskGetCompletedOrSkipped } from '../model/temporary-focus/didTaskGetCompletedOrSkipped';
-import { getTasksDependingOnTask, getTasksThatCanBePrerequisiteTasksOfTask } from '../model/task/sequence/taskSequence';
+import { canTaskBePrerequisiteTaskOfTask, getTasksDependingOnTask, getTasksThatCanBePrerequisiteTasksOfTask } from '../model/task/sequence/taskSequence';
+import { RecurringTaskInSequenceError } from '../model/task/TaskTimingError';
 import { serializeTask, deserializeRow } from '../persistence/cloud/task.serializer';
 import { getActiveRepositories } from '../persistence/activeRepositories';
 import type { BackupTask } from '../utilities/backup';
@@ -60,7 +61,7 @@ interface TasksActions {
 	setSteps: (task: Task, stepTexts: string[]) => void;
 	setStepText: (task: Task, stepID: string, newText: string) => void;
 	setDueDate: (task: Task, dueDate: Date | null) => void;
-	setTimingOptions: (task: Task, options: TaskTimingOptions) => void;
+	setTimingOptionsAndPrerequisiteTasks: (parameters: { task: Task, timingOptions: TaskTimingOptions, prerequisiteTaskIDs: string[] }) => void;
 	setComplete: (task: Task, isComplete: boolean) => void;
 	setStepComplete: (task: Task, stepID: string, isComplete: boolean) => void;
 	moveStepUp: (task: Task, stepID: string) => void;
@@ -331,8 +332,41 @@ export const useTasksStore = create<TasksState & TasksActions>()(
 			get().executeWithPatches(() => task.setDueDate(dueDate), [task]);
 		},
 
-		setTimingOptions(task: Task, options: TaskTimingOptions) {
-			get().executeWithPatches(() => task.setFromTaskTimingOptions(options), [task]);
+		setTimingOptionsAndPrerequisiteTasks({ task, timingOptions, prerequisiteTaskIDs }: { task: Task, timingOptions: TaskTimingOptions, prerequisiteTaskIDs: string[] }) {
+			const tasks = tasksManager.getTasks();
+			const willTaskRepeat = timingOptions.recurrenceDuration !== null;
+			const willTaskWaitForOtherTasks = tasks.some(otherTask => prerequisiteTaskIDs.includes(otherTask.id));
+			const hasTasksDependingOnTask = getTasksDependingOnTask({ task, tasks }).length > 0;
+			if (willTaskRepeat && (willTaskWaitForOtherTasks || hasTasksDependingOnTask)) {
+				throw new RecurringTaskInSequenceError({ doesTaskWaitForOtherTasks: willTaskWaitForOtherTasks });
+			}
+
+			const currentPrerequisiteTaskIDs = task.getPrerequisiteTaskIDs();
+			const removedPrerequisiteTaskIDs = currentPrerequisiteTaskIDs.filter(prerequisiteTaskID => !prerequisiteTaskIDs.includes(prerequisiteTaskID));
+			const addedPrerequisiteTasks = tasks.filter(otherTask =>
+				prerequisiteTaskIDs.includes(otherTask.id) &&
+				!currentPrerequisiteTaskIDs.includes(otherTask.id)
+			);
+			const taskThatCannotBePrerequisiteTask = addedPrerequisiteTasks.find(prerequisiteTask => !canTaskBePrerequisiteTaskOfTask({
+				candidateTask: prerequisiteTask,
+				dependentTask: task,
+				tasks,
+			}));
+			if (taskThatCannotBePrerequisiteTask !== undefined) {
+				throw new Error(`"${taskThatCannotBePrerequisiteTask.getDescription()}" can't be an earlier task of "${task.getDescription()}".`);
+			}
+
+			const taskStateBeforeChange = task.getState();
+			get().executeWithPatches(() => {
+				removedPrerequisiteTaskIDs.forEach(prerequisiteTaskID => task.removePrerequisiteTaskID(prerequisiteTaskID));
+				try {
+					task.setFromTaskTimingOptions(timingOptions);
+				} catch (timingError) {
+					task.restoreState(taskStateBeforeChange);
+					throw timingError;
+				}
+				addedPrerequisiteTasks.forEach(prerequisiteTask => task.addPrerequisiteTaskID(prerequisiteTask.id));
+			}, [task]);
 		},
 
 		setComplete(task: Task, isComplete: boolean) {
@@ -579,7 +613,7 @@ export const selectUpcomingTasks = (): Task[] => getFocusStateOfFocusPage().upco
 
 export const selectTasksInPriorityOrder = (state: TasksState): Task[] => {
 	const prioritizer = new TaskPrioritizer(tasksManager);
-	return prioritizer.getTasksInPriorityOrder(state.tasks, new Date());
+	return prioritizer.getTasksInPriorityOrder([...state.tasks], new Date());
 };
 
 export const selectTasksInTaskManagerOrder = (state: TasksState): Task[] => {

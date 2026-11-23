@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import TasksManager from '../../TasksManager';
 import Task from '../Task';
 import RecurrenceUnit from '../recurrence/RecurrenceUnit';
-import { RecurringTaskInSequenceError } from '../TaskTimingError';
+import { RecurringTaskInSequenceError, TASK_OTHER_TASKS_WAIT_FOR_CANNOT_REPEAT_MESSAGE, WAITING_TASK_CANNOT_REPEAT_FIX_MESSAGE } from '../TaskTimingError';
 import {
 	calculateSequenceDueDateSlack,
 	calculateSequenceTargetOrDueDateSlack,
@@ -129,6 +129,16 @@ describe('making a task in a sequence recurring', () => {
 			recurrenceDuration: oneDay,
 		}, currentTime)).toThrow(RecurringTaskInSequenceError);
 		expect(callParents.isRecurring()).toBe(false);
+	});
+
+	it('explains whether the task waits for other tasks or other tasks wait for it', () => {
+		const watchD3 = addTask({ description: 'Watch D3' });
+		const callParents = addTask({ description: 'Call parents' });
+		callParents.addPrerequisiteTaskID(watchD3.id);
+		const oneDay = { amount: 1, unit: RecurrenceUnit.Day };
+
+		expect(() => watchD3.makeRecurring(oneDay, currentTime, currentTime)).toThrow(TASK_OTHER_TASKS_WAIT_FOR_CANNOT_REPEAT_MESSAGE);
+		expect(() => callParents.makeRecurring(oneDay, currentTime, currentTime)).toThrow(WAITING_TASK_CANNOT_REPEAT_FIX_MESSAGE);
 	});
 });
 

@@ -1,10 +1,14 @@
 import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Tag from '../../model/tag/Tag';
-import { getTokenBecomeLabel, TypedQuickInputField, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
+import Task from '../../model/task/Task';
+import getDetailDistinguishingTaskFromSameNamedTasks from '../../model/task/getDetailDistinguishingTaskFromSameNamedTasks';
+import { getTokenBecomeLabel, PinnedPrerequisiteTaskLocation, TypedQuickInputField, TypedQuickInputPrerequisiteTaskMatch, TypedQuickInputToken } from '../../model/typed-quick-input/TypedQuickInputToken';
 import findActiveTagEntryAtCaret, { ActiveTagEntry } from '../../model/typed-quick-input/findActiveTagEntryAtCaret';
+import findActivePrerequisiteTaskEntryAtCaret, { ActivePrerequisiteTaskEntry } from '../../model/typed-quick-input/findActivePrerequisiteTaskEntryAtCaret';
+import shortenTaskNameToInsertIntoTypedQuickInput from '../../model/typed-quick-input/shortenTaskNameToInsertIntoTypedQuickInput';
 import { useFittingPlaceholder } from '../../hooks/useFittingPlaceholder';
 import { usePlainTextContentEditable } from '../../hooks/usePlainTextContentEditable';
-import InlineTagSuggestionPopover from '../InlineTagSuggestionPopover';
+import InlineSuggestionPopover, { InlineSuggestion } from '../InlineSuggestionPopover';
 import styles from './TypedQuickInput.module.css';
 
 interface Props {
@@ -22,12 +26,21 @@ interface Props {
 	existingTagsSortedByUsage?: Tag[];
 	alreadyAddedTagIDs?: string[];
 	notYetAddedTagNames?: string[];
+	prerequisiteTaskCandidatesInPriorityOrder?: Task[];
+	prerequisiteTaskMatches?: TypedQuickInputPrerequisiteTaskMatch[];
+	manuallyAddedPrerequisiteTaskIDs?: string[];
+	pinnedPrerequisiteTaskLocations?: PinnedPrerequisiteTaskLocation[];
+	onPinPrerequisiteTask?: (parameters: { nextName: string; pinnedLocation: PinnedPrerequisiteTaskLocation }) => void;
 }
 
 const NO_PLACEHOLDER_TIERS: string[] = [];
 const NO_TAGS: Tag[] = [];
 const NO_TAG_IDS: string[] = [];
 const NO_TAG_NAMES: string[] = [];
+const NO_TASKS: Task[] = [];
+const NO_PREREQUISITE_TASK_MATCHES: TypedQuickInputPrerequisiteTaskMatch[] = [];
+const NO_TASK_IDS: string[] = [];
+const NO_PINNED_PREREQUISITE_TASK_LOCATIONS: PinnedPrerequisiteTaskLocation[] = [];
 
 const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	dueDate: styles.tokenDueDate,
@@ -38,8 +51,17 @@ const fieldToColorClass: Record<TypedQuickInputField, string> = {
 	ignoredDate: styles.tokenIgnoredDate,
 	steps: styles.tokenSteps,
 	tag: styles.tokenTag,
-	prerequisiteTask: styles.tokenStartDate,
+	prerequisiteTask: styles.tokenPrerequisiteTask,
 };
+
+function normalizeTaskName(taskName: string): string {
+	return taskName.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function getTokenClassName(token: TypedQuickInputToken): string {
+	if (token.isDisabled) return `${styles.token} ${styles.tokenDisabled}`;
+	return `${styles.token} ${fieldToColorClass[token.field]}`;
+}
 
 function escapeHtml(text: string): string {
 	return text
@@ -134,7 +156,7 @@ function buildHighlightHtml(
 	const ranges: HighlightRange[] = tokens.map((token, tokenIndex) => ({
 		start: token.startIndex,
 		end: token.endIndex,
-		className: `${styles.token} ${fieldToColorClass[token.field]}`,
+		className: getTokenClassName(token),
 		tokenIndex,
 		escapedTokenIndex: null,
 	}));
@@ -190,6 +212,11 @@ export default function TypedQuickInput({
 	existingTagsSortedByUsage = NO_TAGS,
 	alreadyAddedTagIDs = NO_TAG_IDS,
 	notYetAddedTagNames = NO_TAG_NAMES,
+	prerequisiteTaskCandidatesInPriorityOrder = NO_TASKS,
+	prerequisiteTaskMatches = NO_PREREQUISITE_TASK_MATCHES,
+	manuallyAddedPrerequisiteTaskIDs = NO_TASK_IDS,
+	pinnedPrerequisiteTaskLocations = NO_PINNED_PREREQUISITE_TASK_LOCATIONS,
+	onPinPrerequisiteTask,
 }: Props) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const fittingPlaceholder = useFittingPlaceholder(placeholderTiersLongestFirst, editorRef);
@@ -198,8 +225,9 @@ export default function TypedQuickInput({
 	const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
 	const [demotingRange, setDemotingRange] = useState<{ start: number; end: number } | null>(null);
 	const [activeTagEntry, setActiveTagEntry] = useState<ActiveTagEntry | null>(null);
-	const [tagHighlightedIndex, setTagHighlightedIndex] = useState(0);
-	const [tagPopoverPosition, setTagPopoverPosition] = useState<{ left: number; top: number } | null>(null);
+	const [activePrerequisiteTaskEntry, setActivePrerequisiteTaskEntry] = useState<ActivePrerequisiteTaskEntry | null>(null);
+	const [suggestionHighlightedIndex, setSuggestionHighlightedIndex] = useState(0);
+	const [suggestionPopoverPosition, setSuggestionPopoverPosition] = useState<{ left: number; top: number } | null>(null);
 	const hideTooltipTimer = useRef<number | null>(null);
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const isComposingRef = useRef(false);
@@ -220,27 +248,73 @@ export default function TypedQuickInput({
 		});
 	}, [activeTagEntry, existingTagsSortedByUsage, alreadyAddedTagIDs, normalizedNotYetAddedTagNames]);
 
-	function updateActiveTagEntry() {
+	const prerequisiteTaskSuggestions = useMemo(() => {
+		if (!activePrerequisiteTaskEntry) return [];
+		const normalizedTypedText = normalizeTaskName(activePrerequisiteTaskEntry.typedText);
+		const isMatchOfActiveEntry = (match: TypedQuickInputPrerequisiteTaskMatch) =>
+			match.startIndex < activePrerequisiteTaskEntry.nameStartIndex &&
+			activePrerequisiteTaskEntry.nameStartIndex < match.endIndex;
+		const prerequisiteTaskIDsLinkedElsewhere = new Set([
+			...manuallyAddedPrerequisiteTaskIDs,
+			...prerequisiteTaskMatches.filter(match => !isMatchOfActiveEntry(match)).map(match => match.prerequisiteTaskID),
+		]);
+		const matchingTasks = prerequisiteTaskCandidatesInPriorityOrder.filter(task =>
+			!prerequisiteTaskIDsLinkedElsewhere.has(task.id) &&
+			normalizeTaskName(task.getDescription()).includes(normalizedTypedText)
+		);
+
+		const prerequisiteTaskIDOfActiveEntry = prerequisiteTaskMatches.find(isMatchOfActiveEntry)?.prerequisiteTaskID;
+		const alreadyMatchedTask = matchingTasks.find(task => task.id === prerequisiteTaskIDOfActiveEntry);
+		if (alreadyMatchedTask === undefined) return matchingTasks;
+		return [alreadyMatchedTask, ...matchingTasks.filter(task => task !== alreadyMatchedTask)];
+	}, [activePrerequisiteTaskEntry, prerequisiteTaskCandidatesInPriorityOrder, prerequisiteTaskMatches, manuallyAddedPrerequisiteTaskIDs]);
+
+	const inlineSuggestions: InlineSuggestion[] = useMemo(() => {
+		if (activeTagEntry) return tagSuggestions.map(tag => ({ key: tag.id, label: tag.name, detail: null }));
+		return prerequisiteTaskSuggestions.map(task => ({
+			key: task.id,
+			label: task.getDescription(),
+			detail: getDetailDistinguishingTaskFromSameNamedTasks({
+				task,
+				tasks: prerequisiteTaskCandidatesInPriorityOrder,
+			}),
+		}));
+	}, [activeTagEntry, tagSuggestions, prerequisiteTaskSuggestions, prerequisiteTaskCandidatesInPriorityOrder]);
+
+	const isAnySuggestionEntryActive = activeTagEntry !== null || activePrerequisiteTaskEntry !== null;
+
+	function clearActiveSuggestionEntries() {
+		setActiveTagEntry(null);
+		setActivePrerequisiteTaskEntry(null);
+	}
+
+	function updateActiveSuggestionEntries() {
 		const editor = editorRef.current;
 		if (!editor) return;
 		const caretOffset = getCaretCharacterOffset(editor);
 		if (caretOffset === null) {
-			setActiveTagEntry(null);
+			clearActiveSuggestionEntries();
 			return;
 		}
 
-		const entry = findActiveTagEntryAtCaret(editor.textContent ?? '', caretOffset);
-		setActiveTagEntry(entry);
-		setTagHighlightedIndex(0);
-		if (entry) {
+		const text = editor.textContent ?? '';
+		const tagEntry = findActiveTagEntryAtCaret(text, caretOffset);
+		const canSuggestPrerequisiteTasks = tagEntry === null && onPinPrerequisiteTask !== undefined;
+		const prerequisiteTaskEntry = canSuggestPrerequisiteTasks
+			? findActivePrerequisiteTaskEntryAtCaret({ text, caretOffset, pinnedPrerequisiteTaskLocations })
+			: null;
+		setActiveTagEntry(tagEntry);
+		setActivePrerequisiteTaskEntry(prerequisiteTaskEntry);
+		setSuggestionHighlightedIndex(0);
+		if (tagEntry || prerequisiteTaskEntry) {
 			const rect = getCaretClientRect(editor);
-			if (rect) setTagPopoverPosition({ left: rect.left, top: rect.bottom });
+			if (rect) setSuggestionPopoverPosition({ left: rect.left, top: rect.bottom });
 		}
 	}
 
 	const onEditorSelectionChange = useEffectEvent(() => {
 		if (document.activeElement !== editorRef.current) return;
-		updateActiveTagEntry();
+		updateActiveSuggestionEntries();
 	});
 
 	function confirmTagSuggestion(tag: Tag) {
@@ -254,6 +328,33 @@ export default function TypedQuickInput({
 		pendingCaretOffsetRef.current = activeTagEntry.segmentStartIndex + replacement.length;
 		setActiveTagEntry(null);
 		onChange(nextValue);
+	}
+
+	function confirmPrerequisiteTaskSuggestion(task: Task) {
+		if (!activePrerequisiteTaskEntry || !onPinPrerequisiteTask) return;
+		const insertedName = shortenTaskNameToInsertIntoTypedQuickInput(task.getDescription());
+		const followingCharacter = value[activePrerequisiteTaskEntry.nameEndIndex];
+		const needsTrailingSpace = followingCharacter !== ' ';
+		const replacement = needsTrailingSpace ? `${insertedName} ` : insertedName;
+		const { nameStartIndex, nameEndIndex } = activePrerequisiteTaskEntry;
+
+		const nextValue = value.slice(0, nameStartIndex) + replacement + value.slice(nameEndIndex);
+		pendingCaretOffsetRef.current = nameStartIndex + replacement.length;
+		setActivePrerequisiteTaskEntry(null);
+		onPinPrerequisiteTask({
+			nextName: nextValue,
+			pinnedLocation: {
+				prerequisiteTaskID: task.id,
+				matchedText: insertedName,
+				startIndex: nameStartIndex,
+				endIndex: nameStartIndex + insertedName.length,
+			},
+		});
+	}
+
+	function confirmInlineSuggestionAtIndex(index: number) {
+		if (activeTagEntry) confirmTagSuggestion(tagSuggestions[index]);
+		else confirmPrerequisiteTaskSuggestion(prerequisiteTaskSuggestions[index]);
 	}
 
 	useEffect(() => {
@@ -303,7 +404,7 @@ export default function TypedQuickInput({
 		if (pendingCaretOffsetRef.current !== null) {
 			setCaretCharacterOffset(editor, pendingCaretOffsetRef.current);
 			pendingCaretOffsetRef.current = null;
-			updateActiveTagEntry();
+			updateActiveSuggestionEntries();
 		}
 	}, [value, tokens, escapedTokens, demotingRange]);
 
@@ -350,7 +451,7 @@ export default function TypedQuickInput({
 		if (!editor) return;
 		hideTooltip();
 		onChange(editor.textContent ?? '');
-		updateActiveTagEntry();
+		updateActiveSuggestionEntries();
 	}
 
 	function handleCompositionStart() {
@@ -364,37 +465,37 @@ export default function TypedQuickInput({
 		const composedValue = editor.textContent ?? '';
 		if (composedValue !== value) onChange(composedValue);
 		else rewriteHighlightedHtml(editor, value, tokens, escapedTokens, demotingRange);
-		updateActiveTagEntry();
+		updateActiveSuggestionEntries();
 	}
 
 	function handleBlur() {
-		setActiveTagEntry(null);
+		clearActiveSuggestionEntries();
 	}
 
 	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-		if (!disabled && !event.nativeEvent.isComposing && activeTagEntry && tagSuggestions.length > 0) {
+		if (!disabled && !event.nativeEvent.isComposing && isAnySuggestionEntryActive && inlineSuggestions.length > 0) {
 			if (event.key === 'ArrowDown') {
 				event.preventDefault();
 				event.stopPropagation();
-				setTagHighlightedIndex(current => Math.min(current + 1, tagSuggestions.length - 1));
+				setSuggestionHighlightedIndex(current => Math.min(current + 1, inlineSuggestions.length - 1));
 				return;
 			}
 			if (event.key === 'ArrowUp') {
 				event.preventDefault();
 				event.stopPropagation();
-				setTagHighlightedIndex(current => Math.max(current - 1, 0));
+				setSuggestionHighlightedIndex(current => Math.max(current - 1, 0));
 				return;
 			}
 			if ((event.key === 'Enter' && !event.shiftKey) || event.key === 'Tab') {
 				event.preventDefault();
 				event.stopPropagation();
-				confirmTagSuggestion(tagSuggestions[tagHighlightedIndex]);
+				confirmInlineSuggestionAtIndex(suggestionHighlightedIndex);
 				return;
 			}
 			if (event.key === 'Escape') {
 				event.preventDefault();
 				event.stopPropagation();
-				setActiveTagEntry(null);
+				clearActiveSuggestionEntries();
 				return;
 			}
 		}
@@ -529,13 +630,13 @@ export default function TypedQuickInput({
 				onBlur={handleBlur}
 			/>
 
-			{activeTagEntry && tagPopoverPosition && (
-				<InlineTagSuggestionPopover
-					tags={tagSuggestions}
-					highlightedIndex={tagHighlightedIndex}
-					position={tagPopoverPosition}
-					onHoverIndex={setTagHighlightedIndex}
-					onSelectIndex={index => confirmTagSuggestion(tagSuggestions[index])}
+			{isAnySuggestionEntryActive && suggestionPopoverPosition && (
+				<InlineSuggestionPopover
+					suggestions={inlineSuggestions}
+					highlightedIndex={suggestionHighlightedIndex}
+					position={suggestionPopoverPosition}
+					onHoverIndex={setSuggestionHighlightedIndex}
+					onSelectIndex={confirmInlineSuggestionAtIndex}
 				/>
 			)}
 

@@ -18,11 +18,25 @@ export type TypedQuickInputToken = {
 	endIndex: number;
 	explanation: string;
 	colorClass: string;
+	isDisabled: boolean;
 };
 
 export type EscapedTokenLocation = {
 	field: TypedQuickInputField;
 	matchedText: string;
+	startIndex: number;
+	endIndex: number;
+};
+
+export type PinnedPrerequisiteTaskLocation = {
+	prerequisiteTaskID: string;
+	matchedText: string;
+	startIndex: number;
+	endIndex: number;
+};
+
+export type TypedQuickInputPrerequisiteTaskMatch = {
+	prerequisiteTaskID: string;
 	startIndex: number;
 	endIndex: number;
 };
@@ -40,6 +54,7 @@ export type TypedQuickInputParseResult = {
 	steps: string[] | null;
 	tags: TypedQuickInputTagMatch[];
 	prerequisiteTaskIDs: string[];
+	prerequisiteTaskMatches: TypedQuickInputPrerequisiteTaskMatch[];
 	tokens: TypedQuickInputToken[];
 	escapedTokens: TypedQuickInputToken[];
 };

@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Task from '../model/task/Task';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
-import { getDateOrderErrorMessage } from '../model/task/TaskTimingError';
-import { useTasksStore } from '../stores/tasksStore';
+import { getTaskTimingErrorMessage } from '../model/task/TaskTimingError';
+import { canTaskBePrerequisiteTaskOfTask } from '../model/task/sequence/taskSequence';
+import { selectTasksInPriorityOrder, useTasksStore } from '../stores/tasksStore';
 import TimingOptionsInput from './inputs/TimingOptionsInput';
+import PrerequisiteTasksInput from './inputs/PrerequisiteTasksInput';
 import ErrorMessage from './errors/ErrorMessage';
 
 interface Props {
@@ -13,8 +15,10 @@ interface Props {
 }
 
 export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
-	const setTimingOptions = useTasksStore(s => s.setTimingOptions);
+	const setTimingOptionsAndPrerequisiteTasks = useTasksStore(s => s.setTimingOptionsAndPrerequisiteTasks);
+	const tasks = useTasksStore(s => s.tasks);
 	const [options, setOptions] = useState<TaskTimingOptions | null>(() => task && isOpen ? task.getTaskTimingOptions() : null);
+	const [prerequisiteTaskIDs, setPrerequisiteTaskIDs] = useState<string[]>(() => task && isOpen ? task.getPrerequisiteTaskIDs() : []);
 	const [error, setError] = useState<string | null>(null);
 	const [taskOnPreviousRender, setTaskOnPreviousRender] = useState(task);
 	const [wasOpenOnPreviousRender, setWasOpenOnPreviousRender] = useState(isOpen);
@@ -24,19 +28,39 @@ export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
 		setWasOpenOnPreviousRender(isOpen);
 		if (task && isOpen) {
 			setOptions(task.getTaskTimingOptions());
+			setPrerequisiteTaskIDs(task.getPrerequisiteTaskIDs());
 			setError(null);
 		}
 	}
 
+	const tasksInPriorityOrder = useMemo(
+		() => isOpen ? selectTasksInPriorityOrder(useTasksStore.getState()) : [],
+		[isOpen, tasks]
+	);
+
 	if (!isOpen || !task || !options) return null;
+
+	const prerequisiteTasks = tasks.filter(otherTask => prerequisiteTaskIDs.includes(otherTask.id));
+	const candidateTasksInPriorityOrder = tasksInPriorityOrder.filter(candidateTask =>
+		!prerequisiteTaskIDs.includes(candidateTask.id) &&
+		canTaskBePrerequisiteTaskOfTask({
+			candidateTask,
+			dependentTask: task,
+			tasks,
+		})
+	);
 
 	function handleConfirm() {
 		if (!task || !options) return;
 
 		try {
-			setTimingOptions(task, options);
+			setTimingOptionsAndPrerequisiteTasks({
+				task,
+				timingOptions: options,
+				prerequisiteTaskIDs,
+			});
 		} catch (timingError) {
-			setError(getDateOrderErrorMessage(timingError) ?? 'Failed to update timing options.');
+			setError(getTaskTimingErrorMessage(timingError) ?? 'Failed to update timing options.');
 			return;
 		}
 		onClose();
@@ -50,6 +74,14 @@ export default function TimingOptionsPopup({ task, isOpen, onClose }: Props) {
 			<div className="modal-backdrop" />
 			<div className="modal">
 				<h2 className="modal-title">Timing Options</h2>
+				{options.recurrenceDuration === null && (
+					<PrerequisiteTasksInput
+						prerequisiteTasks={prerequisiteTasks}
+						candidateTasksInPriorityOrder={candidateTasksInPriorityOrder}
+						onAdd={prerequisiteTask => setPrerequisiteTaskIDs(previous => [...previous, prerequisiteTask.id])}
+						onRemove={prerequisiteTask => setPrerequisiteTaskIDs(previous => previous.filter(prerequisiteTaskID => prerequisiteTaskID !== prerequisiteTask.id))}
+					/>
+				)}
 				<TimingOptionsInput value={options} onChange={setOptions} />
 				<ErrorMessage message={error} />
 				<div className="modal-actions">

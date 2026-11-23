@@ -1,0 +1,51 @@
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-extra-extra-small);
+	min-width: 0;
+	max-width: 100%;
+	padding-left: var(--space-small);
+	padding-right: var(--space-extra-small);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-prerequisite-task) 12%, transparent);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-full);
+	font-size: var(--font-size-extra-small);
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+.name {
+	min-width: 0;
+	max-width: 12rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--color-text-secondary);
+}
+
+.nameCompleted {
+	color: var(--color-text-muted);
+	text-decoration: line-through;
+}
+
+.removeButton {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: none;
+	border: none;
+	color: var(--color-text-subtle);
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.removeButton:hover {
+		color: var(--color-text-secondary);
+	}
+}
+
+.removeIcon {
+	width: 0.7rem;
+	height: 0.7rem;
+}

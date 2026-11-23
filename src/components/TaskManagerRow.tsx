@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Task from '../model/task/Task';
 import Tag from '../model/tag/Tag';
+import { getPrerequisiteTasksOfTask, getTasksThatCanBePrerequisiteTasksOfTask } from '../model/task/sequence/taskSequence';
 import Duration from '../model/time-management/Duration';
 import RecurrenceDuration, { formatRecurrenceDuration, formatWeekdaysOfRecurrenceDuration, hasRecurrenceWeekdays } from '../model/task/recurrence/RecurrenceDuration';
 import { formatTime, formatAbbreviatedDurationRange } from '../utilities/timeFormatters';
@@ -18,7 +19,10 @@ import ContextMenuButton from './context-menu/ContextMenuButton';
 import { isNativeContextMenuTarget } from './context-menu/isNativeContextMenuTarget';
 import TagChip from './TagChip';
 import AddTagPopover from './AddTagPopover';
+import PrerequisiteTaskChip from './PrerequisiteTaskChip';
+import PrerequisiteTaskPickerPopup from './PrerequisiteTaskPickerPopup';
 import CloseIcon from './svg-icons/CloseIcon';
+import PlusIcon from './svg-icons/PlusIcon';
 import DeleteIcon from './svg-icons/DeleteIcon';
 import TimingIcon from './svg-icons/TimingIcon';
 import SkipIcon from './svg-icons/SkipIcon';
@@ -63,6 +67,8 @@ export interface TaskManagerRowActions {
 	addTagToTask: (task: Task, tagName: string) => Promise<void>;
 	removeTagFromTask: (task: Task, tagID: string) => Promise<void>;
 	renameTag: (tagID: string, newName: string) => Promise<void>;
+	addPrerequisiteTaskToTask: (parameters: { dependentTask: Task, prerequisiteTask: Task }) => void;
+	removePrerequisiteTaskFromTask: (parameters: { dependentTask: Task, prerequisiteTaskID: string }) => void;
 }
 
 interface RowSelectionDragHandlers {
@@ -76,6 +82,7 @@ interface Props {
 	now: Date;
 	store: TaskManagerRowActions;
 	tags: Tag[];
+	tasksInPriorityOrder: Task[];
 	isSelected: boolean;
 	selectionDragHandlers: RowSelectionDragHandlers;
 	hiddenColumnKeys: Set<HidableColumnKey>;
@@ -85,7 +92,7 @@ interface Props {
 	onRequestDelete: () => void;
 }
 
-export default function TaskManagerRow({ rowID, task, now, store, tags, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onOpenSkip, onRequestDelete }: Props) {
+export default function TaskManagerRow({ rowID, task, now, store, tags, tasksInPriorityOrder, isSelected, selectionDragHandlers, hiddenColumnKeys, onToggleSelected, onOpenTiming, onOpenSkip, onRequestDelete }: Props) {
 	const steps = task.getSteps();
 	const alreadyAddedTagIDs = task.getTagIDs();
 	const alreadyAddedTags = alreadyAddedTagIDs
@@ -99,10 +106,20 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 	const dueDate = task.getDueDate();
 	const skippedUntil = task.getSkippedUntil();
 	const isSkipActive = skippedUntil !== null && skippedUntil > now;
-	const isCompactRow = steps.length === 0 && alreadyAddedTags.length === 0 && !isSkipActive;
+	const prerequisiteTasks = getPrerequisiteTasksOfTask({ task, tasks: tasksInPriorityOrder });
+	const isCompactRow = steps.length === 0 && alreadyAddedTags.length === 0 && !isSkipActive && prerequisiteTasks.length === 0;
 
 	const [stepContextMenu, setStepContextMenu] = useState<{ stepID: string; x: number; y: number } | null>(null);
 	const [rowContextMenuPosition, setRowContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+	const [prerequisiteTaskPickerAnchorPosition, setPrerequisiteTaskPickerAnchorPosition] = useState<{ x: number; y: number } | null>(null);
+	const isPrerequisiteTaskListNeeded = rowContextMenuPosition !== null || prerequisiteTaskPickerAnchorPosition !== null;
+	const candidatePrerequisiteTasksInPriorityOrder = useMemo(() => {
+		if (!isPrerequisiteTaskListNeeded) return [];
+		return getTasksThatCanBePrerequisiteTasksOfTask({
+			dependentTask: task,
+			tasks: tasksInPriorityOrder,
+		});
+	}, [isPrerequisiteTaskListNeeded, task, tasksInPriorityOrder]);
 	const stepsEditorRef = useRef<StepsTreeEditorHandle>(null);
 	const isTouchDevice = useIsTouchDevice();
 	const copyTaskAsMarkdown = useCopyTaskAsMarkdown();
@@ -146,7 +163,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 						className={styles.descriptionInput}
 					/>
 					{alreadyAddedTags.length === 0 && (
-						<span className={styles.hoverRevealTagButton}>
+						<span className={styles.hoverRevealAddButton}>
 							<AddTagPopover
 								existingTags={tags}
 								alreadyAddedTagIDs={alreadyAddedTagIDs}
@@ -181,7 +198,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 								onRemove={() => store.removeTagFromTask(task, tag.id)}
 							/>
 						))}
-						<span className={styles.hoverRevealTagButton}>
+						<span className={styles.hoverRevealAddButton}>
 							<AddTagPopover
 								existingTags={tags}
 								alreadyAddedTagIDs={alreadyAddedTagIDs}
@@ -190,6 +207,33 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 								onCreateAndAdd={tagName => store.addTagToTask(task, tagName)}
 								isCompact
 							/>
+						</span>
+					</div>
+				)}
+				{prerequisiteTasks.length > 0 && (
+					<div className={styles.prerequisiteTasksRow}>
+						<span className={styles.prerequisiteTasksLabel}>Do after:</span>
+						{prerequisiteTasks.map(prerequisiteTask => (
+							<PrerequisiteTaskChip
+								key={prerequisiteTask.id}
+								prerequisiteTask={prerequisiteTask}
+								onRemove={() => store.removePrerequisiteTaskFromTask({ dependentTask: task, prerequisiteTaskID: prerequisiteTask.id })}
+							/>
+						))}
+						<span className={styles.hoverRevealAddButton}>
+							<button
+								type="button"
+								data-popover-open={prerequisiteTaskPickerAnchorPosition !== null}
+								onClick={event => {
+									const buttonRectangle = event.currentTarget.getBoundingClientRect();
+									setPrerequisiteTaskPickerAnchorPosition({ x: buttonRectangle.left, y: buttonRectangle.bottom });
+								}}
+								className={`${styles.addPrerequisiteTaskButton} touch-hit-area`}
+								aria-label="Add do after task"
+								title="Add do after task"
+							>
+								<PlusIcon className={styles.addPrerequisiteTaskIcon} />
+							</button>
 						</span>
 					</div>
 				)}
@@ -318,7 +362,14 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, isSelect
 					onClose={() => setRowContextMenuPosition(null)}
 					items={[
 						{ label: 'Copy task as Markdown', onClick: () => copyTaskAsMarkdown(task) },
+						...(candidatePrerequisiteTasksInPriorityOrder.length > 0 ? [{ label: 'Do after…', onClick: () => setPrerequisiteTaskPickerAnchorPosition(rowContextMenuPosition) }] : []),
 					]}
+				/>
+				<PrerequisiteTaskPickerPopup
+					anchorPosition={prerequisiteTaskPickerAnchorPosition}
+					candidateTasksInPriorityOrder={candidatePrerequisiteTasksInPriorityOrder}
+					onPick={prerequisiteTask => store.addPrerequisiteTaskToTask({ dependentTask: task, prerequisiteTask })}
+					onClose={() => setPrerequisiteTaskPickerAnchorPosition(null)}
 				/>
 			</td>
 		</tr>

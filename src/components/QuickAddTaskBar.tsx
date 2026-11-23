@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useTasksStore } from '../stores/tasksStore';
+import { selectTasksInPriorityOrder, useTasksStore } from '../stores/tasksStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTagsStore } from '../stores/tagsStore';
 import TaskTimingOptions from '../model/task/TaskTimingOptions';
@@ -12,7 +12,8 @@ import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import Step from '../model/task/step/Step';
 import { createStep, pruneEmptySteps, convertPastedListItemsIntoSteps, insertStepsAfterStepReplacingItIfBlank } from '../model/task/step/stepTree';
 import { appendRootNode, mapNode, reparentAndReorderNode, indentNode, unindentNode, moveNodeAmongSiblings, insertSiblingRelativeToNode, deleteNode, getNodeIDsInDepthFirstOrder } from '../utilities/tree/orderedTree';
-import { getDateOrderErrorMessage } from '../model/task/TaskTimingError';
+import { getTaskTimingErrorMessage } from '../model/task/TaskTimingError';
+import { canTaskBePrerequisiteTask } from '../model/task/sequence/taskSequence';
 import { DuplicateTagNameError, EmptyTagNameError } from '../persistence/TagRepository';
 import StepsTreeEditor, { StepsTreeEditorHandle } from './StepsTreeEditor';
 import TypedQuickInput from './inputs/TypedQuickInput';
@@ -42,11 +43,28 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(s => s.setShouldShowQuickAddTaskBarOnFocusPage);
 	const tags = useTagsStore(s => s.tags);
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
+	const prerequisiteTaskCandidatesInPriorityOrder = useMemo(
+		() => selectTasksInPriorityOrder(useTasksStore.getState()).filter(canTaskBePrerequisiteTask),
+		[tasks]
+	);
+	const prerequisiteTaskCandidates = useMemo(
+		() => prerequisiteTaskCandidatesInPriorityOrder.map(task => ({ id: task.id, description: task.getDescription() })),
+		[prerequisiteTaskCandidatesInPriorityOrder]
+	);
 
-	const { name, setName, toggleTokenEscape, reset: resetTypedQuickInputEntry, ...parseResult } = useTypedQuickInputEntry({
+	const {
+		name,
+		setName,
+		setNameAndPinPrerequisiteTask,
+		pinnedPrerequisiteTaskLocations,
+		toggleTokenEscape,
+		reset: resetTypedQuickInputEntry,
+		...parseResult
+	} = useTypedQuickInputEntry({
 		nightTime: Time.fromString(nightTime),
 		morningTime: Time.fromString(morningTime),
 		existingTags: tags,
+		prerequisiteTaskCandidates,
 	});
 	const {
 		alreadyAddedTagIDs,
@@ -96,6 +114,12 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 		const description = parseResult.cleanedName.trim();
 		if (!description) return;
 
+		const disabledToken = parseResult.tokens.find(token => token.isDisabled);
+		if (disabledToken !== undefined) {
+			setErrorMessage(disabledToken.explanation);
+			return;
+		}
+
 		isCreatingTaskRef.current = true;
 		setIsCreatingTask(true);
 		try {
@@ -109,6 +133,9 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			}
 			for (const tagID of alreadyAddedTagIDs) {
 				task.addTagID(tagID);
+			}
+			for (const prerequisiteTaskID of parseResult.prerequisiteTaskIDs) {
+				task.addPrerequisiteTaskID(prerequisiteTaskID);
 			}
 
 			const typedStepNodes = (parseResult.steps ?? []).map(createStep);
@@ -125,9 +152,9 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 			setManualSteps([]);
 			setIsStepsSectionVisible(false);
 		} catch (creationError) {
-			const dateOrderErrorMessage = getDateOrderErrorMessage(creationError);
-			if (dateOrderErrorMessage !== null) {
-				setErrorMessage(dateOrderErrorMessage);
+			const taskTimingErrorMessage = getTaskTimingErrorMessage(creationError);
+			if (taskTimingErrorMessage !== null) {
+				setErrorMessage(taskTimingErrorMessage);
 			} else if (creationError instanceof DuplicateTagNameError || creationError instanceof EmptyTagNameError) {
 				setErrorMessage(creationError.message);
 			} else {
@@ -157,6 +184,10 @@ export default function QuickAddTaskBar({ placeholderTiersLongestFirst }: Props)
 					existingTagsSortedByUsage={tagsSortedByUsageCount}
 					alreadyAddedTagIDs={alreadyAddedTagIDs}
 					notYetAddedTagNames={notYetAddedTagNames}
+					prerequisiteTaskCandidatesInPriorityOrder={prerequisiteTaskCandidatesInPriorityOrder}
+					prerequisiteTaskMatches={parseResult.prerequisiteTaskMatches}
+					pinnedPrerequisiteTaskLocations={pinnedPrerequisiteTaskLocations}
+					onPinPrerequisiteTask={setNameAndPinPrerequisiteTask}
 				/>
 				<button
 					type="button"

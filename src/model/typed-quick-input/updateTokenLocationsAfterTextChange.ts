@@ -1,5 +1,3 @@
-import { EscapedTokenLocation } from './TypedQuickInputToken';
-
 function findCommonPrefixLength(oldText: string, newText: string): number {
 	const maxLength = Math.min(oldText.length, newText.length);
 	let length = 0;
@@ -16,12 +14,12 @@ function findCommonSuffixLength(oldText: string, newText: string, maxLength: num
 	return length;
 }
 
-export default function updateEscapedTokenLocationsAfterTextChange(
+export default function updateTokenLocationsAfterTextChange<TokenLocation extends { startIndex: number; endIndex: number }>(
 	oldText: string,
 	newText: string,
-	escapedTokenLocations: EscapedTokenLocation[]
-): EscapedTokenLocation[] {
-	if (oldText === newText || escapedTokenLocations.length === 0) return escapedTokenLocations;
+	tokenLocations: TokenLocation[]
+): TokenLocation[] {
+	if (oldText === newText || tokenLocations.length === 0) return tokenLocations;
 
 	const prefixLength = findCommonPrefixLength(oldText, newText);
 	const suffixLength = findCommonSuffixLength(oldText, newText, Math.min(oldText.length, newText.length) - prefixLength);
@@ -31,8 +29,8 @@ export default function updateEscapedTokenLocationsAfterTextChange(
 	const editNewEnd = newText.length - suffixLength;
 	const lengthDelta = editNewEnd - editOldEnd;
 
-	const updatedLocations: EscapedTokenLocation[] = [];
-	for (const location of escapedTokenLocations) {
+	const updatedLocations: TokenLocation[] = [];
+	for (const location of tokenLocations) {
 		if (location.endIndex <= editStart) {
 			updatedLocations.push(location);
 		} else if (location.startIndex >= editOldEnd) {

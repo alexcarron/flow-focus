@@ -57,11 +57,11 @@ Words or phrases you can type in quick add to set a due date:
 
 ## Sequences
 
-### After
+### Do After
 
-How a task waits for other tasks to be completed before it shows up. The app shows it as "After" followed by the earlier task's name (e.g. After: Wash Dishes).
+How a task waits for other tasks to be completed before it shows up. The app shows it as "Do after" followed by the earlier task's name (e.g. Do after: Wash Dishes), and the field for picking them is called "Do after tasks".
 
-In quick add, type "after" followed by the start of an existing task's name. The typed words have to cover at least the whole first word of the task's name, and no other task's name can start with the same words. If no task matches, "after" is read as a start date word instead.
+In quick add, type "after" followed by the start of an existing task's name, or pick a task from the suggestions that show up. The typed words have to cover at least the whole first word of the task's name, and no other task's name can start with the same words unless they're one task's whole name. If no task matches, "after" is read as a start date word instead.
 
 ### Earlier Task (Prerequisite Task)
 

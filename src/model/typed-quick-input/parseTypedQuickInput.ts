@@ -6,7 +6,8 @@ import { getDefaultTargetDateOfWeekdayRepeat } from '../task/recurrence/recurren
 import Time from '../time-management/Time';
 import { addDays } from '../../utilities/dateFormatting';
 import { getEndOfDayTimeOfDay, RawMatch, typedQuickInputMatchers } from './typedQuickInputMatchers';
-import { EscapedTokenLocation, isTokenEscapedByAnyLocation, TypedQuickInputParseResult, TypedQuickInputTagMatch } from './TypedQuickInputToken';
+import { RECURRING_TASK_CANNOT_WAIT_MESSAGE, WAITING_TASK_CANNOT_REPEAT_MESSAGE } from '../task/sequence/taskSequence';
+import { EscapedTokenLocation, isTokenEscapedByAnyLocation, PinnedPrerequisiteTaskLocation, TypedQuickInputParseResult, TypedQuickInputPrerequisiteTaskMatch, TypedQuickInputTagMatch } from './TypedQuickInputToken';
 
 const defaultNightTime = Time.fromString(DEFAULT_SETTINGS.nightTime);
 const defaultMorningTime = Time.fromString(DEFAULT_SETTINGS.morningTime);
@@ -110,6 +111,39 @@ function ignoreTargetDateAfterDueDate(parameters: { timing: Partial<TaskTimingOp
 	};
 }
 
+function disableMatch({ match, explanation }: { match: RawMatch; explanation: string }): RawMatch {
+	return {
+		...match,
+		explanation,
+		timing: {},
+		prerequisiteTaskID: undefined,
+		isDisabled: true,
+	};
+}
+
+function disableLaterOfRepeatAndPrerequisiteTasks(keptMatches: RawMatch[]): RawMatch[] {
+	const repeatMatch = keptMatches.find(match => match.field === 'recurrenceDuration');
+	const firstPrerequisiteTaskMatch = keptMatches.find(match => match.field === 'prerequisiteTask');
+	if (repeatMatch === undefined || firstPrerequisiteTaskMatch === undefined) return keptMatches;
+
+	const wasRepeatTypedFirst = repeatMatch.startIndex < firstPrerequisiteTaskMatch.startIndex;
+	return keptMatches.map(match => {
+		if (wasRepeatTypedFirst && match.field === 'prerequisiteTask') {
+			return disableMatch({
+				match,
+				explanation: RECURRING_TASK_CANNOT_WAIT_MESSAGE,
+			});
+		}
+		if (!wasRepeatTypedFirst && match === repeatMatch) {
+			return disableMatch({
+				match,
+				explanation: WAITING_TASK_CANNOT_REPEAT_MESSAGE,
+			});
+		}
+		return match;
+	});
+}
+
 export default function parseTypedQuickInput(config: {
 	input: string;
 	now?: Date;
@@ -118,6 +152,7 @@ export default function parseTypedQuickInput(config: {
 	escapedTokenLocations?: EscapedTokenLocation[];
 	existingTags?: Tag[];
 	prerequisiteTaskCandidates?: { id: string; description: string }[];
+	pinnedPrerequisiteTaskLocations?: PinnedPrerequisiteTaskLocation[];
 }): TypedQuickInputParseResult {
 	const input = config.input;
 	const now = config.now ?? new Date();
@@ -126,6 +161,7 @@ export default function parseTypedQuickInput(config: {
 	const escapedTokenLocations = config.escapedTokenLocations ?? [];
 	const existingTags = config.existingTags ?? [];
 	const prerequisiteTaskCandidates = config.prerequisiteTaskCandidates ?? [];
+	const pinnedPrerequisiteTaskLocations = config.pinnedPrerequisiteTaskLocations ?? [];
 
 	const rawMatches = typedQuickInputMatchers.flatMap(matcher => matcher.findMatches({
 		input,
@@ -135,6 +171,7 @@ export default function parseTypedQuickInput(config: {
 		escapedTokenLocations,
 		existingTags,
 		prerequisiteTaskCandidates,
+		pinnedPrerequisiteTaskLocations,
 	}));
 
 	const quoteSpans = findQuoteSpans(input);
@@ -150,7 +187,9 @@ export default function parseTypedQuickInput(config: {
 		)
 	);
 
-	const keptMatchesBeforeDateOrderCheck = resolveOverlappingMatches(unprotectedMatches.filter(match => !isMatchEscaped(match)));
+	const keptMatchesBeforeDateOrderCheck = disableLaterOfRepeatAndPrerequisiteTasks(
+		resolveOverlappingMatches(unprotectedMatches.filter(match => !isMatchEscaped(match)))
+	);
 	const keptEscapedMatches = resolveOverlappingMatches(unprotectedMatches.filter(isMatchEscaped));
 
 	const removedIndices = new Set<number>();
@@ -192,6 +231,7 @@ export default function parseTypedQuickInput(config: {
 		endIndex: match.endIndex,
 		explanation: match.explanation,
 		colorClass: match.colorClass,
+		isDisabled: match.isDisabled ?? false,
 	});
 
 	const tokens = keptMatches.map(matchToToken).sort((left, right) => left.startIndex - right.startIndex);
@@ -207,7 +247,14 @@ export default function parseTypedQuickInput(config: {
 		}))
 		.sort((left, right) => left.startIndex - right.startIndex);
 
-	const prerequisiteTaskIDs = [...new Set(keptMatches.flatMap(match => match.prerequisiteTaskID ?? []))];
+	const prerequisiteTaskMatches: TypedQuickInputPrerequisiteTaskMatch[] = keptMatches
+		.flatMap(match => match.prerequisiteTaskID === undefined ? [] : [{
+			prerequisiteTaskID: match.prerequisiteTaskID,
+			startIndex: match.startIndex,
+			endIndex: match.endIndex,
+		}])
+		.sort((left, right) => left.startIndex - right.startIndex);
+	const prerequisiteTaskIDs = [...new Set(prerequisiteTaskMatches.map(match => match.prerequisiteTaskID))];
 
 	return {
 		cleanedName: buildCleanedName(input, removedIndices),
@@ -215,6 +262,7 @@ export default function parseTypedQuickInput(config: {
 		steps,
 		tags,
 		prerequisiteTaskIDs,
+		prerequisiteTaskMatches,
 		tokens,
 		escapedTokens,
 	};

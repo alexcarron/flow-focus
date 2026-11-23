@@ -5,6 +5,8 @@ const WORD_REGEX = /[^\s,]+/g;
 
 type WordLocation = { startIndex: number; endIndex: number };
 
+type PrerequisiteTaskCandidate = { id: string; description: string };
+
 function normalizeName(name: string): string {
 	return name.trim().replace(/\s+/g, ' ').toLowerCase();
 }
@@ -30,10 +32,42 @@ function doesTypedNameMatchStartOfTaskName({ typedName, taskName }: { typedName:
 	return taskName.startsWith(typedName) && typedName.length >= firstWordOfTaskName.length;
 }
 
+function findOnlyCandidateMatchingTypedName({ typedName, candidates }: { typedName: string; candidates: PrerequisiteTaskCandidate[] }): PrerequisiteTaskCandidate | 'none' | 'several' {
+	const matchingCandidates = candidates.filter(candidate => doesTypedNameMatchStartOfTaskName({
+		typedName,
+		taskName: normalizeName(candidate.description),
+	}));
+	if (matchingCandidates.length === 0) return 'none';
+	if (matchingCandidates.length === 1) return matchingCandidates[0];
+
+	const exactlyNamedCandidates = matchingCandidates.filter(candidate => normalizeName(candidate.description) === typedName);
+	if (exactlyNamedCandidates.length === 1) return exactlyNamedCandidates[0];
+	return 'several';
+}
+
+function createPrerequisiteTaskMatch({ input, triggerStartIndex, nameEndIndex, prerequisiteTask }: {
+	input: string;
+	triggerStartIndex: number;
+	nameEndIndex: number;
+	prerequisiteTask: PrerequisiteTaskCandidate;
+}): RawMatch {
+	const prerequisiteTaskDescription = prerequisiteTask.description;
+	return {
+		field: 'prerequisiteTask',
+		colorClass: 'prerequisiteTask',
+		startIndex: triggerStartIndex,
+		endIndex: nameEndIndex,
+		matchedText: input.slice(triggerStartIndex, nameEndIndex),
+		explanation: `Do after: ${prerequisiteTaskDescription}`,
+		timing: {},
+		prerequisiteTaskID: prerequisiteTask.id,
+	};
+}
+
 export const prerequisiteTaskMatcher: Matcher = {
 	field: 'prerequisiteTask',
 	colorClass: 'prerequisiteTask',
-	findMatches({ input, prerequisiteTaskCandidates }: FindMatchesConfig): RawMatch[] {
+	findMatches({ input, prerequisiteTaskCandidates, pinnedPrerequisiteTaskLocations }: FindMatchesConfig): RawMatch[] {
 		if (prerequisiteTaskCandidates.length === 0) return [];
 
 		const matches: RawMatch[] = [];
@@ -41,30 +75,40 @@ export const prerequisiteTaskMatcher: Matcher = {
 		let triggerMatch: RegExpExecArray | null;
 		while ((triggerMatch = triggerRegex.exec(input)) !== null) {
 			const nameStartIndex = triggerMatch.index + triggerMatch[0].length;
-			const words = findConsecutiveWordsStartingAt({ input, startIndex: nameStartIndex });
 
+			const pinnedLocation = pinnedPrerequisiteTaskLocations.find(location =>
+				location.startIndex === nameStartIndex &&
+				input.slice(location.startIndex, location.endIndex) === location.matchedText
+			);
+			const pinnedPrerequisiteTask = prerequisiteTaskCandidates.find(candidate => candidate.id === pinnedLocation?.prerequisiteTaskID);
+			if (pinnedLocation !== undefined && pinnedPrerequisiteTask !== undefined) {
+				matches.push(createPrerequisiteTaskMatch({
+					input,
+					triggerStartIndex: triggerMatch.index,
+					nameEndIndex: pinnedLocation.endIndex,
+					prerequisiteTask: pinnedPrerequisiteTask,
+				}));
+				triggerRegex.lastIndex = pinnedLocation.endIndex;
+				continue;
+			}
+
+			const words = findConsecutiveWordsStartingAt({ input, startIndex: nameStartIndex });
 			for (let wordCount = words.length; wordCount > 0; wordCount--) {
 				const nameEndIndex = words[wordCount - 1].endIndex;
 				const typedName = normalizeName(input.slice(nameStartIndex, nameEndIndex));
-				const matchingCandidates = prerequisiteTaskCandidates.filter(candidate => doesTypedNameMatchStartOfTaskName({
+				const matchingCandidate = findOnlyCandidateMatchingTypedName({
 					typedName,
-					taskName: normalizeName(candidate.description),
-				}));
-				if (matchingCandidates.length === 0) continue;
-				if (matchingCandidates.length > 1) break;
-
-				const prerequisiteTask = matchingCandidates[0];
-				const prerequisiteTaskDescription = prerequisiteTask.description;
-				matches.push({
-					field: 'prerequisiteTask',
-					colorClass: 'prerequisiteTask',
-					startIndex: triggerMatch.index,
-					endIndex: nameEndIndex,
-					matchedText: input.slice(triggerMatch.index, nameEndIndex),
-					explanation: `After: ${prerequisiteTaskDescription}`,
-					timing: {},
-					prerequisiteTaskID: prerequisiteTask.id,
+					candidates: prerequisiteTaskCandidates,
 				});
+				if (matchingCandidate === 'none') continue;
+				if (matchingCandidate === 'several') break;
+
+				matches.push(createPrerequisiteTaskMatch({
+					input,
+					triggerStartIndex: triggerMatch.index,
+					nameEndIndex,
+					prerequisiteTask: matchingCandidate,
+				}));
 				triggerRegex.lastIndex = nameEndIndex;
 				break;
 			}

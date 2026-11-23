@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import RecurrenceUnit from '../model/task/recurrence/RecurrenceUnit';
+import { RecurringTaskInSequenceError } from '../model/task/TaskTimingError';
 import { db } from '../persistence/local/flowfocus.db';
 import StepStatus from '../model/task/step/StepStatus';
 import type Task from '../model/task/Task';
@@ -434,5 +435,74 @@ describe('linking a prerequisite task', () => {
 
 		const reloadedCallParents = useTasksStore.getState().tasks.find(task => task.id === callParents.id)!;
 		expect(reloadedCallParents.getPrerequisiteTaskIDs()).toEqual([]);
+	});
+});
+
+describe('setting timing options and prerequisite tasks together', () => {
+	it('links and unlinks prerequisite tasks in one undo step with the timing change', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const playDeadlock = await useTasksStore.getState().addTask('Play Deadlock');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+		const dueDate = new Date(2030, 0, 4, 17, 0, 0, 0);
+
+		useTasksStore.getState().setTimingOptionsAndPrerequisiteTasks({
+			task: callParents,
+			timingOptions: { ...callParents.getTaskTimingOptions(), dueDate },
+			prerequisiteTaskIDs: [playDeadlock.id],
+		});
+
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([playDeadlock.id]);
+		expect(callParents.getDueDate()).toEqual(dueDate);
+
+		useTasksStore.getState().undo();
+
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([watchD3.id]);
+		expect(callParents.getDueDate()).toBeNull();
+	});
+
+	it('refuses to make a task repeat while it waits for another task, without changing anything', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+
+		expect(() => useTasksStore.getState().setTimingOptionsAndPrerequisiteTasks({
+			task: callParents,
+			timingOptions: { ...callParents.getTaskTimingOptions(), recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Day } },
+			prerequisiteTaskIDs: [watchD3.id],
+		})).toThrow(RecurringTaskInSequenceError);
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([]);
+		expect(callParents.isRecurring()).toBe(false);
+	});
+
+	it('lets a task repeat when its last prerequisite task is removed in the same change', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+
+		useTasksStore.getState().setTimingOptionsAndPrerequisiteTasks({
+			task: callParents,
+			timingOptions: { ...callParents.getTaskTimingOptions(), recurrenceDuration: { amount: 1, unit: RecurrenceUnit.Day } },
+			prerequisiteTaskIDs: [],
+		});
+
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([]);
+		expect(callParents.isRecurring()).toBe(true);
+	});
+
+	it('puts the prerequisite tasks back when the timing options are invalid', async () => {
+		const watchD3 = await useTasksStore.getState().addTask('Watch D3');
+		const callParents = await useTasksStore.getState().addTask('Call parents');
+		useTasksStore.getState().addPrerequisiteTaskToTask({ dependentTask: callParents, prerequisiteTask: watchD3 });
+
+		expect(() => useTasksStore.getState().setTimingOptionsAndPrerequisiteTasks({
+			task: callParents,
+			timingOptions: {
+				...callParents.getTaskTimingOptions(),
+				startDate: new Date(2030, 0, 5, 9, 0, 0, 0),
+				dueDate: new Date(2030, 0, 4, 17, 0, 0, 0),
+			},
+			prerequisiteTaskIDs: [],
+		})).toThrow();
+		expect(callParents.getPrerequisiteTaskIDs()).toEqual([watchD3.id]);
 	});
 });

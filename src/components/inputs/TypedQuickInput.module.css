@@ -83,7 +83,14 @@
 	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-tag) 15%, transparent);
 }
 
-.tokenIgnoredDate {
+.tokenPrerequisiteTask {
+	color: var(--color-typed-quick-input-prerequisite-task);
+	background-color: color-mix(in srgb, var(--color-typed-quick-input-prerequisite-task) 15%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-typed-quick-input-prerequisite-task) 15%, transparent);
+}
+
+.tokenIgnoredDate,
+.tokenDisabled {
 	color: var(--color-text-muted);
 	text-decoration: line-through;
 	background-color: transparent;

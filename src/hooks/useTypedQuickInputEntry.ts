@@ -1,14 +1,20 @@
 import { useMemo, useState } from 'react';
 import Tag from '../model/tag/Tag';
 import parseTypedQuickInput from '../model/typed-quick-input/parseTypedQuickInput';
-import { EscapedTokenLocation, isTokenEscapedByLocation, TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
+import { EscapedTokenLocation, isTokenEscapedByLocation, PinnedPrerequisiteTaskLocation, TypedQuickInputField } from '../model/typed-quick-input/TypedQuickInputToken';
 import removeEscapeCharactersBeforeTokens from '../model/typed-quick-input/removeEscapeCharactersBeforeTokens';
-import updateEscapedTokenLocationsAfterTextChange from '../model/typed-quick-input/updateEscapedTokenLocationsAfterTextChange';
+import updateTokenLocationsAfterTextChange from '../model/typed-quick-input/updateTokenLocationsAfterTextChange';
 import Time from '../model/time-management/Time';
 
-export default function useTypedQuickInputEntry(config: { nightTime: Time; morningTime: Time; existingTags: Tag[] }) {
+export default function useTypedQuickInputEntry(config: {
+	nightTime: Time;
+	morningTime: Time;
+	existingTags: Tag[];
+	prerequisiteTaskCandidates: { id: string; description: string }[];
+}) {
 	const [name, setNameState] = useState('');
 	const [escapedTokenLocations, setEscapedTokenLocations] = useState<EscapedTokenLocation[]>([]);
+	const [pinnedPrerequisiteTaskLocations, setPinnedPrerequisiteTaskLocations] = useState<PinnedPrerequisiteTaskLocation[]>([]);
 
 	const nightTimeText = config.nightTime.toString();
 	const morningTimeText = config.morningTime.toString();
@@ -21,12 +27,15 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 			morningTime: Time.fromString(morningTimeText),
 			escapedTokenLocations,
 			existingTags: config.existingTags,
+			prerequisiteTaskCandidates: config.prerequisiteTaskCandidates,
+			pinnedPrerequisiteTaskLocations,
 		}),
-		[name, nightTimeText, morningTimeText, escapedTokenLocations, config.existingTags]
+		[name, nightTimeText, morningTimeText, escapedTokenLocations, config.existingTags, config.prerequisiteTaskCandidates, pinnedPrerequisiteTaskLocations]
 	);
 
 	function setName(nextName: string) {
-		const shiftedEscapedTokenLocations = updateEscapedTokenLocationsAfterTextChange(name, nextName, escapedTokenLocations);
+		const shiftedEscapedTokenLocations = updateTokenLocationsAfterTextChange(name, nextName, escapedTokenLocations);
+		const shiftedPinnedPrerequisiteTaskLocations = updateTokenLocationsAfterTextChange(name, nextName, pinnedPrerequisiteTaskLocations);
 		const { input, escapedTokenLocations: nextEscapedTokenLocations } = removeEscapeCharactersBeforeTokens({
 			input: nextName,
 			now: new Date(),
@@ -34,9 +43,17 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 			morningTime: Time.fromString(morningTimeText),
 			escapedTokenLocations: shiftedEscapedTokenLocations,
 			existingTags: config.existingTags,
+			prerequisiteTaskCandidates: config.prerequisiteTaskCandidates,
+			pinnedPrerequisiteTaskLocations: shiftedPinnedPrerequisiteTaskLocations,
 		});
 		setEscapedTokenLocations(nextEscapedTokenLocations);
+		setPinnedPrerequisiteTaskLocations(updateTokenLocationsAfterTextChange(nextName, input, shiftedPinnedPrerequisiteTaskLocations));
 		setNameState(input);
+	}
+
+	function setNameAndPinPrerequisiteTask({ nextName, pinnedLocation }: { nextName: string; pinnedLocation: PinnedPrerequisiteTaskLocation }) {
+		setName(nextName);
+		setPinnedPrerequisiteTaskLocations(previous => [...previous, pinnedLocation]);
 	}
 
 	function toggleTokenEscape(field: TypedQuickInputField, matchedText: string, startIndex: number, endIndex: number) {
@@ -52,7 +69,16 @@ export default function useTypedQuickInputEntry(config: { nightTime: Time; morni
 	function reset() {
 		setNameState('');
 		setEscapedTokenLocations([]);
+		setPinnedPrerequisiteTaskLocations([]);
 	}
 
-	return { name, setName, toggleTokenEscape, reset, ...parseResult };
+	return {
+		name,
+		setName,
+		setNameAndPinPrerequisiteTask,
+		pinnedPrerequisiteTaskLocations,
+		toggleTokenEscape,
+		reset,
+		...parseResult,
+	};
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useTasksStore, selectTasksInTaskManagerOrder } from '../../stores/tasksStore';
+import { useTasksStore, selectTasksInTaskManagerOrder, selectTasksInPriorityOrder } from '../../stores/tasksStore';
 import { useTagsStore } from '../../stores/tagsStore';
 import Task from '../../model/task/Task';
 import { getApproximateMillisecondsOfRecurrenceDuration } from '../../model/task/recurrence/RecurrenceDuration';
@@ -218,10 +218,13 @@ export default function TasksManagerPage() {
 	const persistChangedTasks = useTasksStore(s => s.persistChangedTasks);
 	const addTagToTask = useTasksStore(s => s.addTagToTask);
 	const removeTagFromTask = useTasksStore(s => s.removeTagFromTask);
+	const addPrerequisiteTaskToTask = useTasksStore(s => s.addPrerequisiteTaskToTask);
+	const removePrerequisiteTaskFromTask = useTasksStore(s => s.removePrerequisiteTaskFromTask);
+	const tasksInPriorityOrder = useMemo(() => selectTasksInPriorityOrder(useTasksStore.getState()), [tasks]);
 	const tags = useTagsStore(s => s.tags);
 	const renameTag = useTagsStore(s => s.renameTag);
 	const tagsSortedByUsageCount = useMemo(() => sortTagsByUsageCount({ tags, tasks }), [tags, tasks]);
-	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag };
+	const store: TaskManagerRowActions = { setDescription, setStepText, setStepComplete, completeStepAndPrecedingSteps, uncompleteStepAndFollowingSteps, moveStepUp, moveStepDown, reparentStep, indentStep, unindentStep, insertStepBeforeStep, insertStepAfterStep, insertStepsFromPastedListItems, addFirstStep, deleteStep, setComplete, cancelSkip, deleteTask, refreshTasks, persistChangedTasks, addTagToTask, removeTagFromTask, renameTag, addPrerequisiteTaskToTask, removePrerequisiteTaskFromTask };
 
 	const [filter, setFilter] = useState<Filter>(loadSavedFilter);
 	const [searchText, setSearchText] = useState('');
@@ -471,6 +474,7 @@ export default function TasksManagerPage() {
 									now={now}
 									store={store}
 									tags={tagsSortedByUsageCount}
+									tasksInPriorityOrder={tasksInPriorityOrder}
 									isSelected={selectedRowIDs.has(rowID)}
 									selectionDragHandlers={getRowSelectionDragHandlers(rowID)}
 									hiddenColumnKeys={hiddenColumnKeys}

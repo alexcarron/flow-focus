@@ -1,0 +1,59 @@
+.picker {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-small);
+	min-width: 0;
+}
+
+.searchInput {
+	width: 100%;
+}
+
+.taskList {
+	display: flex;
+	flex-direction: column;
+	max-height: 16rem;
+	overflow-y: auto;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.taskOption {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 100%;
+	min-width: 0;
+	padding: var(--space-extra-small) var(--space-small);
+	text-align: left;
+	background: none;
+	border: none;
+	border-radius: var(--radius-small);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-small);
+	cursor: pointer;
+}
+
+.taskOptionHighlighted {
+	background-color: var(--color-accent-selected-background);
+}
+
+.taskName,
+.taskDetail {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.taskDetail {
+	color: var(--color-text-muted);
+	font-size: var(--font-size-extra-small);
+}
+
+.emptyMessage {
+	padding: var(--space-extra-small) var(--space-small);
+	color: var(--color-text-muted);
+	font-size: var(--font-size-small);
+}

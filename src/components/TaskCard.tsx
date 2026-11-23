@@ -1,7 +1,8 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import Task from '../model/task/Task';
 import Tag from '../model/tag/Tag';
-import { useTasksStore } from '../stores/tasksStore';
+import { selectTasksInPriorityOrder, useTasksStore } from '../stores/tasksStore';
+import { getTasksThatCanBePrerequisiteTasksOfTask } from '../model/task/sequence/taskSequence';
 import { useTagsStore } from '../stores/tagsStore';
 import { useCommitOnEnter } from '../hooks/useCommitOnEnter';
 import { usePlainTextContentEditable } from '../hooks/usePlainTextContentEditable';
@@ -17,6 +18,7 @@ import ContextMenu from './context-menu/ContextMenu';
 import ContextMenuButton from './context-menu/ContextMenuButton';
 import { isNativeContextMenuTarget } from './context-menu/isNativeContextMenuTarget';
 import ConfirmModal from './ConfirmModal';
+import PrerequisiteTaskPickerPopup from './PrerequisiteTaskPickerPopup';
 import TagChip from './TagChip';
 import AddTagPopover from './AddTagPopover';
 import CloseIcon from './svg-icons/CloseIcon';
@@ -63,6 +65,7 @@ export default function TaskCard({ task, isTemporarilyFocused = false }: Props) 
 	const [stepPendingDeletionID, setStepPendingDeletionID] = useState<string | null>(null);
 	const [stepIDToFocusAfterDeletion, setStepIDToFocusAfterDeletion] = useState<string | null>(null);
 	const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
+	const [prerequisiteTaskPickerAnchorPosition, setPrerequisiteTaskPickerAnchorPosition] = useState<{ x: number; y: number } | null>(null);
 
 	const descRef = useRef<HTMLHeadingElement>(null);
 	const stepsEditorHandleRef = useRef<StepsTreeEditorHandle | null>(null);
@@ -91,6 +94,15 @@ export default function TaskCard({ task, isTemporarilyFocused = false }: Props) 
 			el.textContent = task.getDescription();
 		}
 	}, [task.getDescription()]);
+
+	const isPrerequisiteTaskListNeeded = cardContextMenu !== null || prerequisiteTaskPickerAnchorPosition !== null;
+	const candidatePrerequisiteTasksInPriorityOrder = useMemo(() => {
+		if (!isPrerequisiteTaskListNeeded) return [];
+		return getTasksThatCanBePrerequisiteTasksOfTask({
+			dependentTask: task,
+			tasks: selectTasksInPriorityOrder(useTasksStore.getState()),
+		});
+	}, [isPrerequisiteTaskListNeeded, task, store.tasks]);
 
 	const startDate = task.getStartDate();
 	const targetDate = task.getTargetDate();
@@ -345,7 +357,15 @@ export default function TaskCard({ task, isTemporarilyFocused = false }: Props) 
 				items={[
 					{ label: 'Copy task as Markdown', onClick: () => copyTaskAsMarkdown(task) },
 					...(steps.length === 0 ? [{ label: 'Add a step', hintKeys: getShortcutKeyParts(SHORTCUTS.stepInsert.insertFirst), onClick: () => addStepAndFocus(store.addFirstStep(task)) }] : []),
+					...(candidatePrerequisiteTasksInPriorityOrder.length > 0 ? [{ label: 'Do after…', onClick: () => setPrerequisiteTaskPickerAnchorPosition(cardContextMenu) }] : []),
 				]}
+			/>
+
+			<PrerequisiteTaskPickerPopup
+				anchorPosition={prerequisiteTaskPickerAnchorPosition}
+				candidateTasksInPriorityOrder={candidatePrerequisiteTasksInPriorityOrder}
+				onPick={prerequisiteTask => store.addPrerequisiteTaskToTask({ dependentTask: task, prerequisiteTask })}
+				onClose={() => setPrerequisiteTaskPickerAnchorPosition(null)}
 			/>
 
 			<ConfirmModal

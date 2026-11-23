@@ -6,6 +6,7 @@
 	max-height: 11rem;
 	overflow-y: auto;
 	width: 12rem;
+	max-width: calc(100vw - 2 * var(--space-small));
 	margin: 0;
 	padding: var(--space-extra-small);
 	list-style: none;
@@ -22,7 +23,8 @@
 
 .suggestion {
 	display: flex;
-	align-items: center;
+	flex-direction: column;
+	align-items: flex-start;
 	width: 100%;
 	padding: var(--space-extra-small);
 	text-align: left;
@@ -36,4 +38,20 @@
 
 .suggestionHighlighted {
 	background-color: var(--color-accent-selected-background);
+}
+
+.suggestionLabel {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.suggestionDetail {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-extra-small);
 }

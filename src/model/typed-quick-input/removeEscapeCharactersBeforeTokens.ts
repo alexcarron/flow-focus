@@ -1,6 +1,6 @@
 import parseTypedQuickInput from './parseTypedQuickInput';
 import { EscapedTokenLocation, toEscapedTokenLocation } from './TypedQuickInputToken';
-import updateEscapedTokenLocationsAfterTextChange from './updateEscapedTokenLocationsAfterTextChange';
+import updateTokenLocationsAfterTextChange from './updateTokenLocationsAfterTextChange';
 
 const ESCAPE_CHARACTER = '\\';
 
@@ -13,7 +13,7 @@ export default function removeEscapeCharactersBeforeTokens(
 	let escapeCharacterIndex = input.indexOf(ESCAPE_CHARACTER);
 	while (escapeCharacterIndex !== -1) {
 		const inputWithoutEscapeCharacter = input.slice(0, escapeCharacterIndex) + input.slice(escapeCharacterIndex + 1);
-		const shiftedEscapedTokenLocations = updateEscapedTokenLocationsAfterTextChange(input, inputWithoutEscapeCharacter, escapedTokenLocations);
+		const shiftedEscapedTokenLocations = updateTokenLocationsAfterTextChange(input, inputWithoutEscapeCharacter, escapedTokenLocations);
 		const { tokens } = parseTypedQuickInput({
 			...parseConfig,
 			input: inputWithoutEscapeCharacter,

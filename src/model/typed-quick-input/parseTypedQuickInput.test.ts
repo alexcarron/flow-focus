@@ -1,3 +1,4 @@
+import { RECURRING_TASK_CANNOT_WAIT_MESSAGE, WAITING_TASK_CANNOT_REPEAT_MESSAGE } from '../task/sequence/taskSequence';
 import parseTypedQuickInput from './parseTypedQuickInput';
 import { toEscapedTokenLocation } from './TypedQuickInputToken';
 import Time from '../time-management/Time';
@@ -447,7 +448,7 @@ describe('parseTypedQuickInput prerequisite tasks', () => {
 		expect(result.tokens[0]).toMatchObject({
 			field: 'prerequisiteTask',
 			matchedText: 'after watch D3',
-			explanation: 'After: Watch D3 with friends',
+			explanation: 'Do after: Watch D3 with friends',
 		});
 	});
 
@@ -504,5 +505,91 @@ describe('parseTypedQuickInput prerequisite tasks', () => {
 
 		expect(result.prerequisiteTaskIDs).toEqual(['watch-d3', 'friday-groceries']);
 		expect(result.cleanedName).toBe('call parents');
+	});
+
+	it('matches a task whose whole name was typed even when another task name starts with it', () => {
+		const watchD3 = { id: 'watch-d3-alone', description: 'Watch D3' };
+		const result = parseTypedQuickInput({
+			input: 'call parents after watch D3',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3, watchD3WithFriends],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual(['watch-d3-alone']);
+		expect(result.cleanedName).toBe('call parents');
+	});
+
+	it('links the pinned task even when another task has exactly the same name', () => {
+		const firstWatchD3 = { id: 'first-watch-d3', description: 'Watch D3' };
+		const secondWatchD3 = { id: 'second-watch-d3', description: 'Watch D3' };
+		const input = 'call parents after Watch D3';
+		const nameStartIndex = input.indexOf('Watch D3');
+		const result = parseTypedQuickInput({
+			input,
+			now: testNow,
+			prerequisiteTaskCandidates: [firstWatchD3, secondWatchD3],
+			pinnedPrerequisiteTaskLocations: [{
+				prerequisiteTaskID: 'second-watch-d3',
+				matchedText: 'Watch D3',
+				startIndex: nameStartIndex,
+				endIndex: nameStartIndex + 'Watch D3'.length,
+			}],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual(['second-watch-d3']);
+		expect(result.prerequisiteTaskMatches).toEqual([{
+			prerequisiteTaskID: 'second-watch-d3',
+			startIndex: input.indexOf('after'),
+			endIndex: input.length,
+		}]);
+		expect(result.cleanedName).toBe('call parents');
+	});
+
+	it('ignores a pinned location whose text no longer matches', () => {
+		const firstWatchD3 = { id: 'first-watch-d3', description: 'Watch D3' };
+		const secondWatchD3 = { id: 'second-watch-d3', description: 'Watch D3' };
+		const input = 'call parents after Watch D4';
+		const nameStartIndex = input.indexOf('Watch D4');
+		const result = parseTypedQuickInput({
+			input,
+			now: testNow,
+			prerequisiteTaskCandidates: [firstWatchD3, secondWatchD3],
+			pinnedPrerequisiteTaskLocations: [{
+				prerequisiteTaskID: 'second-watch-d3',
+				matchedText: 'Watch D3',
+				startIndex: nameStartIndex,
+				endIndex: nameStartIndex + 'Watch D3'.length,
+			}],
+		});
+
+		expect(result.prerequisiteTaskIDs).toEqual([]);
+	});
+
+	it('disables a prerequisite task typed after a repeat', () => {
+		const result = parseTypedQuickInput({
+			input: 'call parents every day after watch D3',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends],
+		});
+
+		const prerequisiteTaskToken = result.tokens.find(token => token.field === 'prerequisiteTask')!;
+		expect(prerequisiteTaskToken.isDisabled).toBe(true);
+		expect(prerequisiteTaskToken.explanation).toBe(RECURRING_TASK_CANNOT_WAIT_MESSAGE);
+		expect(result.prerequisiteTaskIDs).toEqual([]);
+		expect(result.timing.recurrenceDuration).toBeDefined();
+	});
+
+	it('disables a repeat typed after a prerequisite task', () => {
+		const result = parseTypedQuickInput({
+			input: 'call parents after watch D3 every day',
+			now: testNow,
+			prerequisiteTaskCandidates: [watchD3WithFriends],
+		});
+
+		const repeatToken = result.tokens.find(token => token.field === 'recurrenceDuration')!;
+		expect(repeatToken.isDisabled).toBe(true);
+		expect(repeatToken.explanation).toBe(WAITING_TASK_CANNOT_REPEAT_MESSAGE);
+		expect(result.prerequisiteTaskIDs).toEqual(['watch-d3']);
+		expect(result.timing.recurrenceDuration).toBeUndefined();
 	});
 });

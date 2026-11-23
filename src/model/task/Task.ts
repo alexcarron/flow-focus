@@ -13,7 +13,7 @@ import RecurrenceDuration, { areRecurrenceDurationsEqual, cloneRecurrenceDuratio
 import TaskOccurrence from "./recurrence/TaskOccurrence";
 import { computeCurrentTaskOccurrence, getOccurrenceStartDate, TaskRecurrenceSnapshot } from "./recurrence/computeTaskOccurrence";
 import { moveAnchorOccurrenceToFirstRecurrenceWeekday } from "./recurrence/recurrenceWeekdayOccurrences";
-import { calculateSequenceDueDateSlack, hasIncompletePrerequisiteTask, isTaskInSequence } from "./sequence/taskSequence";
+import { calculateSequenceDueDateSlack, getPrerequisiteTasksOfTask, hasIncompletePrerequisiteTask, isTaskInSequence } from "./sequence/taskSequence";
 
 const FIRST_OCCURRENCE_INDEX = 0;
 
@@ -244,8 +244,10 @@ export default class Task {
 
 	protected assertCanBecomeRecurring(): void {
 		if (this.isRecurring()) return;
-		if (isTaskInSequence({ task: this, tasks: this.tasksManager.getTasks() })) {
-			throw new RecurringTaskInSequenceError();
+		const tasks = this.tasksManager.getTasks();
+		if (isTaskInSequence({ task: this, tasks })) {
+			const doesTaskWaitForOtherTasks = getPrerequisiteTasksOfTask({ task: this, tasks }).length > 0;
+			throw new RecurringTaskInSequenceError({ doesTaskWaitForOtherTasks });
 		}
 	}
 

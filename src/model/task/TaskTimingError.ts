@@ -26,16 +26,21 @@ export class SkipUntilDateInPastError extends Error {
 	}
 }
 
+export const WAITING_TASK_CANNOT_REPEAT_FIX_MESSAGE = "Uncheck Repeating and remove this task's do after tasks first.";
+
+export const TASK_OTHER_TASKS_WAIT_FOR_CANNOT_REPEAT_MESSAGE = "Other tasks wait for this one, so it can't repeat.";
+
 export class RecurringTaskInSequenceError extends Error {
-	constructor() {
-		super('Remove this task from its sequence before making it repeat.');
+	constructor({ doesTaskWaitForOtherTasks }: { doesTaskWaitForOtherTasks: boolean }) {
+		super(doesTaskWaitForOtherTasks ? WAITING_TASK_CANNOT_REPEAT_FIX_MESSAGE : TASK_OTHER_TASKS_WAIT_FOR_CANNOT_REPEAT_MESSAGE);
 		this.name = 'RecurringTaskInSequenceError';
 	}
 }
 
-export function getDateOrderErrorMessage(error: unknown): string | null {
+export function getTaskTimingErrorMessage(error: unknown): string | null {
 	if (error instanceof StartDateAfterTargetDateError) return "The start date can't be after the target date.";
 	if (error instanceof StartDateAfterDueDateError) return "The start date can't be after the due date.";
 	if (error instanceof TargetDateAfterDueDateError) return "The target date can't be after the due date.";
+	if (error instanceof RecurringTaskInSequenceError) return error.message;
 	return null;
 }
