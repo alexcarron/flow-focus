@@ -293,7 +293,7 @@ export default function TaskManagerRow({ rowID, task, now, store, tags, tasksInP
 
 			<td data-mobile-label="Time Left to Complete" data-mobile-empty={task.getIsComplete() ? 'true' : 'false'} className={hiddenColumnKeys.has('timeAvailable') ? `${styles.cell} ${styles.hiddenColumn}` : styles.cell}>
 				{dueDate
-					? formatTime(task.getTimeToCompleteByDueDate(now))
+					? formatTime(task.getTimeLeftByDueDate(now))
 					: '∞'}
 			</td>
 

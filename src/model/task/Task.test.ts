@@ -1050,6 +1050,46 @@ describe('Task', () => {
 		});
 	});
 
+	describe('getTimeLeftByDueDate', () => {
+		const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
+		const hourInMilliseconds = 60 * 60 * 1000;
+
+		beforeEach(() => {
+			tasksManager.setAsleepTimeWindow(new TimeWindow('0:00', '8:00'));
+		});
+
+		it('returns infinity if there is no due date', () => {
+			expect(task.getTimeLeftByDueDate(currentTime)).toEqual(Infinity);
+		});
+
+		it('does not subtract time asleep when the due date is at least a day away', () => {
+			task.setDueDate(new Date(2024, 0, 2, 12, 0, 0, 0));
+			expect(task.getTimeLeftByDueDate(currentTime)).toBe(24 * hourInMilliseconds);
+		});
+
+		it('subtracts time asleep when the due date is less than a day away', () => {
+			task.setDueDate(new Date(2024, 0, 2, 6, 0, 0, 0));
+			expect(task.getTimeLeftByDueDate(currentTime)).toBe(12 * hourInMilliseconds);
+		});
+
+		it('counts from the current time instead of the start date when the due date is less than a day away', () => {
+			task.setStartDate(new Date(2024, 0, 1, 20, 0, 0, 0));
+			task.setDueDate(new Date(2024, 0, 2, 10, 0, 0, 0));
+			expect(task.getTimeLeftByDueDate(currentTime)).toBe(14 * hourInMilliseconds);
+		});
+
+		it('counts from the current time instead of the start date when the due date is at least a day away', () => {
+			task.setStartDate(new Date(2024, 0, 2, 0, 0, 0, 0));
+			task.setDueDate(new Date(2024, 0, 2, 18, 0, 0, 0));
+			expect(task.getTimeLeftByDueDate(currentTime)).toBe(30 * hourInMilliseconds);
+		});
+
+		it('returns negative time if the due date is in the past', () => {
+			task.setDueDate(new Date(currentTime.getTime() - 1000));
+			expect(task.getTimeLeftByDueDate(currentTime)).toBe(-1000);
+		});
+	});
+
 	describe('getTimeUntilDueDate', () => {
 		const currentTime = new Date();
 

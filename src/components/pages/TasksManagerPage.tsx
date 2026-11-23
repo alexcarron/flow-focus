@@ -166,7 +166,7 @@ function applySort(tasks: Task[], sortBy: SortBy, dir: SortDir): Task[] {
 	else if (sortBy === SortBy.Steps)
 		sorted.sort((a, b) => a.getSteps().length - b.getSteps().length);
 	else if (sortBy === SortBy.TimeAvailable)
-		sorted.sort((a, b) => a.getTimeToCompleteByDueDate(now) - b.getTimeToCompleteByDueDate(now));
+		sorted.sort((a, b) => a.getTimeLeftByDueDate(now) - b.getTimeLeftByDueDate(now));
 	else if (sortBy === SortBy.Duration)
 		sorted.sort((a, b) => a.getMaxRequiredTime(now) - b.getMaxRequiredTime(now));
 	else if (sortBy === SortBy.RecurrenceDuration)

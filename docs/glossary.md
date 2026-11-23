@@ -85,6 +85,14 @@ The same as sequence due date slack, but measured to each task's target or due d
 
 ## Prioritization
 
+### Time Left
+
+How long from now until a task's due date, shown in the Tasks page's "Time Left to Complete" column. Once it's a day or more, it's the real time until the due date. Under a day, it's the awake time left. It always counts from now, even if the task hasn't started yet. In the code it's `getTimeLeftByDueDate`.
+
+### Awake Time Left
+
+How much time you're awake before a date, with time asleep subtracted. If the task hasn't started yet, it counts from the start date instead of from now. The priority order uses this, never the time left. In the code it's `getTimeToCompleteByDueDate` and `getTimeToCompleteByTargetOrDueDate`.
+
 ### Due Date Slack
 
 How much spare time you have before a task's due date, after setting aside the longest the task could take.

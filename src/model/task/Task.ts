@@ -16,6 +16,7 @@ import { moveAnchorOccurrenceToFirstRecurrenceWeekday } from "./recurrence/recur
 import { calculateSequenceDueDateSlack, getPrerequisiteTasksOfTask, hasIncompletePrerequisiteTask, isTaskInSequence } from "./sequence/taskSequence";
 
 const FIRST_OCCURRENCE_INDEX = 0;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default class Task {
 	static [immerable] = true;
@@ -735,16 +736,34 @@ export default class Task {
 			taskDateRange = new DateRange(startDate, date);
 		}
 
+		return this.getAwakeTimeInDateRange(taskDateRange);
+	}
+
+	protected getAwakeTimeInDateRange(dateRange: DateRange): number {
 		const asleepTimeWindow = this.tasksManager.getAsleepTimeWindow();
 		if (asleepTimeWindow === null) {
-			return taskDateRange.getDuration();
+			return dateRange.getDuration();
 		}
 
-		return taskDateRange.getDurationWithoutTimeWindow(asleepTimeWindow);
+		return dateRange.getDurationWithoutTimeWindow(asleepTimeWindow);
 	}
 
 	getTimeToCompleteByDueDate(currentTime: Date): number {
 		return this.getAwakeTimeAvailableBefore(this.getDueDate(), currentTime);
+	}
+
+	getTimeLeftByDueDate(currentTime: Date): number {
+		const dueDate = this.getDueDate();
+		if (dueDate === null) {
+			return Number.POSITIVE_INFINITY;
+		}
+
+		const timeUntilDueDate = this.getTimeUntilDueDate(currentTime);
+		if (timeUntilDueDate >= MILLISECONDS_PER_DAY) {
+			return timeUntilDueDate;
+		}
+
+		return this.getAwakeTimeInDateRange(new DateRange(currentTime, dueDate));
 	}
 
 	getTimeToCompleteByTargetOrDueDate(currentTime: Date): number {
