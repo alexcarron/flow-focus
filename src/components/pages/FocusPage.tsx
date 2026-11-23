@@ -38,7 +38,8 @@ export default function FocusPage() {
 	const shouldShowQuickAddTaskBar = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
 	const shouldShowRemainingTasksSummary = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
 	const shouldShowConfetti = useSettingsStore(state => state.shouldShowConfetti);
-	const shouldPlayCelebrationSound = useSettingsStore(state => state.shouldPlayCelebrationSound);
+	const shouldPlayTaskCompletionSound = useSettingsStore(state => state.shouldPlayTaskCompletionSound);
+	const shouldPlayStepCompletionSound = useSettingsStore(state => state.shouldPlayStepCompletionSound);
 	const hasInteractedSinceRegainingFocus = useHasInteractedSinceRegainingFocus();
 	const [confettiBursts, setConfettiBursts] = useState<{
 		id: string,
@@ -67,7 +68,7 @@ export default function FocusPage() {
 
 	const celebrateCompletion = useEffectEvent(({ taskEffort }: { taskEffort: number }) => {
 		const undoStackLengthAfterCompletion = useTasksStore.getState().undoStack.length;
-		if (shouldPlayCelebrationSound) {
+		if (shouldPlayTaskCompletionSound) {
 			playingCelebrationSoundsRef.current.push({
 				undoStackLengthAfterCompletion,
 				stopCelebrationSound: playCelebrationSound({ taskEffort }),
@@ -108,7 +109,7 @@ export default function FocusPage() {
 	});
 
 	const celebrateStepCompletion = useEffectEvent(({ taskProgress }: { taskProgress: number }) => {
-		if (shouldPlayCelebrationSound) playStepCompletionSound({ taskProgress });
+		if (shouldPlayStepCompletionSound) playStepCompletionSound({ taskProgress });
 	});
 
 	useEffect(() => {

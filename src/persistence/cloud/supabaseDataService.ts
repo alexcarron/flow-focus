@@ -68,13 +68,15 @@ export function createSupabaseDataService(userID: string): SupabaseDataService {
 				p_user_id: cloudRow.user_id,
 				p_morning_time: cloudRow.morning_time,
 				p_night_time: cloudRow.night_time,
+				p_should_ignore_sleep_schedule: cloudRow.should_ignore_sleep_schedule,
 				p_bedtime: cloudRow.bedtime,
 				p_wake_time: cloudRow.wake_time,
 				p_should_keep_task_details_after_creating: cloudRow.should_keep_task_details_after_creating,
 				p_should_show_quick_add_task_bar_on_focus_page: cloudRow.should_show_quick_add_task_bar_on_focus_page,
 				p_should_show_remaining_tasks_summary_on_focus_page: cloudRow.should_show_remaining_tasks_summary_on_focus_page,
 				p_should_show_confetti: cloudRow.should_show_confetti,
-				p_should_play_celebration_sound: cloudRow.should_play_celebration_sound,
+				p_should_play_task_completion_sound: cloudRow.should_play_task_completion_sound,
+				p_should_play_step_completion_sound: cloudRow.should_play_step_completion_sound,
 				p_updated_at: cloudRow.updated_at,
 			});
 			if (error) throw error;

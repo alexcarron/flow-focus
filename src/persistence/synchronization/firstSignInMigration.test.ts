@@ -168,13 +168,15 @@ describe('migrateLocalDataToCloud', () => {
 			id: SETTINGS_ROW_ID,
 			morningTime: '07:00',
 			nightTime: '23:00',
+			shouldIgnoreSleepSchedule: false,
 			bedtime: '00:00',
 			wakeTime: '08:00',
 			shouldKeepTaskDetailsAfterCreating: false,
 			shouldShowQuickAddTaskBarOnFocusPage: true,
 			shouldShowRemainingTasksSummaryOnFocusPage: true,
 			shouldShowConfetti: true,
-			shouldPlayCelebrationSound: true,
+			shouldPlayTaskCompletionSound: true,
+			shouldPlayStepCompletionSound: true,
 			updatedAt: '2026-03-01T12:00:00.000Z',
 			isSynced: false,
 		};
@@ -193,14 +195,16 @@ describe('migrateLocalDataToCloud', () => {
 		cloudSettings = { 
 			...localSettings, 
 			morning_time: localSettings.morningTime, 
-			night_time: localSettings.nightTime, 
+			night_time: localSettings.nightTime,
+			should_ignore_sleep_schedule: false,
 			bedtime: localSettings.bedtime, 
 			wake_time: localSettings.wakeTime, 
 			should_keep_task_details_after_creating: false, 
 			should_show_quick_add_task_bar_on_focus_page: true,
 			should_show_remaining_tasks_summary_on_focus_page: true, 
 			should_show_confetti: true,
-			should_play_celebration_sound: true, 
+			should_play_task_completion_sound: true,
+			should_play_step_completion_sound: true,
 			updated_at: localSettings.updatedAt
 		};
 		cloudChecklist = { items: [], updated_at: localChecklist.updatedAt };

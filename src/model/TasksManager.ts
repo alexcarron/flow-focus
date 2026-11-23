@@ -5,20 +5,14 @@ import Time from "./time-management/Time";
 import TimeWindow from "./time-management/TimeWindow";
 import Weekday from "./time-management/Weekday";
 import WeeklyDateRange from "./time-management/WeeklyDateRange";
-import RecurrenceUnit from "./task/recurrence/RecurrenceUnit";
 
 export default class TasksManager {
 	protected tasks: Task[] = [];
-	private asleepTimeWindow: TimeWindow = new TimeWindow("0:00", "8:00");
+	private asleepTimeWindow: TimeWindow | null = new TimeWindow("0:00", "8:00");
 	private downtimeTime: RecurringDateRange = new WeeklyDateRange(
 		Weekday.SATURDAY, new Time(0),
 		Weekday.SUNDAY, new Time(23, 59)
 	)
-	private sleepTask: Task;
-
-	constructor() {
-		this.sleepTask = this.createSleepTask(new Date());
-	}
 
 	private addTask(task: Task) {
 		this.tasks.push(task);
@@ -44,27 +38,16 @@ export default class TasksManager {
 		skippedTasks.forEach(task => task.unSkip());
 	}
 
-	public getAsleepTimeWindow(): TimeWindow {
+	public getAsleepTimeWindow(): TimeWindow | null {
 		return this.asleepTimeWindow;
 	}
 
-	public setAsleepTimeWindow(timeWindow: TimeWindow): void {
+	public setAsleepTimeWindow(timeWindow: TimeWindow | null): void {
 		this.asleepTimeWindow = timeWindow;
-		this.sleepTask = this.createSleepTask(new Date());
 	}
 
 	public getDowntime(): RecurringDateRange {
 		return this.downtimeTime;
-	}
-
-	private createSleepTask(currentTime: Date): Task {
-		const sleepDateRange = this.asleepTimeWindow.toDateRange(currentTime);
-
-		const task = new Task(this, "Go To Sleep");
-		task.setDueDate(sleepDateRange.getEndDate());
-		task.makeRecurring({ amount: 1, unit: RecurrenceUnit.Day }, sleepDateRange.getStartDate(), currentTime);
-
-		return task;
 	}
 
 	public getPriorityTask(currentTime: Date): Task | null {

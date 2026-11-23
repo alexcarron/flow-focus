@@ -1,5 +1,3 @@
-import Task from '../../../model/task/Task';
-import Step from '../../../model/task/step/Step';
 import QuickToDoChecklistItem from '../../../model/quickToDoChecklist/QuickToDoChecklistItem';
 import Tag from '../../../model/tag/Tag';
 import { AppSettings } from '../../../model/AppSettings';
@@ -16,53 +14,17 @@ export interface BackupTask extends BackupTaskV11 {
 	prerequisiteTaskIDs: string[];
 }
 
+export type BackupSettings = Omit<AppSettings, 'shouldIgnoreSleepSchedule' | 'shouldPlayTaskCompletionSound' | 'shouldPlayStepCompletionSound'> & {
+	shouldPlayCelebrationSound?: boolean;
+};
+
 export interface BackupData {
 	format: typeof BACKUP_FORMAT;
 	exportedAt: string;
-	settings: AppSettings;
+	settings: BackupSettings;
 	tasks: BackupTask[];
 	quickToDoChecklist: QuickToDoChecklistItem[];
 	tags: Tag[];
-}
-
-function convertNullableDateToISOString(date: Date | null): string | null {
-	if (date === null) return null;
-	return date.toISOString();
-}
-
-function stepToBackupStep(step: Step): BackupStep {
-	return {
-		id: step.id,
-		text: step.text,
-		status: step.status,
-		children: step.children.map(stepToBackupStep),
-	};
-}
-
-export function taskToBackupTask(task: Task): BackupTask {
-	const state = task.getState();
-	return {
-		id: task.id,
-		description: state.description,
-		steps: state.steps.map(stepToBackupStep),
-		startDate: convertNullableDateToISOString(state.startDate),
-		targetDate: convertNullableDateToISOString(state.targetDate),
-		dueDate: convertNullableDateToISOString(state.dueDate),
-		minRequiredTime: state.minDuration,
-		maxRequiredTime: state.maxDuration,
-		recurrenceDuration: state.recurrenceDuration,
-		shouldNotSkipMissedOccurrences: state.shouldNotSkipMissedOccurrences,
-		completedOccurrenceIndex: state.completedOccurrenceIndex,
-		skippedOccurrenceIndex: state.skippedOccurrenceIndex,
-		progressOccurrenceIndex: state.progressOccurrenceIndex,
-		isComplete: state.isComplete,
-		isSkipped: state.isSkipped,
-		skippedUntil: convertNullableDateToISOString(state.skippedUntil),
-		lastActionedStep: state.lastActionedStep,
-		tagIDs: state.tagIDs,
-		prerequisiteTaskIDs: state.prerequisiteTaskIDs,
-		createdAt: task.createdAt.toISOString(),
-	};
 }
 
 export function isBackupTask(value: unknown): value is BackupTask {

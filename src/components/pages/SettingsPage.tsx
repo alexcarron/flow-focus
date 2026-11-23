@@ -9,22 +9,26 @@ import styles from './SettingsPage.module.css';
 export default function SettingsPage() {
 	const morningTime = useSettingsStore(state => state.morningTime);
 	const nightTime = useSettingsStore(state => state.nightTime);
+	const shouldIgnoreSleepSchedule = useSettingsStore(state => state.shouldIgnoreSleepSchedule);
 	const bedtime = useSettingsStore(state => state.bedtime);
 	const wakeTime = useSettingsStore(state => state.wakeTime);
 	const shouldKeepTaskDetailsAfterCreating = useSettingsStore(state => state.shouldKeepTaskDetailsAfterCreating);
 	const shouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(state => state.shouldShowQuickAddTaskBarOnFocusPage);
 	const shouldShowRemainingTasksSummaryOnFocusPage = useSettingsStore(state => state.shouldShowRemainingTasksSummaryOnFocusPage);
 	const shouldShowConfetti = useSettingsStore(state => state.shouldShowConfetti);
-	const shouldPlayCelebrationSound = useSettingsStore(state => state.shouldPlayCelebrationSound);
+	const shouldPlayTaskCompletionSound = useSettingsStore(state => state.shouldPlayTaskCompletionSound);
+	const shouldPlayStepCompletionSound = useSettingsStore(state => state.shouldPlayStepCompletionSound);
 	const setMorningTime = useSettingsStore(state => state.setMorningTime);
 	const setNightTime = useSettingsStore(state => state.setNightTime);
+	const setShouldIgnoreSleepSchedule = useSettingsStore(state => state.setShouldIgnoreSleepSchedule);
 	const setBedtime = useSettingsStore(state => state.setBedtime);
 	const setWakeTime = useSettingsStore(state => state.setWakeTime);
 	const setShouldKeepTaskDetailsAfterCreating = useSettingsStore(state => state.setShouldKeepTaskDetailsAfterCreating);
 	const setShouldShowQuickAddTaskBarOnFocusPage = useSettingsStore(state => state.setShouldShowQuickAddTaskBarOnFocusPage);
 	const setShouldShowRemainingTasksSummaryOnFocusPage = useSettingsStore(state => state.setShouldShowRemainingTasksSummaryOnFocusPage);
 	const setShouldShowConfetti = useSettingsStore(state => state.setShouldShowConfetti);
-	const setShouldPlayCelebrationSound = useSettingsStore(state => state.setShouldPlayCelebrationSound);
+	const setShouldPlayTaskCompletionSound = useSettingsStore(state => state.setShouldPlayTaskCompletionSound);
+	const setShouldPlayStepCompletionSound = useSettingsStore(state => state.setShouldPlayStepCompletionSound);
 
 	const tasks = useTasksStore(state => state.tasks);
 	const [backupStatus, setBackupStatus] = useState<string | null>(null);
@@ -106,37 +110,35 @@ export default function SettingsPage() {
 					</p>
 				</div>
 
-				<div className="field-group">
-					<label className="field-label">Bedtime</label>
-					<input
-						type="time"
-						value={bedtime}
-						onChange={event => setBedtime(event.target.value)}
-						className="field large"
-					/>
-				</div>
-
-				<div className="field-group">
-					<label className="field-label">Wake-up time</label>
-					<input
-						type="time"
-						value={wakeTime}
-						onChange={event => setWakeTime(event.target.value)}
-						className="field large"
-					/>
-				</div>
-			</section>
-
-			<section className={styles.section}>
-				<div>
-					<h2 className={styles.sectionHeading}>Task Creation</h2>
-				</div>
-
 				<CheckboxInput
-					value={shouldKeepTaskDetailsAfterCreating}
-					onChange={setShouldKeepTaskDetailsAfterCreating}
-					label="Keep task details when creating task"
+					value={shouldIgnoreSleepSchedule}
+					onChange={setShouldIgnoreSleepSchedule}
+					label="Don't subtract time asleep from time left"
 				/>
+
+				{!shouldIgnoreSleepSchedule && (
+					<>
+						<div className="field-group">
+							<label className="field-label">Bedtime</label>
+							<input
+								type="time"
+								value={bedtime}
+								onChange={event => setBedtime(event.target.value)}
+								className="field large"
+							/>
+						</div>
+
+						<div className="field-group">
+							<label className="field-label">Wake-up time</label>
+							<input
+								type="time"
+								value={wakeTime}
+								onChange={event => setWakeTime(event.target.value)}
+								className="field large"
+							/>
+						</div>
+					</>
+				)}
 			</section>
 
 			<section className={styles.section}>
@@ -153,7 +155,7 @@ export default function SettingsPage() {
 				<CheckboxInput
 					value={shouldShowRemainingTasksSummaryOnFocusPage}
 					onChange={setShouldShowRemainingTasksSummaryOnFocusPage}
-					label="Show titles of upcoming tasks below the focused task"
+					label="Show upcoming tasks below the focused task"
 				/>
 
 				<CheckboxInput
@@ -163,9 +165,27 @@ export default function SettingsPage() {
 				/>
 
 				<CheckboxInput
-					value={shouldPlayCelebrationSound}
-					onChange={setShouldPlayCelebrationSound}
-					label="Play sounds when completing tasks and steps"
+					value={shouldPlayTaskCompletionSound}
+					onChange={setShouldPlayTaskCompletionSound}
+					label="Play sound when completing a task"
+				/>
+
+				<CheckboxInput
+					value={shouldPlayStepCompletionSound}
+					onChange={setShouldPlayStepCompletionSound}
+					label="Play sound when completing a step"
+				/>
+			</section>
+
+			<section className={styles.section}>
+				<div>
+					<h2 className={styles.sectionHeading}>Task Creation</h2>
+				</div>
+
+				<CheckboxInput
+					value={shouldKeepTaskDetailsAfterCreating}
+					onChange={setShouldKeepTaskDetailsAfterCreating}
+					label="Keep task details when creating task"
 				/>
 			</section>
 

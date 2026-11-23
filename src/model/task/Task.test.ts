@@ -1,3 +1,4 @@
+import TimeWindow from '../time-management/TimeWindow';
 import TasksManager from "../TasksManager";
 import StepStatus from "./step/StepStatus";
 import Step from "./step/Step";
@@ -1031,6 +1032,21 @@ describe('Task', () => {
 			task.setStartDate(startDate);
 			task.setDueDate(dueDate);
 			expect(task.getTimeToCompleteByDueDate(currentTime)).toBe(1000);
+		});
+
+		it('subtracts time asleep when there is an asleep time window', () => {
+			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
+			tasksManager.setAsleepTimeWindow(new TimeWindow('0:00', '8:00'));
+			task.setDueDate(new Date(2024, 0, 2, 12, 0, 0, 0));
+			expect(task.getTimeToCompleteByDueDate(currentTime)).toBe(16 * 60 * 60 * 1000);
+		});
+
+		it('does not subtract time asleep when there is no asleep time window', () => {
+			const currentTime = new Date(2024, 0, 1, 12, 0, 0, 0);
+			tasksManager.setAsleepTimeWindow(null);
+			task.setDueDate(new Date(2024, 0, 2, 12, 0, 0, 0));
+			expect(task.getTimeToCompleteByDueDate(currentTime)).toBe(24 * 60 * 60 * 1000);
+			tasksManager.setAsleepTimeWindow(new TimeWindow('0:00', '8:00'));
 		});
 	});
 

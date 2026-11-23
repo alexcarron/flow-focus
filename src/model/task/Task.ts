@@ -735,9 +735,12 @@ export default class Task {
 			taskDateRange = new DateRange(startDate, date);
 		}
 
-		return taskDateRange.getDurationWithoutTimeWindow(
-			this.tasksManager.getAsleepTimeWindow()
-		);
+		const asleepTimeWindow = this.tasksManager.getAsleepTimeWindow();
+		if (asleepTimeWindow === null) {
+			return taskDateRange.getDuration();
+		}
+
+		return taskDateRange.getDurationWithoutTimeWindow(asleepTimeWindow);
 	}
 
 	getTimeToCompleteByDueDate(currentTime: Date): number {

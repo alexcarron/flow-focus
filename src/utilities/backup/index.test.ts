@@ -6,7 +6,8 @@ import { useTasksStore, tasksManager } from '../../stores/tasksStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useQuickToDoChecklistStore } from '../../stores/quickToDoChecklistStore';
 import { createBackup, readBackupFile, applyBackup, BackupData } from './index';
-import { BACKUP_FORMAT } from './versions/backupV12';
+import { BACKUP_FORMAT } from './versions/backupV13';
+import { BACKUP_FORMAT as BACKUP_FORMAT_V12 } from './versions/backupV12';
 import { BACKUP_FORMAT as BACKUP_FORMAT_V11 } from './versions/backupV11';
 import { BACKUP_FORMAT as BACKUP_FORMAT_V10 } from './versions/backupV10';
 import { BACKUP_FORMAT as BACKUP_FORMAT_V9 } from './versions/backupV9';
@@ -301,6 +302,26 @@ describe('readBackupFile', () => {
 		expect(migrated.format).toBe(BACKUP_FORMAT);
 		expect(typeof migrated.tasks[0].id).toBe('string');
 		expect(migrated.tasks[0].prerequisiteTaskIDs).toEqual([]);
+	});
+
+	it.each([true, false])("sets both completion sound settings to %s from a v12 backup's celebration sound setting", async shouldPlayCelebrationSound => {
+		const { shouldPlayTaskCompletionSound, shouldPlayStepCompletionSound, shouldIgnoreSleepSchedule, ...settingsV12 } = DEFAULT_SETTINGS;
+		const v12Backup = {
+			format: BACKUP_FORMAT_V12,
+			exportedAt: '2026-11-20T10:00:00.000Z',
+			settings: { ...settingsV12, shouldPlayCelebrationSound },
+			tasks: [],
+			quickToDoChecklist: [],
+			tags: [],
+		};
+
+		const migrated = await readBackupFile(makeBackupFile(v12Backup));
+
+		expect(migrated.format).toBe(BACKUP_FORMAT);
+		expect(migrated.settings.shouldPlayTaskCompletionSound).toBe(shouldPlayCelebrationSound);
+		expect(migrated.settings.shouldPlayStepCompletionSound).toBe(shouldPlayCelebrationSound);
+		expect(migrated.settings).not.toHaveProperty('shouldPlayCelebrationSound');
+		expect(migrated.settings.shouldIgnoreSleepSchedule).toBe(false);
 	});
 
 	it('rejects a file that is not a recognized backup', async () => {

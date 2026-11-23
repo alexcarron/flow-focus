@@ -12,13 +12,15 @@ interface SettingsActions {
 	loadSettings: () => Promise<void>;
 	setMorningTime: (value: string) => Promise<void>;
 	setNightTime: (value: string) => Promise<void>;
+	setShouldIgnoreSleepSchedule: (value: boolean) => Promise<void>;
 	setBedtime: (value: string) => Promise<void>;
 	setWakeTime: (value: string) => Promise<void>;
 	setShouldKeepTaskDetailsAfterCreating: (value: boolean) => Promise<void>;
 	setShouldShowQuickAddTaskBarOnFocusPage: (value: boolean) => Promise<void>;
 	setShouldShowRemainingTasksSummaryOnFocusPage: (value: boolean) => Promise<void>;
 	setShouldShowConfetti: (value: boolean) => Promise<void>;
-	setShouldPlayCelebrationSound: (value: boolean) => Promise<void>;
+	setShouldPlayTaskCompletionSound: (value: boolean) => Promise<void>;
+	setShouldPlayStepCompletionSound: (value: boolean) => Promise<void>;
 	importSettings: (settings: AppSettings) => Promise<void>;
 }
 
@@ -26,13 +28,15 @@ function pickSettings(state: SettingsState): AppSettings {
 	return {
 		morningTime: state.morningTime,
 		nightTime: state.nightTime,
+		shouldIgnoreSleepSchedule: state.shouldIgnoreSleepSchedule,
 		bedtime: state.bedtime,
 		wakeTime: state.wakeTime,
 		shouldKeepTaskDetailsAfterCreating: state.shouldKeepTaskDetailsAfterCreating,
 		shouldShowQuickAddTaskBarOnFocusPage: state.shouldShowQuickAddTaskBarOnFocusPage,
 		shouldShowRemainingTasksSummaryOnFocusPage: state.shouldShowRemainingTasksSummaryOnFocusPage,
 		shouldShowConfetti: state.shouldShowConfetti,
-		shouldPlayCelebrationSound: state.shouldPlayCelebrationSound,
+		shouldPlayTaskCompletionSound: state.shouldPlayTaskCompletionSound,
+		shouldPlayStepCompletionSound: state.shouldPlayStepCompletionSound,
 	};
 }
 
@@ -41,7 +45,12 @@ async function persistSettings(settings: AppSettings): Promise<void> {
 }
 
 function applySleepWindow(settings: AppSettings): void {
-	tasksManager.setAsleepTimeWindow(new TimeWindow(settings.bedtime, settings.wakeTime));
+	if (settings.shouldIgnoreSleepSchedule) {
+		tasksManager.setAsleepTimeWindow(null);
+	}
+	else {
+		tasksManager.setAsleepTimeWindow(new TimeWindow(settings.bedtime, settings.wakeTime));
+	}
 }
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()((set, get) => ({
@@ -64,6 +73,13 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 	async setNightTime(value: string) {
 		set({ nightTime: value });
 		await persistSettings({ ...pickSettings(get()), nightTime: value });
+	},
+
+	async setShouldIgnoreSleepSchedule(value: boolean) {
+		set({ shouldIgnoreSleepSchedule: value });
+		const settings = { ...pickSettings(get()), shouldIgnoreSleepSchedule: value };
+		await persistSettings(settings);
+		applySleepWindow(settings);
 	},
 
 	async setBedtime(value: string) {
@@ -100,9 +116,14 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set, 
 		await persistSettings({ ...pickSettings(get()), shouldShowConfetti: value });
 	},
 
-	async setShouldPlayCelebrationSound(value: boolean) {
-		set({ shouldPlayCelebrationSound: value });
-		await persistSettings({ ...pickSettings(get()), shouldPlayCelebrationSound: value });
+	async setShouldPlayTaskCompletionSound(value: boolean) {
+		set({ shouldPlayTaskCompletionSound: value });
+		await persistSettings({ ...pickSettings(get()), shouldPlayTaskCompletionSound: value });
+	},
+
+	async setShouldPlayStepCompletionSound(value: boolean) {
+		set({ shouldPlayStepCompletionSound: value });
+		await persistSettings({ ...pickSettings(get()), shouldPlayStepCompletionSound: value });
 	},
 
 	async importSettings(importedSettings: AppSettings) {

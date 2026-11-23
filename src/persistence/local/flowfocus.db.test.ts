@@ -497,3 +497,50 @@ describe('upgrading a database whose tasks have no prerequisite tasks', () => {
 		upgradedDB.close();
 	});
 });
+
+class PreSplitCompletionSoundsFlowFocusDB extends Dexie {
+	constructor() {
+		super(DB_NAME);
+		this.version(14).stores({
+			tasks: 'id, dueDate, targetDate, startDate, isComplete, isSkipped, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		});
+	}
+}
+
+describe('upgrading a database whose settings have one celebration sound setting', () => {
+	it.each([true, false])('sets both completion sound settings to %s without marking the settings unsynced', async shouldPlayCelebrationSound => {
+		const legacyDB = new PreSplitCompletionSoundsFlowFocusDB();
+		await legacyDB.open();
+		await legacyDB.table('settings').add({
+			id: 1,
+			morningTime: '07:00',
+			nightTime: '23:00',
+			bedtime: '00:00',
+			wakeTime: '08:00',
+			shouldKeepTaskDetailsAfterCreating: false,
+			shouldShowQuickAddTaskBarOnFocusPage: true,
+			shouldShowRemainingTasksSummaryOnFocusPage: true,
+			shouldShowConfetti: true,
+			shouldPlayCelebrationSound,
+			updatedAt: '2026-09-01T00:00:00.000Z',
+			isSynced: true,
+		});
+		legacyDB.close();
+
+		const upgradedDB = new FlowFocusDB();
+		await upgradedDB.open();
+		const row = await upgradedDB.settings.get(1);
+		expect(row?.shouldPlayTaskCompletionSound).toBe(shouldPlayCelebrationSound);
+		expect(row?.shouldPlayStepCompletionSound).toBe(shouldPlayCelebrationSound);
+		expect(row).not.toHaveProperty('shouldPlayCelebrationSound');
+		expect(row?.shouldIgnoreSleepSchedule).toBe(false);
+		expect(row?.updatedAt).toBe('2026-09-01T00:00:00.000Z');
+		expect(row?.isSynced).toBe(true);
+
+		upgradedDB.close();
+	});
+});

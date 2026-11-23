@@ -233,7 +233,26 @@ export class FlowFocusDB extends Dexie {
 				addEmptyPrerequisiteTaskIDsToTaskRow(row);
 			});
 		});
+		this.version(15).stores({
+			tasks: 'id, dueDate, targetDate, startDate, isComplete, isSkipped, deletedAt, updatedAt',
+			settings: 'id',
+			quickToDoChecklist: 'id',
+			syncStatus: 'id',
+			tags: 'id, deletedAt',
+		}).upgrade(transaction => {
+			return transaction.table('settings').toCollection().modify(row => {
+				splitSettingsRowCelebrationSoundIntoTaskAndStepCompletionSounds(row);
+				row.shouldIgnoreSleepSchedule ??= false;
+			});
+		});
 	}
+}
+
+function splitSettingsRowCelebrationSoundIntoTaskAndStepCompletionSounds(row: Record<string, unknown>): void {
+	const shouldPlaySounds = (row.shouldPlayCelebrationSound as boolean | undefined) ?? true;
+	row.shouldPlayTaskCompletionSound = shouldPlaySounds;
+	row.shouldPlayStepCompletionSound = shouldPlaySounds;
+	delete row.shouldPlayCelebrationSound;
 }
 
 function convertTaskRowFromMandatoryAndEndTimeToTargetAndDueDates(row: Record<string, unknown>): void {
